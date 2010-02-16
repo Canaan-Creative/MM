@@ -22,7 +22,7 @@ output reg [31:0] API_DAT_O   ,
 output reg        txfifo_push ,
 output reg [31:0] txfifo_din  ,
 
-input  [8 :0]     rxcnt       ,
+input  [9 :0]     rxcnt       ,
 input             rxempty     ,
 input  [9 :0]     txcnt       ,
 output            reg_flush   ,
@@ -89,7 +89,7 @@ end
 // Register.state
 //-----------------------------------------------------
 reg [3:0] reg_flush_r ;
-wire [31:0] rd_state = {3'h0, rxcnt[8:0], 3'b0, rxempty,
+wire [31:0] rd_state = {2'h0, rxcnt[9:0], 3'b0, rxempty,
 			reg_state, 1'b0, txcnt[9:0], reg_flush, txfull};
 
 always @ ( posedge clk ) begin

@@ -159,7 +159,7 @@ unsigned int api_get_tx_cnt()
 
 unsigned int api_get_rx_cnt()
 {
-	return (readl(&api->state) >> 20) & 0x1ff;
+	return (readl(&api->state) >> 20) & 0x3ff;
 }
 
 void api_set_tx_fifo(unsigned int * data)

@@ -16,14 +16,14 @@ input  [31:0]         tx_fifo_dout      ,
 
 output                rx_fifo_wr_en     ,
 output [31:0]         rx_fifo_din       ,
-input  [8:0]          rx_fifo_data_count,
+input  [9:0]          rx_fifo_data_count,
 
 output reg [`API_NUM-1:0] load          ,
 output                sck               ,
 output                mosi              ,
 input  [`API_NUM-1:0] miso
 );
-parameter RX_FIFO_DEPTH = 256;//words
+parameter RX_FIFO_DEPTH = 512;//words
 parameter WORK_LEN = 736/32;//words
 parameter RX_BLOCK_LEN = 11;//words
 parameter MAX_CHIP_IN_CH = 5;//words

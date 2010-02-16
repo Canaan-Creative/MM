@@ -46,7 +46,7 @@ wire                rx_fifo_rd_en     ;
 wire [31 : 0]       rx_fifo_dout      ;
 wire                rx_fifo_full      ;
 wire                rx_fifo_empty     ;
-wire [8  : 0]       rx_fifo_data_count;
+wire [9  : 0]       rx_fifo_data_count;
 
 wire clk = CLK_I;
 wire rst = RST_I | reg_rst;
@@ -74,7 +74,7 @@ api_slave(
 /*output reg       */ .txfifo_push (tx_fifo_wr_en     ),
 /*output reg [31:0]*/ .txfifo_din  (tx_fifo_din       ),
 
-/*input  [8 :0]    */ .rxcnt       (rx_fifo_data_count),
+/*input  [9 :0]    */ .rxcnt       (rx_fifo_data_count),
 /*input            */ .rxempty     (rx_fifo_empty     ),
 /*input  [9:0]     */ .txcnt       (tx_fifo_data_count),
 /*output           */ .reg_flush   (reg_rst           ),
@@ -110,7 +110,7 @@ api_ctrl #(.WORK_LEN(WORK_LEN), .RX_FIFO_DEPTH(RX_FIFO_DEPTH)) api_ctrl(
 
 /*output               */ .rx_fifo_wr_en     (rx_fifo_wr_en     ),
 /*output [31:0]        */ .rx_fifo_din       (rx_fifo_din       ),
-/*input  [8  : 0]      */ .rx_fifo_data_count(rx_fifo_data_count),
+/*input  [9  : 0]      */ .rx_fifo_data_count(rx_fifo_data_count),
 
 /*output [`API_NUM-1:0]*/ .load              (load              ),
 /*output               */ .sck               (sck               ),
@@ -131,8 +131,8 @@ fifo512 tx_fifo(
 /*output [9  : 0]*/ .data_count(tx_fifo_data_count)
 ) ;                                       
 
-//256words
-i2c_fifo rx_fifo(                          
+//512words
+fifo512 rx_fifo(                          
 /*input          */ .clk       (clk               ),
 /*input          */ .srst      (rst               ),
 /*input  [31 : 0]*/ .din       (rx_fifo_din       ),
@@ -141,7 +141,7 @@ i2c_fifo rx_fifo(
 /*output [31 : 0]*/ .dout      (rx_fifo_dout      ),
 /*output         */ .full      (rx_fifo_full      ),
 /*output         */ .empty     (rx_fifo_empty     ),
-/*output [8  : 0]*/ .data_count(rx_fifo_data_count)
+/*output [9  : 0]*/ .data_count(rx_fifo_data_count)
 );
 /*
 wire [35:0] icon_ctrl_0;
