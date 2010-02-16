@@ -23,7 +23,7 @@ output                mosi      ,
 input  [`API_NUM-1:0] miso
 );
 parameter WORK_LEN = 736/32;
-parameter RX_FIFO_DEPTH = 256;
+parameter RX_FIFO_DEPTH = 512;
 
 wire [2:0]          reg_state         ;
 wire [27:0]         reg_timeout       ;
