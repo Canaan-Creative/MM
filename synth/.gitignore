@@ -1,8 +1,8 @@
+*.ngc
 .xst_extra_opts
 _xmsgs/
 mm.bld
 mm.lso
-mm.ngc
 mm.ngc_xst.xrpt
 mm.old.ucf
 mm.prj
