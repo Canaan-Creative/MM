@@ -2661,8 +2661,13 @@ end
 `ifdef LM32_EBR_REGISTER_FILE
 `else
 // Register file write port
+`ifdef LM32_RESET_REGISTER_FILE_ON_RESET
 always @(posedge clk_i `CFG_RESET_SENSITIVITY)
+`else
+always @(posedge clk_i)
+`endif
 begin
+`ifdef LM32_RESET_REGISTER_FILE_ON_RESET
     if (rst_i == `TRUE) begin
         registers[0] <= #1 {`LM32_WORD_WIDTH{1'b0}};
         registers[1] <= #1 {`LM32_WORD_WIDTH{1'b0}};
@@ -2697,7 +2702,9 @@ begin
         registers[30] <= #1 {`LM32_WORD_WIDTH{1'b0}};
         registers[31] <= #1 {`LM32_WORD_WIDTH{1'b0}}; 
         end
-    else begin
+    else
+`endif
+    begin
         if (reg_write_enable_q_w == `TRUE)
           registers[write_idx_w] <= #1 w_result;
         end

@@ -352,4 +352,8 @@
 `define DOWNLOAD_BUFFER_SIZE            128
 //`define DOWNLOAD_BUFFER_SIZE_256        1
 
+// Don't reset register file on reset
+// Very expensive on FPGAs.
+`undef LM32_RESET_REGISTER_FILE_ON_RESET
+
 `endif
