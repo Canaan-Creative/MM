@@ -102,6 +102,24 @@ module lm32_top (
     user_operand_0,
     user_operand_1,
 `endif    
+`ifdef CFG_IROM_EXPOSE
+    irom_clk_rd, irom_clk_wr,
+    irom_rst_rd, irom_rst_wr,
+    irom_addr_rd, irom_addr_wr,
+    irom_d_rd /* unused */, irom_d_wr,
+    irom_q_rd, irom_q_wr,
+    irom_en_rd, irom_en_wr,
+    irom_write_rd, irom_write_wr,
+`endif
+`ifdef CFG_DRAM_EXPOSE
+    dram_clk_rd, dram_clk_wr,
+    dram_rst_rd, dram_rst_wr,
+    dram_addr_rd, dram_addr_wr,
+    dram_d_rd /* unused */, dram_d_wr,
+    dram_q_rd, dram_q_wr /* unused */,
+    dram_en_rd, dram_en_wr,
+    dram_write_rd, dram_write_wr,
+`endif
 `ifdef CFG_IWB_ENABLED
     // Instruction Wishbone master
     I_DAT_O,
@@ -153,6 +171,13 @@ input [`LM32_WORD_RNG] user_result;             // User-defined instruction resu
 input user_complete;                            // Indicates the user-defined instruction result is valid
 `endif    
 
+`ifdef CFG_IROM_EXPOSE
+input [`LM32_WORD_RNG] irom_q_rd, irom_q_wr;
+`endif
+`ifdef CFG_DRAM_EXPOSE
+input [`LM32_WORD_RNG] dram_q_rd, dram_q_wr /* unused */;
+`endif
+
 `ifdef CFG_IWB_ENABLED
 input [`LM32_WORD_RNG] I_DAT_I;                 // Instruction Wishbone interface read data
 input I_ACK_I;                                  // Instruction Wishbone interface acknowledgement
@@ -188,6 +213,35 @@ output [`LM32_WORD_RNG] user_operand_0;         // First operand for user-define
 wire   [`LM32_WORD_RNG] user_operand_0;
 output [`LM32_WORD_RNG] user_operand_1;         // Second operand for user-defined instruction
 wire   [`LM32_WORD_RNG] user_operand_1;
+`endif
+
+`ifdef CFG_IROM_EXPOSE
+output irom_clk_rd, irom_clk_wr;
+wire irom_clk_rd, irom_clk_wr;
+output irom_rst_rd, irom_rst_wr;
+wire irom_rst_rd, irom_rst_wr;
+output [`LM32_WORD_RNG] irom_d_rd /* unused */, irom_d_wr;
+wire [`LM32_WORD_RNG] irom_d_rd /* unused */, irom_d_wr;
+output [`IROM_ADDR_WIDTH-1:0] irom_addr_rd, irom_addr_wr;
+wire [`IROM_ADDR_WIDTH-1:0] irom_addr_rd, irom_addr_wr;
+output irom_en_rd, irom_en_wr;
+wire irom_en_rd, irom_en_wr;
+output irom_write_rd, irom_write_wr;
+wire irom_write_rd, irom_write_wr;
+`endif
+`ifdef CFG_DRAM_EXPOSE
+output dram_clk_rd, dram_clk_wr;
+wire dram_clk_rd, dram_clk_wr;
+output dram_rst_rd, dram_rst_wr;
+wire dram_rst_rd, dram_rst_wr;
+output [`LM32_WORD_RNG] dram_d_rd /* unused */, dram_d_wr;
+wire [`LM32_WORD_RNG] dram_d_rd /* unused */, dram_d_wr;
+output [`DRAM_ADDR_WIDTH-1:0] dram_addr_rd, dram_addr_wr;
+wire [`DRAM_ADDR_WIDTH-1:0] dram_addr_rd, dram_addr_wr;
+output dram_en_rd, dram_en_wr;
+wire dram_en_rd, dram_en_wr;
+output dram_write_rd, dram_write_wr;
+wire dram_write_rd, dram_write_wr;
 `endif
 
 `ifdef CFG_IWB_ENABLED
@@ -341,6 +395,38 @@ lm32_cpu cpu (
     .user_operand_0        (user_operand_0),
     .user_operand_1        (user_operand_1),
 `endif    
+`ifdef CFG_IROM_EXPOSE
+    .irom_clk_rd(irom_clk_rd),
+    .irom_clk_wr(irom_clk_wr),
+    .irom_rst_rd(irom_rst_rd),
+    .irom_rst_wr(irom_rst_wr),
+    .irom_d_rd(irom_d_rd) /* unused */,
+    .irom_d_wr(irom_d_wr),
+    .irom_q_rd(irom_q_rd),
+    .irom_q_wr(irom_q_wr),
+    .irom_addr_rd(irom_addr_rd),
+    .irom_addr_wr(irom_addr_wr),
+    .irom_en_rd(irom_en_rd),
+    .irom_en_wr(irom_en_wr),
+    .irom_write_rd(irom_write_rd),
+    .irom_write_wr(irom_write_wr),
+`endif
+`ifdef CFG_DRAM_EXPOSE
+    .dram_clk_rd(dram_clk_rd),
+    .dram_clk_wr(dram_clk_wr),
+    .dram_rst_rd(dram_rst_rd),
+    .dram_rst_wr(dram_rst_wr),
+    .dram_d_rd(dram_d_rd) /* unused */,
+    .dram_d_wr(dram_d_wr),
+    .dram_q_rd(dram_q_rd),
+    .dram_q_wr(dram_q_wr) /* unused */,
+    .dram_addr_rd(dram_addr_rd),
+    .dram_addr_wr(dram_addr_wr),
+    .dram_en_rd(dram_en_rd),
+    .dram_en_wr(dram_en_wr),
+    .dram_write_rd(dram_write_rd),
+    .dram_write_wr(dram_write_wr),
+`endif
 `ifdef CFG_IWB_ENABLED
     // Instruction Wishbone master
     .I_DAT_O               (I_DAT_O),
