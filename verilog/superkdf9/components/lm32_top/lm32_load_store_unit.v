@@ -113,7 +113,7 @@ module lm32_load_store_unit (
     irom_we_xm,
     irom_stall_request_x,
 `endif			     
-`ifdef LM32_EXPOSE_DRAM
+`ifdef CFG_DRAM_EXPOSE
     dram_clk_rd, dram_clk_wr,
     dram_rst_rd, dram_rst_wr,
     dram_addr_rd, dram_addr_wr,
@@ -185,7 +185,7 @@ input dflush;                                           // Flush the data cache
 input [`LM32_WORD_RNG] irom_data_m;                     // Data from Instruction-ROM
 `endif
 
-`ifdef LM32_EXPOSE_DRAM
+`ifdef CFG_DRAM_EXPOSE
 input [`LM32_WORD_RNG] dram_q_rd, dram_q_wr /* unused */;
 `endif
 
@@ -225,15 +225,15 @@ reg    [`LM32_WORD_RNG] load_data_w;
 output stall_wb_load;                                   // Request to stall pipeline due to a load from the Wishbone interface
 reg    stall_wb_load;
 
-`ifdef LM32_EXPOSE_DRAM
+`ifdef CFG_DRAM_EXPOSE
 output dram_clk_rd, dram_clk_wr;
 wire dram_clk_rd, dram_clk_wr;
 output dram_rst_rd, dram_rst_wr;
 wire dram_rst_rd, dram_rst_wr;
 output [`LM32_WORD_RNG] dram_d_rd /* unused */, dram_d_wr;
 wire [`LM32_WORD_RNG] dram_d_rd /* unused */, dram_d_wr;
-output [clogb2_v1(`CFG_DRAM_LIMIT/4-`CFG_DRAM_BASE_ADDRESS/4+1)-1:0] dram_addr_rd, dram_addr_wr;
-wire [clogb2_v1(`CFG_DRAM_LIMIT/4-`CFG_DRAM_BASE_ADDRESS/4+1)-1:0] dram_addr_rd, dram_addr_wr;
+output [`DRAM_ADDR_WIDTH-1:0] dram_addr_rd, dram_addr_wr;
+wire [`DRAM_ADDR_WIDTH-1:0] dram_addr_rd, dram_addr_wr;
 output dram_en_rd, dram_en_wr;
 wire dram_en_rd, dram_en_wr;
 output dram_write_rd, dram_write_wr;
@@ -315,12 +315,12 @@ reg wb_load_complete;                                   // Indicates when a Wish
 /////////////////////////////////////////////////////
 
 `ifdef CFG_DRAM_ENABLED
-`ifndef LM32_EXPOSE_DRAM
+`ifndef CFG_DRAM_EXPOSE
 wire dram_clk_rd, dram_clk_wr;
 wire dram_rst_rd, dram_rst_wr;
 wire [`LM32_WORD_RNG] dram_d_rd /* unused */, dram_d_wr;
 wire [`LM32_WORD_RNG] dram_q_rd, dram_q_wr /* unused */;
-wire [clogb2_v1(`CFG_DRAM_LIMIT/4-`CFG_DRAM_BASE_ADDRESS/4+1)-1:0] dram_addr_rd, dram_addr_wr;
+wire [`DRAM_ADDR_WIDTH-1:0] dram_addr_rd, dram_addr_wr;
 wire dram_en_rd, dram_en_wr;
 wire dram_write_rd, dram_write_wr;
 `endif
@@ -329,13 +329,13 @@ assign {dram_clk_rd, dram_clk_wr} = {clk_i, clk_i};
 assign {dram_rst_rd, dram_rst_wr} = {rst_i, rst_i};
 assign {dram_en_rd, dram_en_wr} = {!stall_x, !stall_m};
 assign {dram_write_rd, dram_write_wr} = {`FALSE, store_q_m & dram_select_m};
-assign dram_addr_rd = load_store_address_x[clogb2_v1(`CFG_DRAM_LIMIT/4-`CFG_DRAM_BASE_ADDRESS/4+1)+2-1:2];
-assign dram_addr_wr = load_store_address_m[clogb2_v1(`CFG_DRAM_LIMIT/4-`CFG_DRAM_BASE_ADDRESS/4+1)+2-1:2];
+assign dram_addr_rd = load_store_address_x[`DRAM_ADDR_WIDTH+2-1:2];
+assign dram_addr_wr = load_store_address_m[`DRAM_ADDR_WIDTH+2-1:2];
 assign dram_d_rd = {32{1'b0}};
 assign dram_d_wr = dram_store_data_m;
 assign dram_data_out = dram_q_rd;
 
-`ifndef LM32_EXPOSE_DRAM
+`ifndef CFG_DRAM_EXPOSE
    // Data RAM
    pmi_ram_dp_true 
      #(
@@ -350,10 +350,10 @@ assign dram_data_out = dram_q_rd;
        //.pmi_data_width_b       (`LM32_WORD_WIDTH),
 	
        .pmi_addr_depth_a       (`CFG_DRAM_LIMIT/4-`CFG_DRAM_BASE_ADDRESS/4+1),
-       .pmi_addr_width_a       (clogb2_v1(`CFG_DRAM_LIMIT/4-`CFG_DRAM_BASE_ADDRESS/4+1)),
+       .pmi_addr_width_a       (`DRAM_ADDR_WIDTH),
        .pmi_data_width_a       (`LM32_WORD_WIDTH),
        .pmi_addr_depth_b       (`CFG_DRAM_LIMIT/4-`CFG_DRAM_BASE_ADDRESS/4+1),
-       .pmi_addr_width_b       (clogb2_v1(`CFG_DRAM_LIMIT/4-`CFG_DRAM_BASE_ADDRESS/4+1)),
+       .pmi_addr_width_b       (`DRAM_ADDR_WIDTH),
        .pmi_data_width_b       (`LM32_WORD_WIDTH),
 
        .pmi_regmode_a          ("noreg"),

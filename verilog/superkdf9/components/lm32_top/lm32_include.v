@@ -356,14 +356,16 @@
 // Very expensive on FPGAs.
 `undef LM32_RESET_REGISTER_FILE_ON_RESET
 
-`ifdef CFG_IROM_ENABLED
-// Define this to expose IROM module to the outer world
-`define LM32_EXPOSE_IROM
+`define IROM_ADDR_WIDTH clogb2_v1(`CFG_IROM_LIMIT/4-`CFG_IROM_BASE_ADDRESS/4+1)
+`ifndef CFG_IROM_ENABLED
+// Define this to expose IROM module to the outside world
+`undef CFG_IROM_EXPOSE
 `endif
 
+`define DRAM_ADDR_WIDTH clogb2_v1(`CFG_DRAM_LIMIT/4-`CFG_DRAM_BASE_ADDRESS/4+1)
 `ifdef CFG_DRAM_ENABLED
-// Define this to expose DRAM module to the outer world
-`define LM32_EXPOSE_DRAM
+// Define this to expose DRAM module to the outside world
+`undef CFG_DRAM_EXPOSE
 `endif
 
 `endif

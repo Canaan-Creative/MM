@@ -143,7 +143,7 @@ module lm32_instruction_unit (
 `ifdef CFG_IROM_ENABLED
     irom_data_m,
 `endif
-`ifdef LM32_EXPOSE_IROM
+`ifdef CFG_IROM_EXPOSE
     irom_clk_rd, irom_clk_wr,
     irom_rst_rd, irom_rst_wr,
     irom_addr_rd, irom_addr_wr,
@@ -241,7 +241,7 @@ input [`LM32_WORD_RNG] irom_address_xm;                 // Address from load-sto
 input irom_we_xm;                                       // Indicates if memory operation is load or store
 `endif
 
-`ifdef LM32_EXPOSE_IROM
+`ifdef CFG_IROM_EXPOSE
 input [`LM32_WORD_RNG] irom_q_rd, irom_q_wr;
 `endif
 
@@ -289,15 +289,15 @@ output [`LM32_WORD_RNG] irom_data_m;                    // Data to load-store un
 wire   [`LM32_WORD_RNG] irom_data_m;                      
 `endif   
 
-`ifdef LM32_EXPOSE_IROM
+`ifdef CFG_IROM_EXPOSE
 output irom_clk_rd, irom_clk_wr;
 wire irom_clk_rd, irom_clk_wr;
 output irom_rst_rd, irom_rst_wr;
 wire irom_rst_rd, irom_rst_wr;
 output [`LM32_WORD_RNG] irom_d_rd /* unused */, irom_d_wr;
 wire [`LM32_WORD_RNG] irom_d_rd /* unused */, irom_d_wr;
-output [clogb2_v1(`CFG_IROM_LIMIT/4-`CFG_IROM_BASE_ADDRESS/4+1)-1:0] irom_addr_rd, irom_addr_wr;
-wire [clogb2_v1(`CFG_IROM_LIMIT/4-`CFG_IROM_BASE_ADDRESS/4+1)-1:0] irom_addr_rd, irom_addr_wr;
+output [`IROM_ADDR_WIDTH-1:0] irom_addr_rd, irom_addr_wr;
+wire [`IROM_ADDR_WIDTH-1:0] irom_addr_rd, irom_addr_wr;
 output irom_en_rd, irom_en_wr;
 wire irom_en_rd, irom_en_wr;
 output irom_write_rd, irom_write_wr;
@@ -413,12 +413,12 @@ reg jtag_access;                                        // Indicates if a JTAG W
 
 // Instruction ROM
 `ifdef CFG_IROM_ENABLED  
-`ifndef LM32_EXPOSE_IROM
+`ifndef CFG_IROM_EXPOSE
 wire irom_clk_rd, irom_clk_wr;
 wire irom_rst_rd, irom_rst_wr;
 wire [`LM32_WORD_RNG] irom_d_rd /* unused */, irom_d_wr;
 wire [`LM32_WORD_RNG] irom_q_rd, irom_q_wr;
-wire [clogb2_v1(`CFG_IROM_LIMIT/4-`CFG_IROM_BASE_ADDRESS/4+1)-1:0] irom_addr_rd, irom_addr_wr;
+wire [`IROM_ADDR_WIDTH-1:0] irom_addr_rd, irom_addr_wr;
 wire irom_en_rd, irom_en_wr;
 wire irom_write_rd, irom_write_wr;
 `endif
@@ -427,14 +427,14 @@ assign {irom_clk_rd, irom_clk_wr} = {clk_i, clk_i};
 assign {irom_rst_rd, irom_rst_wr} = {rst_i, rst_i};
 assign {irom_en_rd, irom_en_wr} = {!stall_a, !stall_x || !stall_m};
 assign {irom_write_rd, irom_write_wr} = {`FALSE, irom_we_xm};
-assign irom_addr_rd = pc_a[clogb2_v1(`CFG_IROM_LIMIT/4-`CFG_IROM_BASE_ADDRESS/4+1)+2-1:2];
-assign irom_addr_wr = irom_address_xm[clogb2_v1(`CFG_IROM_LIMIT/4-`CFG_IROM_BASE_ADDRESS/4+1)+2-1:2];
+assign irom_addr_rd = pc_a[`IROM_ADDR_WIDTH+2-1:2];
+assign irom_addr_wr = irom_address_xm[`IROM_ADDR_WIDTH+2-1:2];
 assign irom_d_rd = {32{1'b0}};
 assign irom_d_wr = irom_store_data_m;
 assign irom_data_f = irom_q_rd;
 assign irom_data_m = irom_q_wr;
 
-`ifndef LM32_EXPOSE_IROM
+`ifndef CFG_IROM_EXPOSE
    pmi_ram_dp_true 
      #(
        // ----- Parameters -------
@@ -448,10 +448,10 @@ assign irom_data_m = irom_q_wr;
        //.pmi_data_width_b       (`LM32_WORD_WIDTH),
 	 
        .pmi_addr_depth_a       (`CFG_IROM_LIMIT/4-`CFG_IROM_BASE_ADDRESS/4+1),
-       .pmi_addr_width_a       (clogb2_v1(`CFG_IROM_LIMIT/4-`CFG_IROM_BASE_ADDRESS/4+1)),
+       .pmi_addr_width_a       (`IROM_ADDR_WIDTH),
        .pmi_data_width_a       (`LM32_WORD_WIDTH),
        .pmi_addr_depth_b       (`CFG_IROM_LIMIT/4-`CFG_IROM_BASE_ADDRESS/4+1),
-       .pmi_addr_width_b       (clogb2_v1(`CFG_IROM_LIMIT/4-`CFG_IROM_BASE_ADDRESS/4+1)),
+       .pmi_addr_width_b       (`IROM_ADDR_WIDTH),
        .pmi_data_width_b       (`LM32_WORD_WIDTH),
 	 
        .pmi_regmode_a          ("noreg"),
