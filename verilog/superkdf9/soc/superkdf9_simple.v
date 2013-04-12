@@ -324,15 +324,30 @@ assign WBM1_RTY_I = (selected == 2'd2 ? WBS_RTY_O : 0);
 
 endmodule
 
+`include "../components/lm32_top/lm32_functions.v" // for clogb2_v1
+`include "../components/lm32_top/lm32_include.v" // for {IROM,DRAM}_ADDR_WIDTH
 `include "../components/lm32_top/lm32_include_all.v"
 `include "../components/uart_core/uart_core.v"
 `include "../components/spi/wb_spi.v"
 `include "../components/gpio/gpio.v"
 `include "../components/gpio/tpio.v"
 
-
 module superkdf9_simple ( 
-	clk_i,reset_n
+	clk_i,reset_n,
+	irom_clk_rd, irom_clk_wr,
+	irom_rst_rd, irom_rst_wr,
+	irom_addr_rd, irom_addr_wr,
+	irom_d_rd /* unused */, irom_d_wr,
+	irom_q_rd, irom_q_wr,
+	irom_en_rd, irom_en_wr,
+	irom_write_rd, irom_write_wr,
+	dram_clk_rd, dram_clk_wr,
+	dram_rst_rd, dram_rst_wr,
+	dram_addr_rd, dram_addr_wr,
+	dram_d_rd /* unused */, dram_d_wr,
+	dram_q_rd, dram_q_wr /* unused */,
+	dram_en_rd, dram_en_wr,
+	dram_write_rd, dram_write_wr
 , uartSIN
 , uartSOUT
 , uartRXRDY_N
@@ -347,6 +362,33 @@ module superkdf9_simple (
 , uart_debugSOUT
 );
 input	clk_i, reset_n;
+input [31:0] irom_q_rd, irom_q_wr;
+input [31:0] dram_q_rd, dram_q_wr /* unused */;
+output irom_clk_rd, irom_clk_wr;
+wire irom_clk_rd, irom_clk_wr;
+output irom_rst_rd, irom_rst_wr;
+wire irom_rst_rd, irom_rst_wr;
+output [31:0] irom_d_rd /* unused */, irom_d_wr;
+wire [31:0] irom_d_rd /* unused */, irom_d_wr;
+output [32-2-1:0] irom_addr_rd, irom_addr_wr;
+wire [32-2-1:0] irom_addr_rd, irom_addr_wr;
+output irom_en_rd, irom_en_wr;
+wire irom_en_rd, irom_en_wr;
+output irom_write_rd, irom_write_wr;
+wire irom_write_rd, irom_write_wr;
+output dram_clk_rd, dram_clk_wr;
+wire dram_clk_rd, dram_clk_wr;
+output dram_rst_rd, dram_rst_wr;
+wire dram_rst_rd, dram_rst_wr;
+output [31:0] dram_d_rd /* unused */, dram_d_wr;
+wire [31:0] dram_d_rd /* unused */, dram_d_wr;
+output [32-2-1:0] dram_addr_rd, dram_addr_wr;
+wire [32-2-1:0] dram_addr_rd, dram_addr_wr;
+output dram_en_rd, dram_en_wr;
+wire dram_en_rd, dram_en_wr;
+output dram_write_rd, dram_write_wr;
+wire dram_write_rd, dram_write_wr;
+
 genvar i;
 wire [31:0] zwire = 32'hZZZZZZZZ;
 wire [31:0] zerowire = 32'h00000000;
@@ -573,7 +615,38 @@ lm32_top
 .DEBUG_CYC_I(SHAREDBUS_CYC_I & superkdf9DEBUG_en),
 .DEBUG_STB_I(SHAREDBUS_STB_I & superkdf9DEBUG_en),
 .interrupt_n(superkdf9interrupt_n),
-.clk_i (clk_i), .rst_i (sys_reset));
+.clk_i (clk_i), .rst_i (sys_reset),
+// the exposed IROM
+.irom_clk_rd(irom_clk_rd),
+.irom_clk_wr(irom_clk_wr),
+.irom_rst_rd(irom_rst_rd),
+.irom_rst_wr(irom_rst_wr),
+.irom_d_rd(irom_d_rd) /* unused */,
+.irom_d_wr(irom_d_wr),
+.irom_q_rd(irom_q_rd),
+.irom_q_wr(irom_q_wr),
+.irom_addr_rd(irom_addr_rd[`IROM_ADDR_WIDTH-1:0]),
+.irom_addr_wr(irom_addr_wr[`IROM_ADDR_WIDTH-1:0]),
+.irom_en_rd(irom_en_rd),
+.irom_en_wr(irom_en_wr),
+.irom_write_rd(irom_write_rd),
+.irom_write_wr(irom_write_wr),
+// the exposed DRAM
+.dram_clk_rd(dram_clk_rd),
+.dram_clk_wr(dram_clk_wr),
+.dram_rst_rd(dram_rst_rd),
+.dram_rst_wr(dram_rst_wr),
+.dram_d_rd(dram_d_rd) /* unused */,
+.dram_d_wr(dram_d_wr),
+.dram_q_rd(dram_q_rd),
+.dram_q_wr(dram_q_wr) /* unused */,
+.dram_addr_rd(dram_addr_rd[`DRAM_ADDR_WIDTH-1:0]),
+.dram_addr_wr(dram_addr_wr[`DRAM_ADDR_WIDTH-1:0]),
+.dram_en_rd(dram_en_rd),
+.dram_en_wr(dram_en_wr),
+.dram_write_rd(dram_write_rd),
+.dram_write_wr(dram_write_wr)
+);
 
 
 wire [7:0] uartUART_DAT_I;
