@@ -14,12 +14,9 @@ _default_: $(project).bit $(project).mcs $(project)_err.twr
 
 vfiles_nodir := \
 	include/.dummy.v\
-	lattice/bb.v\
-	lattice/pmi_addsub.v\
-	lattice/pmi_ram_dp_true.v\
-	lattice/pmi_fifo_dc.v\
-	lattice/pmi_fifo.v\
-	lattice/pmi_distributed_dpram.v\
+	xilinx/bb.v\
+	xilinx/pmi_addsub.v\
+	xilinx/pmi_fifo.v\
 	superkdf9/soc/superkdf9_simple.v\
 	main.v
 
