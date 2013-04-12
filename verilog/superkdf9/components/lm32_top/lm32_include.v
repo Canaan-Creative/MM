@@ -363,7 +363,7 @@
 `endif
 
 `define DRAM_ADDR_WIDTH clogb2_v1(`CFG_DRAM_LIMIT/4-`CFG_DRAM_BASE_ADDRESS/4+1)
-`ifdef CFG_DRAM_ENABLED
+`ifndef CFG_DRAM_ENABLED
 // Define this to expose DRAM module to the outside world
 `undef CFG_DRAM_EXPOSE
 `endif
