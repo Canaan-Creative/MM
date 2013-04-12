@@ -143,6 +143,15 @@ module lm32_instruction_unit (
 `ifdef CFG_IROM_ENABLED
     irom_data_m,
 `endif
+`ifdef LM32_EXPOSE_IROM
+    irom_clk_rd, irom_clk_wr,
+    irom_rst_rd, irom_rst_wr,
+    irom_addr_rd, irom_addr_wr,
+    irom_d_rd /* unused */, irom_d_wr,
+    irom_q_rd, irom_q_wr,
+    irom_en_rd, irom_en_wr,
+    irom_write_rd, irom_write_wr,
+`endif
 `ifdef CFG_IWB_ENABLED
     // To Wishbone
     i_dat_o,
@@ -232,6 +241,10 @@ input [`LM32_WORD_RNG] irom_address_xm;                 // Address from load-sto
 input irom_we_xm;                                       // Indicates if memory operation is load or store
 `endif
 
+`ifdef LM32_EXPOSE_IROM
+input [`LM32_WORD_RNG] irom_q_rd, irom_q_wr;
+`endif
+
 `ifdef CFG_IWB_ENABLED
 input [`LM32_WORD_RNG] i_dat_i;                         // Instruction Wishbone interface read data
 input i_ack_i;                                          // Instruction Wishbone interface acknowledgement
@@ -275,6 +288,21 @@ wire   icache_refilling;
 output [`LM32_WORD_RNG] irom_data_m;                    // Data to load-store unit on load
 wire   [`LM32_WORD_RNG] irom_data_m;                      
 `endif   
+
+`ifdef LM32_EXPOSE_IROM
+output irom_clk_rd, irom_clk_wr;
+wire irom_clk_rd, irom_clk_wr;
+output irom_rst_rd, irom_rst_wr;
+wire irom_rst_rd, irom_rst_wr;
+output [`LM32_WORD_RNG] irom_d_rd /* unused */, irom_d_wr;
+wire [`LM32_WORD_RNG] irom_d_rd /* unused */, irom_d_wr;
+output [clogb2_v1(`CFG_IROM_LIMIT/4-`CFG_IROM_BASE_ADDRESS/4+1)-1:0] irom_addr_rd, irom_addr_wr;
+wire [clogb2_v1(`CFG_IROM_LIMIT/4-`CFG_IROM_BASE_ADDRESS/4+1)-1:0] irom_addr_rd, irom_addr_wr;
+output irom_en_rd, irom_en_wr;
+wire irom_en_rd, irom_en_wr;
+output irom_write_rd, irom_write_wr;
+wire irom_write_rd, irom_write_wr;
+`endif
 
 `ifdef CFG_IWB_ENABLED
 output [`LM32_WORD_RNG] i_dat_o;                        // Instruction Wishbone interface write data
@@ -385,6 +413,28 @@ reg jtag_access;                                        // Indicates if a JTAG W
 
 // Instruction ROM
 `ifdef CFG_IROM_ENABLED  
+`ifndef LM32_EXPOSE_IROM
+wire irom_clk_rd, irom_clk_wr;
+wire irom_rst_rd, irom_rst_wr;
+wire [`LM32_WORD_RNG] irom_d_rd /* unused */, irom_d_wr;
+wire [`LM32_WORD_RNG] irom_q_rd, irom_q_wr;
+wire [clogb2_v1(`CFG_IROM_LIMIT/4-`CFG_IROM_BASE_ADDRESS/4+1)-1:0] irom_addr_rd, irom_addr_wr;
+wire irom_en_rd, irom_en_wr;
+wire irom_write_rd, irom_write_wr;
+`endif
+
+assign {irom_clk_rd, irom_clk_wr} = {clk_i, clk_i};
+assign {irom_rst_rd, irom_rst_wr} = {rst_i, rst_i};
+assign {irom_en_rd, irom_en_wr} = {!stall_a, !stall_x || !stall_m};
+assign {irom_write_rd, irom_write_wr} = {`FALSE, irom_we_xm};
+assign irom_addr_rd = pc_a[clogb2_v1(`CFG_IROM_LIMIT/4-`CFG_IROM_BASE_ADDRESS/4+1)+2-1:2];
+assign irom_addr_wr = irom_address_xm[clogb2_v1(`CFG_IROM_LIMIT/4-`CFG_IROM_BASE_ADDRESS/4+1)+2-1:2];
+assign irom_d_rd = {32{1'b0}};
+assign irom_d_wr = irom_store_data_m;
+assign irom_data_f = irom_q_rd;
+assign irom_data_m = irom_q_wr;
+
+`ifndef LM32_EXPOSE_IROM
    pmi_ram_dp_true 
      #(
        // ----- Parameters -------
@@ -414,22 +464,23 @@ reg jtag_access;                                        // Indicates if a JTAG W
        ) 
        ram (
 	    // ----- Inputs -------
-	    .ClockA                 (clk_i),
-	    .ClockB                 (clk_i),
-	    .ResetA                 (rst_i),
-	    .ResetB                 (rst_i),
-	    .DataInA                ({32{1'b0}}),
-	    .DataInB                (irom_store_data_m),
-	    .AddressA               (pc_a[clogb2_v1(`CFG_IROM_LIMIT/4-`CFG_IROM_BASE_ADDRESS/4+1)+2-1:2]),
-	    .AddressB               (irom_address_xm[clogb2_v1(`CFG_IROM_LIMIT/4-`CFG_IROM_BASE_ADDRESS/4+1)+2-1:2]),
-	    .ClockEnA               (!stall_a),
-	    .ClockEnB               (!stall_x || !stall_m),
-	    .WrA                    (`FALSE),
-	    .WrB                    (irom_we_xm), 
+	    .ClockA                 (irom_clk_rd),
+	    .ClockB                 (irom_clk_wr),
+	    .ResetA                 (irom_rst_rd),
+	    .ResetB                 (irom_rst_wr),
+	    .DataInA                (irom_d_rd),
+	    .DataInB                (irom_d_wr),
+	    .AddressA               (irom_addr_rd),
+	    .AddressB               (irom_addr_wr),
+	    .ClockEnA               (irom_en_rd),
+	    .ClockEnB               (irom_en_wr),
+	    .WrA                    (irom_write_rd),
+	    .WrB                    (irom_write_wr), 
 	    // ----- Outputs -------
-	    .QA                     (irom_data_f),
-	    .QB                     (irom_data_m)
+	    .QA                     (irom_q_rd),
+	    .QB                     (irom_q_wr)
 	    );
+`endif
 `endif    
  
 `ifdef CFG_ICACHE_ENABLED

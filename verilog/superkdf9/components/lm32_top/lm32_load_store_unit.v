@@ -113,6 +113,15 @@ module lm32_load_store_unit (
     irom_we_xm,
     irom_stall_request_x,
 `endif			     
+`ifdef LM32_EXPOSE_DRAM
+    dram_clk_rd, dram_clk_wr,
+    dram_rst_rd, dram_rst_wr,
+    dram_addr_rd, dram_addr_wr,
+    dram_d_rd /* unused */, dram_d_wr,
+    dram_q_rd, dram_q_wr /* unused */,
+    dram_en_rd, dram_en_wr,
+    dram_write_rd, dram_write_wr,
+`endif
     load_data_w,
     stall_wb_load,
     // To Wishbone
@@ -176,6 +185,10 @@ input dflush;                                           // Flush the data cache
 input [`LM32_WORD_RNG] irom_data_m;                     // Data from Instruction-ROM
 `endif
 
+`ifdef LM32_EXPOSE_DRAM
+input [`LM32_WORD_RNG] dram_q_rd, dram_q_wr /* unused */;
+`endif
+
 input [`LM32_WORD_RNG] d_dat_i;                         // Data Wishbone interface read data
 input d_ack_i;                                          // Data Wishbone interface acknowledgement
 input d_err_i;                                          // Data Wishbone interface error
@@ -211,6 +224,21 @@ output [`LM32_WORD_RNG] load_data_w;                    // Result of a load inst
 reg    [`LM32_WORD_RNG] load_data_w;
 output stall_wb_load;                                   // Request to stall pipeline due to a load from the Wishbone interface
 reg    stall_wb_load;
+
+`ifdef LM32_EXPOSE_DRAM
+output dram_clk_rd, dram_clk_wr;
+wire dram_clk_rd, dram_clk_wr;
+output dram_rst_rd, dram_rst_wr;
+wire dram_rst_rd, dram_rst_wr;
+output [`LM32_WORD_RNG] dram_d_rd /* unused */, dram_d_wr;
+wire [`LM32_WORD_RNG] dram_d_rd /* unused */, dram_d_wr;
+output [clogb2_v1(`CFG_DRAM_LIMIT/4-`CFG_DRAM_BASE_ADDRESS/4+1)-1:0] dram_addr_rd, dram_addr_wr;
+wire [clogb2_v1(`CFG_DRAM_LIMIT/4-`CFG_DRAM_BASE_ADDRESS/4+1)-1:0] dram_addr_rd, dram_addr_wr;
+output dram_en_rd, dram_en_wr;
+wire dram_en_rd, dram_en_wr;
+output dram_write_rd, dram_write_wr;
+wire dram_write_rd, dram_write_wr;
+`endif
 
 output [`LM32_WORD_RNG] d_dat_o;                        // Data Wishbone interface write data
 reg    [`LM32_WORD_RNG] d_dat_o;
@@ -287,6 +315,27 @@ reg wb_load_complete;                                   // Indicates when a Wish
 /////////////////////////////////////////////////////
 
 `ifdef CFG_DRAM_ENABLED
+`ifndef LM32_EXPOSE_DRAM
+wire dram_clk_rd, dram_clk_wr;
+wire dram_rst_rd, dram_rst_wr;
+wire [`LM32_WORD_RNG] dram_d_rd /* unused */, dram_d_wr;
+wire [`LM32_WORD_RNG] dram_q_rd, dram_q_wr /* unused */;
+wire [clogb2_v1(`CFG_DRAM_LIMIT/4-`CFG_DRAM_BASE_ADDRESS/4+1)-1:0] dram_addr_rd, dram_addr_wr;
+wire dram_en_rd, dram_en_wr;
+wire dram_write_rd, dram_write_wr;
+`endif
+
+assign {dram_clk_rd, dram_clk_wr} = {clk_i, clk_i};
+assign {dram_rst_rd, dram_rst_wr} = {rst_i, rst_i};
+assign {dram_en_rd, dram_en_wr} = {!stall_x, !stall_m};
+assign {dram_write_rd, dram_write_wr} = {`FALSE, store_q_m & dram_select_m};
+assign dram_addr_rd = load_store_address_x[clogb2_v1(`CFG_DRAM_LIMIT/4-`CFG_DRAM_BASE_ADDRESS/4+1)+2-1:2];
+assign dram_addr_wr = load_store_address_m[clogb2_v1(`CFG_DRAM_LIMIT/4-`CFG_DRAM_BASE_ADDRESS/4+1)+2-1:2];
+assign dram_d_rd = {32{1'b0}};
+assign dram_d_wr = dram_store_data_m;
+assign dram_data_out = dram_q_rd;
+
+`ifndef LM32_EXPOSE_DRAM
    // Data RAM
    pmi_ram_dp_true 
      #(
@@ -317,23 +366,24 @@ reg wb_load_complete;                                   // Indicates when a Wish
        ) 
        ram (
 	    // ----- Inputs -------
-	    .ClockA                 (clk_i),
-	    .ClockB                 (clk_i),
-	    .ResetA                 (rst_i),
-	    .ResetB                 (rst_i),
-	    .DataInA                ({32{1'b0}}),
-	    .DataInB                (dram_store_data_m),
-	    .AddressA               (load_store_address_x[clogb2_v1(`CFG_DRAM_LIMIT/4-`CFG_DRAM_BASE_ADDRESS/4+1)+2-1:2]),
-	    .AddressB               (load_store_address_m[clogb2_v1(`CFG_DRAM_LIMIT/4-`CFG_DRAM_BASE_ADDRESS/4+1)+2-1:2]),
+	    .ClockA                 (dram_clk_rd),
+	    .ClockB                 (dram_clk_wr),
+	    .ResetA                 (dram_rst_rd),
+	    .ResetB                 (dram_rst_wr),
+	    .DataInA                (dram_d_rd),
+	    .DataInB                (dram_d_wr),
+	    .AddressA               (dram_addr_rd),
+	    .AddressB               (dram_addr_wr),
 	    // .ClockEnA               (!stall_x & (load_x | store_x)),
-	    .ClockEnA               (!stall_x),
-	    .ClockEnB               (!stall_m),
-	    .WrA                    (`FALSE),
-	    .WrB                    (store_q_m & dram_select_m), 
+	    .ClockEnA               (dram_en_rd),
+	    .ClockEnB               (dram_en_wr),
+	    .WrA                    (dram_write_rd),
+	    .WrB                    (dram_write_wr),
 	    // ----- Outputs -------
-	    .QA                     (dram_data_out),
-	    .QB                     ()
+	    .QA                     (dram_q_rd),
+	    .QB                     (/* unused */)
 	    );
+`endif
    
    /*----------------------------------------------------------------------
     EBRs cannot perform reads from location 'written to' on the same clock
