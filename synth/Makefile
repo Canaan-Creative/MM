@@ -17,6 +17,7 @@ vfiles_nodir := \
 	xilinx/bb.v\
 	xilinx/pmi_addsub.v\
 	xilinx/pmi_fifo.v\
+	xilinx/bram.v\
 	superkdf9/soc/superkdf9_simple.v\
 	main.v
 
