@@ -7,10 +7,10 @@ module pmi_addsub #(
 	parameter pmi_family = 0,
 	parameter module_type= "pmi_addsub"
 	)(
-	input [pmi_data_width - 1 : 0] DataA,
-	input [pmi_data_width - 1 : 0] DataB,
-	input Cin,
-	input Add_Sub,
+	input wire [pmi_data_width - 1 : 0] DataA,
+	input wire [pmi_data_width - 1 : 0] DataB,
+	input wire Cin,
+	input wire Add_Sub,
 	output wire [pmi_result_width - 1 : 0]Result,
 	output wire Cout,
 	output wire Overflow

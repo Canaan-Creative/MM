@@ -12,11 +12,11 @@ module pmi_fifo #(
 	parameter module_type = "pmi_fifo",
 	parameter pmi_implementation = "LUT"
 )(
-	input [pmi_data_width - 1 : 0] Data,
-	input Clock,
-	input WrEn,
-	input RdEn,
-	input Reset,
+	input wire [pmi_data_width - 1 : 0] Data,
+	input wire Clock,
+	input wire WrEn,
+	input wire RdEn,
+	input wire Reset,
 	output wire [pmi_data_width - 1 : 0] Q,
 	output wire Empty,
 	output wire Full,
