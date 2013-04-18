@@ -22,6 +22,7 @@
 `define CFG_DRAM_INIT_FILE_FORMAT "hex"
 `define CFG_DRAM_INIT_FILE "none"
 `define LM32_I_PC_WIDTH 16
+`define CFG_USER_ENABLED
 `define uartUART_WB_DAT_WIDTH 8
 `define uartUART_WB_ADR_WIDTH 4
 `define uartCLK_IN_MHZ 0
