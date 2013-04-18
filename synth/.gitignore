@@ -50,3 +50,6 @@ smartguide.ncd
 mm_bd.bmm
 _impact.cmd
 _impact.log
+GuidePresReport.tmp
+mm_bd.ncd
+mm_par_fpga_editor.log
