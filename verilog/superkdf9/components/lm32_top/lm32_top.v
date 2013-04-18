@@ -208,7 +208,7 @@ input DEBUG_STB_I;                              // Debug monitor Wishbone interf
 output user_valid;                              // Indicates that user_opcode and user_operand_* are valid
 wire   user_valid;
 output [`LM32_USER_OPCODE_RNG] user_opcode;     // User-defined instruction opcode
-reg    [`LM32_USER_OPCODE_RNG] user_opcode;
+wire   [`LM32_USER_OPCODE_RNG] user_opcode;
 output [`LM32_WORD_RNG] user_operand_0;         // First operand for user-defined instruction
 wire   [`LM32_WORD_RNG] user_operand_0;
 output [`LM32_WORD_RNG] user_operand_1;         // Second operand for user-defined instruction
