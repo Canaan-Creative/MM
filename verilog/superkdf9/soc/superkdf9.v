@@ -5,7 +5,14 @@
 
 module superkdf9 ( 
 	input wire clk, rst
-	//,input wire [31:0] interrupt_n
+	,output wire [3:0] led
+	,input wire [31:0] interrupt_n
+	,output wire [10:0] user_opcode
+	,output wire [31:0] user_operand_0
+	,output wire [31:0] user_operand_1
+	,input wire [31:0] user_result
+	,input wire user_complete
+	,output wire user_valid
 );
 
 `include "../components/lm32_top/lm32_functions.v" // for clogb2_v1
@@ -67,10 +74,6 @@ bram #(
 	.WriteB(dram_write_wr)
 );
 // }}}
-
-wire [31:0] user_result, user_operand_0, user_operand_1;
-wire [10:0] user_opcode;
-wire user_valid, user_complete;
 
 lm32_top superkdf9( 
 	// instruction wishbone bus (unused) {{{
@@ -141,22 +144,6 @@ lm32_top superkdf9(
 	.user_operand_0(user_operand_0),
 	.user_operand_1(user_operand_1) // }}}
 );
-
-// test user instructions
-reg user_complete_reg;
-assign user_complete = user_complete_reg;
-assign user_result = user_operand_0 + user_operand_1;
-always @(posedge clk)
-	user_complete_reg <= user_valid;
-
-// VIO/ILA and ICON
-wire [35:0] icon_ctrl_0, icon_ctrl_1;
-icon icon_test(.CONTROL0(icon_ctrl_0), .CONTROL1(icon_ctrl_1));
-ila ila_test(.CONTROL(icon_ctrl_0), .CLK(clk), .TRIG0({
-	rst, user_complete, user_valid, user_opcode[4:0]
-	,user_operand_0[31:0]
-}));
-vio vio_test(.CONTROL(icon_ctrl_1), .ASYNC_OUT(interrupt_n));
 
 endmodule
 // vim: set fdm=marker : 
