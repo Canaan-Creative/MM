@@ -1,2 +1,2 @@
-#define EV_STANDALONE 1
+#include "ev.h"
 #include "libev/ev.c"
