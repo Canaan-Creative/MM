@@ -1,4 +1,6 @@
+CC := gcc
 CFLAGS += -Wall -Wno-pointer-sign \
+	-fsanitize=address \
 	-ggdb -O0
 
 all: sim
