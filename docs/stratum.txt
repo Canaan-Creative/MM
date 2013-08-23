@@ -1,6 +1,6 @@
 // http://mining.bitcoin.cz/stratum-mining
 
-连接刚开始的时候pool会送过来如下的数据：
+after connection, the pool will send back these:
 {
 "id": 1,
 "result": [
@@ -14,7 +14,7 @@
 "error": null
 }
 
-pool发过来的任务：
+new task sent by the pool:
 {
 "params": [
 	"263884", // job id
@@ -57,7 +57,7 @@ pool发过来的任务：
 "method": "mining.notify"
 }
 
-矿机返回的信息：
+// share submitted by the miner
 {
 "params": [
 	"userid", // miner id
@@ -70,7 +70,7 @@ pool发过来的任务：
 "method": "mining.submit"
 }
 
-share被接受后返回：
+// if the share is accepted, the pool returns this
 {
 "error": null,
 "id": 297,
