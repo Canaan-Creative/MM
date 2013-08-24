@@ -9,11 +9,12 @@ static void (*isr_table[32])(void);
 
 void
 irq_handler(uint32_t pending) {
-	int i;
+	int i, j;
 
 	for (i=0; i<32; i++) {
 		if (pending & 0x01) (*isr_table[i])();
 		pending >>= 1;
+		asm volatile ("user %0, %1, %1, 0x0f" : "=r"(j) : "r"(i));
 	}
 }
 
