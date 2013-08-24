@@ -31,7 +31,7 @@
 #   files              description
 #   ----------         ------------
 #   $(project).ucf     ucf file (override by $(ucf_file))
-#   $(project).bmm     initial bmm file (has_bmm should be non nil) 
+#   $(project).bmm     initial bmm file (has_bmm should be non nil)
 #                      (override by $(bmm_file))
 #
 # Library modules should have a modules.mk in their root directory,
