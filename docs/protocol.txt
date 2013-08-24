@@ -14,6 +14,7 @@ cgminer broadcasts this structure (new_task) to all FPGA controllers:
     int coinbase_tx_extranonce_size; // only 4 is support atm.
     int nbranches;
     hash256 branches[nbranches];
+    uint8_t difficulty; // number of leading zeros bits required (for a valid share)
     bool rollntime; // whether rollntime is accepted
     bool flush; // flush all prior jobs (cut)
     other_misc_info; // performance profile (e.g.: high_perf, or quiet)

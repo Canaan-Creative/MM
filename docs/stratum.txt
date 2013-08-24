@@ -20,6 +20,7 @@ new task sent by the pool:
 	"263884", // job id
 	"5a01641719eabe62723e5a1b2fdac4f4167f3a4785757bae0000001c00000000", // prevhash
 	// coinbase tx = initial part + extra_nonce1 (given by pool) + extra_nonce2 + coinbase final part
+	// the maximum size of coinbase tx is: 185 bytes (assuming the maximum size of coinbase is 100 bytes)
 	// coinbase tx initial part
 	"01000000" + // tx_version
 		"01" + // var_int encoded in_counter
@@ -76,3 +77,13 @@ new task sent by the pool:
 "id": 297,
 "result": true
 }
+
+
+HASH256 load analysis:
+assume a merkle tree with 20 merkle branches (it could include about 2 million txs, which translates to 3.5k tps), to generate 1 work item:
+hash256(coinbase)+20*hash256(merkle branch)
+
+with the maximum size of coinbase 185 bytes, it needs 4+1 basic sha256 operations.
+every merkle branch hash needs 2+1 basic sha256 operations.
+
+which means, every work item needs: 5 + 20 * 3 = 65 basic sha256 operations.
