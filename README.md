@@ -10,9 +10,20 @@ Directory Structure
 * `synth`: directory for synthesize and build of the hardware part.
 * `verilog`: HDL.
 * `firmware`: code running in LatticeMico32 soft processor.
-* `software`: software running in the controlling host (Linux only).
 
 License
 ===
 
 BSD? MIT? GPL??
+
+How to build?
+===
+
+$ cd synth
+$ vi xilinx.mk # adjust isedir and perhaps `xil_env`
+$ make
+$ cd ../firmware
+$ make
+$ make -C ../synth # rebuild mcs
+$ cd ../software
+$ make
