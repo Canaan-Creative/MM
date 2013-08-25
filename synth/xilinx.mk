@@ -47,13 +47,15 @@
 #
 # TODO: how to generate mig for spartan 6?
 
+SHELL = /bin/bash
+
 part := $(device)$(speed)$(package)
 
 coregen_work_dir ?= ./coregen-tmp
 map_opts ?= -timing -ol high -detail -pr b -register_duplication -w -mt 2
 par_opts ?= -ol high -mt 4
 isedir ?= /opt/xilinx/13.3/ISE_DS/
-xil_env ?= . $(isedir)/settings32.sh &>/dev/null
+xil_env ?= . $(isedir)/settings$(shell getconf LONG_BIT).sh &>/dev/null
 flashsize ?= 8192
 ucf_file ?= $(project).ucf
 bmm_file ?= $(project).bmm
