@@ -1,0 +1,89 @@
+// http://mining.bitcoin.cz/stratum-mining
+
+after connection, the pool will send back these:
+{
+"id": 1,
+"result": [
+	[
+		["mining.set_difficulty", "b4b6693b72a50c7116db18d6497cac52"],
+		["mining.notify", "ae6812eb4cd7735a302a8a9dd95cf71f"]
+	],
+	"08000002", // extra_nonce1
+	4 // extra_nonce2 size in bytes
+  ],
+"error": null
+}
+
+new task sent by the pool:
+{
+"params": [
+	"263884", // job id
+	"5a01641719eabe62723e5a1b2fdac4f4167f3a4785757bae0000001c00000000", // prevhash
+	// coinbase tx = initial part + extra_nonce1 (given by pool) + extra_nonce2 + coinbase final part
+	// the maximum size of coinbase tx is: 185 bytes (assuming the maximum size of coinbase is 100 bytes)
+	// coinbase tx initial part
+	"01000000" + // tx_version
+		"01" + // var_int encoded in_counter
+		"0000000000000000000000000000000000000000000000000000000000000000" + // prev_tx_hash
+		"ffffffff" + // prev_tx_index
+		"53" + // var_int encoded txin_script_len (83 bytes)
+		"03f8dd0304000406cc44124d696e656420627920425443204775696c642cfabe6d6d93d43dc5dc6e20f927d68ef532ed70fb52071cbad5bfe1913fc109f2204d9e89010000000000000008", // coin_base: 75 bytes
+	// coinbase tx final part
+	"ffffffff" + // txin_sequence_no
+		"01" + // var_int encoded out_counter
+		"a0d20b9500000000" + // value: 25.00580000 BTC
+		"19" + // var_int encoded txout_script_len
+		"76" + // OP_DUP
+		"a9" + // OP_HASH160
+		"14" + // PUSH_20BYTES
+		"27a1f12771de5cc3b73941664b2537c15316be43" +
+		"88" + // OP_EQUALVERIFY
+		"ac" + // OP_CHECKSIG
+		"00000000", // lock_time
+	// merkle branches
+	      [
+		"82591d0c5a6b20c2bee6f933161c97a12d491ba39c29c0e27f7dbd40455052d8",
+		"db89e54264a66f9fce6dd0fb0bcd4fe24a8af1f577b596a05ed012603eb389f4",
+		"055f7f6b7accc18d7101531ad449848336a2b94cbcaa46dc6568336091df27ca",
+		"7ad7b6367f45e537b12e8ea84861ddaab78afc041b6626fd4949582b3f4505c1",
+		"f95273e1d21dcffef90b0e1c0eaa240c010da7c307ff7519f0fb427a21ccb395",
+		"aae92f2f428838459e61add7ecd23c2c592a3404763c980ac048275049b8eef9"
+	      ],
+	"00000002", // version
+	"19548732", // nbits
+	"5214f239", // ntime
+	true // clean_jobs: when true, flush all old jobs
+	], 
+"id": null,
+"method": "mining.notify"
+}
+
+// share submitted by the miner
+{
+"params": [
+	"userid", // miner id
+	"263884",  // job id
+	"62000000", // extra nonce 
+	"5214f239", // ntime
+	"26a8c33c" // nonce
+	],
+"id": 297,
+"method": "mining.submit"
+}
+
+// if the share is accepted, the pool returns this
+{
+"error": null,
+"id": 297,
+"result": true
+}
+
+
+HASH256 load analysis:
+assume a merkle tree with 20 merkle branches (it could include about 2 million txs, which translates to 3.5k tps), to generate 1 work item:
+hash256(coinbase)+20*hash256(merkle branch)
+
+with the maximum size of coinbase 185 bytes, it needs 4+1 basic sha256 operations.
+every merkle branch hash needs 2+1 basic sha256 operations.
+
+which means, every work item needs: 5 + 20 * 3 = 65 basic sha256 operations.

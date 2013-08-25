@@ -1,0 +1,42 @@
+Protocol between cgminer and FPGA controller
+
+Physical link: multiple FPGA controllers are daisy-chained together using TTL UART.
+Packet structure:
+  ??
+
+conceptual model:
+cgminer broadcasts this structure (new_task) to all FPGA controllers:
+{
+    uint job_id;
+    int coinbase_tx_len;
+    uint8_t coinbase_tx[coinbase_tx_len]; // the whole coinbase tx
+    int coinbase_tx_extranonce_offset;
+    int coinbase_tx_extranonce_size; // only 4 is support atm.
+    int nbranches;
+    hash256 branches[nbranches];
+    uint8_t difficulty; // number of leading zeros bits required (for a valid share)
+    bool rollntime; // whether rollntime is accepted
+    bool flush; // flush all prior jobs (cut)
+    other_misc_info; // performance profile (e.g.: high_perf, or quiet)
+}
+
+each FPGA controller selects its own partition of extranonce in coinbase txn.
+
+
+FPGA controllers send this structure (result) back to cgminer:
+{
+    int uid; // unique id for this controller; truncate hash256(key || DNA)
+    uint job_id;
+    uint32_t extranonce;
+    uint32_t nonce;
+    uint32_t ntime;
+}
+
+FPGA controllers also periodically send back heartbeat packets:
+{
+    int uid;
+    current_status; // working/idle, etc.
+    fan_info;
+    temp_info;
+    statistics;
+}
