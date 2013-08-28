@@ -1,10 +1,12 @@
 HARDWARE_NAME := mm
 PRJ_NAME := main
 
+CROSS?=lm32-elf-
+
 CPU_CONFIG := -mmultiply-enabled -mbarrel-shift-enabled -muser-enabled #-mdivide-enabled -msign-extend-enabled 
-CC:= lm32-elf-gcc
-LD:= lm32-elf-gcc
-SIZE:= lm32-elf-size
+CC:= $(CROSS)gcc
+LD:= $(CROSS)gcc
+SIZE:= $(CROSS)size
 CFLAGS:= -std=gnu99 -Os -ffunction-sections -ffreestanding -ggdb -Wall -Werror -I. -Isdk -Iminilibc $(CPU_CONFIG)
 LDFLAGS:= -Wl,--gc-sections -Wl,-T,linker.ld -nostartfiles -nodefaultlibs -nostdlib -Wl,-Map=$(PRJ_NAME).map
 LDLIBS:= -lgcc 
