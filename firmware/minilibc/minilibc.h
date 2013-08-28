@@ -1,7 +1,7 @@
 #ifndef MINILIBC_H_
 #define MINILIBC_H_
 
-#include <sdk.h>
+#include "sdk.h"
 #include "defines.h"
 typedef unsigned int size_t;
 #define BUG_DELAY 1500 /* ms */
