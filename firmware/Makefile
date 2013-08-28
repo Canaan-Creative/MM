@@ -31,13 +31,13 @@ else
 endif
 
 # ----- Customer ----------------------------------------------------------
-CPU_CONFIG := -mmultiply-enabled -mbarrel-shift-enabled -muser-enabled #-mdivide-enabled -msign-extend-enabled 
-CPPFLAGS   := -std=gnu99 -Os -ffunction-sections -ffreestanding -ggdb -Wall -Werror -I. -Isdk -Iminilibc $(CPU_CONFIG)
-LDFLAGS    := -Wl,--gc-sections -Wl,-T,linker.ld -nostartfiles -nodefaultlibs -nostdlib -Wl,-Map=$(PRJ_NAME).map
-LDLIBS     := -lgcc
+CPU_CONFIG = -mmultiply-enabled -mbarrel-shift-enabled -muser-enabled #-mdivide-enabled -msign-extend-enabled 
+CPPFLAGS   += -std=gnu99 -Os -ffunction-sections -ffreestanding -ggdb -Wall -Werror -I. -Isdk -Iminilibc $(CPU_CONFIG)
+LDFLAGS    += -Wl,--gc-sections -Wl,-T,linker.ld -nostartfiles -nodefaultlibs -nostdlib -Wl,-Map=$(PRJ_NAME).map
+LDLIBS     += -lgcc
 
-CSRCS      := main.c
-SDK_SRCS   := \
+CSRCS      = main.c
+SDK_SRCS   = \
 	sdk/crt0ram.S \
 	sdk/utils.S \
 	sdk/intr.c \
@@ -46,9 +46,9 @@ SDK_SRCS   := \
 	minilibc/printf.c
 OBJS       := $(addsuffix .o,$(basename $(CSRCS) $(SDK_SRCS)))
 
-HARDWARE_NAME := mm
-PRJ_NAME      := main
-TARGET := $(PRJ_NAME).elf
+HARDWARE_NAME = mm
+PRJ_NAME      = main
+TARGET = $(PRJ_NAME).elf
 
 isedir  ?= /opt/xilinx/13.3/ISE_DS/
 xil_env ?= . $(isedir)/settings$(shell getconf LONG_BIT).sh &>/dev/null
