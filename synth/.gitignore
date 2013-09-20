@@ -4,11 +4,9 @@ _xmsgs/
 mm.bld
 mm.lso
 mm.ngc_xst.xrpt
-mm.old.ucf
 mm.prj
 mm.scr
 mm.srp
-mm.ucf
 mm_ngdbuild.xrpt
 netlist.lst
 xst/
