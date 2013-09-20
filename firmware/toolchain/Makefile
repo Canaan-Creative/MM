@@ -15,6 +15,7 @@
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
 #make sure you have wrtie access
+RTEMS_VERSION=4.11
 LM32_PREFIX=/opt/lm32
 LM32_SOURCES_URL=http://www.rtems.org/ftp/pub/rtems/SOURCES/$(RTEMS_VERSION)
 
