@@ -61,8 +61,7 @@ all: $(TARGET)
 
 $(TARGET): $(OBJS) | ../synth/$(HARDWARE_NAME)_bd.bmm ../synth/$(HARDWARE_NAME).bit
 	$(LD) $(LDFLAGS) $(OBJS) -o $@ $(LDLIBS)
-	$(xil_env)
-	data2mem -bm ../synth/$(HARDWARE_NAME)_bd.bmm -bd $(TARGET) -bt ../synth/$(HARDWARE_NAME).bit -o b temp.bit
+	$(xil_env) && data2mem -bm ../synth/$(HARDWARE_NAME)_bd.bmm -bd $(TARGET) -bt ../synth/$(HARDWARE_NAME).bit -o b temp.bit
 	mv temp.bit ../synth/$(HARDWARE_NAME).bit
 #	$(MAKE) -C ../synth $(HARDWARE_NAME).mcs
 
