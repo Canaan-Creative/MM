@@ -50,7 +50,7 @@ HARDWARE_NAME = mm
 PRJ_NAME      = main
 TARGET = $(PRJ_NAME).elf
 
-isedir  ?= /opt/xilinx/13.3/ISE_DS/
+isedir  ?= /home/Xilinx/14.6/ISE_DS/
 xil_env ?= . $(isedir)/settings$(shell getconf LONG_BIT).sh &>/dev/null
 
 
