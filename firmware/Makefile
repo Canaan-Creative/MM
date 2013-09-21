@@ -56,8 +56,15 @@ xil_env ?= . $(isedir)/settings$(shell getconf LONG_BIT).sh &>/dev/null
 
 .PHONY: all clean
 
-all: $(TARGET)
+all: $(TARGET) $(PRJ_NAME).objdump $(PRJ_NAME).hexdump
 	$(SIZE) $(TARGET)
+
+
+$(PRJ_NAME).objdump: $(PRJ_NAME).elf
+	$(CROSS)objdump -D $^ > $@
+
+$(PRJ_NAME).hexdump: $(PRJ_NAME).elf
+	hexdump -v -e '1 "%08x"' -e '"\n"' $^ > $@
 
 $(TARGET): $(OBJS) | ../synth/$(HARDWARE_NAME)_bd.bmm ../synth/$(HARDWARE_NAME).bit
 	$(LD) $(LDFLAGS) $(OBJS) -o $@ $(LDLIBS)
@@ -74,7 +81,7 @@ $(TARGET): $(OBJS) | ../synth/$(HARDWARE_NAME)_bd.bmm ../synth/$(HARDWARE_NAME).
 	$(MKDEP)
 
 clean:
-	rm -f $(OBJS) $(OBJS:.o=.d) $(TARGET)
+	rm -f $(OBJS) $(OBJS:.o=.d) $(TARGET) $(PRJ_NAME).objdump $(PRJ_NAME).hexdump
 
 # ----- Dependencies ----------------------------------------------------------
 MKDEP =									\
