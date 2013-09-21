@@ -7,23 +7,22 @@ Directory Structure
 ---
 
 * `docs`: various design documentation.
+* `firmware`: code running in LatticeMico32 soft processor.
+* `ipcores_dir`: ip cores
+* `sim`:
 * `synth`: directory for synthesize and build of the hardware part.
 * `verilog`: HDL.
-* `firmware`: code running in LatticeMico32 soft processor.
 
 License
 ===
 
-BSD? MIT? GPL??
+BSD? MIT? GPL? UNLICENSE?
 
 How to build?
 ===
 
-$ cd synth
 $ vi xilinx.mk # adjust isedir and perhaps `xil_env`
-$ make
-$ cd ../firmware
-$ make
-$ make -C ../synth # rebuild mcs
-$ cd ../software
-$ make
+$ make -C synth
+$ CROSS=/opt/lm32/bin/lm32-rtems4.11- make -C firmware
+$ make -C synth # rebuild mcs
+$ CROSS=/opt/lm32/bin/lm32-rtems4.11- make -C firmware
