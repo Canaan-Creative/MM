@@ -44,6 +44,7 @@
 //   =======================================================================
 
 `include "system_conf.v"
+`include "mm_defines.vh"
 
 module arbiter2
 #(
@@ -332,22 +333,9 @@ endmodule
 `include "../components/gpio/gpio.v"
 `include "../components/gpio/tpio.v"
 
-module superkdf9_simple ( 
-	clk_i,reset_n,
-	irom_clk_rd, irom_clk_wr,
-	irom_rst_rd, irom_rst_wr,
-	irom_addr_rd, irom_addr_wr,
-	irom_d_rd /* unused */, irom_d_wr,
-	irom_q_rd, irom_q_wr,
-	irom_en_rd, irom_en_wr,
-	irom_write_rd, irom_write_wr,
-	dram_clk_rd, dram_clk_wr,
-	dram_rst_rd, dram_rst_wr,
-	dram_addr_rd, dram_addr_wr,
-	dram_d_rd /* unused */, dram_d_wr,
-	dram_q_rd, dram_q_wr /* unused */,
-	dram_en_rd, dram_en_wr,
-	dram_write_rd, dram_write_wr
+//module superkdf9_simple ( 
+module mm ( 
+  ex_clk_i 
 , uartSIN
 , uartSOUT
 , uartRXRDY_N
@@ -361,32 +349,22 @@ module superkdf9_simple (
 , uart_debugSIN
 , uart_debugSOUT
 );
-input	clk_i, reset_n;
-input [31:0] irom_q_rd, irom_q_wr;
-input [31:0] dram_q_rd, dram_q_wr /* unused */;
-output irom_clk_rd, irom_clk_wr;
+input	ex_clk_i;
+wire clk_i , reset_n ;
+clkgen clk (.clkin(ex_clk_i), .clkout(clk_i), .locked(reset_n));
+wire [31:0] irom_q_rd, irom_q_wr;
+wire [31:0] dram_q_rd, dram_q_wr /* unused */;
 wire irom_clk_rd, irom_clk_wr;
-output irom_rst_rd, irom_rst_wr;
 wire irom_rst_rd, irom_rst_wr;
-output [31:0] irom_d_rd /* unused */, irom_d_wr;
 wire [31:0] irom_d_rd /* unused */, irom_d_wr;
-output [32-2-1:0] irom_addr_rd, irom_addr_wr;
 wire [32-2-1:0] irom_addr_rd, irom_addr_wr;
-output irom_en_rd, irom_en_wr;
 wire irom_en_rd, irom_en_wr;
-output irom_write_rd, irom_write_wr;
 wire irom_write_rd, irom_write_wr;
-output dram_clk_rd, dram_clk_wr;
 wire dram_clk_rd, dram_clk_wr;
-output dram_rst_rd, dram_rst_wr;
 wire dram_rst_rd, dram_rst_wr;
-output [31:0] dram_d_rd /* unused */, dram_d_wr;
 wire [31:0] dram_d_rd /* unused */, dram_d_wr;
-output [32-2-1:0] dram_addr_rd, dram_addr_wr;
 wire [32-2-1:0] dram_addr_rd, dram_addr_wr;
-output dram_en_rd, dram_en_wr;
 wire dram_en_rd, dram_en_wr;
-output dram_write_rd, dram_write_wr;
 wire dram_write_rd, dram_write_wr;
 
 genvar i;
@@ -647,6 +625,62 @@ lm32_top
 .dram_write_rd(dram_write_rd),
 .dram_write_wr(dram_write_wr)
 );
+// VIO/ILA and ICON {{{
+wire [35:0] icon_ctrl_0, icon_ctrl_1;
+icon icon_test(.CONTROL0(icon_ctrl_0), .CONTROL1(icon_ctrl_1));
+ila ila_test(.CONTROL(icon_ctrl_0), .CLK(clk_i), .TRIG0({
+	uartSOUT ,
+	gpioPIO_BOTH_OUT[3:0],
+	gpioGPIO_ACK_O,
+	gpioGPIO_en ,
+	SHAREDBUS_STB_I ,
+	gpioGPIO_DAT_I[31:0]
+}));
+vio vio_test(.CONTROL(icon_ctrl_1), .ASYNC_OUT(intr_i));
+// }}}
+
+// IROM {{{
+bram #(
+	.size(1+`CFG_IROM_LIMIT - `CFG_IROM_BASE_ADDRESS),
+	.name("irom")
+) irom (
+	.ClockA(irom_clk_rd),
+	.ClockB(irom_clk_wr),
+	.ResetA(irom_rst_rd),
+	.ResetB(irom_rst_wr),
+	.AddressA(irom_addr_rd),
+	.AddressB(irom_addr_wr),
+	.DataInA(irom_d_rd), /* unused */
+	.DataInB(irom_d_wr),
+	.DataOutA(irom_q_rd),
+	.DataOutB(irom_q_wr), /* unused */
+	.ClockEnA(irom_en_rd),
+	.ClockEnB(irom_en_wr),
+	.WriteA(irom_write_rd),
+	.WriteB(irom_write_wr)
+);
+// }}}
+// DRAM {{{
+bram #(
+	.size(8192), // only provide necessary
+	.name("irom")
+) dram (
+	.ClockA(dram_clk_rd),
+	.ClockB(dram_clk_wr),
+	.ResetA(dram_rst_rd),
+	.ResetB(dram_rst_wr),
+	.AddressA(dram_addr_rd),
+	.AddressB(dram_addr_wr),
+	.DataInA(dram_d_rd), /* unused */
+	.DataInB(dram_d_wr),
+	.DataOutA(dram_q_rd),
+	.DataOutB(dram_q_wr),
+	.ClockEnA(dram_en_rd),
+	.ClockEnB(dram_en_wr),
+	.WriteA(dram_write_rd),
+	.WriteB(dram_write_wr)
+);
+// }}}
 
 
 wire [7:0] uartUART_DAT_I;

@@ -16,15 +16,21 @@ delay(volatile uint32_t i) {
 int
 main(void) {
 	int i = 0, j;
+	unsigned int *gpio_pio_data = (unsigned int *)0x80000200 ; 
+	unsigned int *uart0_buf = ( unsigned int *)0x80000100 ; 
+	//unsigned int *gpio_pio_tri  = (unsigned int *)0x80000204 ; 
 	//irq_set_mask(0x1);
 	//irq_enable();
 	j = 1;
 	while (1) {
-		setled(j);
+		//setled(j);
 		delay(16000000);
-		j <<= 1;
-		if (j > (1 << 3))
-			j = 1;
+		j++;
+		*gpio_pio_data = 0x00345678|(j<<24) ;
+		*uart0_buf = 0x12345678 ;
+		//j <<= 1;
+		//if (j > (1 << 3))
+		//	j = 1;
 	}
 	while (1) {
 		asm volatile ("rcsr    %0, IP": "=r"(i));

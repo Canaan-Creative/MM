@@ -1,25 +1,25 @@
 # Global controls
-NET "CLK" LOC = K12;
+NET "ex_clk_i" LOC = K12;
 
 # UART <-> FT232
-NET "RXD" LOC = R14; # FT232's TX
-NET "TXD" LOC = R12; # FT232's RX
+NET "uartSIN" LOC = R14; # FT232's TX
+NET "uartSOUT" LOC = R12; # FT232's RX
 
 # UART debug
 
-# LED
-NET "LED[0]" LOC = J11;
-NET "LED[1]" LOC = J12;
-NET "LED[2]" LOC = J13;
-NET "LED[3]" LOC = J14;
+# LED gpioPIO_BOTH_OUT
+NET "gpioPIO_BOTH_OUT[0]" LOC = J11;
+NET "gpioPIO_BOTH_OUT[1]" LOC = J12;
+NET "gpioPIO_BOTH_OUT[2]" LOC = J13;
+NET "gpioPIO_BOTH_OUT[3]" LOC = J14;
 
 # SPI Flash: W25Q80BV
-NET "FLASH_MISO" LOC = P10;
-NET "FLASH_MOSI" LOC = T10;
-NET "FLASH_SCK" LOC = R11;
-NET "FLASH_NCS" LOC = T3;
+#NET "spiMISO_MASTER" LOC = P10;
+#NET "spiMOSI_MASTER" LOC = T10;
+#NET "spiSCLK_MASTER" LOC = R11;
+#NET "spiSS_N_MASTER" LOC = T3;
 
 NET "*" IOSTANDARD = LVCMOS33;
 
-NET "CLK" TNM_NET = "CLK";
-TIMESPEC TS_clk = PERIOD "CLK" 30 ns HIGH 50 %;
+NET "ex_clk_i" TNM_NET = "ex_clk_i";
+TIMESPEC TS_clk = PERIOD "ex_clk_i" 30 ns HIGH 50 %;
