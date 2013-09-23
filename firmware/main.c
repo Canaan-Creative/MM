@@ -10,12 +10,7 @@
 #include "sdk.h"
 #include "minilibc.h"
 
-void setled(uint32_t led) {
-	int t;
-	asm volatile ("user %0, %1, %1, 0x1": "=r"(t) : "r"(led));
-}
-
-void delay(volatile uint32_t i) {
+static void delay(volatile uint32_t i) {
 	while (i--)
 		;
 }
