@@ -1,12 +1,4 @@
-We have 2 part under Avalon2, AR9331 the host side, LM32 the fpga side
-
-AR9331:
-  * Do we need multi-pool? I think we do.
-  * We need api, pool management, stratum code, a lot.
-  * So I think we need the cgminer
-  * I will start keep patches here, patches for OpenWrt.
-  * It will goes to public repo unitl we have real hardware. mean all open source
-
+We have 2 part under Avalon2, AR9331 the host side, LM32 the FPGA side
 
 The protocol:
   * Use serial-serial for controller connection
@@ -19,9 +11,12 @@ The protocol:
   **  newtask: 0x00, reset: 0x88, heartbeat:0x89
 
 Memo:
-* How to sync?
-* 8MB Uboot and Firmware
-* GPIO control the PSU
-* Sync with OpenWrt
-* About the serial console? kernel will use /dev/ttyS0 when start
-* The new Avalon2 driver for cgminer
+  * How to sync serial?
+  * 8MB Uboot and Firmware
+  * GPIO control the PSU
+  * About the serial console? kernel will use /dev/ttyS0 when start
+  * The new Avalon2 driver for cgminer
+
+
+TODO:
+  * 动态调压 miner 运行在不同频率
