@@ -1,0 +1,51 @@
+From a20d4e9c81955bb0ebc790e2913e70796bfae092 Mon Sep 17 00:00:00 2001
+From: Xiangfu <xiangfu@openmobilefree.net>
+Date: Mon, 21 May 2012 12:45:24 +0800
+Subject: [PATCH] jansson-0001-for-milkymist-one.patch
+
+---
+ src/Makefile.am |    2 +-
+ src/Makefile.in |    2 +-
+ src/utf.h       |    2 +-
+ 3 files changed, 3 insertions(+), 3 deletions(-)
+
+diff --git a/src/Makefile.am b/src/Makefile.am
+index 80c03de..c7e4f9a 100644
+--- a/src/Makefile.am
++++ b/src/Makefile.am
+@@ -24,5 +24,5 @@ libjansson_la_LDFLAGS = \
+ 
+ if GCC
+ # These flags are gcc specific
+-AM_CFLAGS = -Wall -Wextra -Wdeclaration-after-statement -Werror
++AM_CFLAGS = -Wall -Wextra -Wdeclaration-after-statement
+ endif
+diff --git a/src/Makefile.in b/src/Makefile.in
+index cc50ee2..0c9639a 100644
+--- a/src/Makefile.in
++++ b/src/Makefile.in
+@@ -237,7 +237,7 @@ libjansson_la_LDFLAGS = \
+ 
+ 
+ # These flags are gcc specific
+-@GCC_TRUE@AM_CFLAGS = -Wall -Wextra -Wdeclaration-after-statement -Werror
++@GCC_TRUE@AM_CFLAGS = -Wall -Wextra -Wdeclaration-after-statement
+ all: all-am
+ 
+ .SUFFIXES:
+diff --git a/src/utf.h b/src/utf.h
+index 0c3ab31..2bc9d6d 100644
+--- a/src/utf.h
++++ b/src/utf.h
+@@ -28,7 +28,7 @@ typedef int int32_t;
+ 
+ #endif /* HAVE_CONFIG_H */
+ 
+-int utf8_encode(int codepoint, char *buffer, int *size);
++int utf8_encode(int32_t codepoint, char *buffer, int *size);
+ 
+ int utf8_check_first(char byte);
+ int utf8_check_full(const char *buffer, int size, int32_t *codepoint);
+-- 
+1.7.5.4
+
