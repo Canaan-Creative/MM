@@ -1,6 +1,16 @@
+//
+// Author: Minux
+// Author: Xiangfu Liu <xiangfu@openmobilefree.net>
+// Bitcoin:	1CanaaniJzgps8EV6Sfmpb7T8RutpaeyFn
+//
+// This is free and unencumbered software released into the public domain.
+// For details see the UNLICENSE file at the root of the source tree.
+//
+
 #include "sdk.h"
 #include "minilibc.h"
 
+<<<<<<< HEAD
 //`define SHA256_TEST		"abcdbcdecdefdefgefghfghighijhijkijkljklmklmnlmnomnopnopq"
 //`define SHA256_TEST_PADDING	{1'b1,63'b0,448'b0,64'd448}	// 448 bit
 //`define SHA256_TEST_RESULT	256'h248d6a61_d20638b8_e5c02693_0c3e6039_a33ce459_64ff2167_f6ecedd4_19db06c1
@@ -12,10 +22,14 @@ setled(uint32_t led) {
 
 void
 delay(volatile uint32_t i) {
+=======
+static void delay(volatile uint32_t i) {
+>>>>>>> 0a89e8ab864edff626cf02fb1fc245db3fcab4c8
 	while (i--)
 		;
 }
 
+<<<<<<< HEAD
 unsigned int data[32] = {
   0x61626364
 , 0x62636465
@@ -72,11 +86,18 @@ main(void) {
 //	for( i=0 ; i<8 ;i++)
 //		tmp = *sha_hash ;
 //
+=======
+int main(void) {
+	int i = 0, j;
+	unsigned int *gpio_pio_data = (unsigned int *)0x80000200;
+	unsigned int *uart0_buf = (unsigned int *)0x80000100;
+	j = 1;
+>>>>>>> 0a89e8ab864edff626cf02fb1fc245db3fcab4c8
 	while (1) {
-		//setled(j);
 		delay(16000000);
 		j++;
 		*gpio_pio_data = 0x00345678|(j<<24) ;
+<<<<<<< HEAD
 		*sha_cmd = 0x1 ;
 		for(i=0;i<16;i++)
 			*sha_din = data[i] ;
@@ -97,6 +118,9 @@ main(void) {
 		//j <<= 1;
 		//if (j > (1 << 3))
 		//	j = 1;
+=======
+		*uart0_buf = 0x12345678 ;
+>>>>>>> 0a89e8ab864edff626cf02fb1fc245db3fcab4c8
 	}
 	while (1) {
 		asm volatile ("rcsr    %0, IP": "=r"(i));
@@ -114,4 +138,4 @@ main(void) {
 	return(0);
 }
 
-// vim: set ts=4 sw=4 fdm=marker : 
+// vim: set ts=4 sw=4 fdm=marker :

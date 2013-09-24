@@ -31,8 +31,12 @@ else
 endif
 
 # ----- Customer ----------------------------------------------------------
+RTEMS_MAKEFILE_PATH ?= /opt/lm32/lm32-rtems$(RTEMS_VERSION)/mm
+
+INCLUDES   = -I. -Isdk -Iminilibc -I $(RTEMS_MAKEFILE_PATH)/lib/include -B $(RTEMS_MAKEFILE_PATH)/lib
 CPU_CONFIG = -mmultiply-enabled -mbarrel-shift-enabled -muser-enabled #-mdivide-enabled -msign-extend-enabled 
-CPPFLAGS   += -std=gnu99 -Os -ffunction-sections -ffreestanding -ggdb -Wall -Werror -I. -Isdk -Iminilibc $(CPU_CONFIG)
+CPPFLAGS   += -std=gnu99 -Os -ffunction-sections -ffreestanding -ggdb -Wall -Werror $(CPU_CONFIG) $(INCLUDES)
+
 LDFLAGS    += -Wl,--gc-sections -Wl,-T,linker.ld -nostartfiles -nodefaultlibs -nostdlib -Wl,-Map=$(PRJ_NAME).map
 LDLIBS     += -lgcc
 
@@ -56,9 +60,8 @@ xil_env ?= . $(isedir)/settings$(shell getconf LONG_BIT).sh &>/dev/null
 
 .PHONY: all clean
 
-all: $(TARGET) $(PRJ_NAME).objdump $(PRJ_NAME).hexdump
+all: $(TARGET) $(PRJ_NAME).objdump $(PRJ_NAME).hexdump $(HARDWARE_NAME).bit
 	$(SIZE) $(TARGET)
-
 
 $(PRJ_NAME).objdump: $(PRJ_NAME).elf
 	$(CROSS)objdump -D $^ > $@
@@ -66,15 +69,14 @@ $(PRJ_NAME).objdump: $(PRJ_NAME).elf
 $(PRJ_NAME).hexdump: $(PRJ_NAME).elf
 	hexdump -v -e '1 "%08x"' -e '"\n"' $^ > $@
 
-$(TARGET): $(OBJS) | ../synth/$(HARDWARE_NAME)_bd.bmm ../synth/$(HARDWARE_NAME).bit
+$(TARGET): $(OBJS)
 	$(LD) $(LDFLAGS) $(OBJS) -o $@ $(LDLIBS)
-	$(xil_env) && data2mem -bm ../synth/$(HARDWARE_NAME)_bd.bmm -bd $(TARGET) -bt ../synth/$(HARDWARE_NAME).bit -o b temp.bit
-	mv temp.bit ../synth/$(HARDWARE_NAME).bit
-#	$(MAKE) -C ../synth $(HARDWARE_NAME).mcs
+
+$(HARDWARE_NAME).bit: $(TARGET) ../synth/$(HARDWARE_NAME)_bd.bmm ../synth/$(HARDWARE_NAME).bit
+	$(xil_env) && data2mem -bm ../synth/$(HARDWARE_NAME)_bd.bmm -bd $(TARGET) -bt ../synth/$(HARDWARE_NAME).bit -o b $@
 
 ../synth/$(HARDWARE)_bd.bmm ../synth/$(HARDWARE_NAME).bit:
-	@echo "Please do make in ../synth first"
-	@false
+	make -C ../synth
 
 %.o: %.c
 	$(CC) $(CPPFLAGS) $(CFLAGS) -o $@ -c $<
