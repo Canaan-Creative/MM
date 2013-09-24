@@ -332,6 +332,8 @@ endmodule
 `include "../components/spi/wb_spi.v"
 `include "../components/gpio/gpio.v"
 `include "../components/gpio/tpio.v"
+`include "../components/sha/sha.v"
+`include "../components/sha/sha_core.v"
 
 //module superkdf9_simple ( 
 module mm ( 
@@ -457,6 +459,14 @@ wire uart_debugUART_en;
 wire uart_debugINTR;
 input  uart_debugSIN;
 output  uart_debugSOUT;
+
+//sha core
+wire [31:0] shaSHA_DAT_O;
+wire   shaSHA_ACK_O;
+wire   shaSHA_ERR_O;
+wire   shaSHA_RTY_O;
+wire   shaSHA_en;
+
 reg [2:0] counter;
 wire sys_reset = !counter[2];
 always @(posedge clk_i or negedge reset_n)
@@ -527,24 +537,28 @@ uartUART_en ? {4{uartUART_DAT_O[7:0]}} :
 spiSPI_en ? spiSPI_DAT_O : 
 gpioGPIO_en ? gpioGPIO_DAT_O : 
 uart_debugUART_en ? {4{uart_debugUART_DAT_O[7:0]}} : 
+shaSHA_en ? shaSHA_DAT_O : 
 0;
 assign SHAREDBUS_ERR_O = SHAREDBUS_CYC_I & !(
 (!uartUART_ERR_O & uartUART_en) | 
 (!spiSPI_ERR_O & spiSPI_en) | 
 (!gpioGPIO_ERR_O & gpioGPIO_en) | 
 (!uart_debugUART_ERR_O & uart_debugUART_en) | 
+(!shaSHA_ERR_O & shaSHA_en ) |
 0);
 assign SHAREDBUS_ACK_O = 
 uartUART_en ? uartUART_ACK_O : 
 spiSPI_en ? spiSPI_ACK_O : 
 gpioGPIO_en ? gpioGPIO_ACK_O : 
 uart_debugUART_en ? uart_debugUART_ACK_O : 
+shaSHA_en ? shaSHA_ACK_O :
 0;
 assign SHAREDBUS_RTY_O = 
 uartUART_en ? uartUART_RTY_O : 
 spiSPI_en ? spiSPI_RTY_O : 
 gpioGPIO_en ? gpioGPIO_RTY_O : 
 uart_debugUART_en ? uart_debugUART_RTY_O : 
+shaSHA_en ? shaSHA_RTY_O :
 0;
 wire [31:0] superkdf9DEBUG_DAT_I;
 assign superkdf9DEBUG_DAT_I = 0;
@@ -629,12 +643,12 @@ lm32_top
 wire [35:0] icon_ctrl_0, icon_ctrl_1;
 icon icon_test(.CONTROL0(icon_ctrl_0), .CONTROL1(icon_ctrl_1));
 ila ila_test(.CONTROL(icon_ctrl_0), .CLK(clk_i), .TRIG0({
-	uartSOUT ,
-	gpioPIO_BOTH_OUT[3:0],
-	gpioGPIO_ACK_O,
-	gpioGPIO_en ,
+	sys_reset ,
 	SHAREDBUS_STB_I ,
-	gpioGPIO_DAT_I[31:0]
+	shaSHA_ACK_O ,
+	SHAREDBUS_ADR_I[3:0] ,
+	SHAREDBUS_DAT_I[3:0] ,
+	shaSHA_DAT_O[3:0]
 }));
 vio vio_test(.CONTROL(icon_ctrl_1), .ASYNC_OUT(intr_i));
 // }}}
@@ -856,6 +870,27 @@ uart_core
 .INTR(uart_debugINTR),
 .CLK(clk_i), .RESET(sys_reset));
 
+assign shaSHA_en = (SHAREDBUS_ADR_I[31:4] == 28'b1000000000000000000001000000);
+sha sha256(
+// system clock and reset
+/*input        */ .CLK_I     (clk_i),
+/*input        */ .RST_I     (sys_reset),
+
+// wishbone interface signals
+/*input        */ .SHA_CYC_I (SHAREDBUS_CYC_I & shaSHA_en ) ,//NC
+/*input        */ .SHA_STB_I (SHAREDBUS_STB_I & shaSHA_en ) ,
+/*input        */ .SHA_WE_I  (SHAREDBUS_WE_I) ,
+/*input        */ .SHA_LOCK_I(SHAREDBUS_LOCK_I) ,//NC
+/*input [2:0]  */ .SHA_CTI_I (SHAREDBUS_CTI_I) ,//NC
+/*input [1:0]  */ .SHA_BTE_I (SHAREDBUS_BTE_I) ,//NC
+/*input [3:0]  */ .SHA_ADR_I (SHAREDBUS_ADR_I[3:0]) ,
+/*input [31:0] */ .SHA_DAT_I (SHAREDBUS_DAT_I[31:0]) ,
+/*input [3:0]  */ .SHA_SEL_I (SHAREDBUS_SEL_I) ,
+/*output reg   */ .SHA_ACK_O (shaSHA_ACK_O) ,
+/*output       */ .SHA_ERR_O (shaSHA_ERR_O) ,//const 0
+/*output       */ .SHA_RTY_O (shaSHA_RTY_O) ,//const 0
+/*output [31:0]*/ .SHA_DAT_O (shaSHA_DAT_O)  
+);
 
 assign superkdf9interrupt_n[3] = !uartINTR ;
 assign superkdf9interrupt_n[1] = !spiSPI_INT_O ;
