@@ -3,7 +3,11 @@
 *.d
 /main.elf
 /main.map
+/main.hexdump
+/main.objdump
 /mm.bit
+
+/_impactbatch.log
 
 /libs/build_dir
 /libs/dl
