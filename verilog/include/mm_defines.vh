@@ -1,5 +1,9 @@
 `ifndef MM_DEFINES_INCLUDED
 `define MM_DEFINES_INCLUDED
+
+
+`define MM_CLK_IN_MHZ	64
+
 `define endian_swap(a) {a[7:0], a[15:8], a[23:16], a[31:24]}
 
 function integer log2;
