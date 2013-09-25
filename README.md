@@ -1,10 +1,10 @@
-mm
-==
+mm - Miner Manager
+===
 
-Miner Manager
+Miner Manager is the Avalon2 bitcoin mining machine's FPGA controller.
 
 Directory Structure
----
+===
 
 * `docs`: various design documentation.
 * `firmware`: code running in LatticeMico32 soft processor.
@@ -13,16 +13,11 @@ Directory Structure
 * `synth`: directory for synthesize and build of the hardware part.
 * `verilog`: HDL.
 
-License
-===
-
-BSD? MIT? GPL? UNLICENSE?
-
 How to build?
 ===
 
-$ vi xilinx.mk # adjust isedir and perhaps `xil_env`
-$ make -C synth
-$ CROSS=/opt/lm32/bin/lm32-rtems4.11- make -C firmware
-$ make -C synth # rebuild mcs
-$ CROSS=/opt/lm32/bin/lm32-rtems4.11- make -C firmware
+First you need install the ISE for sure. then edit the `isedir` under xilinx.mk
+by default we are using /home/Xilinx/14.6/ISE_DS/
+
+$ make -C firmware/toolchain # Install the lm32-rtems-4.11- toolchain
+$ make -C firmware           # Generate the final bitstream file
