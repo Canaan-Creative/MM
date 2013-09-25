@@ -72,7 +72,8 @@ junk += $(local_corengcs)
 
 userid := $(shell git rev-parse HEAD | cut -b1-8)
 
-.PHONY: default xilinx_cores clean twr etwr
+.PHONY: default xilinx_cores twr etwr clean distclean
+
 default: $(project).bit $(project).mcs
 xilinx_cores: $(corengcs)
 twr: $(project).twr
@@ -224,9 +225,10 @@ junk += $(project)_err.twr $(project)_err.twx
 .gitignore: $(mkfiles)
 	echo programming_files $(junk) | sed 's, ,\n,g' > .gitignore
 
-clean::
+clean:
 	rm -rf $(junk) par_usage_statistics.html webtalk.log ./_xmsgs
-cleanall:: clean
+
+distclean: clean
 	rm -f .xst_extra_opts .curr_part
 	rm -rf $(junk_cache)
 	rm -f $(products)

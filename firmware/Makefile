@@ -111,6 +111,9 @@ $(HARDWARE_NAME).bit: $(PRJ_NAME).elf ../synth/$(HARDWARE_NAME).bit ../synth/$(H
 clean:
 	rm -f $(OBJS) $(OBJS:.o=.d) $(TARGET) $(PRJ_NAME).objdump $(PRJ_NAME).hexdump
 
+distclean: clean
+	make -C ../synth distclean
+
 # ----- Dependencies ----------------------------------------------------------
 MKDEP =									\
 	$(DEPEND) $< |							\
