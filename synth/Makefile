@@ -46,5 +46,4 @@ vfiles := $(addprefix ../verilog/, $(vfiles_nodir))
 include xilinx.mk
 
 $(SOFTWARE_ELF):
-	@echo "please do make in ../firmware"
-	@false
+	make -C `dirname $@` `basename $@`
