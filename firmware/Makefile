@@ -89,10 +89,12 @@ load: $(HARDWARE_NAME).bit
 	$(xil_env) && impact -batch $(BATCHFILE)
 	@rm -f $(BATCHFILE)
 
-$(HARDWARE_NAME).bit: $(PRJ_NAME).elf ../synth/$(HARDWARE_NAME)_bd.bmm ../synth/$(HARDWARE_NAME).bit
+$(HARDWARE_NAME).bit: $(PRJ_NAME).elf ../synth/$(HARDWARE_NAME).bit ../synth/$(HARDWARE_NAME)_bd.bmm
 	$(xil_env) && data2mem -bm ../synth/$(HARDWARE_NAME)_bd.bmm -bd $(PRJ_NAME).elf -bt ../synth/$(HARDWARE_NAME).bit -o b $@
 
-../synth/$(HARDWARE)_bd.bmm ../synth/$(HARDWARE_NAME).bit:
+../synth/$(HARDWARE)_bd.bmm: ../synth/$(HARDWARE_NAME).bit
+
+../synth/$(HARDWARE_NAME).bit:
 	make -C ../synth
 
 
