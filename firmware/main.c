@@ -10,41 +10,33 @@
 #include "sdk.h"
 #include "minilibc.h"
 
-void setled(uint32_t led) {
-	int t;
-	asm volatile ("user %0, %1, %1, 0x1": "=r"(t) : "r"(led));
+#include "system_config.h"
+
+static void set_led(uint32_t led) {
+	volatile uint32_t *gpio_pio_data = (uint32_t *)GPIO_BASE;
+
+	*gpio_pio_data = led;
 }
 
-void delay(volatile uint32_t i) {
+static void delay(volatile uint32_t i) {
 	while (i--)
 		;
 }
 
 int main(void) {
-	int i = 0, j;
-	unsigned int *gpio_pio_data = (unsigned int *)0x80000200;
-	unsigned int *uart0_buf = (unsigned int *)0x80000100;
-	j = 1;
+	struct lm32_uart *uart0 = (struct lm32_uart *)UART0_BASE;
+	uint32_t j = 1;
+
 	while (1) {
 		delay(16000000);
+
 		j++;
-		*gpio_pio_data = 0x00345678|(j<<24) ;
-		*uart0_buf = 0x12345678 ;
+		set_led(0x00345678 | (j << 24));
+
+		uart0->rxtx = j & 0x000000ff;
 	}
-	while (1) {
-		asm volatile ("rcsr    %0, IP": "=r"(i));
-		asm volatile ("user %0, %1, %1, 0xb": "=r"(j) : "r"(i));
-	}
-	while (1) {
-		asm volatile ("user %0, %1, %1, 0x55" : "=r"(j) : "r"(i));
-		if (j != i + i) break;
-		asm volatile ("user %0, %1, %1, 0xaa" : "=r"(j) : "r"(~i));
-		if (j != ~i + ~i) break;
-		i++;
-	}
-	while (1)
-		;
-	return(0);
+
+	return 0;
 }
 
 // vim: set ts=4 sw=4 fdm=marker :
