@@ -11,6 +11,7 @@
 #include "minilibc.h"
 
 #include "system_config.h"
+#include "io.h"
 
 static void set_led(uint32_t led)
 {
@@ -25,34 +26,26 @@ static void delay(volatile uint32_t i)
 		;
 }
 
-static inline int reg_read(unsigned int reg)
-{
-	return *((int*)(reg));
-}
-
-static inline void reg_write(unsigned int reg, int value)
-{
-	*((int*)(reg)) = value;
-}
-
-void uart_init(struct lm32_uart *uart, int baud)
+static void uart_init(struct lm32_uart *uart, int baud)
 {
 	/* Disable UART interrupts */
-	reg_write(uart->ier, 0);
+	writeb(0, &uart->ier);
 
 	/* Line control 8 bit, 1 stop, no parity */
-	reg_write(uart->lcr, LM32_UART_LCR_8BIT);
+	writeb(LM32_UART_LCR_8BIT, &uart->lcr);
 
 	/* Modem control, DTR = 1, RTS = 1 */
-	reg_write(uart->mcr, LM32_UART_MCR_DTR | LM32_UART_MCR_RTS);
+	writeb(LM32_UART_MCR_DTR | LM32_UART_MCR_RTS, &uart->mcr);
 
 	/* Set baud rate */
-	reg_write(uart->div, CPU_FREQUENCY / baud);
+	writew(CPU_FREQUENCY / baud, &uart->div);
 }
 
 int main(void) {
 	struct lm32_uart *uart0 = (struct lm32_uart *)UART0_BASE;
 	uint32_t j = 1;
+
+	uart_init(uart0, UART_BAUD_RATE);
 
 	while (1) {
 		delay(16000000);
@@ -60,7 +53,7 @@ int main(void) {
 		j++;
 		set_led(0x00345678 | (j << 24));
 
-		uart0->rxtx = j & 0x000000ff;
+		uart0->rxtx = 0xaa;
 	}
 
 	return 0;

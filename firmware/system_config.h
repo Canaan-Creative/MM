@@ -1,16 +1,16 @@
-//
-// Author: Xiangfu Liu <xiangfu@openmobilefree.net>
-// Bitcoin:	1CanaaniJzgps8EV6Sfmpb7T8RutpaeyFn
-//
-// This is free and unencumbered software released into the public domain.
-// For details see the UNLICENSE file at the root of the source tree.
-//
+/*
+ * Author: Xiangfu Liu <xiangfu@openmobilefree.net>
+ * Bitcoin:	1CanaaniJzgps8EV6Sfmpb7T8RutpaeyFn
+ *
+ * This is free and unencumbered software released into the public domain.
+ * For details see the UNLICENSE file at the root of the source tree.
+ */
 
 #ifndef __SYSTEM_CONFIG_H_
 #define __SYSTEM_CONFIG_H_
 
-#define CPU_FREQUENCY			(50 * 1000 * 1000)
-#define UART_BAUD_RATE          (115200)
+#define CPU_FREQUENCY		(64 * 1000 * 1000)
+#define UART_BAUD_RATE          (57600)
 
 #define SPI_BASE		(0x80000000)
 #define UART0_BASE		(0x80000100)
