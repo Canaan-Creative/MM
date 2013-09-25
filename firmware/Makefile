@@ -1,4 +1,4 @@
-CROSS ?= lm32-elf-
+CROSS ?= /opt/lm32/bin/lm32-rtems4.11-
 
 CC    := $(CROSS)gcc
 LD    := $(CROSS)gcc
@@ -50,18 +50,18 @@ SDK_SRCS   = \
 	minilibc/printf.c
 OBJS       := $(addsuffix .o,$(basename $(CSRCS) $(SDK_SRCS)))
 
-HARDWARE_NAME = mm
-PRJ_NAME      = main
-TARGET = $(PRJ_NAME).elf
+BATCHFILE	:= $(shell mktemp)
+HARDWARE_NAME	= mm
+PRJ_NAME	= main
 
 isedir  ?= /home/Xilinx/14.6/ISE_DS/
 xil_env ?= . $(isedir)/settings$(shell getconf LONG_BIT).sh &>/dev/null
 
 
-.PHONY: all clean
+.PHONY: all clean load
 
-all: $(TARGET) $(PRJ_NAME).objdump $(PRJ_NAME).hexdump $(HARDWARE_NAME).bit
-	$(SIZE) $(TARGET)
+# C rules
+all: $(PRJ_NAME).objdump $(PRJ_NAME).hexdump $(HARDWARE_NAME).bit
 
 $(PRJ_NAME).objdump: $(PRJ_NAME).elf
 	$(CROSS)objdump -D $^ > $@
@@ -69,19 +69,34 @@ $(PRJ_NAME).objdump: $(PRJ_NAME).elf
 $(PRJ_NAME).hexdump: $(PRJ_NAME).elf
 	hexdump -v -e '1 "%08x"' -e '"\n"' $^ > $@
 
-$(TARGET): $(OBJS)
+$(PRJ_NAME).elf: $(OBJS)
 	$(LD) $(LDFLAGS) $(OBJS) -o $@ $(LDLIBS)
-
-$(HARDWARE_NAME).bit: $(TARGET) ../synth/$(HARDWARE_NAME)_bd.bmm ../synth/$(HARDWARE_NAME).bit
-	$(xil_env) && data2mem -bm ../synth/$(HARDWARE_NAME)_bd.bmm -bd $(TARGET) -bt ../synth/$(HARDWARE_NAME).bit -o b $@
-
-../synth/$(HARDWARE)_bd.bmm ../synth/$(HARDWARE_NAME).bit:
-	make -C ../synth
+	$(SIZE) $(PRJ_NAME).elf
 
 %.o: %.c
 	$(CC) $(CPPFLAGS) $(CFLAGS) -o $@ -c $<
 	$(MKDEP)
 
+
+# Bitstream rules
+load: $(HARDWARE_NAME).bit
+	echo setmode -bs	>> $(BATCHFILE)
+	echo setcable -p auto	>> $(BATCHFILE)
+	echo identify		>> $(BATCHFILE)
+	echo assignfile -p 1 -file $^ >> $(BATCHFILE)
+	echo program -p 1	>> $(BATCHFILE)
+	echo exit		>> $(BATCHFILE)
+	$(xil_env) && impact -batch $(BATCHFILE)
+	@rm -f $(BATCHFILE)
+
+$(HARDWARE_NAME).bit: $(PRJ_NAME).elf ../synth/$(HARDWARE_NAME)_bd.bmm ../synth/$(HARDWARE_NAME).bit
+	$(xil_env) && data2mem -bm ../synth/$(HARDWARE_NAME)_bd.bmm -bd $(PRJ_NAME).elf -bt ../synth/$(HARDWARE_NAME).bit -o b $@
+
+../synth/$(HARDWARE)_bd.bmm ../synth/$(HARDWARE_NAME).bit:
+	make -C ../synth
+
+
+# Clean rules
 clean:
 	rm -f $(OBJS) $(OBJS:.o=.d) $(TARGET) $(PRJ_NAME).objdump $(PRJ_NAME).hexdump
 
