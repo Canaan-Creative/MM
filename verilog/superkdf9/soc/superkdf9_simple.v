@@ -342,6 +342,8 @@ module mm (
 , uartSOUT
 , uartRXRDY_N
 , uartTXRDY_N
+, uartRESET_N
+, hubRESET_N
 , spiMISO_MASTER
 , spiMOSI_MASTER
 , spiSS_N_MASTER
@@ -428,6 +430,8 @@ wire uartUART_en;
 wire uartINTR;
 input  uartSIN;
 output  uartSOUT;
+output  uartRESET_N;
+output  hubRESET_N;
 output  uartRXRDY_N;
 output  uartTXRDY_N;
 
@@ -466,6 +470,10 @@ wire   shaSHA_ACK_O;
 wire   shaSHA_ERR_O;
 wire   shaSHA_RTY_O;
 wire   shaSHA_en;
+
+// Enable the FT232 and HUB
+assign uartRESET_N = 1'b1;
+assign hubRESET_N  = 1'b1;
 
 reg [2:0] counter;
 wire sys_reset = !counter[2];
