@@ -67,10 +67,10 @@ isedir  ?= /home/Xilinx/14.6/ISE_DS/
 xil_env ?= . $(isedir)/settings$(shell getconf LONG_BIT).sh &>/dev/null
 
 
-.PHONY: all clean load
+.PHONY: all clean distclean load reflash
 
 # C rules
-all: $(PRJ_NAME).objdump $(PRJ_NAME).hexdump $(HARDWARE_NAME).bit
+all: $(PRJ_NAME).objdump $(PRJ_NAME).hexdump $(HARDWARE_NAME).bit $(HARDWARE_NAME).mcs
 
 $(PRJ_NAME).objdump: $(PRJ_NAME).elf
 	$(CROSS)objdump -D $^ > $@
@@ -88,6 +88,18 @@ $(PRJ_NAME).elf: $(OBJS)
 
 
 # Bitstream rules
+# TODO: how to setCable -baud 12000000
+reflash: $(HARDWARE_NAME).mcs
+	echo setmode -bs	>> $(BATCHFILE)
+	echo setcable -p auto	>> $(BATCHFILE)
+	echo identify		>> $(BATCHFILE)
+	echo attachFlash -p 1 -spi W25Q80BV		>> $(BATCHFILE)
+	echo assignfiletoattachedflash -p 1 -file $<	>> $(BATCHFILE)
+	echo program -p 1 -dataWidth 4 -spionly -e -v -loadfpga >> $(BATCHFILE)
+	echo exit		>> $(BATCHFILE)
+	$(xil_env) && impact -batch $(BATCHFILE)
+	@rm -f $(BATCHFILE)
+
 load: $(HARDWARE_NAME).bit
 	echo setmode -bs	>> $(BATCHFILE)
 	echo setcable -p auto	>> $(BATCHFILE)
@@ -97,6 +109,11 @@ load: $(HARDWARE_NAME).bit
 	echo exit		>> $(BATCHFILE)
 	$(xil_env) && impact -batch $(BATCHFILE)
 	@rm -f $(BATCHFILE)
+
+$(HARDWARE_NAME).mcs: $(HARDWARE_NAME).bit
+	cp $^ ../synth
+	make -C ../synth $@
+	cp ../synth/$@ .
 
 $(HARDWARE_NAME).bit: $(PRJ_NAME).elf ../synth/$(HARDWARE_NAME).bit ../synth/$(HARDWARE_NAME)_bd.bmm
 	$(xil_env) && data2mem -bm ../synth/$(HARDWARE_NAME)_bd.bmm -bd $(PRJ_NAME).elf -bt ../synth/$(HARDWARE_NAME).bit -o b $@
