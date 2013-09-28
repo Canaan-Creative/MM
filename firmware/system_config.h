@@ -9,8 +9,8 @@
 #ifndef __SYSTEM_CONFIG_H_
 #define __SYSTEM_CONFIG_H_
 
-#define CPU_FREQUENCY		(64 * 1000 * 1000)
-#define UART_BAUD_RATE          (57600)
+#define CPU_FREQUENCY		(50 * 1000 * 1000)
+#define UART_BAUD_RATE          (115200)
 
 #define SPI_BASE		(0x80000000)
 #define UART0_BASE		(0x80000100)

@@ -26,7 +26,7 @@ static void delay(volatile uint32_t i)
 		;
 }
 
-static void uart_init(struct lm32_uart *uart, int baud)
+void uart_init(struct lm32_uart *uart, int baud)
 {
 	/* Disable UART interrupts */
 	writeb(0, &uart->ier);
@@ -45,15 +45,16 @@ int main(void) {
 	struct lm32_uart *uart0 = (struct lm32_uart *)UART0_BASE;
 	uint32_t j = 1;
 
-	uart_init(uart0, UART_BAUD_RATE);
-
 	while (1) {
 		delay(16000000);
 
 		j++;
 		set_led(0x00345678 | (j << 24));
 
-		uart0->rxtx = 0xaa;
+		if (j % 2)
+			uart0->rxtx = 0xaa;
+		else
+			uart0->rxtx = 0x55;
 	}
 
 	return 0;
