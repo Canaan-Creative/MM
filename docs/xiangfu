@@ -63,3 +63,33 @@ while (42) {
 	if (delay_count = 10)
 		serial_heatbeat(); 		/* how to control the time */
 }
+
+
+0. 如果区分Nonce2 区间。HASH(DNA(57bits) + KEY)
+
+1. 串口的软硬件
+AR9331 --> FPGA_1 --> FPGA_2 --> FPGA_3 --|
+  ^    	   	      	     	 	  |
+  |---------------------------------------|
+
+  a. AR9331 broadcast to all fpga ?
+  b. how fpga forward the task?
+  c. how fpga return the task?
+
+2. 如何区分 55nm/40nm different freq. send the fix work. check the return time.
+{
+ taskid
+ rxid
+ rxtime
+ nonce
+}
+
+3. Very 1024nonce. report HW
+
+4. Adjust the freq base on HW Error and Temp. AR9331 DO NOT configure the freq.
+
+5. Configure the diff!
+
+6. Check the nonce and Diff!
+
+7. Read/Write the task/nonce FIFO. how??

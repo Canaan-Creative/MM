@@ -25,11 +25,13 @@ each FPGA controller selects its own partition of extranonce in coinbase txn.
 
 FPGA controllers send this structure (result) back to cgminer:
 {
-    int uid; // unique id for this controller; truncate hash256(key || DNA)
-    uint job_id;
+    int uid; // unique id for this controller/modular; truncate hash256(key || DNA)
     uint32_t extranonce;
     uint32_t nonce;
     uint32_t ntime;
+    int minerid; // unique id for the modular.
+    uint job_id;
+    int hw; // every 1024 nonce. report a hw
 }
 
 FPGA controllers also periodically send back heartbeat packets:
