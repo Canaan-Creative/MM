@@ -9,7 +9,7 @@
 #ifndef __SYSTEM_CONFIG_H_
 #define __SYSTEM_CONFIG_H_
 
-#define CPU_FREQUENCY		(50 * 1000 * 1000)
+#define CPU_FREQUENCY		(50 * 1000 * 1000) /* 50Mhz */
 #define UART_BAUD_RATE          (115200)
 
 #define SPI_BASE		(0x80000000)
@@ -40,6 +40,7 @@ struct lm32_uart {
 	volatile unsigned char mcr;
 	volatile unsigned char lsr;
 	volatile unsigned char msr;
+	volatile unsigned char pad0;
 	volatile unsigned short div;
 };
 
