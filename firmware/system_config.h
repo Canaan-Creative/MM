@@ -22,14 +22,19 @@
 #define TWIRE_BASE		(0x80000700)
 
 
+/* Line status register */
+#define LM32_UART_LSR_DR   (0x01)
+#define LM32_UART_LSR_TDRR (1 << 5)
+#define LM32_UART_LSR_TEMT (1 << 6)
+
 /* Line control register */
-#define LM32_UART_LCR_WLS0 (0x0001)
-#define LM32_UART_LCR_WLS1 (0x0002)
+#define LM32_UART_LCR_WLS0 (0x01)
+#define LM32_UART_LCR_WLS1 (0x02)
 #define LM32_UART_LCR_8BIT (LM32_UART_LCR_WLS1 | LM32_UART_LCR_WLS0)
 
 /* Modem control register */
-#define LM32_UART_MCR_DTR  (0x0001)
-#define LM32_UART_MCR_RTS  (0x0002)
+#define LM32_UART_MCR_DTR  (0x01)
+#define LM32_UART_MCR_RTS  (0x02)
 
 
 struct lm32_uart {
