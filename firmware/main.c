@@ -28,6 +28,7 @@ static void delay(volatile uint32_t i)
 
 static void uart_init(struct lm32_uart *uart, int baud)
 {
+	uint8_t value;
 	/* Disable UART interrupts */
 	writeb(0, &uart->ier);
 
@@ -38,7 +39,10 @@ static void uart_init(struct lm32_uart *uart, int baud)
 	writeb(LM32_UART_MCR_DTR | LM32_UART_MCR_RTS, &uart->mcr);
 
 	/* Set baud rate */
-	writew(bswap_16(CPU_FREQUENCY / baud), &uart->div);
+	value = (CPU_FREQUENCY / baud) & 0xff;
+	writeb(value, &uart->divl);
+	value = (CPU_FREQUENCY / baud) >> 8;
+	writeb(value, &uart->divh);
 }
 
 int main(void) {
@@ -48,15 +52,10 @@ int main(void) {
 	uart_init(uart0, UART_BAUD_RATE);
 
 	while (1) {
-		delay(16000000);
+		delay(4000000);
 
 		j++;
 		set_led(0x00345678 | (j << 24));
-
-		if (j % 2)
-			uart0->rxtx = 0xaa;
-		else
-			uart0->rxtx = 0x55;
 	}
 
 	return 0;

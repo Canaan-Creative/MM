@@ -41,7 +41,8 @@ struct lm32_uart {
 	volatile unsigned char lsr;
 	volatile unsigned char msr;
 	volatile unsigned char pad0;
-	volatile unsigned short div;
+	volatile unsigned char divl;
+	volatile unsigned char divh;
 };
 
 #endif /* __SYSTEM_CONFIG_H_ */
