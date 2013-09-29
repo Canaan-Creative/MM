@@ -58,7 +58,7 @@ static void serial_putc(const unsigned char c)
 		serial_putc('\r');
 
 	/* Wait for fifo to shift out some bytes */
-	while (!((readb(&uart->lsr) & (LM32_UART_LSR_TDRR | LM32_UART_LSR_TEMT)) == 0x60))
+	while (!((readb(&uart->lsr) & (LM32_UART_LSR_THRR | LM32_UART_LSR_TEMT)) == 0x60))
 		;
 
 	writeb(c, &uart->rxtx);

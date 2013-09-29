@@ -24,7 +24,7 @@
 
 /* Line status register */
 #define LM32_UART_LSR_DR	(1 << 0)
-#define LM32_UART_LSR_TDRR	(1 << 5)
+#define LM32_UART_LSR_THRR	(1 << 5)
 #define LM32_UART_LSR_TEMT	(1 << 6)
 
 /* Line control register */
