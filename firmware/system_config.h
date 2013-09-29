@@ -23,18 +23,18 @@
 
 
 /* Line status register */
-#define LM32_UART_LSR_DR   (0x01)
-#define LM32_UART_LSR_TDRR (1 << 5)
-#define LM32_UART_LSR_TEMT (1 << 6)
+#define LM32_UART_LSR_DR	(1 << 0)
+#define LM32_UART_LSR_TDRR	(1 << 5)
+#define LM32_UART_LSR_TEMT	(1 << 6)
 
 /* Line control register */
-#define LM32_UART_LCR_WLS0 (0x01)
-#define LM32_UART_LCR_WLS1 (0x02)
-#define LM32_UART_LCR_8BIT (LM32_UART_LCR_WLS1 | LM32_UART_LCR_WLS0)
+#define LM32_UART_LCR_WLS0	(1 << 0)
+#define LM32_UART_LCR_WLS1	(1 << 1)
+#define LM32_UART_LCR_8BIT	(LM32_UART_LCR_WLS1 | LM32_UART_LCR_WLS0)
 
 /* Modem control register */
-#define LM32_UART_MCR_DTR  (0x01)
-#define LM32_UART_MCR_RTS  (0x02)
+#define LM32_UART_MCR_DTR	(1 << 0)
+#define LM32_UART_MCR_RTS	(1 << 1)
 
 
 struct lm32_uart {
@@ -48,6 +48,23 @@ struct lm32_uart {
 	volatile unsigned char pad0;
 	volatile unsigned char divl;
 	volatile unsigned char divh;
+};
+
+/* SHA256
+ * Please read http://csrc.nist.gov/publications/fips/fips180-4/fips-180-4.pdf
+ * Example here: http://csrc.nist.gov/groups/ST/toolkit/documents/Examples/SHA256.pdf
+ * 1. Write the CMD_INIT
+ * 2. Wait the CMD_DONE when write every 512bits data
+ *    You may need pad the data to 512bits
+ * 3. Wait teh CMD_DONE. read the result out
+ */
+#define LM32_SHA256_CMD_INIT	(1 << 0)
+#define LM32_SHA256_CMD_DONE	(1 << 1)
+
+struct lm32_sha256 {
+	volatile unsigned int cmd;
+	volatile unsigned int in;
+	volatile unsigned int out;
 };
 
 #endif /* __SYSTEM_CONFIG_H_ */

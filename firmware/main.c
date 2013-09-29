@@ -14,6 +14,7 @@
 #include "io.h"
 
 struct lm32_uart *uart = (struct lm32_uart *)UART0_BASE;
+struct lm32_sha256 *sha256 = (struct lm32_sha256 *)SHA256_BASE;
 
 void uart_init(void)
 {
@@ -76,7 +77,7 @@ static void delay(volatile uint32_t i)
 		;
 }
 
-const char *result = "\n\n{\"params\": ["
+const char *result = "\n{\"params\": ["
 	"\"userid\"," // miner id
 	"\"263884\", " // job id
 	"\"62000000\"," // extra nonce
@@ -86,16 +87,49 @@ const char *result = "\n\n{\"params\": ["
 	"\"id\": 297,"
 	"\"method\": \"mining.submit\"}\n\n";
 
+const uint32_t sha256_in[16] =
+            {0x61626380, 0x00000000, 0x00000000, 0x00000000,
+             0x00000000, 0x00000000, 0x00000000, 0x00000000,
+             0x00000000, 0x00000000, 0x00000000, 0x00000000,
+             0x00000000, 0x00000000, 0x00000000, 0x00000018};
 
 int main(void) {
 	uint8_t tmp;
-	uint32_t j = 0;
+	uint32_t j, t32;
 
 	uart_init();
 
+	/* Test serial console */
+	j = 0;
 	while (result[j]) {
 		serial_putc(result[j++]);
 	}
+
+	/* Test sha256 core */
+	serial_putc('U');
+	serial_putc('U');
+	serial_putc('U');
+	serial_putc('U');
+
+	writel(LM32_SHA256_CMD_INIT, &sha256->cmd);
+	for (j = 0; j < 16; j++)
+		writel(sha256_in[j], &sha256->in);
+	while (!(readl(&sha256->cmd) & LM32_SHA256_CMD_DONE))
+		;
+	for (j = 0; j < 8; j++) {
+		t32 = readl(&sha256->out);
+		serial_putc((t32 & 0x000000ff) >> 0);
+		serial_putc((t32 & 0x0000ff00) >> 8);
+		serial_putc((t32 & 0x00ff0000) >> 16);
+		serial_putc((t32 & 0xff000000) >> 24);
+	}
+	serial_putc('U');
+	serial_putc('U');
+	serial_putc('U');
+	serial_putc('U');
+
+	/* Test GPIO */
+	j = 1;
 	while (1) {
 		delay(4000000);
 
