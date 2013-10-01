@@ -6,8 +6,8 @@
  * For details see the UNLICENSE file at the root of the source tree.
  */
 
-#ifndef _ASM_IO_H
-#define _ASM_IO_H
+#ifndef _IO_H
+#define _IO_H
 
 #ifndef bswap_16
 #define	bswap_16(value)  \
@@ -31,4 +31,4 @@
 #define writew(b,addr) (*(volatile unsigned short *)(addr)) = (b)
 #define writel(b,addr) (*(volatile unsigned int *)(addr)) = (b)
 
-#endif /* _ASM_IO_H */
+#endif /* _IO_H */

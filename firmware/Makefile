@@ -49,7 +49,7 @@ CPPFLAGS   += -std=gnu99 -Os -ffunction-sections -ffreestanding -ggdb -Wall -Wer
 LDFLAGS    += -Wl,--gc-sections -Wl,-T,linker.ld -nostartfiles -nodefaultlibs -nostdlib -Wl,-Map=$(PRJ_NAME).map
 LDLIBS     += -lgcc
 
-CSRCS      = main.c
+CSRCS      = main.c serial.c
 SDK_SRCS   = \
 	sdk/crt0ram.S \
 	sdk/utils.S \
