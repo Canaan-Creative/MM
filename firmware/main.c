@@ -15,6 +15,7 @@
 #include "system_config.h"
 #include "io.h"
 #include "serial.h"
+#include "hexdump.c"
 
 static void set_led(uint32_t led)
 {
@@ -62,7 +63,7 @@ const char *result = "{\"params\": ["
 	"\"26a8c33c\"" // nonce
 	"],"
 	"\"id\": 297,"
-	"\"method\": \"mining.submit\"}";
+	"\"method\": \"mining.submit\"}\n";
 
 const uint32_t sha256_in[16] = {
 	0x61626380, 0x00000000, 0x00000000, 0x00000000,
@@ -108,23 +109,11 @@ int main(void) {
 
 	/* Test sha256 core: 1 block data*/
 	sha256_transform(state, sha256_in, 16);
-	for (j = 0; j < 8; j++) {
-		serial_putc((state[j] & 0x000000ff) >> 0);
-		serial_putc((state[j] & 0x0000ff00) >> 8);
-		serial_putc((state[j] & 0x00ff0000) >> 16);
-		serial_putc((state[j] & 0xff000000) >> 24);
-	}
-	serial_puts("UUUU");
+	hexdump((uint8_t *)state, 32);
 
 	/* Test sha256 core: 2 block data*/
 	sha256_transform(state, sha256_in2, 32);
-	for (j = 0; j < 8; j++) {
-		serial_putc((state[j] & 0x000000ff) >> 0);
-		serial_putc((state[j] & 0x0000ff00) >> 8);
-		serial_putc((state[j] & 0x00ff0000) >> 16);
-		serial_putc((state[j] & 0xff000000) >> 24);
-	}
-	serial_puts("UUUU");
+	hexdump((uint8_t *)state, 32);
 
 	/* Test GPIO */
 	j = 1;
