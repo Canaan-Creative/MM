@@ -15,19 +15,27 @@
 #include "system_config.h"
 #include "io.h"
 #include "serial.h"
+#include "jsmn.h"
 #include "hexdump.c"
 
-static void set_led(uint32_t led)
-{
-	volatile uint32_t *gpio_pio_data = (uint32_t *)GPIO_BASE;
-
-	*gpio_pio_data = led;
-}
-
-static void delay(volatile uint32_t i)
+static inline void delay(volatile uint32_t i)
 {
 	while (i--)
 		;
+}
+
+static void error()
+{
+	volatile uint32_t *gpio = (uint32_t *)GPIO_BASE;
+	uint8_t i = 0;
+
+	while (1) {
+		delay(4000000);
+		if (i++ %2)
+			writel(0x00000000 | (0xf << 24), gpio);
+		else
+			writel(0x00000000, gpio);
+	}
 }
 
 const char *stratum = "{"
@@ -99,13 +107,14 @@ static void sha256_transform(uint32_t *state, const uint32_t *input, int count)
 }
 
 int main(void) {
-	uint8_t tmp;
-	uint32_t j, state[8];
+	uint8_t i, j;
+	uint32_t state[8];
 
 	uart_init();
 
 	/* Test serial console */
 	serial_puts(result);
+	serial_putc('\n');
 
 	/* Test sha256 core: 1 block data*/
 	sha256_transform(state, sha256_in, 16);
@@ -115,18 +124,30 @@ int main(void) {
 	sha256_transform(state, sha256_in2, 32);
 	hexdump((uint8_t *)state, 32);
 
-	/* Test GPIO */
-	j = 1;
-	while (1) {
-		delay(4000000);
+	/* Decode stratum to struct stratum */
+	jsmn_parser parser;
+	jsmn_init(&parser);
 
-		j++;
-		set_led(0x00345678 | (j << 24));
+	jsmntok_t tokens[256];
+	jsmnerr_t r = jsmn_parse(&parser, result, tokens, 256);
+	if (r != JSMN_SUCCESS)
+		serial_puts("ERROR\n");
 
-		tmp = serial_getc();
-		serial_putc(tmp);
+	for (i = 0; i < 12; i++) {
+		char buf[32];
+		m_sprintf(buf, "%d, %d, %d, %d - ",
+			  tokens[i].type,
+			  tokens[i].start,
+			  tokens[i].end,
+			  tokens[i].size);
+		serial_puts(buf);
+		for (j = tokens[i].start; j < tokens[i].end; j++)
+			serial_putc(result[j]);
+		serial_putc('\n');
 	}
 
+	/* Code should be never reach here */
+	error();
 	return 0;
 }
 

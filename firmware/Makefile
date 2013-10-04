@@ -7,47 +7,14 @@
 # For details see the UNLICENSE file at the root of the source tree.
 #
 
-CROSS ?= /opt/lm32/bin/lm32-rtems4.11-
-
-CC    := $(CROSS)gcc
-LD    := $(CROSS)gcc
-SIZE  := $(CROSS)size
-
-# ----- Quiet code ----------------------------------------------------------
-SHELL=/bin/bash
-CPP := $(CPP)   # make sure changing CC won't affect CPP
-
-CC_normal	:= $(CC)
-AR_normal	:= $(AR) rsc
-DEPEND_normal	:= $(CPP) $(CFLAGS) -D__OPTIMIZE__ -MM -MG
-RANLIB_normal	:= ranlib
-
-CC_quiet	= @echo "  CC       " $@ && $(CC_normal)
-AR_quiet	= @echo "  AR       " $@ && $(AR_normal)
-DEPEND_quiet	= @$(DEPEND_normal)
-RANLIB_quiet	= @$(RANLIB_normal)
-
-ifeq ($(V),1)
-    CC		= $(CC_normal)
-    AR		= $(AR_normal)
-    DEPEND	= $(DEPEND_normal)
-    RANLIB	= $(RANLIB_normal)
-else
-    CC		= $(CC_quiet)
-    AR		= $(AR_quiet)
-    DEPEND	= $(DEPEND_quiet)
-    RANLIB	= $(RANLIB_quiet)
-endif
-
+-include config.mk
 # ----- Customer ----------------------------------------------------------
-RTEMS_MAKEFILE_PATH ?= /opt/lm32/lm32-rtems$(RTEMS_VERSION)/mm
-
-INCLUDES   = -I. -Isdk -Iminilibc -I $(RTEMS_MAKEFILE_PATH)/lib/include -B $(RTEMS_MAKEFILE_PATH)/lib
+INCLUDES   = -I. -Isdk -Iminilibc -Ijsmn
 CPU_CONFIG = -mmultiply-enabled -mbarrel-shift-enabled -muser-enabled #-mdivide-enabled -msign-extend-enabled 
 CPPFLAGS   += -std=gnu99 -Os -ffunction-sections -ffreestanding -ggdb -Wall -Werror $(CPU_CONFIG) $(INCLUDES)
 
-LDFLAGS    += -Wl,--gc-sections -Wl,-T,linker.ld -nostartfiles -nodefaultlibs -nostdlib -Wl,-Map=$(PRJ_NAME).map
-LDLIBS     += -lgcc
+LDFLAGS    += -Wl,--gc-sections -Wl,-T,linker.ld -nostartfiles -nodefaultlibs -nostdlib -Wl,-Map=$(PRJ_NAME).map -Bjsmn
+LDLIBS     += -lgcc -ljsmn
 
 CSRCS      = main.c serial.c
 SDK_SRCS   = \
