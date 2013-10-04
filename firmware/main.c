@@ -58,20 +58,11 @@ const char *stratum = "{"
 	"\"00000002\", "
 	"\"191cdc20\", "
 	"\"524cc5a3\", "
-	"false], "
+	"false"
+	"], "
 	"\"id\": null, "
 	"\"method\": \"mining.notify\""
 	"}";
-
-const char *result = "{\"params\": ["
-	"\"usrid\"," // miner id
-	"\"263884\", " // job id
-	"\"62000000\"," // extra nonce
-	"\"5214f239\"," // ntime
-	"\"26a8c33c\"" // nonce
-	"],"
-	"\"id\": 297,"
-	"\"method\": \"mining.submit\"}\n";
 
 const uint32_t sha256_in[16] = {
 	0x61626380, 0x00000000, 0x00000000, 0x00000000,
@@ -112,10 +103,6 @@ int main(void) {
 
 	uart_init();
 
-	/* Test serial console */
-	serial_puts(result);
-	serial_putc('\n');
-
 	/* Test sha256 core: 1 block data*/
 	sha256_transform(state, sha256_in, 16);
 	hexdump((uint8_t *)state, 32);
@@ -126,23 +113,30 @@ int main(void) {
 
 	/* Decode stratum to struct stratum */
 	jsmn_parser parser;
-	jsmn_init(&parser);
-
 	jsmntok_t tokens[256];
-	jsmnerr_t r = jsmn_parse(&parser, result, tokens, 256);
-	if (r != JSMN_SUCCESS)
-		serial_puts("ERROR\n");
+	jsmnerr_t r;
 
-	for (i = 0; i < 12; i++) {
+	serial_puts(stratum);
+	serial_puts("\n");
+
+	jsmn_init(&parser);
+	r = jsmn_parse(&parser, stratum, tokens, 256);
+	if (r != JSMN_SUCCESS) {
 		char buf[32];
-		m_sprintf(buf, "%d, %d, %d, %d - ",
+		m_sprintf(buf, "%s : %d\n", "ERROR", r);
+		serial_puts(buf);
+	}
+
+	for (i = 1; i < 2; i++) {
+		char buf[32];
+		m_sprintf(buf, "%d, %d, %d, %d : ",
 			  tokens[i].type,
 			  tokens[i].start,
 			  tokens[i].end,
 			  tokens[i].size);
 		serial_puts(buf);
 		for (j = tokens[i].start; j < tokens[i].end; j++)
-			serial_putc(result[j]);
+			serial_putc(stratum[j]);
 		serial_putc('\n');
 	}
 

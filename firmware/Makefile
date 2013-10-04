@@ -11,7 +11,7 @@
 # ----- Customer ----------------------------------------------------------
 INCLUDES   = -I. -Isdk -Iminilibc -Ijsmn
 CPU_CONFIG = -mmultiply-enabled -mbarrel-shift-enabled -muser-enabled #-mdivide-enabled -msign-extend-enabled 
-CPPFLAGS   += -std=gnu99 -Os -ffunction-sections -ffreestanding -ggdb -Wall -Werror $(CPU_CONFIG) $(INCLUDES)
+CPPFLAGS   += -std=gnu99 -Os -ffunction-sections -ffreestanding -Wall -Werror $(CPU_CONFIG) $(INCLUDES)
 
 LDFLAGS    += -Wl,--gc-sections -Wl,-T,linker.ld -nostartfiles -nodefaultlibs -nostdlib -Wl,-Map=$(PRJ_NAME).map -Bjsmn
 LDLIBS     += -lgcc -ljsmn

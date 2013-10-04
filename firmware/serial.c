@@ -53,7 +53,7 @@ unsigned char serial_getc()
 void serial_putc(const unsigned char c)
 {
 	if (c == '\n')
-		serial_putc('\r');
+		writeb('\r', &uart->rxtx);
 
 	/* Wait for fifo to shift out some bytes */
 	while (!((readb(&uart->lsr) & (LM32_UART_LSR_THRR | LM32_UART_LSR_TEMT)) == 0x60))
