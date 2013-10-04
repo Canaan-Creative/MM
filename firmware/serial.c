@@ -14,6 +14,14 @@
 
 static struct lm32_uart *uart = (struct lm32_uart *)UART0_BASE;
 
+static int serial_tstc(void)
+{
+	if (readb(&uart->lsr) & LM32_UART_LSR_DR)
+		return 1;
+
+	return 0;
+}
+
 void uart_init(void)
 {
 	uint8_t value;
@@ -31,14 +39,6 @@ void uart_init(void)
 	writeb(value, &uart->divl);
 	value = (CPU_FREQUENCY / UART_BAUD_RATE) >> 8;
 	writeb(value, &uart->divh);
-}
-
-static int serial_tstc(void)
-{
-	if (readb(&uart->lsr) & LM32_UART_LSR_DR)
-		return 1;
-
-	return 0;
 }
 
 unsigned char serial_getc()
@@ -60,4 +60,10 @@ void serial_putc(const unsigned char c)
 		;
 
 	writeb(c, &uart->rxtx);
+}
+
+void serial_puts(const char *s)
+{
+	while (*s)
+		serial_putc(*s++);
 }

@@ -12,5 +12,6 @@
 void uart_init(void);
 unsigned char serial_getc();
 void serial_putc(const unsigned char c);
+void serial_puts(const char *s);
 
 #endif	/* _SERIAL_H */
