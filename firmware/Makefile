@@ -45,9 +45,12 @@ $(PRJ_NAME).objdump: $(PRJ_NAME).elf
 $(PRJ_NAME).hexdump: $(PRJ_NAME).elf
 	hexdump -v -e '1 "%08x"' -e '"\n"' $^ > $@
 
-$(PRJ_NAME).elf: $(OBJS)
+$(PRJ_NAME).elf: $(OBJS) jsmn/libjsmn.a
 	$(LD) $(LDFLAGS) $(OBJS) -o $@ $(LDLIBS)
 	$(SIZE) $(PRJ_NAME).elf
+
+jsmn/libjsmn.a:
+	make -C `dirname $@`
 
 %.o: %.c
 	$(CC) $(CPPFLAGS) $(CFLAGS) -o $@ -c $<
@@ -94,6 +97,7 @@ $(HARDWARE_NAME).bit: $(PRJ_NAME).elf ../synth/$(HARDWARE_NAME).bit ../synth/$(H
 # Clean rules
 clean:
 	rm -f $(OBJS) $(OBJS:.o=.d) $(TARGET) $(PRJ_NAME).objdump $(PRJ_NAME).hexdump
+	make -C jsmn clean
 
 distclean: clean
 	make -C ../synth distclean
