@@ -649,16 +649,25 @@ lm32_top
 );
 // VIO/ILA and ICON {{{
 wire [35:0] icon_ctrl_0, icon_ctrl_1;
-icon icon_test(.CONTROL0(icon_ctrl_0), .CONTROL1(icon_ctrl_1));
-ila ila_test(.CONTROL(icon_ctrl_0), .CLK(clk_i), .TRIG0({
-	sys_reset ,
-	SHAREDBUS_STB_I ,
-	shaSHA_ACK_O ,
-	SHAREDBUS_ADR_I[3:0] ,
-	SHAREDBUS_DAT_I[3:0] ,
-	shaSHA_DAT_O[3:0]
-}));
-vio vio_test(.CONTROL(icon_ctrl_1), .ASYNC_OUT(intr_i));
+wire [255:0] trig0 = {
+	gpioGPIO_DAT_I[31:0],//224:193
+	SHAREDBUS_STB_I & gpioGPIO_en,//192
+	dram_addr_rd[29:0] ,//191:162
+	dram_addr_wr[29:0] ,//161:132
+	dram_d_rd[31:0]    ,//131:100 /* unused */
+	dram_d_wr[31:0]    ,//99:68
+	dram_q_rd[31:0]    ,//67:36
+	dram_q_wr[31:0]    ,//35:4
+	dram_en_rd         ,//3
+	dram_en_wr         ,//2
+	dram_write_rd      ,//1
+	dram_write_wr       //0
+
+} ;
+icon icon_test(.CONTROL0(icon_ctrl_0));
+ila ila_test(.CONTROL(icon_ctrl_0), .CLK(clk_i), .TRIG0(trig0)
+);
+//vio vio_test(.CONTROL(icon_ctrl_1), .ASYNC_OUT(intr_i));
 // }}}
 
 // IROM {{{

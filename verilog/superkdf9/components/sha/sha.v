@@ -85,22 +85,25 @@ end
 // REG SHA_HASH
 //-----------------------------------------------------
 reg [2:0] hash_cnt ;
-reg [31:0] reg_hash ;
+reg [255:0] reg_hash ;
 wire [255:0] hash ;
 always @ ( posedge CLK_I or posedge RST_I ) begin
 	if( RST_I )
-		reg_hash <= 32'b0 ;
-	else if( sha_hash_rd_en ) begin
-		case( hash_cnt )
-		3'd0: reg_hash <= hash[32*8-1:32*7] ;
-		3'd1: reg_hash <= hash[32*7-1:32*6] ;
-		3'd2: reg_hash <= hash[32*6-1:32*5] ;
-		3'd3: reg_hash <= hash[32*5-1:32*4] ;
-		3'd4: reg_hash <= hash[32*4-1:32*3] ;
-		3'd5: reg_hash <= hash[32*3-1:32*2] ;
-		3'd6: reg_hash <= hash[32*2-1:32*1] ;
-		3'd7: reg_hash <= hash[32*1-1:32*0] ;
-		endcase
+		reg_hash <= 256'b0 ;
+	else if( done )
+		reg_hash <= hash ;
+	else if( sha_hash_rd_en_f ) begin
+		reg_hash <= {reg_hash[32*7-1:0],reg_hash[32*8-1:32*7]} ;
+		//case( hash_cnt )
+		//3'd0: reg_hash <= hash[32*8-1:32*7] ;
+		//3'd1: reg_hash <= hash[32*7-1:32*6] ;
+		//3'd2: reg_hash <= hash[32*6-1:32*5] ;
+		//3'd3: reg_hash <= hash[32*5-1:32*4] ;
+		//3'd4: reg_hash <= hash[32*4-1:32*3] ;
+		//3'd5: reg_hash <= hash[32*3-1:32*2] ;
+		//3'd6: reg_hash <= hash[32*2-1:32*1] ;
+		//3'd7: reg_hash <= hash[32*1-1:32*0] ;
+		//endcase
 	end
 end
 
@@ -126,7 +129,7 @@ always @ ( posedge CLK_I or posedge RST_I ) begin
 	end
 end
 
-assign SHA_DAT_O = sha_cmd_rd_en_f ? {30'h0,reg_done,1'b0} : reg_hash ; 
+assign SHA_DAT_O = sha_cmd_rd_en_f ? {30'h0,reg_done,1'b0} : reg_hash[32*8-1:32*7] ; 
 
 sha_core U_sha_core(
 /*input         */ .clk     (CLK_I ) , 

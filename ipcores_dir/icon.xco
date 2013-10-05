@@ -1,7 +1,7 @@
 ##############################################################
 #
-# Xilinx Core Generator version 13.3
-# Date: Fri Jan 06 13:37:58 2012
+# Xilinx Core Generator version 14.6
+# Date: Fri Oct  4 11:54:14 2013
 #
 ##############################################################
 #
@@ -22,16 +22,16 @@ SET asysymbol = true
 SET busformat = BusFormatAngleBracketNotRipped
 SET createndf = false
 SET designentry = Verilog
-SET device = __DEVICE__
-SET devicefamily = __FAMILY__
+SET device = xc6slx16
+SET devicefamily = spartan6
 SET flowvendor = Other
 SET formalverification = false
 SET foundationsym = false
 SET implementationfiletype = Ngc
-SET package = __PACKAGE__
+SET package = ftg256
 SET removerpms = false
-SET simulationfiles = Structural
-SET speedgrade = __SPEED__
+SET simulationfiles = Behavioral
+SET speedgrade = -2
 SET verilogsim = true
 SET vhdlsim = false
 # END Project Options
@@ -40,14 +40,17 @@ SELECT ICON_(ChipScope_Pro_-_Integrated_Controller) family Xilinx,_Inc. 1.06.a
 # END Select
 # BEGIN Parameters
 CSET component_name=icon
-CSET constraint_type=embedded
+CSET constraint_type=external
 CSET enable_jtag_bufg=true
 CSET example_design=false
-CSET number_control_ports=2
+CSET number_control_ports=1
 CSET use_ext_bscan=false
 CSET use_softbscan=false
 CSET use_unused_bscan=false
 CSET user_scan_chain=USER1
 # END Parameters
+# BEGIN Extra information
+MISC pkg_timestamp=2013-06-08T17:28:33Z
+# END Extra information
 GENERATE
-# CRC: cac835db
+# CRC: 917d7803
