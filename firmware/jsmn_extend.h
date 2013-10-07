@@ -6,10 +6,15 @@
  * For details see the UNLICENSE file at the root of the source tree.
  */
 
-#ifndef _DEFINES_H
-#define _DEFINES_H
+#ifndef _JSMN_EXTEND_H
+#define _JSMN_EXTEND_H
 
-#define DEBUG		1
+#include "jsmn.h"
 
-#define MM_VERSION	"MM201310\n"
-#endif	/* _DEFINES_H */
+typedef int jsmnidx_t;
+
+#define JSMNIDX_ERR	(-1)
+
+jsmnidx_t jsmn_object_get(const char *js, jsmntok_t *tokens, const char *key);
+
+#endif

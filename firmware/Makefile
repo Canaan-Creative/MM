@@ -13,7 +13,7 @@ INCLUDES   = -I. -Isdk -Iminilibc -Ijsmn
 LDFLAGS    += -Wl,--gc-sections -Wl,-T,linker.ld -nostartfiles -nodefaultlibs -nostdlib -Wl,-Map=$(PRJ_NAME).map
 LDLIBS     += -Bminilibc -Bjsmn -lminilibc -ljsmn -lgcc
 
-CSRCS      = main.c serial.c
+CSRCS      = main.c serial.c jsmn_extend.c
 SDK_SRCS   = \
 	sdk/crt0ram.S \
 	sdk/utils.S \

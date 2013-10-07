@@ -14,12 +14,26 @@
 #include "jsmn.h"
 
 #include "system_config.h"
+#include "defines.h"
+
 #include "io.h"
 #include "serial.h"
+#include "jsmn_extend.h"
 
 #include "hexdump.c"
 
-static inline void delay(volatile uint32_t i)
+#ifdef DEBUG
+char printf_buf32[32];
+#define debug32(...)	do {				\
+		m_sprintf(printf_buf32, __VA_ARGS__);	\
+		serial_puts(printf_buf32);		\
+	} while(0)
+#else
+#define debug32(...)
+#endif
+
+
+static void delay(volatile uint32_t i)
 {
 	while (i--)
 		;
@@ -138,26 +152,16 @@ bool hex2bin(unsigned char *p, const char *hexstr, size_t len)
 	return false;
 }
 
-int jsmn_find_key(const char *key, const char *js, jsmntok_t *tokens)
+static bool parse_notify(const char *js, jsmntok_t *tokens)
 {
-	uint32_t i = 1;
-	while (tokens[i].start != 0 && tokens[i].end != 0) {
-		if (tokens[i].type == 3 &&
-		    !strncmp(key, js + tokens[i].start, tokens[i].end - tokens[i].start))
-			return i;
-		i++;
-	}
-
-	return -1;
+	return true;
 }
 
 int main(void) {
-	char printf_buf[32];
 	uint32_t i, j, state[8];
 
 	uart_init();
-	serial_puts(stratum);
-	serial_puts("\n");
+	serial_puts(MM_VERSION);
 
 	/* Test sha256 core: 1 block data*/
 	sha256_transform(state, sha256_in, 16);
@@ -170,34 +174,38 @@ int main(void) {
 	/* Decode stratum to struct stratum */
 	jsmn_parser parser;
 	jsmntok_t tokens[30];
+	jsmnidx_t idx_m, idx_n;
 	jsmnerr_t r;
 
 	jsmn_init(&parser);
 	r = jsmn_parse(&parser, stratum, tokens, 256);
 	if (r != JSMN_SUCCESS) {
-		m_sprintf(printf_buf, "E: %d\n", r);
-		serial_puts(printf_buf);
+		debug32("E: %d\n", r);
 		error(0xe);
 	}
 
 	for (i = 0; i < 30; i++) {
-		m_sprintf(printf_buf, "I: [%d]%d, %d, %d, %d-->", i,
+		debug32("I: [%d]%d, %d, %d, %d->", i,
 			  tokens[i].type, tokens[i].start,
 			  tokens[i].end, tokens[i].size);
-		serial_puts(printf_buf);
 		for (j = tokens[i].start; j < tokens[i].end; j++)
 			serial_putc(stratum[j]);
 		serial_putc('\n');
 	}
 
-	int ret = jsmn_find_key("method", stratum, tokens);
-	if (ret < 0) {
-		m_sprintf(printf_buf, "E: %d\n", ret);
-		serial_puts(printf_buf);
+	idx_m = jsmn_object_get(stratum, tokens, "method");
+	if (idx_m == JSMNIDX_ERR) {
+		/* FIXME: do something else */
 		error(0xe);
-	} else {
-		m_sprintf(printf_buf, "I: %d\n", ret);
-		serial_puts(printf_buf);
+	}
+	idx_n = jsmn_object_get(stratum, tokens, "mining.notify");
+	if (idx_n == JSMNIDX_ERR) {
+		/* FIXME: do something else */
+		error(0xe);
+	}
+	if (idx_m == idx_n - 1) {
+		if (!parse_notify(stratum, tokens))
+			error(0xe);
 	}
 
 	unsigned char p[32];
