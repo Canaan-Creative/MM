@@ -19,6 +19,7 @@
 #include "io.h"
 #include "serial.h"
 #include "jsmn_extend.h"
+#include "miner.h"
 
 #include "hexdump.c"
 
@@ -32,6 +33,7 @@ char printf_buf32[32];
 #define debug32(...)
 #endif
 
+struct stratum_work stratum_work;
 
 static void delay(volatile uint32_t i)
 {
