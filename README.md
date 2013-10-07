@@ -19,5 +19,5 @@ How to build?
 First you need install the ISE for sure. then edit the `isedir` under xilinx.mk
 by default we are using /home/Xilinx/14.6/ISE_DS/
 
-$ make -C firmware/toolchain # Install the lm32-rtems-4.11- toolchain
-$ make -C firmware           # Generate the final bitstream file
+1. $ make -C firmware/toolchain # Install the lm32-rtems-4.11- toolchain under /opt
+2. $ make -C firmware           # Generate the final bitstream file .bit/.mcs under firmware/

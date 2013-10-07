@@ -10,20 +10,14 @@
 -include config.mk
 # ----- Customer ----------------------------------------------------------
 INCLUDES   = -I. -Isdk -Iminilibc -Ijsmn
-CPU_CONFIG = -mmultiply-enabled -mbarrel-shift-enabled -muser-enabled #-mdivide-enabled -msign-extend-enabled 
-CPPFLAGS   += -std=gnu99 -Os -ffunction-sections -ffreestanding -Wall -Werror $(CPU_CONFIG) $(INCLUDES)
-
-LDFLAGS    += -Wl,--gc-sections -Wl,-T,linker.ld -nostartfiles -nodefaultlibs -nostdlib -Wl,-Map=$(PRJ_NAME).map -Bjsmn
-LDLIBS     += -lgcc -ljsmn
+LDFLAGS    += -Wl,--gc-sections -Wl,-T,linker.ld -nostartfiles -nodefaultlibs -nostdlib -Wl,-Map=$(PRJ_NAME).map
+LDLIBS     += -Bminilibc -Bjsmn -lminilibc -ljsmn -lgcc
 
 CSRCS      = main.c serial.c
 SDK_SRCS   = \
 	sdk/crt0ram.S \
 	sdk/utils.S \
-	sdk/intr.c \
-	minilibc/memcpy.c \
-	minilibc/memset.c \
-	minilibc/printf.c
+	sdk/intr.c
 OBJS       := $(addsuffix .o,$(basename $(CSRCS) $(SDK_SRCS)))
 
 BATCHFILE	:= $(shell mktemp)
@@ -45,11 +39,11 @@ $(PRJ_NAME).objdump: $(PRJ_NAME).elf
 $(PRJ_NAME).hexdump: $(PRJ_NAME).elf
 	hexdump -v -e '1 "%08x"' -e '"\n"' $^ > $@
 
-$(PRJ_NAME).elf: $(OBJS) jsmn/libjsmn.a
+$(PRJ_NAME).elf: $(OBJS) jsmn/libjsmn.a minilibc/libminilibc.a
 	$(LD) $(LDFLAGS) $(OBJS) -o $@ $(LDLIBS)
 	$(SIZE) $(PRJ_NAME).elf
 
-jsmn/libjsmn.a:
+minilibc/libminilibc.a jsmn/libjsmn.a:
 	make -C `dirname $@`
 
 %.o: %.c
@@ -98,6 +92,7 @@ $(HARDWARE_NAME).bit: $(PRJ_NAME).elf ../synth/$(HARDWARE_NAME).bit ../synth/$(H
 clean:
 	rm -f $(OBJS) $(OBJS:.o=.d) $(TARGET) $(PRJ_NAME).objdump $(PRJ_NAME).hexdump
 	make -C jsmn clean
+	make -C minilibc clean
 
 distclean: clean
 	make -C ../synth distclean

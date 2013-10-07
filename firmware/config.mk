@@ -31,3 +31,5 @@ else
     RANLIB	= $(RANLIB_quiet)
 endif
 
+CPU_CONFIG = -mmultiply-enabled -mbarrel-shift-enabled -muser-enabled
+CPPFLAGS   += -std=gnu99 -Os -ffunction-sections -ffreestanding -Wall -Werror $(CPU_CONFIG) $(INCLUDES)
