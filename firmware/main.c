@@ -97,6 +97,19 @@ static void sha256_transform(uint32_t *state, const uint32_t *input, int count)
 		state[i] = readl(&sha256->out);
 }
 
+int jsmn_find_key(const char *key, const char *js, jsmntok_t *tokens)
+{
+	uint32_t i = 1;
+	while (tokens[i].start != 0 && tokens[i].end != 0) {
+		if (tokens[i].type == 3 &&
+		    !strncmp(key, js + tokens[i].start, tokens[i].end - tokens[i].start))
+			return i;
+		i++;
+	}
+
+	return -1;
+}
+
 int main(void) {
 	char printf_buf[32];
 	uint32_t i, j, state[8];
@@ -127,13 +140,23 @@ int main(void) {
 	}
 
 	for (i = 0; i < 30; i++) {
-		m_sprintf(printf_buf, "I: %d, %d, %d, %d-->",
+		m_sprintf(printf_buf, "I: [%d]%d, %d, %d, %d-->", i,
 			  tokens[i].type, tokens[i].start,
 			  tokens[i].end, tokens[i].size);
 		serial_puts(printf_buf);
 		for (j = tokens[i].start; j < tokens[i].end; j++)
 			serial_putc(stratum[j]);
 		serial_putc('\n');
+	}
+
+	int ret = jsmn_find_key("method", stratum, tokens);
+	if (ret < 0) {
+		m_sprintf(printf_buf, "E: %d\n", ret);
+		serial_puts(printf_buf);
+		error(15);
+	} else {
+		m_sprintf(printf_buf, "I: %d\n", ret);
+		serial_puts(printf_buf);
 	}
 
 	/* Code should be never reach here */
