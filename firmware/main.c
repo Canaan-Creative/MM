@@ -24,7 +24,7 @@ static inline void delay(volatile uint32_t i)
 		;
 }
 
-static void error()
+static void error(uint8_t n)
 {
 	volatile uint32_t *gpio = (uint32_t *)GPIO_BASE;
 	uint8_t i = 0;
@@ -32,7 +32,7 @@ static void error()
 	while (1) {
 		delay(4000000);
 		if (i++ %2)
-			writel(0x00000000 | (0xf << 24), gpio);
+			writel(0x00000000 | (n << 24), gpio);
 		else
 			writel(0x00000000, gpio);
 	}
@@ -98,10 +98,12 @@ static void sha256_transform(uint32_t *state, const uint32_t *input, int count)
 }
 
 int main(void) {
-	uint8_t i, j;
-	uint32_t state[8];
+	char printf_buf[32];
+	uint32_t i, j, state[8];
 
 	uart_init();
+	serial_puts(stratum);
+	serial_puts("\n");
 
 	/* Test sha256 core: 1 block data*/
 	sha256_transform(state, sha256_in, 16);
@@ -113,35 +115,29 @@ int main(void) {
 
 	/* Decode stratum to struct stratum */
 	jsmn_parser parser;
-	jsmntok_t tokens[256];
+	jsmntok_t tokens[30];
 	jsmnerr_t r;
-
-	serial_puts(stratum);
-	serial_puts("\n");
 
 	jsmn_init(&parser);
 	r = jsmn_parse(&parser, stratum, tokens, 256);
 	if (r != JSMN_SUCCESS) {
-		char buf[32];
-		m_sprintf(buf, "%s : %d\n", "ERROR", r);
-		serial_puts(buf);
+		m_sprintf(printf_buf, "E: %d\n", r);
+		serial_puts(printf_buf);
+		error(15);
 	}
 
-	for (i = 1; i < 2; i++) {
-		char buf[32];
-		m_sprintf(buf, "%d, %d, %d, %d : ",
-			  tokens[i].type,
-			  tokens[i].start,
-			  tokens[i].end,
-			  tokens[i].size);
-		serial_puts(buf);
+	for (i = 0; i < 30; i++) {
+		m_sprintf(printf_buf, "I: %d, %d, %d, %d-->",
+			  tokens[i].type, tokens[i].start,
+			  tokens[i].end, tokens[i].size);
+		serial_puts(printf_buf);
 		for (j = tokens[i].start; j < tokens[i].end; j++)
 			serial_putc(stratum[j]);
 		serial_putc('\n');
 	}
 
 	/* Code should be never reach here */
-	error();
+	error(16);
 	return 0;
 }
 
