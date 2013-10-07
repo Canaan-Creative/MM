@@ -31,4 +31,7 @@
 #define writew(b,addr) (*(volatile unsigned short *)(addr)) = (b)
 #define writel(b,addr) (*(volatile unsigned int *)(addr)) = (b)
 
+#define likely(x)	(x)
+#define unlikely(x)	(x)
+
 #endif /* _IO_H */

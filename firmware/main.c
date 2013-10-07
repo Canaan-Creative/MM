@@ -7,15 +7,16 @@
  * For details see the UNLICENSE file at the root of the source tree.
  */
 
-#include "stdbool.h"
-#include "stdio.h"
+#include <stdbool.h>
+
 #include "sdk.h"
 #include "minilibc.h"
+#include "jsmn.h"
 
 #include "system_config.h"
 #include "io.h"
 #include "serial.h"
-#include "jsmn.h"
+
 #include "hexdump.c"
 
 static inline void delay(volatile uint32_t i)
@@ -97,6 +98,46 @@ static void sha256_transform(uint32_t *state, const uint32_t *input, int count)
 		state[i] = readl(&sha256->out);
 }
 
+static int bin_value(unsigned char ch)
+{
+        if ('0' <= ch && ch <= '9')
+                return ch - '0';
+        else if ('a' <= ch && ch <= 'f')
+                return ch - 'a' + 0x0A;
+        else if ('A' <= ch && ch <= 'F')
+                return ch - 'A' + 0x0A;
+        else
+                return -1;
+}
+
+bool hex2bin(unsigned char *p, const char *hexstr, size_t len)
+{
+	while (*hexstr && len) {
+		int a, b;
+
+		a = ((bin_value(hexstr[0])<<4) & 0xF0);
+		b = ((bin_value(hexstr[1])   ) & 0x0F);
+
+		if (a == -1 || b == -1) {
+			serial_puts("E: hex2bin sscanf failed:");
+			serial_putc(hexstr[0]);
+			serial_putc(hexstr[1]);
+			serial_putc('\n');
+			return false;
+		}
+
+		*p = (unsigned char)(a | b);
+
+		hexstr += 2;
+		p++;
+		len--;
+	}
+
+	if (len == 0)
+		return true;
+	return false;
+}
+
 int jsmn_find_key(const char *key, const char *js, jsmntok_t *tokens)
 {
 	uint32_t i = 1;
@@ -136,7 +177,7 @@ int main(void) {
 	if (r != JSMN_SUCCESS) {
 		m_sprintf(printf_buf, "E: %d\n", r);
 		serial_puts(printf_buf);
-		error(15);
+		error(0xe);
 	}
 
 	for (i = 0; i < 30; i++) {
@@ -153,14 +194,19 @@ int main(void) {
 	if (ret < 0) {
 		m_sprintf(printf_buf, "E: %d\n", ret);
 		serial_puts(printf_buf);
-		error(15);
+		error(0xe);
 	} else {
 		m_sprintf(printf_buf, "I: %d\n", ret);
 		serial_puts(printf_buf);
 	}
 
+	unsigned char p[32];
+	if (!hex2bin(p, stratum + tokens[17].start, 32))
+		error(0xe);
+	hexdump(p, 32);
+
 	/* Code should be never reach here */
-	error(16);
+	error(0xf);
 	return 0;
 }
 
