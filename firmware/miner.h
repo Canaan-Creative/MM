@@ -16,10 +16,18 @@ struct stratum_work {
 	jsmntok_t *bbversion;
 	jsmntok_t *nbit;
 	jsmntok_t *ntime;
+	jsmntok_t *clean;
+
+	jsmntok_t *coinbase1;
+	jsmntok_t *coinbase2;
+	jsmntok_t *merkles;
+
+	uint8_t coinbase[1024];
+
 
 	size_t cb_len;
 	size_t header_len;
-	int merkles;
+	int merkles_count;
 	double diff;
 };
 

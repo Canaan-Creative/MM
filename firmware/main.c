@@ -154,8 +154,25 @@ bool hex2bin(unsigned char *p, const char *hexstr, size_t len)
 	return false;
 }
 
-static bool parse_notify(const char *js, jsmntok_t *tokens)
+static bool parse_notify(const char *js, jsmntok_t *tokens, struct stratum_work *sw)
 {
+	size_t cb1_len, cb2_len;
+
+	sw->job_id = &tokens[3];
+	sw->prev_hash = &tokens[4];
+	sw->coinbase1 = &tokens[5];
+	sw->coinbase2 = &tokens[6];
+	sw->merkles = &tokens[7];
+	sw->bbversion = &tokens[7 + tokens[7].size + 1];
+	sw->nbit = &tokens[7 + tokens[7].size + 2];
+	sw->ntime = &tokens[7 + tokens[7].size + 3];
+	sw->clean = &tokens[7 + tokens[7].size + 4];
+
+	cb1_len = (*sw->coinbase1).end - (*sw->coinbase1).start;
+	cb2_len = (*sw->coinbase2).end - (*sw->coinbase2).start;
+	debug32("I: cb1/2 len: %d, %d\n", cb1_len, cb2_len);
+
+
 	return true;
 }
 
@@ -206,7 +223,7 @@ int main(void) {
 		error(0xe);
 	}
 	if (idx_m == idx_n - 1) {
-		if (!parse_notify(stratum, tokens))
+		if (!parse_notify(stratum, tokens, &stratum_work))
 			error(0xe);
 	}
 
