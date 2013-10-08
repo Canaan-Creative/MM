@@ -55,6 +55,21 @@ static void error(uint8_t n)
 	}
 }
 
+/* confirmed mining.subscribe with extranonce1 90f1ab0b00000000 extran2size 4 */
+const char *session = "{"
+	"\"result\": "
+	"["
+	  "["
+	    "[\"mining.notify\", \"90f1ab0b000000001\"], "
+	    "[\"mining.set_difficulty\", \"90f1ab0b000000002\"]"
+	  "], "
+	  "\"90f1ab0b00000000\", 4"
+	"], "
+	"\"id\": 0, "
+	"\"error\": null"
+	"}";
+
+/* This is a eligisu stratum work, length: 4307 */
 const char *stratum = "{"
 	"\"params\": [\"1380763043 1101\", "
 	"\"5506102164edbcbd90a8b0d617618e0c724dad2a58b640620000000000000000\", "
@@ -157,6 +172,7 @@ bool hex2bin(unsigned char *p, const char *hexstr, size_t len)
 static bool parse_notify(const char *js, jsmntok_t *tokens, struct stratum_work *sw)
 {
 	size_t cb1_len, cb2_len;
+	int merkle_offset;
 
 	sw->job_id = &tokens[3];
 	sw->prev_hash = &tokens[4];
@@ -168,10 +184,19 @@ static bool parse_notify(const char *js, jsmntok_t *tokens, struct stratum_work 
 	sw->ntime = &tokens[7 + tokens[7].size + 3];
 	sw->clean = &tokens[7 + tokens[7].size + 4];
 
+	/* Create the coinbase */
 	cb1_len = (*sw->coinbase1).end - (*sw->coinbase1).start;
 	cb2_len = (*sw->coinbase2).end - (*sw->coinbase2).start;
-	debug32("I: cb1/2 len: %d, %d\n", cb1_len, cb2_len);
 
+	merkle_offset = (*sw->bbversion).size + (*sw->prev_hash).size;
+	sw->header_len = merkle_offset +
+	/* merkle_hash */	 32 +
+				(*sw->ntime).size +
+				(*sw->nbit).size +
+	/* nonce */		 8 +
+	/* workpadding */	 96;
+	merkle_offset /= 2;
+	sw->header_len = sw->header_len * 2 + 1;
 
 	return true;
 }
@@ -212,6 +237,7 @@ int main(void) {
 		serial_putc('\n');
 	}
 
+	/* STEP1: Make sure it's a stratum mining.notify  */
 	idx_m = jsmn_object_get(stratum, tokens, "method");
 	if (idx_m == JSMNIDX_ERR) {
 		/* FIXME: do something else */
@@ -222,6 +248,8 @@ int main(void) {
 		/* FIXME: do something else */
 		error(0xe);
 	}
+
+	/* STEP2: Decode the stratum work */
 	if (idx_m == idx_n - 1) {
 		if (!parse_notify(stratum, tokens, &stratum_work))
 			error(0xe);

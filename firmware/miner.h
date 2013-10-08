@@ -9,6 +9,8 @@
 #ifndef __MINER_H__
 #define __MINER_H__
 
+char *workpadding = "000000800000000000000000000000000000000000000000000000000000000000000000000000000000000080020000";
+
 struct stratum_work {
 	jsmntok_t *jobid;
 	jsmntok_t *job_id;
@@ -22,7 +24,9 @@ struct stratum_work {
 	jsmntok_t *coinbase2;
 	jsmntok_t *merkles;
 
-	uint8_t coinbase[1024];
+	/* This coinbase needs 4K? */
+	uint8_t coinbase[2*1024];
+	uint8_t header[300];
 
 
 	size_t cb_len;
