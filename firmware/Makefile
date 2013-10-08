@@ -9,11 +9,11 @@
 
 -include config.mk
 # ----- Customer ----------------------------------------------------------
-INCLUDES   = -I. -Isdk -Iminilibc -Ijsmn
+INCLUDES   = -I. -Isdk -Iminilibc
 LDFLAGS    += -Wl,--gc-sections -Wl,-T,linker.ld -nostartfiles -nodefaultlibs -nostdlib -Wl,-Map=$(PRJ_NAME).map
-LDLIBS     += -Bminilibc -Bjsmn -lminilibc -ljsmn -lgcc
+LDLIBS     += -Bminilibc -lminilibc -lgcc
 
-CSRCS      = main.c serial.c jsmn_extend.c
+CSRCS      = main.c serial.c
 SDK_SRCS   = \
 	sdk/crt0ram.S \
 	sdk/utils.S \
@@ -39,11 +39,11 @@ $(PRJ_NAME).objdump: $(PRJ_NAME).elf
 $(PRJ_NAME).hexdump: $(PRJ_NAME).elf
 	hexdump -v -e '1 "%08x"' -e '"\n"' $^ > $@
 
-$(PRJ_NAME).elf: $(OBJS) jsmn/libjsmn.a minilibc/libminilibc.a
+$(PRJ_NAME).elf: $(OBJS) minilibc/libminilibc.a
 	$(LD) $(LDFLAGS) $(OBJS) -o $@ $(LDLIBS)
 	$(SIZE) $(PRJ_NAME).elf
 
-minilibc/libminilibc.a jsmn/libjsmn.a:
+minilibc/libminilibc.a:
 	make -C `dirname $@`
 
 %.o: %.c

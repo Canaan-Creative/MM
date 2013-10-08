@@ -9,30 +9,43 @@
 #ifndef __MINER_H__
 #define __MINER_H__
 
+#include <stdbool.h>
+#include "sdk.h"
+
+char *blank_merkel = "0000000000000000000000000000000000000000000000000000000000000000";
 char *workpadding = "000000800000000000000000000000000000000000000000000000000000000000000000000000000000000080020000";
 
-struct stratum_work {
-	jsmntok_t *jobid;
-	jsmntok_t *job_id;
-	jsmntok_t *prev_hash;
-	jsmntok_t *bbversion;
-	jsmntok_t *nbit;
-	jsmntok_t *ntime;
-	jsmntok_t *clean;
-
-	jsmntok_t *coinbase1;
-	jsmntok_t *coinbase2;
-	jsmntok_t *merkles;
-
-	/* This coinbase needs 4K? */
-	uint8_t coinbase[2*1024];
-	uint8_t header[300];
+struct work {
+	unsigned char	data[128];
+	unsigned char	midstate[32];
+	unsigned char	target[32];
+	unsigned char	hash[32];
 
 
-	size_t cb_len;
-	size_t header_len;
-	int merkles_count;
-	double diff;
+	bool		stratum;
+	char 		*job_id;
+	uint32_t	nonce2;
+	size_t		nonce2_len;
+	char		*ntime;
+	double		sdiff;
+	char		*nonce1;
+};
+
+struct mm_work {
+	uint8_t *jobid;
+
+	size_t coinbase_len;
+	uint8_t *coinbase;
+	int cb_nonce2_offset;
+	int cb_nonce2_size; /* only 4 is support atm. */
+	int nbranches;
+	uint8_t *merkels[10];
+	uint8_t difficulty; /* number of leading zeros bits required
+			     * (for a valid share) */
+	bool rollntime; /* whether rollntime is accepted */
+	bool clean;	/* flush all prior jobs (cut) */
+
+	uint8_t *header;
 };
 
 #endif /* __MINER_H__ */
