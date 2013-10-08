@@ -1,6 +1,7 @@
 *~
 *.o
 *.d
+*.a
 /main.elf
 /main.map
 /main.hexdump
