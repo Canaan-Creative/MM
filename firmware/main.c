@@ -18,6 +18,7 @@
 #include "io.h"
 #include "serial.h"
 #include "miner.h"
+#include "sha256.h"
 
 #include "hexdump.c"
 
@@ -52,39 +53,6 @@ static void error(uint8_t n)
 		else
 			writel(0x00000000, gpio);
 	}
-}
-
-const uint32_t sha256_in[16] = {
-	0x61626380, 0x00000000, 0x00000000, 0x00000000,
-	0x00000000, 0x00000000, 0x00000000, 0x00000000,
-	0x00000000, 0x00000000, 0x00000000, 0x00000000,
-	0x00000000, 0x00000000, 0x00000000, 0x00000018};
-
-const uint32_t sha256_in2[32] = {
-	0x61626364, 0x62636465, 0x63646566, 0x64656667,
-	0x65666768, 0x66676869, 0x6768696A, 0x68696A6B,
-	0x696A6B6C, 0x6A6B6C6D, 0x6B6C6D6E, 0x6C6D6E6F,
-	0x6D6E6F70, 0x6E6F7071, 0x80000000, 0x00000000,
-	0x00000000, 0x00000000, 0x00000000, 0x00000000,
-	0x00000000, 0x00000000, 0x00000000, 0x00000000,
-	0x00000000, 0x00000000, 0x00000000, 0x00000000,
-	0x00000000, 0x00000000, 0x00000000, 0x000001C0};
-
-static void sha256_transform(uint32_t *state, const uint32_t *input, int count)
-{
-	struct lm32_sha256 *sha256 = (struct lm32_sha256 *)SHA256_BASE;
-
-	int i;
-
-	writel(LM32_SHA256_CMD_INIT, &sha256->cmd);
-	for (i = 0; i < count; i++) {
-		writel(input[i], &sha256->in);
-		if (!((i + 1) % 16))
-			while (!(readl(&sha256->cmd) & LM32_SHA256_CMD_DONE))
-				;
-	}
-	for (i = 0; i < 8; i++)
-		state[i] = readl(&sha256->out);
 }
 
 static int bin_value(unsigned char ch)
@@ -128,14 +96,14 @@ bool hex2bin(unsigned char *p, const char *hexstr, size_t len)
 	return false;
 }
 
-#include "cb_test.c"
-
 static void calc_midstate(struct work *work)
 {
 }
 
-static void gen_stratum_work(struct mm_work *mw, struct work *work)
+static void gen_work(struct mm_work *mw, struct work *work)
 {
+	memcpy(mw->coinbase + mw->nonce2_offset, (uint8_t *)mw->nonce2, sizeof(uint32_t));
+	work->nonce2 = mw->nonce2++;
 
 	calc_midstate(work);
 }
@@ -147,13 +115,32 @@ int main(void) {
 	serial_puts(MM_VERSION);
 
 	/* Test sha256 core: 1 block data*/
-	sha256_transform(state, sha256_in, 16);
+	const uint32_t sha256_in[16] = {
+		0x61626380, 0x00000000, 0x00000000, 0x00000000,
+		0x00000000, 0x00000000, 0x00000000, 0x00000000,
+		0x00000000, 0x00000000, 0x00000000, 0x00000000,
+		0x00000000, 0x00000000, 0x00000000, 0x00000018};
+
+	const uint32_t sha256_in2[32] = {
+		0x61626364, 0x62636465, 0x63646566, 0x64656667,
+		0x65666768, 0x66676869, 0x6768696A, 0x68696A6B,
+		0x696A6B6C, 0x6A6B6C6D, 0x6B6C6D6E, 0x6C6D6E6F,
+		0x6D6E6F70, 0x6E6F7071, 0x80000000, 0x00000000,
+		0x00000000, 0x00000000, 0x00000000, 0x00000000,
+		0x00000000, 0x00000000, 0x00000000, 0x00000000,
+		0x00000000, 0x00000000, 0x00000000, 0x00000000,
+		0x00000000, 0x00000000, 0x00000000, 0x000001C0};
+
+
+
+	sha256(state, sha256_in, 16);
 	hexdump((uint8_t *)state, 32);
 
 	/* Test sha256 core: 2 block data*/
-	sha256_transform(state, sha256_in2, 32);
+	sha256(state, sha256_in2, 32);
 	hexdump((uint8_t *)state, 32);
 
+#include "cb_test.c"
 	mm_work.coinbase = cb;
 	mm_work.merkels[0] = m0;
 	mm_work.merkels[1] = m1;
@@ -167,10 +154,11 @@ int main(void) {
 	mm_work.merkels[9] = m9;
 	mm_work.header = h;
 
-	mm_work.cb_nonce2_offset = 0;
-	mm_work.cb_nonce2_size = 4;
+	mm_work.nonce2_offset = 0;
+	mm_work.nonce2_size = 4;
+	mm_work.nonce2 = 0;
 
-	gen_stratum_work(&mm_work, &work);
+	gen_work(&mm_work, &work);
 
 	/* Code should be never reach here */
 	error(0xf);
