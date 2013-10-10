@@ -97,50 +97,48 @@ bool hex2bin(unsigned char *p, const char *hexstr, size_t len)
 	return false;
 }
 
+static void gen_hash(uint8_t *data, uint8_t *hash, size_t len)
+{
+}
+
 static void calc_midstate(struct work *work)
 {
 }
 
 static void gen_work(struct mm_work *mw, struct work *work)
 {
-	memcpy(mw->coinbase + mw->nonce2_offset, (uint8_t *)mw->nonce2, sizeof(uint32_t));
+	uint8_t merkle_root[32];
+
+	memcpy(mw->coinbase + mw->nonce2_offset, (uint8_t *)(&mw->nonce2), sizeof(uint32_t));
 	work->nonce2 = mw->nonce2++;
+
+	gen_hash(mw->coinbase, merkle_root, mw->coinbase_len);
 
 	calc_midstate(work);
 }
 
 int main(void) {
-	uint32_t state[8];
-
 	uart_init();
 	serial_puts(MM_VERSION);
 
 	/* Test sha256 core: 1 block data*/
-	const uint32_t sha256_in[16] = {
-		0x61626380, 0x00000000, 0x00000000, 0x00000000,
-		0x00000000, 0x00000000, 0x00000000, 0x00000000,
-		0x00000000, 0x00000000, 0x00000000, 0x00000000,
-		0x00000000, 0x00000000, 0x00000000, 0x00000018};
-
-	const uint32_t sha256_in2[32] = {
-		0x61626364, 0x62636465, 0x63646566, 0x64656667,
-		0x65666768, 0x66676869, 0x6768696A, 0x68696A6B,
-		0x696A6B6C, 0x6A6B6C6D, 0x6B6C6D6E, 0x6C6D6E6F,
-		0x6D6E6F70, 0x6E6F7071, 0x80000000, 0x00000000,
-		0x00000000, 0x00000000, 0x00000000, 0x00000000,
-		0x00000000, 0x00000000, 0x00000000, 0x00000000,
-		0x00000000, 0x00000000, 0x00000000, 0x00000000,
-		0x00000000, 0x00000000, 0x00000000, 0x000001C0};
-
-	sha256(state, sha256_in, 16);
-	hexdump((uint8_t *)state, 32);
+	uint8_t state[32];
+	const uint8_t sha256_in[3] = {0x61, 0x62, 0x63};
+	const uint8_t sha256_in2[128] = {
+		0x61, 0x62, 0x63, 0x64, 0x62, 0x63, 0x64, 0x65, 0x63, 0x64, 0x65, 0x66, 0x64, 0x65, 0x66, 0x67,
+		0x65, 0x66, 0x67, 0x68, 0x66, 0x67, 0x68, 0x69, 0x67, 0x68, 0x69, 0x6A, 0x68, 0x69, 0x6A, 0x6B,
+		0x69, 0x6A, 0x6B, 0x6C, 0x6A, 0x6B, 0x6C, 0x6D, 0x6B, 0x6C, 0x6D, 0x6E, 0x6C, 0x6D, 0x6E, 0x6F,
+		0x6D, 0x6E, 0x6F, 0x70, 0x6E, 0x6F, 0x70, 0x71};
+	sha256(state, sha256_in, ARRAY_SIZE(sha256_in));
+	hexdump(state, 32);
 
 	/* Test sha256 core: 2 block data*/
-	sha256(state, sha256_in2, 32);
-	hexdump((uint8_t *)state, 32);
+	sha256(state, sha256_in2, ARRAY_SIZE(sha256_in));
+	hexdump(state, 32);
 
 #include "cb_test.c"
 	mm_work.coinbase = cb;
+	mm_work.coinbase_len = ARRAY_SIZE(cb);
 	mm_work.merkels[0] = m0;
 	mm_work.merkels[1] = m1;
 	mm_work.merkels[2] = m2;
@@ -152,8 +150,7 @@ int main(void) {
 	mm_work.merkels[8] = m8;
 	mm_work.merkels[9] = m9;
 	mm_work.header = h;
-
-	mm_work.nonce2_offset = 0;
+	mm_work.nonce2_offset = 119;
 	mm_work.nonce2_size = 4;
 	mm_work.nonce2 = 0;
 

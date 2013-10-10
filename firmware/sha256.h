@@ -9,8 +9,11 @@
 #ifndef _SHA256_H_
 #define _SHA256_H_
 
-#include "sdk.h"
+#include <stdint.h>
 
-void sha256(uint32_t *state, const uint32_t *input, unsigned int count);
+#define SHA256_DIGEST_SIZE (256 / 8)
+#define SHA256_BLOCK_SIZE  (512 / 8)
+
+void sha256(uint8_t *state, const uint8_t *input, unsigned int count);
 
 #endif	/* _SHA256_H_ */

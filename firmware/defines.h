@@ -12,4 +12,6 @@
 #define DEBUG		1
 
 #define MM_VERSION	"M201310M\n"
+#define ARRAY_SIZE(x)	(sizeof(x) / sizeof((x)[0]))
+
 #endif	/* _DEFINES_H */
