@@ -91,7 +91,6 @@ $(HARDWARE_NAME).bit: $(PRJ_NAME).elf ../synth/$(HARDWARE_NAME).bit ../synth/$(H
 # Clean rules
 clean:
 	rm -f $(OBJS) $(OBJS:.o=.d) $(TARGET) $(PRJ_NAME).objdump $(PRJ_NAME).hexdump
-	make -C jsmn clean
 	make -C minilibc clean
 
 distclean: clean

@@ -11,5 +11,5 @@
 
 #define DEBUG		1
 
-#define MM_VERSION	"MM201310\n"
+#define MM_VERSION	"M201310M\n"
 #endif	/* _DEFINES_H */

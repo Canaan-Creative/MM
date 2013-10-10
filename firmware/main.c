@@ -8,6 +8,7 @@
  */
 
 #include <stdbool.h>
+#include <stdint.h>
 
 #include "sdk.h"
 #include "minilibc.h"
@@ -130,8 +131,6 @@ int main(void) {
 		0x00000000, 0x00000000, 0x00000000, 0x00000000,
 		0x00000000, 0x00000000, 0x00000000, 0x00000000,
 		0x00000000, 0x00000000, 0x00000000, 0x000001C0};
-
-
 
 	sha256(state, sha256_in, 16);
 	hexdump((uint8_t *)state, 32);
