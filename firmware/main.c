@@ -23,16 +23,6 @@
 
 #include "hexdump.c"
 
-#ifdef DEBUG
-char printf_buf32[32];
-#define debug32(...)	do {				\
-		m_sprintf(printf_buf32, __VA_ARGS__);	\
-		serial_puts(printf_buf32);		\
-	} while(0)
-#else
-#define debug32(...)
-#endif
-
 struct mm_work mm_work;
 struct work work;
 
@@ -97,8 +87,12 @@ bool hex2bin(unsigned char *p, const char *hexstr, size_t len)
 	return false;
 }
 
-static void gen_hash(uint8_t *data, uint8_t *hash, size_t len)
+static void gen_hash(uint8_t *data, uint8_t *hash, unsigned int len)
 {
+	uint8_t hash1[32];
+
+	sha256(data, len, hash1);
+	sha256(hash1, 32, hash);
 }
 
 static void calc_midstate(struct work *work)
@@ -107,12 +101,21 @@ static void calc_midstate(struct work *work)
 
 static void gen_work(struct mm_work *mw, struct work *work)
 {
-	uint8_t merkle_root[32];
+	uint8_t merkle_root[32], merkle_sha[64];
+	int i;
 
 	memcpy(mw->coinbase + mw->nonce2_offset, (uint8_t *)(&mw->nonce2), sizeof(uint32_t));
 	work->nonce2 = mw->nonce2++;
 
 	gen_hash(mw->coinbase, merkle_root, mw->coinbase_len);
+	memcpy(merkle_sha, merkle_root, 32);
+	for (i = 0; i < mw->nmerkles; i++) {
+		memcpy(merkle_sha + 32, mw->merkles[i], 32);
+		gen_hash(merkle_sha, merkle_root, 64);
+		memcpy(merkle_sha, merkle_root, 32);
+	}
+
+	hexdump(merkle_root, 32);
 
 	calc_midstate(work);
 }
@@ -121,38 +124,8 @@ int main(void) {
 	uart_init();
 	serial_puts(MM_VERSION);
 
-	/* Test sha256 core: 1 block data*/
-	uint8_t state[32];
-	const uint8_t sha256_in[3] = {0x61, 0x62, 0x63};
-	const uint8_t sha256_in2[128] = {
-		0x61, 0x62, 0x63, 0x64, 0x62, 0x63, 0x64, 0x65, 0x63, 0x64, 0x65, 0x66, 0x64, 0x65, 0x66, 0x67,
-		0x65, 0x66, 0x67, 0x68, 0x66, 0x67, 0x68, 0x69, 0x67, 0x68, 0x69, 0x6A, 0x68, 0x69, 0x6A, 0x6B,
-		0x69, 0x6A, 0x6B, 0x6C, 0x6A, 0x6B, 0x6C, 0x6D, 0x6B, 0x6C, 0x6D, 0x6E, 0x6C, 0x6D, 0x6E, 0x6F,
-		0x6D, 0x6E, 0x6F, 0x70, 0x6E, 0x6F, 0x70, 0x71};
-	sha256(state, sha256_in, ARRAY_SIZE(sha256_in));
-	hexdump(state, 32);
-
-	/* Test sha256 core: 2 block data*/
-	sha256(state, sha256_in2, ARRAY_SIZE(sha256_in));
-	hexdump(state, 32);
-
+#include "sha256_test.c"
 #include "cb_test.c"
-	mm_work.coinbase = cb;
-	mm_work.coinbase_len = ARRAY_SIZE(cb);
-	mm_work.merkels[0] = m0;
-	mm_work.merkels[1] = m1;
-	mm_work.merkels[2] = m2;
-	mm_work.merkels[3] = m3;
-	mm_work.merkels[4] = m4;
-	mm_work.merkels[5] = m5;
-	mm_work.merkels[6] = m6;
-	mm_work.merkels[7] = m7;
-	mm_work.merkels[8] = m8;
-	mm_work.merkels[9] = m9;
-	mm_work.header = h;
-	mm_work.nonce2_offset = 119;
-	mm_work.nonce2_size = 4;
-	mm_work.nonce2 = 0;
 
 	gen_work(&mm_work, &work);
 

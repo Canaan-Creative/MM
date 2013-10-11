@@ -186,6 +186,24 @@ uint8_t h[] = {
 	0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x80, 0x02, 0x00, 0x00
 };
 
+	mm_work.coinbase = cb;
+	mm_work.coinbase_len = ARRAY_SIZE(cb);
+	mm_work.nmerkles = 10;
+	mm_work.merkles[0] = m0;
+	mm_work.merkles[1] = m1;
+	mm_work.merkles[2] = m2;
+	mm_work.merkles[3] = m3;
+	mm_work.merkles[4] = m4;
+	mm_work.merkles[5] = m5;
+	mm_work.merkles[6] = m6;
+	mm_work.merkles[7] = m7;
+	mm_work.merkles[8] = m8;
+	mm_work.merkles[9] = m9;
+	mm_work.header = h;
+	mm_work.nonce2_offset = 119;
+	mm_work.nonce2_size = 4;
+	mm_work.nonce2 = 0;
+
 
 /*
  [2013-10-03 09:17:39] Generated stratum merkle 75dc496979c26b13d1f15ad16b8d1d98b25d229f39640513edf199523194b5a3

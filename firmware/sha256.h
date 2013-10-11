@@ -14,6 +14,6 @@
 #define SHA256_DIGEST_SIZE (256 / 8)
 #define SHA256_BLOCK_SIZE  (512 / 8)
 
-void sha256(uint8_t *state, const uint8_t *input, unsigned int count);
+void sha256(const uint8_t *input, unsigned int count, uint8_t *state);
 
 #endif	/* _SHA256_H_ */

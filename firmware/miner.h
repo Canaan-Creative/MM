@@ -41,8 +41,8 @@ struct mm_work {
 	int nonce2_offset;
 	int nonce2_size; /* only 4 is support atm. */
 
-	int nmerkels;
-	uint8_t *merkels[10];
+	int nmerkles;
+	uint8_t *merkles[10];
 
 	uint8_t difficulty; /* number of leading zeros bits required
 			     * (for a valid share) */
