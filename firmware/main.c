@@ -161,8 +161,10 @@ int main(void) {
 	serial_puts(MM_VERSION);
 
 #include "sha256_test.c"
-#include "cb_test1.c"
+#include "cb_test.c"
 
+	gen_work(&mm_work, &work);
+	gen_work(&mm_work, &work);
 	gen_work(&mm_work, &work);
 
 	/* Code should be never reach here */

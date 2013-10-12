@@ -200,9 +200,13 @@ uint8_t h[] = {
 	mm_work.merkles[8] = m8;
 	mm_work.merkles[9] = m9;
 	mm_work.header = h;
-	mm_work.nonce2_offset = 119;
+
+	mm_work.merkle_offset = 36;
+
 	mm_work.nonce2_size = 4;
 	mm_work.nonce2 = 0;
+
+	mm_work.nonce2_offset = 119;
 
 
 /*
