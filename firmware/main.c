@@ -87,6 +87,16 @@ bool hex2bin(unsigned char *p, const char *hexstr, size_t len)
 	return false;
 }
 
+static inline void flip32(void *dest_p, const void *src_p)
+{
+	uint32_t *dest = dest_p;
+	const uint32_t *src = src_p;
+	int i;
+
+	for (i = 0; i < 8; i++)
+		dest[i] = bswap_32(src[i]);
+}
+
 static void gen_hash(uint8_t *data, uint8_t *hash, unsigned int len)
 {
 	uint8_t hash1[32];
@@ -102,6 +112,7 @@ static void calc_midstate(struct work *work)
 static void gen_work(struct mm_work *mw, struct work *work)
 {
 	uint8_t merkle_root[32], merkle_sha[64];
+	uint32_t *data32, *swap32;
 	int i;
 
 	memcpy(mw->coinbase + mw->nonce2_offset, (uint8_t *)(&mw->nonce2), sizeof(uint32_t));
@@ -114,6 +125,9 @@ static void gen_work(struct mm_work *mw, struct work *work)
 		gen_hash(merkle_sha, merkle_root, 64);
 		memcpy(merkle_sha, merkle_root, 32);
 	}
+	data32 = (uint32_t *)merkle_sha;
+	swap32 = (uint32_t *)merkle_root;
+	flip32(swap32, data32);
 
 	hexdump(merkle_root, 32);
 
@@ -125,7 +139,7 @@ int main(void) {
 	serial_puts(MM_VERSION);
 
 #include "sha256_test.c"
-#include "cb_test.c"
+#include "cb_test1.c"
 
 	gen_work(&mm_work, &work);
 
