@@ -121,9 +121,8 @@ static void calc_midstate(struct work *work)
 	uint32_t *data32 = (uint32_t *)data;
 
 	flip64(data32, work->data);
-	/* sha256_init(&ctx); */
-	/* sha256_update(&ctx, data, 64); */
-	/* memcpy(work->midstate, ctx.h, 32); */
+	sha256_update(work->data, 64);
+	sha256_final(work->midstate);
 }
 
 static void gen_work(struct mm_work *mw, struct work *work)
@@ -152,7 +151,7 @@ static void gen_work(struct mm_work *mw, struct work *work)
 
 	debug32("Generated merkle_root:\n"); hexdump(merkle_root, 32);
 	debug32("Generated header:\n"); hexdump(work->data, 128);
-	debug32("Work job_id nonce2 ntime \n"); hexdump((uint8_t *)(&mw->nonce2), 4);
+	debug32("Work job_id nonce2 ntime \n"); hexdump((uint8_t *)(&work->nonce2), 4);
 	calc_midstate(work);
 }
 

@@ -35,22 +35,15 @@ static void write_block(const uint8_t *block)
 	}
 }
 
-static void sha256_update(const uint8_t *input, unsigned int count)
+static void sha256_padding(const uint8_t *input, unsigned int count)
 {
-	int i, len_blocks, len_rem;
+	int i, len_rem;
 	uint8_t block[64], block1[64];
-
-	len_blocks = count / SHA256_BLOCK_SIZE;
-	len_rem = count % SHA256_BLOCK_SIZE;
 
 	memset(block, 0, ARRAY_SIZE(block));
 	memset(block1, 0, ARRAY_SIZE(block));
 
-	if (len_blocks != 0) {
-		for (i = 0; i < len_blocks * SHA256_BLOCK_SIZE; i += SHA256_BLOCK_SIZE)
-			write_block(input + i);
-		input += len_blocks * SHA256_BLOCK_SIZE;
-	}
+	len_rem = count % SHA256_BLOCK_SIZE;
 
 	if (len_rem <= 32) {
 		for (i = 0; i < len_rem; i++)
@@ -76,7 +69,21 @@ static void sha256_update(const uint8_t *input, unsigned int count)
 	}
 }
 
-static void sha256_final(uint8_t *state)
+void sha256_update(const uint8_t *input, unsigned int count)
+{
+	int i, len_blocks;
+
+	len_blocks = count / SHA256_BLOCK_SIZE;
+
+	if (len_blocks != 0) {
+		for (i = 0; i < len_blocks * SHA256_BLOCK_SIZE; i += SHA256_BLOCK_SIZE)
+			write_block(input + i);
+		input += len_blocks * SHA256_BLOCK_SIZE;
+	}
+
+}
+
+void sha256_final(uint8_t *state)
 {
 	int i;
 	uint32_t tmp;
@@ -91,5 +98,6 @@ void sha256(const uint8_t *input, unsigned int count, uint8_t *state)
 {
 	sha256_init();
 	sha256_update(input, count);
+	sha256_padding(input + (count / SHA256_BLOCK_SIZE) * SHA256_BLOCK_SIZE, count);
 	sha256_final(state);
 }
