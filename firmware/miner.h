@@ -16,11 +16,10 @@ char *blank_merkel = "0000000000000000000000000000000000000000000000000000000000
 char *workpadding = "000000800000000000000000000000000000000000000000000000000000000000000000000000000000000080020000";
 
 struct work {
-	unsigned char	data[128];
-	unsigned char	midstate[32];
-	unsigned char	target[32];
-	unsigned char	hash[32];
-
+	uint8_t	data[128];
+	uint8_t	midstate[32];
+	uint8_t	target[32];
+	uint8_t	hash[32];
 
 	bool		stratum;
 	char 		*job_id;
@@ -41,6 +40,7 @@ struct mm_work {
 	int nonce2_offset;
 	int nonce2_size; /* only 4 is support atm. */
 
+	int merkle_offset;
 	int nmerkles;
 	uint8_t *merkles[10];
 
