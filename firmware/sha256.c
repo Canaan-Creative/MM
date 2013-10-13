@@ -16,7 +16,7 @@
 
 static struct lm32_sha256 *lm_sha256 = (struct lm32_sha256 *)SHA256_BASE;
 
-static void sha256_init()
+void sha256_init()
 {
 	writel(LM32_SHA256_CMD_INIT, &lm_sha256->cmd);
 }
@@ -78,9 +78,7 @@ void sha256_update(const uint8_t *input, unsigned int count)
 	if (len_blocks != 0) {
 		for (i = 0; i < len_blocks * SHA256_BLOCK_SIZE; i += SHA256_BLOCK_SIZE)
 			write_block(input + i);
-		input += len_blocks * SHA256_BLOCK_SIZE;
 	}
-
 }
 
 void sha256_final(uint8_t *state)

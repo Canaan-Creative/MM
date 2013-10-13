@@ -121,17 +121,23 @@ static void calc_midstate(struct work *work)
 	uint32_t *data32 = (uint32_t *)data;
 
 	flip64(data32, work->data);
-	sha256_update(work->data, 64);
+
+	sha256_init();
+	sha256_update(data, 64);
 	sha256_final(work->midstate);
+
+	flip64(work->midstate, work->midstate);
 }
 
 static void gen_work(struct mm_work *mw, struct work *work)
 {
 	uint8_t merkle_root[32], merkle_sha[64];
-	uint32_t *data32, *swap32;
+	uint32_t *data32, *swap32, tmp32;
 	int i;
 
-	memcpy(mw->coinbase + mw->nonce2_offset, (uint8_t *)(&mw->nonce2), sizeof(uint32_t));
+	tmp32 = mw->nonce2;
+	tmp32 = bswap_32(tmp32);
+	memcpy(mw->coinbase + mw->nonce2_offset, (uint8_t *)(&tmp32), sizeof(uint32_t));
 	work->nonce2 = mw->nonce2++;
 
 	gen_hash(mw->coinbase, merkle_root, mw->coinbase_len);
@@ -160,7 +166,7 @@ int main(void) {
 	serial_puts(MM_VERSION);
 
 #include "sha256_test.c"
-#include "cb_test.c"
+#include "cb_test1.c"
 
 	gen_work(&mm_work, &work);
 	gen_work(&mm_work, &work);
