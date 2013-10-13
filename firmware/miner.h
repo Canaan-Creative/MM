@@ -18,16 +18,12 @@ char *workpadding = "00000080000000000000000000000000000000000000000000000000000
 struct work {
 	uint8_t	data[128];
 	uint8_t	midstate[32];
-	uint8_t	target[32];
-	uint8_t	hash[32];
 
 	bool		stratum;
-	char 		*job_id;
+	uint8_t		*job_id;
+	char		*nonce1;
 	uint32_t	nonce2;
 	size_t		nonce2_len;
-	char		*ntime;
-	double		sdiff;
-	char		*nonce1;
 };
 
 struct mm_work {
@@ -36,6 +32,7 @@ struct mm_work {
 	size_t coinbase_len;
 	uint8_t *coinbase;
 
+	char *nonce1;
 	uint32_t nonce2;
 	int nonce2_offset;
 	int nonce2_size; /* only 4 is support atm. */

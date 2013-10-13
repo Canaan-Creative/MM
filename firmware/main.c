@@ -24,7 +24,7 @@
 #include "hexdump.c"
 
 struct mm_work mm_work;
-struct work work;
+struct work work[8];
 
 static void delay(volatile uint32_t i)
 {
@@ -87,7 +87,7 @@ bool hex2bin(unsigned char *p, const char *hexstr, size_t len)
 	return false;
 }
 
-static inline void flip32(void *dest_p, const void *src_p)
+static void flip32(void *dest_p, const void *src_p)
 {
 	uint32_t *dest = dest_p;
 	const uint32_t *src = src_p;
@@ -97,7 +97,7 @@ static inline void flip32(void *dest_p, const void *src_p)
 		dest[i] = bswap_32(src[i]);
 }
 
-static inline void flip64(void *dest_p, const void *src_p)
+static void flip64(void *dest_p, const void *src_p)
 {
 	uint32_t *dest = dest_p;
 	const uint32_t *src = src_p;
@@ -151,7 +151,6 @@ static void gen_work(struct mm_work *mw, struct work *work)
 	swap32 = (uint32_t *)merkle_root;
 	flip32(swap32, data32);
 
-
 	memcpy(work->data, mw->header, 128);
 	memcpy(work->data + mw->merkle_offset, merkle_root, 32);
 
@@ -162,15 +161,15 @@ static void gen_work(struct mm_work *mw, struct work *work)
 }
 
 int main(void) {
+	int i;
+
 	uart_init();
 	serial_puts(MM_VERSION);
 
 #include "sha256_test.c"
 #include "cb_test1.c"
-
-	gen_work(&mm_work, &work);
-	gen_work(&mm_work, &work);
-	gen_work(&mm_work, &work);
+	for (i = 0; i < 8; i++)
+		gen_work(&mm_work, &work[i]);
 
 	/* Code should be never reach here */
 	error(0xf);
