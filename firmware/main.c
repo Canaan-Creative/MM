@@ -160,6 +160,14 @@ static void gen_work(struct mm_work *mw, struct work *work)
 	calc_midstate(work);
 }
 
+/* Total: 4W + 19W = 23W
+ * TaskID_H:1, TASKID_L:1, STEP:1, TIMEOUT:1,
+ * CLK_CFG:2, a2, Midsate:8, e0, e1, e2, a0, a1, Data:3
+ */
+void send_work(struct work *w)
+{
+}
+
 int main(void) {
 	int i;
 
@@ -171,6 +179,7 @@ int main(void) {
 	for (i = 0; i < 8; i++)
 		gen_work(&mm_work, &work[i]);
 
+	send_work(&work[0]);
 	/* Code should be never reach here */
 	error(0xf);
 	return 0;
