@@ -60,8 +60,10 @@ struct lm32_uart {
 
 struct lm32_sha256 {
 	volatile unsigned int cmd;
-	volatile unsigned int in;
-	volatile unsigned int out;
+	volatile unsigned int din;
+	volatile unsigned int hash;
+	volatile unsigned int hi;
+	volatile unsigned int pre;
 };
 
 
@@ -72,7 +74,7 @@ struct lm32_sha256 {
 #define LM32_TASK_STATE_RXEMPTY	(1 << 16)
 #define LM32_TASK_STATE_RXCOUNT (0x00F00000)
 
-struct lm32_task {
+struct lm32_alink {
 	volatile unsigned int tx;
 	volatile unsigned int state;	/* Read only */
 	volatile unsigned int en;

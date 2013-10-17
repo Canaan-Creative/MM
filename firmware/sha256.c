@@ -28,7 +28,7 @@ static void write_block(const uint8_t *block)
 
 	for (i = 0; i < 64; i += 4) {
 		memcpy((uint8_t *)(&tmp), block + i, 4);
-		writel(tmp, &lm_sha256->in);
+		writel(tmp, &lm_sha256->din);
 		if (!((i + 4) % 64)) /* Every 512bits we wait */
 			while (!(readl(&lm_sha256->cmd) & LM32_SHA256_CMD_DONE))
 				;
@@ -87,7 +87,7 @@ void sha256_final(uint8_t *state)
 	uint32_t tmp;
 
 	for (i = 0; i < 32; i += 4) {
-		tmp = readl(&lm_sha256->out);
+		tmp = readl(&lm_sha256->hash);
 		memcpy(state + i, (uint8_t *)(&tmp), 4);
 	}
 }
