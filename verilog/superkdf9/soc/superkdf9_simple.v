@@ -140,6 +140,7 @@ output [1:0]WBS_BTE_I;
 output  WBS_LOCK_I;
 output  WBS_CYC_I;
 output  WBS_STB_I;
+
 wire [MAX_DAT_WIDTH-1:0] WBM0_DAT_I_INT;
 wire [MAX_DAT_WIDTH-1:0] WBM0_DAT_O_INT;
 wire [MAX_DAT_WIDTH/8-1:0] WBM0_SEL_O_INT;
@@ -335,6 +336,18 @@ endmodule
 `include "../components/sha/sha.v"
 `include "../components/sha/sha_core.v"
 
+`include "../components/alink/tx_timer.v" 
+`include "../components/alink/txc.v"
+`include "../components/alink/alink_slave.v"
+`include "../components/alink/alink_define.v"
+`include "../components/alink/rxc.v"
+`include "../components/alink/tx_phy.v"
+`include "../components/alink/rx_phy.v"
+`include "../components/alink/alink.v"
+
+`include "../components/twi/twi_define.v"
+`include "../components/twi/twi.v"
+`include "../components/twi/twi_core.v"
 //module superkdf9_simple ( 
 module mm ( 
   ex_clk_i 
@@ -352,10 +365,22 @@ module mm (
 , gpioPIO_BOTH_OUT
 , uart_debugSIN
 , uart_debugSOUT
+, TX_P
+, TX_N
+, RX_P
+, RX_N
+, POWER_ON
+, PWM
+, TWI_SCL
+, TWI_SDA
 );
+output POWER_ON ;
+output PWM ;
 input	ex_clk_i;
 wire clk_i , reset_n ;
 clkgen clk (.clkin(ex_clk_i), .clkout(clk_i), .locked(reset_n));
+assign POWER_ON = 1 ;
+
 wire [31:0] irom_q_rd, irom_q_wr;
 wire [31:0] dram_q_rd, dram_q_wr /* unused */;
 wire irom_clk_rd, irom_clk_wr;
@@ -463,6 +488,11 @@ wire uart_debugUART_en;
 wire uart_debugINTR;
 input  uart_debugSIN;
 output  uart_debugSOUT;
+//alink
+output [31:0] TX_P ;
+output [31:0] TX_N ;
+input  [31:0] RX_P ;
+input  [31:0] RX_N ;
 
 //sha core
 wire [31:0] shaSHA_DAT_O;
@@ -471,6 +501,23 @@ wire   shaSHA_ERR_O;
 wire   shaSHA_RTY_O;
 wire   shaSHA_en;
 
+//alink core
+wire [31:0] alinkALINK_DAT_O;
+wire        alinkALINK_ACK_O;
+wire        alinkALINK_ERR_O;
+wire        alinkALINK_RTY_O;
+wire        alinkALINK_en;
+
+//twi core
+inout       TWI_SCL ;
+inout       TWI_SDA ;
+wire [31:0] twiTWI_DAT_O;
+wire        twiTWI_ACK_O;
+wire        twiTWI_ERR_O;
+wire        twiTWI_RTY_O;
+wire        twiTWI_en;
+wire        TWI_SCL_O ;
+wire        TWI_SDA_OEN ;
 // Enable the FT232 and HUB
 assign uartRESET_N = 1'b1;
 assign hubRESET_N  = 1'b1;
@@ -546,6 +593,8 @@ spiSPI_en ? spiSPI_DAT_O :
 gpioGPIO_en ? gpioGPIO_DAT_O : 
 uart_debugUART_en ? {4{uart_debugUART_DAT_O[7:0]}} : 
 shaSHA_en ? shaSHA_DAT_O : 
+alinkALINK_en ? alinkALINK_DAT_O : 
+twiTWI_en ? twiTWI_DAT_O : 
 0;
 assign SHAREDBUS_ERR_O = SHAREDBUS_CYC_I & !(
 (!uartUART_ERR_O & uartUART_en) | 
@@ -553,6 +602,8 @@ assign SHAREDBUS_ERR_O = SHAREDBUS_CYC_I & !(
 (!gpioGPIO_ERR_O & gpioGPIO_en) | 
 (!uart_debugUART_ERR_O & uart_debugUART_en) | 
 (!shaSHA_ERR_O & shaSHA_en ) |
+(!alinkALINK_ERR_O & alinkALINK_en ) |
+(!twiTWI_ERR_O & twiTWI_en ) |
 0);
 assign SHAREDBUS_ACK_O = 
 uartUART_en ? uartUART_ACK_O : 
@@ -560,6 +611,8 @@ spiSPI_en ? spiSPI_ACK_O :
 gpioGPIO_en ? gpioGPIO_ACK_O : 
 uart_debugUART_en ? uart_debugUART_ACK_O : 
 shaSHA_en ? shaSHA_ACK_O :
+alinkALINK_en ? alinkALINK_ACK_O :
+twiTWI_en ? twiTWI_ACK_O :
 0;
 assign SHAREDBUS_RTY_O = 
 uartUART_en ? uartUART_RTY_O : 
@@ -567,6 +620,8 @@ spiSPI_en ? spiSPI_RTY_O :
 gpioGPIO_en ? gpioGPIO_RTY_O : 
 uart_debugUART_en ? uart_debugUART_RTY_O : 
 shaSHA_en ? shaSHA_RTY_O :
+alinkALINK_en ? alinkALINK_RTY_O :
+twiTWI_en ? twiTWI_RTY_O :
 0;
 wire [31:0] superkdf9DEBUG_DAT_I;
 assign superkdf9DEBUG_DAT_I = 0;
@@ -650,23 +705,24 @@ lm32_top
 // VIO/ILA and ICON {{{
 wire [35:0] icon_ctrl_0, icon_ctrl_1;
 wire [255:0] trig0 = {
-	gpioGPIO_DAT_I[31:0],//224:193
-	SHAREDBUS_STB_I & gpioGPIO_en,//192
-	dram_addr_rd[29:0] ,//191:162
-	dram_addr_wr[29:0] ,//161:132
-	dram_d_rd[31:0]    ,//131:100 /* unused */
-	dram_d_wr[31:0]    ,//99:68
-	dram_q_rd[31:0]    ,//67:36
-	dram_q_wr[31:0]    ,//35:4
-	dram_en_rd         ,//3
-	dram_en_wr         ,//2
-	dram_write_rd      ,//1
-	dram_write_wr       //0
+                   4'ha                 ,//[82:79]
+/*input         */ sys_reset            ,//78
+/*input         */ shaSHA_en        ,//77
+/*input         */ SHAREDBUS_STB_I      ,//76
+/*input         */ SHAREDBUS_WE_I       ,//75
+/*input  [5:0]  */ SHAREDBUS_ADR_I[5:0] ,//[74:69]
+/*input  [31:0] */ SHAREDBUS_DAT_I[31:0],//[68:37]
+/*output        */ shaSHA_ACK_O     ,//36
+/*output [31:0] */ shaSHA_DAT_O     ,//[35:4]
+/*output [   0] */ TX_P[0]              ,//3
+/*output [   0] */ TX_N[0]              ,//2
+/*input  [   0] */ RX_P[0]              ,//1
+/*input  [   0] */ RX_N[0]               //0
 
 } ;
-icon icon_test(.CONTROL0(icon_ctrl_0));
-ila ila_test(.CONTROL(icon_ctrl_0), .CLK(clk_i), .TRIG0(trig0)
-);
+//icon icon_test(.CONTROL0(icon_ctrl_0));
+//ila ila_test(.CONTROL(icon_ctrl_0), .CLK(clk_i), .TRIG0(trig0)
+//);
 //vio vio_test(.CONTROL(icon_ctrl_1), .ASYNC_OUT(intr_i));
 // }}}
 
@@ -887,7 +943,7 @@ uart_core
 .INTR(uart_debugINTR),
 .CLK(clk_i), .RESET(sys_reset));
 
-assign shaSHA_en = (SHAREDBUS_ADR_I[31:4] == 28'b1000000000000000000001000000);
+assign shaSHA_en = (SHAREDBUS_ADR_I[31:5] == 28'b100000000000000000000100000);
 sha sha256(
 // system clock and reset
 /*input        */ .CLK_I     (clk_i),
@@ -896,18 +952,77 @@ sha sha256(
 // wishbone interface signals
 /*input        */ .SHA_CYC_I (SHAREDBUS_CYC_I & shaSHA_en ) ,//NC
 /*input        */ .SHA_STB_I (SHAREDBUS_STB_I & shaSHA_en ) ,
-/*input        */ .SHA_WE_I  (SHAREDBUS_WE_I) ,
-/*input        */ .SHA_LOCK_I(SHAREDBUS_LOCK_I) ,//NC
-/*input [2:0]  */ .SHA_CTI_I (SHAREDBUS_CTI_I) ,//NC
-/*input [1:0]  */ .SHA_BTE_I (SHAREDBUS_BTE_I) ,//NC
-/*input [3:0]  */ .SHA_ADR_I (SHAREDBUS_ADR_I[3:0]) ,
-/*input [31:0] */ .SHA_DAT_I (SHAREDBUS_DAT_I[31:0]) ,
-/*input [3:0]  */ .SHA_SEL_I (SHAREDBUS_SEL_I) ,
-/*output reg   */ .SHA_ACK_O (shaSHA_ACK_O) ,
-/*output       */ .SHA_ERR_O (shaSHA_ERR_O) ,//const 0
-/*output       */ .SHA_RTY_O (shaSHA_RTY_O) ,//const 0
-/*output [31:0]*/ .SHA_DAT_O (shaSHA_DAT_O)  
+/*input        */ .SHA_WE_I  (SHAREDBUS_WE_I              ) ,
+/*input        */ .SHA_LOCK_I(SHAREDBUS_LOCK_I            ) ,//NC
+/*input [2:0]  */ .SHA_CTI_I (SHAREDBUS_CTI_I             ) ,//NC
+/*input [1:0]  */ .SHA_BTE_I (SHAREDBUS_BTE_I             ) ,//NC
+/*input [4:0]  */ .SHA_ADR_I (SHAREDBUS_ADR_I[4:0]        ) ,
+/*input [31:0] */ .SHA_DAT_I (SHAREDBUS_DAT_I[31:0]       ) ,
+/*input [3:0]  */ .SHA_SEL_I (SHAREDBUS_SEL_I             ) ,
+/*output reg   */ .SHA_ACK_O (shaSHA_ACK_O                ) ,
+/*output       */ .SHA_ERR_O (shaSHA_ERR_O                ) ,//const 0
+/*output       */ .SHA_RTY_O (shaSHA_RTY_O                ) ,//const 0
+/*output [31:0]*/ .SHA_DAT_O (shaSHA_DAT_O                )  
 );
+
+assign alinkALINK_en = (SHAREDBUS_ADR_I[31:6] == 26'b10000000000000000000010100);
+alink alink(
+// system clock and reset
+/*input         */ .CLK_I       (clk_i) ,
+/*input         */ .RST_I       (sys_reset) ,
+
+// wishbone interface signals
+/*input         */ .ALINK_CYC_I (SHAREDBUS_CYC_I & alinkALINK_en ) ,//NC
+/*input         */ .ALINK_STB_I (SHAREDBUS_STB_I & alinkALINK_en ) ,
+/*input         */ .ALINK_WE_I  (SHAREDBUS_WE_I                  ) ,
+/*input         */ .ALINK_LOCK_I(SHAREDBUS_LOCK_I                ) ,//NC
+/*input  [2:0]  */ .ALINK_CTI_I (SHAREDBUS_CTI_I                 ) ,//NC
+/*input  [1:0]  */ .ALINK_BTE_I (SHAREDBUS_BTE_I                 ) ,//NC
+/*input  [5:0]  */ .ALINK_ADR_I (SHAREDBUS_ADR_I[5:0]            ) ,
+/*input  [31:0] */ .ALINK_DAT_I (SHAREDBUS_DAT_I[31:0]           ) ,
+/*input  [3:0]  */ .ALINK_SEL_I (SHAREDBUS_SEL_I                 ) ,
+/*output        */ .ALINK_ACK_O (alinkALINK_ACK_O                ) ,
+/*output        */ .ALINK_ERR_O (alinkALINK_ERR_O                ) ,//const 0
+/*output        */ .ALINK_RTY_O (alinkALINK_RTY_O                ) ,//const 0
+/*output [31:0] */ .ALINK_DAT_O (alinkALINK_DAT_O                ) ,
+
+//TX.PHY
+/*output [31:0] */ .TX_P        (TX_P                            ) ,
+/*output [31:0] */ .TX_N        (TX_N                            ) ,
+//RX.PHY                                                         
+/*input  [31:0] */ .RX_P        (RX_P                            ) ,
+/*input  [31:0] */ .RX_N        (RX_N                            )
+);
+
+
+assign twiTWI_en = (SHAREDBUS_ADR_I[31:6] == 26'b10000000000000000000011000);
+assign TWI_SCL = TWI_SCL_O == 1'b0 ? 1'b0 : 1'bz ;//p85
+assign TWI_SDA = TWI_SDA_OEN == 1'b0 ? 1'b0 : 1'bz ;//p8
+twi(
+// system clock and reset
+/*input         */ .CLK_I       (clk_i) ,
+/*input         */ .RST_I       (sys_reset) ,
+
+// wishbone interface signals
+/*input         */ .TWI_CYC_I   (SHAREDBUS_CYC_I & twiTWI_en ) ,//NC
+/*input         */ .TWI_STB_I   (SHAREDBUS_STB_I & twiTWI_en ) ,
+/*input         */ .TWI_WE_I    (SHAREDBUS_WE_I              ) ,
+/*input         */ .TWI_LOCK_I  (SHAREDBUS_LOCK_I            ) ,//NC
+/*input  [2:0]  */ .TWI_CTI_I   (SHAREDBUS_CTI_I             ) ,//NC
+/*input  [1:0]  */ .TWI_BTE_I   (SHAREDBUS_BTE_I             ) ,//NC
+/*input  [5:0]  */ .TWI_ADR_I   (SHAREDBUS_ADR_I[5:0]        ) ,
+/*input  [31:0] */ .TWI_DAT_I   (SHAREDBUS_DAT_I[31:0]       ) ,
+/*input  [3:0]  */ .TWI_SEL_I   (SHAREDBUS_SEL_I             ) ,
+/*output reg    */ .TWI_ACK_O   (twiTWI_ACK_O                ) ,
+/*output        */ .TWI_ERR_O   (twiTWI_ERR_O                ) ,//const 0
+/*output        */ .TWI_RTY_O   (twiTWI_RTY_O                ) ,//const 0
+/*output [31:0] */ .TWI_DAT_O   (twiTWI_DAT_O                ) ,
+
+/*output        */ .TWI_SCL_O   (TWI_SCL_O                   ) ,
+/*input         */ .TWI_SDA_I   (TWI_SDA                     ) ,
+/*output        */ .TWI_SDA_OEN (TWI_SDA_OEN                 ) ,
+/*output        */ .PWM         (PWM                         ) 
+) ;
 
 assign superkdf9interrupt_n[3] = !uartINTR ;
 assign superkdf9interrupt_n[1] = !spiSPI_INT_O ;
