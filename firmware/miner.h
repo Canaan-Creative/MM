@@ -14,24 +14,23 @@
 
 struct work {
 	uint32_t nonce2;
-	uint8_t	task_id[8]; /* Nonce2 + job_id etc */
+	uint8_t	task_id[8];	/* Nonce2 + job_id etc */
 	uint8_t	step[4];
 	uint8_t	timeout[4];
 	uint8_t	clock[8];
 
 	uint8_t a2[4];
-	uint8_t	midstate[32];
 	uint8_t e0[4];
 	uint8_t e1[4];
 	uint8_t e2[4];
 	uint8_t a0[4];
 	uint8_t a1[4];
-	uint8_t data[12];
+	uint8_t data[44]; 	/* midstate[32] + data[12] */
 };
 
 struct result {
 	uint8_t minerid[4];      /* The miner ID */
-	uint8_t	task_id[8];   /* Same with work task_id */
+	uint8_t	task_id[8];	 /* Same with work task_id */
 	uint8_t	timeout[4];
 	uint8_t nonce[4];
 };
