@@ -5,7 +5,9 @@ Between cgminer and FPGA controller
 Multiple FPGA controllers are daisy-chained together using TTL UART.
 
 == Packet structure ==
-  |2B:HEAD|1B:TYPE|1B:IDX|1B:CNT|32B:DATA|?B:CHKSUM|2B:TAIL|
+Length: 40Bytes
+
+Format: |2B:HEAD|1B:TYPE|1B:IDX|1B:CNT|32B:DATA|1B:CRC|2B:TAIL|
 
 HEAD: 'AV'
 
@@ -40,6 +42,7 @@ Cgminer broadcasts this structure (new_task) to all FPGA controllers:
     uint8_t *job_id;		/* jobs id */
     uint8_t coinbase[coinbase_len];	/* the whole coinbase tx */
     hash256 merkles[nbranches];
+    uint8_t header[128];
 }
 Each FPGA controller selects its own partition of extranonce in coinbase txn.
 

@@ -26,6 +26,9 @@
 struct mm_work mm_work;
 struct work work[8];
 
+uint8_t pkg[40];
+uint8_t buffer[4*1024];
+
 static void delay(volatile uint32_t i)
 {
 	while (i--)
@@ -115,12 +118,35 @@ static void gen_hash(uint8_t *data, uint8_t *hash, unsigned int len)
 	sha256(hash1, 32, hash);
 }
 
-static void calc_midstate(struct work *work)
+static void init_work(struct mm_work *mw, struct work *work)
+{
+	/* TODO: create the task_id */
+	work->timeout[0] = 0xff;
+	work->timeout[1] = 0xff;
+	work->timeout[2] = 0xff;
+	work->timeout[3] = 0xff;
+
+	work->clock[0] = 0x94;
+	work->clock[1] = 0xe0;
+	work->clock[2] = 0x00;
+	work->clock[3] = 0x01;
+	work->clock[4] = 0x00;
+	work->clock[5] = 0x00;
+	work->clock[6] = 0x00;
+	work->clock[7] = 0x00;
+
+	work->step[0] = 0x19;
+	work->step[1] = 0x99;
+	work->step[2] = 0x99;
+	work->step[3] = 0x99;
+}
+
+static void calc_midstate(struct mm_work *mw, struct work *work)
 {
 	unsigned char data[64];
 	uint32_t *data32 = (uint32_t *)data;
 
-	flip64(data32, work->data);
+	flip64(data32, mw->header);
 
 	sha256_init();
 	sha256_update(data, 64);
@@ -129,14 +155,22 @@ static void calc_midstate(struct work *work)
 	flip64(work->midstate, work->midstate);
 }
 
+/* Total: 4W + 19W = 23W
+ * TaskID_H:1, TASKID_L:1, STEP:1, TIMEOUT:1,
+ * CLK_CFG:2, a2, Midsate:8, e0, e1, e2, a0, a1, Data:3
+ */
+static void calc_prepare(struct mm_work *mw, struct work *work)
+{
+	/* TODO: calc the a0/2/3, e0/1/2 */
+}
+
 static void gen_work(struct mm_work *mw, struct work *work)
 {
 	uint8_t merkle_root[32], merkle_sha[64];
 	uint32_t *data32, *swap32, tmp32;
 	int i;
 
-	tmp32 = mw->nonce2;
-	tmp32 = bswap_32(tmp32);
+	tmp32 = bswap_32(mw->nonce2);
 	memcpy(mw->coinbase + mw->nonce2_offset, (uint8_t *)(&tmp32), sizeof(uint32_t));
 	work->nonce2 = mw->nonce2++;
 
@@ -151,21 +185,36 @@ static void gen_work(struct mm_work *mw, struct work *work)
 	swap32 = (uint32_t *)merkle_root;
 	flip32(swap32, data32);
 
-	memcpy(work->data, mw->header, 128);
-	memcpy(work->data + mw->merkle_offset, merkle_root, 32);
+	memcpy(mw->header + mw->merkle_offset, merkle_root, 32);
 
-	debug32("Generated merkle_root:\n"); hexdump(merkle_root, 32);
-	debug32("Generated header:\n"); hexdump(work->data, 128);
-	debug32("Work job_id nonce2 ntime \n"); hexdump((uint8_t *)(&work->nonce2), 4);
-	calc_midstate(work);
+	debug32("Generated header:\n"); hexdump(mw->header, 128);
+	debug32("Work nonce2:\n"); hexdump((uint8_t *)(&work->nonce2), 4);
+	calc_midstate(mw, work);
+	calc_prepare(mw, work);
 }
 
-/* Total: 4W + 19W = 23W
- * TaskID_H:1, TASKID_L:1, STEP:1, TIMEOUT:1,
- * CLK_CFG:2, a2, Midsate:8, e0, e1, e2, a0, a1, Data:3
- */
-void send_work(struct work *w)
+static void send_work(struct work *work)
 {
+
+}
+
+static void decode_package(uint8_t *buf)
+{
+	int i = 0, j = ARRAY_SIZE(pkg);
+
+	while (j--) {
+		buffer[i] = pkg[i];
+		i++;
+	}
+}
+
+static void get_package()
+{
+	int i = 0, j = ARRAY_SIZE(pkg);
+
+	while (j--) {
+		pkg[i++] = serial_getc();
+	}
 }
 
 int main(void) {
@@ -174,12 +223,21 @@ int main(void) {
 	uart_init();
 	serial_puts(MM_VERSION);
 
+	while (1) {
+		get_package();
+		decode_package(pkg);
+		hexdump(buffer, 48);
+
 #include "sha256_test.c"
 #include "cb_test1.c"
-	for (i = 0; i < 8; i++)
-		gen_work(&mm_work, &work[i]);
+		for (i = 0; i < 8; i++) {
+			init_work(&mm_work, &work[i]);
+			gen_work(&mm_work, &work[i]);
+			send_work(&work[i]);
+		}
 
-	send_work(&work[0]);
+	}
+
 	/* Code should be never reach here */
 	error(0xf);
 	return 0;
