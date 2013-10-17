@@ -1,28 +1,26 @@
-/* We have 2 part under Avalon2, AR9331 the host side, LM32 the FPGA side */
+The protocol:
+  * Use serial-serial for controller connection
+  * Send task change to broadcast stratum task
+  * we support 3 controllers
+  * Command format:
+  **  (0x00 ~ 0x87) AR9331 --> FPGA: 就一个：newtask,
+  **  (0x88 ~ 0xff) FPGA --> AR9331: 有两个：resend + 心跳
+  **  format：HEAD(0x55aa) + CMD(1byte) + LENGTH(2bytes) + DATA + CRC(1byte) TAIL(0x77ff)
+  **  newtask: 0x00, reset: 0x88, heartbeat:0x89
 
-/* The protocol: */
-/*   * Use serial-serial for controller connection */
-/*   * Send task change to broadcast stratum task */
-/*   * we support 3 controllers */
-/*   * Command format: */
-/*   **  (0x00 ~ 0x87) AR9331 --> FPGA: 就一个：newtask, */
-/*   **  (0x88 ~ 0xff) FPGA --> AR9331: 有两个：resend + 心跳 */
-/*   **  format：HEAD(0x55aa) + CMD(1byte) + LENGTH(2bytes) + DATA + CRC(1byte) TAIL(0x77ff) */
-/*   **  newtask: 0x00, reset: 0x88, heartbeat:0x89 */
+Memo:
+  * How to sync serial?
+  * 8MB Uboot and Firmware
+  * GPIO control the PSU
+  * About the serial console? kernel will use /dev/ttyS0 when start
+  * The new Avalon2 driver for cgminer
 
-/* Memo: */
-/*   * How to sync serial? */
-/*   * 8MB Uboot and Firmware */
-/*   * GPIO control the PSU */
-/*   * About the serial console? kernel will use /dev/ttyS0 when start */
-/*   * The new Avalon2 driver for cgminer */
-
-/* TODO: */
-/*   * 动态调压 miner 运行在不同频率 */
+TODO:
+  * 动态调压 miner 运行在不同频率
 
 
-/* About the lm32 system design: */
-while (42) {
+About the lm32 system design:
+  while (42) {
 	struct stratum_work stratum_work; /* For save the current stratum data */
 
 	ret = serial_check();
@@ -62,7 +60,7 @@ while (42) {
 	delay_count = delay(100);		/* 100ms */
 	if (delay_count = 10)
 		serial_heatbeat(); 		/* how to control the time */
-}
+  }
 
 
 0. 如果区分Nonce2 区间。HASH(DNA(57bits) + KEY)

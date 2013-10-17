@@ -1,43 +1,67 @@
-Protocol between cgminer and FPGA controller
+= Protocol =
+Between cgminer and FPGA controller
 
-Physical link: multiple FPGA controllers are daisy-chained together using TTL UART.
-Packet structure:
-  ??
+== Physical link ==
+Multiple FPGA controllers are daisy-chained together using TTL UART.
 
-conceptual model:
-cgminer broadcasts this structure (new_task) to all FPGA controllers:
+== Packet structure ==
+Length: 40Bytes
+
+Format: |2B:HEAD|1B:TYPE|1B:IDX|1B:CNT|32B:DATA|1B:CRC|2B:TAIL|
+
+HEAD: 'AV'
+
+TYPE:
+  * STATIC	COUNT:1
+  * JOB_ID	COUNT:1~32
+  * COINBASE	COUNT:1~128
+  * MERKLES	COUNT:1~64
+
+  * ACK		COUNT:1
+  * NAK		COUNT:1
+  * NONCE	COUNT:1
+  * HEARTBEAT	COUNT:1
+
+CHKSUM:
+  ?
+
+TAIL: 'ON'
+
+== Conceptual model ==
+Cgminer broadcasts this structure (new_task) to all FPGA controllers:
 {
-    uint job_id;
-    int coinbase_tx_len;
-    uint8_t coinbase_tx[coinbase_tx_len]; // the whole coinbase tx
-    int coinbase_tx_extranonce_offset;
-    int coinbase_tx_extranonce_size; // only 4 is support atm.
-    int nbranches;
-    hash256 branches[nbranches];
-    uint8_t difficulty; // number of leading zeros bits required (for a valid share)
-    bool rollntime; // whether rollntime is accepted
-    bool flush; // flush all prior jobs (cut)
-    other_misc_info; // performance profile (e.g.: high_perf, or quiet)
+    int coinbase_len;
+    int nonce2_offset;
+    int nonce2_size;	/* only 4 is support atm */
+    int nmerkles
+    uint8_t difficulty;		/* number of leading zeros bits required (for a valid share) */
+    bool rollntime;		/* whether rollntime is accepted */
+    bool flush;			/* flush all prior jobs (cut) */
+    uint32_t other_misc_info;	/* performance profile (e.g.: high_perf, or quiet) */
+
+    uint8_t *job_id;		/* jobs id */
+    uint8_t coinbase[coinbase_len];	/* the whole coinbase tx */
+    hash256 merkles[nbranches];
+    uint8_t header[128];
 }
-
-each FPGA controller selects its own partition of extranonce in coinbase txn.
-
+Each FPGA controller selects its own partition of extranonce in coinbase txn.
 
 FPGA controllers send this structure (result) back to cgminer:
 {
-    int uid; // unique id for this controller/modular; truncate hash256(key || DNA)
-    uint32_t extranonce;
+    uint job_id;
+
+    int uid;	/* unique id for this controller/modular; truncate hash256(key || DNA) */
+    uint32_t nonce2;
     uint32_t nonce;
     uint32_t ntime;
-    int minerid; // unique id for the modular.
-    uint job_id;
-    int hw; // every 1024 nonce. report a hw
+    int minerid;	/* unique id for the modular's miner */
+    int hw;	/* every 1024 nonce report a hw */
 }
 
 FPGA controllers also periodically send back heartbeat packets:
 {
     int uid;
-    current_status; // working/idle, etc.
+    current_status;	/* working/idle, etc. */
     fan_info;
     temp_info;
     statistics;

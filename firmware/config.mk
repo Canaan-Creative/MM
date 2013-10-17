@@ -1,3 +1,11 @@
+#
+# Author: Xiangfu Liu <xiangfu@openmobilefree.net>
+# Bitcoin:	1CanaaniJzgps8EV6Sfmpb7T8RutpaeyFn
+#
+# This is free and unencumbered software released into the public domain.
+# For details see the UNLICENSE file at the root of the source tree.
+#
+
 CROSS ?= /opt/lm32/bin/lm32-rtems4.11-
 
 CC    := $(CROSS)gcc
@@ -31,3 +39,5 @@ else
     RANLIB	= $(RANLIB_quiet)
 endif
 
+CPU_CONFIG = -mmultiply-enabled -mbarrel-shift-enabled -muser-enabled
+CPPFLAGS   += -std=gnu99 -Os -ffunction-sections -ffreestanding -Wall -Werror $(CPU_CONFIG) $(INCLUDES)

@@ -1,12 +1,14 @@
 *~
 *.o
 *.d
+*.a
 /main.elf
 /main.map
 /main.hexdump
 /main.objdump
 /mm.bit
 /mm.mcs
+/TAGS
 
 /_impactbatch.log
 

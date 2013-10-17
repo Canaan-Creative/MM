@@ -749,7 +749,7 @@ bram #(
 // }}}
 // DRAM {{{
 bram #(
-	.size(8192), // only provide necessary
+	.size(1+`CFG_DRAM_LIMIT - `CFG_DRAM_BASE_ADDRESS),
 	.name("irom")
 ) dram (
 	.ClockA(dram_clk_rd),

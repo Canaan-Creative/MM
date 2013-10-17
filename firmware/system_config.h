@@ -6,8 +6,8 @@
  * For details see the UNLICENSE file at the root of the source tree.
  */
 
-#ifndef __SYSTEM_CONFIG_H_
-#define __SYSTEM_CONFIG_H_
+#ifndef _SYSTEM_CONFIG_H_
+#define _SYSTEM_CONFIG_H_
 
 #define CPU_FREQUENCY		(50 * 1000 * 1000) /* 50Mhz */
 #define UART_BAUD_RATE          (115200)
@@ -17,9 +17,7 @@
 #define GPIO_BASE		(0x80000200)
 #define UART1_BASE		(0x80000300)
 #define SHA256_BASE		(0x80000400)
-#define PHYI_BASE		(0x80000500)
-#define PHYO_BASE		(0x80000600)
-#define TWIRE_BASE		(0x80000700)
+#define TASK_BASE		(0x80000500)
 
 
 /* Line status register */
@@ -35,7 +33,6 @@
 /* Modem control register */
 #define LM32_UART_MCR_DTR	(1 << 0)
 #define LM32_UART_MCR_RTS	(1 << 1)
-
 
 struct lm32_uart {
 	volatile unsigned char rxtx;
@@ -67,4 +64,20 @@ struct lm32_sha256 {
 	volatile unsigned int out;
 };
 
-#endif /* __SYSTEM_CONFIG_H_ */
+
+/* This is the ASIC task FIFO buffer registers */
+#define LM32_TASK_STATE_TXFULL	(1 << 0)
+#define LM32_TASK_STATE_FLUSH	(1 << 1)
+#define LM32_TASK_STATE_TXCOUNT	(0x000000F0)
+#define LM32_TASK_STATE_RXEMPTY	(1 << 16)
+#define LM32_TASK_STATE_RXCOUNT (0x00F00000)
+
+struct lm32_task {
+	volatile unsigned int tx;
+	volatile unsigned int state;	/* Read only */
+	volatile unsigned int en;
+	volatile unsigned int busy;	/* Read only */
+	volatile unsigned int rx;
+};
+
+#endif /* _SYSTEM_CONFIG_H_ */
