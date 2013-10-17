@@ -187,8 +187,8 @@ static void gen_work(struct mm_work *mw, struct work *work)
 
 	memcpy(mw->header + mw->merkle_offset, merkle_root, 32);
 
-	debug32("Generated header:\n"); hexdump(mw->header, 128);
 	debug32("Work nonce2:\n"); hexdump((uint8_t *)(&work->nonce2), 4);
+	debug32("Generated header:\n"); hexdump(mw->header, 128);
 	calc_midstate(mw, work);
 	calc_prepare(mw, work);
 }
