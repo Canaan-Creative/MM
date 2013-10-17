@@ -1,11 +1,11 @@
-`define SHA256_H0 32'h6a09e667
-`define SHA256_H1 32'hbb67ae85
-`define SHA256_H2 32'h3c6ef372
-`define SHA256_H3 32'ha54ff53a
-`define SHA256_H4 32'h510e527f
-`define SHA256_H5 32'h9b05688c
-`define SHA256_H6 32'h1f83d9ab
-`define SHA256_H7 32'h5be0cd19
+//`define SHA256_H0 32'h6a09e667
+//`define SHA256_H1 32'hbb67ae85
+//`define SHA256_H2 32'h3c6ef372
+//`define SHA256_H3 32'ha54ff53a
+//`define SHA256_H4 32'h510e527f
+//`define SHA256_H5 32'h9b05688c
+//`define SHA256_H6 32'h1f83d9ab
+//`define SHA256_H7 32'h5be0cd19
 
 `define K00 32'h428a2f98
 `define K01 32'h71374491
@@ -73,15 +73,30 @@
 `define K63 32'hc67178f2
 
 module sha_core (
-input  wire         clk     , 
-input  wire         rst     ,
-        
-input  wire         init    ,//sha core initial
-input  wire         vld     ,//data input valid
-input  wire [31:0]  din     ,
+input  wire         clk       , 
+input  wire         rst       ,
+input  wire [31:0]  SHA256_H0 ,
+input  wire [31:0]  SHA256_H1 ,
+input  wire [31:0]  SHA256_H2 ,
+input  wire [31:0]  SHA256_H3 ,
+input  wire [31:0]  SHA256_H4 ,
+input  wire [31:0]  SHA256_H5 ,
+input  wire [31:0]  SHA256_H6 ,
+input  wire [31:0]  SHA256_H7 ,
 
-output reg          done    ,
-output wire [255:0] hash     
+output reg  [31:0]  A0        ,
+output reg  [31:0]  A1        ,
+output reg  [31:0]  A2        ,
+output reg  [31:0]  E0        ,
+output reg  [31:0]  E1        ,
+output reg  [31:0]  E2        ,
+ 
+input  wire         init      ,//sha core initial
+input  wire         vld       ,//data input valid
+input  wire [31:0]  din       ,
+
+output reg          done      ,
+output wire [255:0] hash       
 ) ;
                         
 
@@ -126,14 +141,14 @@ output wire [255:0] hash
 
 always @ ( posedge clk ) begin
 	if( init ) begin
-		H0 <= `SHA256_H0 ;
-		H1 <= `SHA256_H1 ;
-		H2 <= `SHA256_H2 ;
-		H3 <= `SHA256_H3 ;
-		H4 <= `SHA256_H4 ;
-		H5 <= `SHA256_H5 ;
-		H6 <= `SHA256_H6 ;
-		H7 <= `SHA256_H7 ;
+		H0 <= SHA256_H0 ;
+		H1 <= SHA256_H1 ;
+		H2 <= SHA256_H2 ;
+		H3 <= SHA256_H3 ;
+		H4 <= SHA256_H4 ;
+		H5 <= SHA256_H5 ;
+		H6 <= SHA256_H6 ;
+		H7 <= SHA256_H7 ;
 	end else if( done ) begin
 		H0 <= A ;
 		H1 <= B ;
@@ -181,14 +196,14 @@ end
                         G <= 'b0 ;
                         H <= 'b0 ;
                 end else if( init ) begin
-                        A <= `SHA256_H0 ;
-                        B <= `SHA256_H1 ;
-                        C <= `SHA256_H2 ;
-                        D <= `SHA256_H3 ;
-                        E <= `SHA256_H4 ;
-                        F <= `SHA256_H5 ;
-                        G <= `SHA256_H6 ;
-                        H <= `SHA256_H7 ;
+                        A <= SHA256_H0 ;
+                        B <= SHA256_H1 ;
+                        C <= SHA256_H2 ;
+                        D <= SHA256_H3 ;
+                        E <= SHA256_H4 ;
+                        F <= SHA256_H5 ;
+                        G <= SHA256_H6 ;
+                        H <= SHA256_H7 ;
 		end else begin
                         case (round)
                         'd0:
@@ -211,7 +226,8 @@ end
                                         C <= B ;
                                         B <= A ;
                                         A <= next_A ;
-                                                
+                                        A0<= next_A ;
+					E0<= next_E ; 
                                         round <= round_plus_1 ;
                                 end
                         'd2:
@@ -227,6 +243,8 @@ end
                                         C <= B ;
                                         B <= A ;
                                         A <= next_A ;
+					A1<= next_A ;
+					E1<= next_E ;
                                                 
                                         round <= round_plus_1 ;
                                 end
@@ -243,6 +261,8 @@ end
                                         C <= B ;
                                         B <= A ;
                                         A <= next_A ;
+					A2<= next_A ;
+					E2<= next_E ;
                                                 
                                         round <= round_plus_1 ;
                                 end

@@ -11,7 +11,7 @@ module sha(
     input SHA_LOCK_I,//NC
     input [2:0] SHA_CTI_I,//NC
     input [1:0] SHA_BTE_I,//NC
-    input [3:0] SHA_ADR_I,
+    input [4:0] SHA_ADR_I,
     input [31:0]  SHA_DAT_I,
     input [3:0]   SHA_SEL_I,
     output reg    SHA_ACK_O,
@@ -21,6 +21,7 @@ module sha(
 );
 assign SHA_ERR_O = 1'b0 ;
 assign SHA_RTY_O = 1'b0 ;
+
 //-----------------------------------------------------
 // WB bus ACK
 //-----------------------------------------------------
@@ -33,12 +34,13 @@ always @ ( posedge CLK_I or posedge RST_I ) begin
 		SHA_ACK_O <= 1'b0 ;
 end
 
-wire sha_cmd_wr_en = SHA_STB_I & SHA_WE_I  & ( SHA_ADR_I == 4'h0) & ~SHA_ACK_O ;
-wire sha_din_wr_en = SHA_STB_I & SHA_WE_I  & ( SHA_ADR_I == 4'h4) & ~SHA_ACK_O ;
+wire sha_cmd_wr_en = SHA_STB_I & SHA_WE_I  & ( SHA_ADR_I == 5'h0) & ~SHA_ACK_O ;
+wire sha_din_wr_en = SHA_STB_I & SHA_WE_I  & ( SHA_ADR_I == 5'h4) & ~SHA_ACK_O ;
+wire sha_hi_wr_en  = SHA_STB_I & SHA_WE_I  & ( SHA_ADR_I == 5'hc) & ~SHA_ACK_O ;
 
-wire sha_cmd_rd_en = SHA_STB_I & ~SHA_WE_I & ( SHA_ADR_I == 4'h0) & ~SHA_ACK_O ;
-wire sha_hash_rd_en = SHA_STB_I & ~SHA_WE_I  & ( SHA_ADR_I == 4'h8) & ~SHA_ACK_O ;
-
+wire sha_cmd_rd_en = SHA_STB_I & ~SHA_WE_I & ( SHA_ADR_I == 5'h0) & ~SHA_ACK_O ;
+wire sha_hash_rd_en = SHA_STB_I & ~SHA_WE_I  & ( SHA_ADR_I == 5'h8) & ~SHA_ACK_O ;
+wire sha_pre_rd_en = SHA_STB_I & ~SHA_WE_I  & ( SHA_ADR_I == 5'h10) & ~SHA_ACK_O ;
 //-----------------------------------------------------
 // REG SHA_CMD
 //-----------------------------------------------------
@@ -85,33 +87,68 @@ end
 // REG SHA_HASH
 //-----------------------------------------------------
 reg [2:0] hash_cnt ;
-reg [255:0] reg_hash ;
+reg [31:0] reg_hash ;
 wire [255:0] hash ;
-always @ ( posedge CLK_I or posedge RST_I ) begin
-	if( RST_I )
-		reg_hash <= 256'b0 ;
-	else if( done )
-		reg_hash <= hash ;
-	else if( sha_hash_rd_en_f ) begin
-		reg_hash <= {reg_hash[32*7-1:0],reg_hash[32*8-1:32*7]} ;
-		//case( hash_cnt )
-		//3'd0: reg_hash <= hash[32*8-1:32*7] ;
-		//3'd1: reg_hash <= hash[32*7-1:32*6] ;
-		//3'd2: reg_hash <= hash[32*6-1:32*5] ;
-		//3'd3: reg_hash <= hash[32*5-1:32*4] ;
-		//3'd4: reg_hash <= hash[32*4-1:32*3] ;
-		//3'd5: reg_hash <= hash[32*3-1:32*2] ;
-		//3'd6: reg_hash <= hash[32*2-1:32*1] ;
-		//3'd7: reg_hash <= hash[32*1-1:32*0] ;
-		//endcase
-	end
+reg sha_hash_rd_en_r ;
+always @ ( posedge CLK_I )
+	sha_hash_rd_en_r <= sha_hash_rd_en ;
+
+always @ ( * ) begin
+	case( hash_cnt )
+	3'd0: reg_hash = hash[32*8-1:32*7] ;
+	3'd1: reg_hash = hash[32*7-1:32*6] ;
+	3'd2: reg_hash = hash[32*6-1:32*5] ;
+	3'd3: reg_hash = hash[32*5-1:32*4] ;
+	3'd4: reg_hash = hash[32*4-1:32*3] ;
+	3'd5: reg_hash = hash[32*3-1:32*2] ;
+	3'd6: reg_hash = hash[32*2-1:32*1] ;
+	3'd7: reg_hash = hash[32*1-1:32*0] ;
+	endcase
 end
 
 always @ ( posedge CLK_I or posedge RST_I ) begin
 	if( RST_I | reg_init )
 		hash_cnt <= 3'b0 ;
-	else if( sha_hash_rd_en )
+	else if( sha_hash_rd_en_r )
 		hash_cnt <= hash_cnt + 3'b1 ;
+end
+
+//-----------------------------------------------------
+// REG SHA_HI
+//-----------------------------------------------------
+reg [8*32-1:0] SHA256_Hx ;
+always @ ( posedge CLK_I ) begin
+	if( sha_hi_wr_en )
+		SHA256_Hx <= {SHA256_Hx[7*32-1:0],SHA_DAT_I[31:0]} ;
+end
+
+//-----------------------------------------------------
+// REG SHA_PRE
+//-----------------------------------------------------
+wire [32*6-1:0] PRE ;
+reg [2:0] pre_cnt ;
+reg [31:0] reg_pre ;
+reg sha_pre_rd_en_r ;
+always @ ( posedge CLK_I )
+	sha_pre_rd_en_r <= sha_pre_rd_en ;
+
+always @ ( * ) begin
+	case( pre_cnt )
+	3'd0: reg_pre = PRE[32*1-1:32*0] ;
+	3'd1: reg_pre = PRE[32*2-1:32*1] ;
+	3'd2: reg_pre = PRE[32*3-1:32*2] ;
+	3'd3: reg_pre = PRE[32*4-1:32*3] ;
+	3'd4: reg_pre = PRE[32*5-1:32*4] ;
+	3'd5: reg_pre = PRE[32*6-1:32*5] ;
+	default: reg_pre = 32'b0 ;
+	endcase
+end
+
+always @ ( posedge CLK_I or posedge RST_I ) begin
+	if( RST_I | reg_init )
+		pre_cnt <= 3'b0 ;
+	else if( sha_pre_rd_en_r )
+		pre_cnt <= pre_cnt + 3'b1 ;
 end
 
 //-----------------------------------------------------
@@ -129,18 +166,33 @@ always @ ( posedge CLK_I or posedge RST_I ) begin
 	end
 end
 
-assign SHA_DAT_O = sha_cmd_rd_en_f ? {30'h0,reg_done,1'b0} : reg_hash[32*8-1:32*7] ; 
+assign SHA_DAT_O = sha_cmd_rd_en_f  ? {30'h0,reg_done,1'b0} : 
+                   sha_hash_rd_en_f ? reg_hash : reg_pre ; 
 
 sha_core U_sha_core(
-/*input         */ .clk     (CLK_I ) , 
-/*input         */ .rst     (RST_I ),
-        
-/*input         */ .init    (reg_init),//sha core initial
-/*input         */ .vld     (vld),//data input valid
-/*input  [31:0] */ .din     (reg_din),
+/*input         */ .clk       (CLK_I                 ) , 
+/*input         */ .rst       (RST_I                 ) ,
+/*input  [31:0] */ .SHA256_H0 (SHA256_Hx[32*8-1:32*7]) ,
+/*input  [31:0] */ .SHA256_H1 (SHA256_Hx[32*7-1:32*6]) ,
+/*input  [31:0] */ .SHA256_H2 (SHA256_Hx[32*6-1:32*5]) ,
+/*input  [31:0] */ .SHA256_H3 (SHA256_Hx[32*5-1:32*4]) ,
+/*input  [31:0] */ .SHA256_H4 (SHA256_Hx[32*4-1:32*3]) ,
+/*input  [31:0] */ .SHA256_H5 (SHA256_Hx[32*3-1:32*2]) ,
+/*input  [31:0] */ .SHA256_H6 (SHA256_Hx[32*2-1:32*1]) ,
+/*input  [31:0] */ .SHA256_H7 (SHA256_Hx[32*1-1:32*0]) ,
 
-/*output        */ .done    (done),
-/*output [255:0]*/ .hash    (hash)
+/*output [31:0] */ .A0        (PRE[32*1-1:32*0]      ) ,
+/*output [31:0] */ .A1        (PRE[32*2-1:32*1]      ) ,
+/*output [31:0] */ .A2        (PRE[32*3-1:32*2]      ) ,
+/*output [31:0] */ .E0        (PRE[32*4-1:32*3]      ) ,
+/*output [31:0] */ .E1        (PRE[32*5-1:32*4]      ) ,
+/*output [31:0] */ .E2        (PRE[32*6-1:32*5]      ) ,
+      
+/*input         */ .init      (reg_init              ) ,//sha core initial
+/*input         */ .vld       (vld                   ) ,//data input valid
+/*input  [31:0] */ .din       (reg_din               ) ,
+
+/*output        */ .done      (done                  ) ,
+/*output [255:0]*/ .hash      (hash                  ) 
 ) ;
-
 endmodule 
