@@ -27,6 +27,7 @@
 
 struct mm_work mm_work;
 struct work work[WORK_BUF_LEN];
+struct result result;
 
 uint8_t pkg[40];
 uint8_t buffer[4*1024];
@@ -259,6 +260,33 @@ void send_work(struct work *w)
 	}
 }
 
+static void submit_result()
+{
+	hexdump((uint8_t *)(&result), 20);
+}
+
+static void read_result()
+{
+	uint32_t tmp;
+
+	while (!(LM32_ALINK_STATE_RXEMPTY & alink->state)) {
+		tmp = readl(alink->rx);
+		memcpy(result.miner_id, (uint8_t *)(&tmp), 4);
+
+		tmp = readl(alink->rx);
+		memcpy(result.task_id, (uint8_t *)(&tmp), 4);
+
+		tmp = readl(alink->rx);
+		memcpy(result.timeout, (uint8_t *)(&tmp), 4);
+
+		tmp = readl(alink->rx);
+		memcpy(result.nonce, (uint8_t *)(&tmp), 4);
+
+		/* TODO: test the result before submit */
+		submit_result();
+	}
+}
+
 static void decode_package(uint8_t *buf)
 {
 	int i = 0, j = ARRAY_SIZE(pkg);
@@ -292,6 +320,8 @@ int main(void) {
 #include "cb_test1.c"
 
 		for (i = 0; i < WORK_BUF_LEN; i++) {
+			read_result();
+			/* TODO: try to read result here */
 			init_work(&mm_work, &work[i]);
 			gen_work(&mm_work, &work[i]);
 			send_work(&work[i]);
