@@ -1,3 +1,11 @@
+`define DEF_SHA256_H0 32'h6a09e667
+`define DEF_SHA256_H1 32'hbb67ae85
+`define DEF_SHA256_H2 32'h3c6ef372
+`define DEF_SHA256_H3 32'ha54ff53a
+`define DEF_SHA256_H4 32'h510e527f
+`define DEF_SHA256_H5 32'h9b05688c
+`define DEF_SHA256_H6 32'h1f83d9ab
+`define DEF_SHA256_H7 32'h5be0cd19
 
 module sha(
     // system clock and reset
@@ -46,6 +54,7 @@ wire sha_pre_rd_en = SHA_STB_I & ~SHA_WE_I  & ( SHA_ADR_I == 5'h10) & ~SHA_ACK_O
 //-----------------------------------------------------
 reg reg_init ;
 reg reg_done ;
+reg reg_rst ;
 wire done ;
 always @ ( posedge CLK_I or posedge RST_I ) begin
 	if( RST_I )
@@ -65,6 +74,14 @@ always @ ( posedge CLK_I or posedge RST_I ) begin
 		reg_done <= 1'b0 ;
 end
 
+always @ ( posedge CLK_I or posedge RST_I ) begin
+	if( RST_I )
+		reg_rst <= 1'b0 ;
+	else if( sha_cmd_wr_en )
+		reg_rst <= SHA_DAT_I[2] ;
+	else
+		reg_rst <= 1'b0 ;
+end
 
 //-----------------------------------------------------
 // REG SHA_DIN
@@ -117,8 +134,18 @@ end
 // REG SHA_HI
 //-----------------------------------------------------
 reg [8*32-1:0] SHA256_Hx ;
-always @ ( posedge CLK_I ) begin
-	if( sha_hi_wr_en )
+always @ ( posedge CLK_I or posedge RST_I ) begin
+	if( RST_I | reg_rst ) begin
+		SHA256_Hx[8*32-1:7*32] <= `DEF_SHA256_H0 ;
+		SHA256_Hx[7*32-1:6*32] <= `DEF_SHA256_H1 ;
+		SHA256_Hx[6*32-1:5*32] <= `DEF_SHA256_H2 ;
+		SHA256_Hx[5*32-1:4*32] <= `DEF_SHA256_H3 ;
+		SHA256_Hx[4*32-1:3*32] <= `DEF_SHA256_H4 ;
+		SHA256_Hx[3*32-1:2*32] <= `DEF_SHA256_H5 ;
+		SHA256_Hx[2*32-1:1*32] <= `DEF_SHA256_H6 ;
+		SHA256_Hx[1*32-1:0*32] <= `DEF_SHA256_H7 ;
+
+	end else if( sha_hi_wr_en )
 		SHA256_Hx <= {SHA256_Hx[7*32-1:0],SHA_DAT_I[31:0]} ;
 end
 

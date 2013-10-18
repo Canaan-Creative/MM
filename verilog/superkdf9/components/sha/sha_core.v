@@ -1,11 +1,3 @@
-`define DEF_SHA256_H0 32'h6a09e667
-`define DEF_SHA256_H1 32'hbb67ae85
-`define DEF_SHA256_H2 32'h3c6ef372
-`define DEF_SHA256_H3 32'ha54ff53a
-`define DEF_SHA256_H4 32'h510e527f
-`define DEF_SHA256_H5 32'h9b05688c
-`define DEF_SHA256_H6 32'h1f83d9ab
-`define DEF_SHA256_H7 32'h5be0cd19
 
 `define K00 32'h428a2f98
 `define K01 32'h71374491
@@ -140,16 +132,7 @@ output wire [255:0] hash
         assign round_plus_1 = round + 1 ;
 
 always @ ( posedge clk ) begin
-	if( rst ) begin
-		H0 <= `DEF_SHA256_H0 ;
-		H1 <= `DEF_SHA256_H1 ;
-		H2 <= `DEF_SHA256_H2 ;
-		H3 <= `DEF_SHA256_H3 ;
-		H4 <= `DEF_SHA256_H4 ;
-		H5 <= `DEF_SHA256_H5 ;
-		H6 <= `DEF_SHA256_H6 ;
-		H7 <= `DEF_SHA256_H7 ;
-	end else if( init ) begin
+	if( init ) begin
 		H0 <= SHA256_H0 ;
 		H1 <= SHA256_H1 ;
 		H2 <= SHA256_H2 ;
