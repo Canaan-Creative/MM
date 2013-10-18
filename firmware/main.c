@@ -215,7 +215,7 @@ void send_work(struct work *w)
 	uint32_t tmp;
 	int i;
 
-	while (alink_full()) {};
+	debug32("Generated task:\n");
 
 	memcpy((uint8_t *)(&tmp), w->task_id, 4);
 	writel(tmp, alink->tx);
@@ -320,11 +320,11 @@ int main(void) {
 #include "cb_test1.c"
 
 		for (i = 0; i < WORK_BUF_LEN; i++) {
-			read_result();
 			/* TODO: try to read result here */
 			init_work(&mm_work, &work[i]);
 			gen_work(&mm_work, &work[i]);
 			send_work(&work[i]);
+			read_result();
 		}
 	}
 

@@ -9,11 +9,9 @@
 #ifndef _DEFINES_H
 #define _DEFINES_H
 
-#define DEBUG		1
-
 #define MM_VERSION	"M201310M\n"
 
-#define ARRAY_SIZE(x)	(sizeof(x) / sizeof((x)[0]))
+#define DEBUG		1
 
 #ifdef DEBUG
 #include "serial.h"
@@ -24,6 +22,7 @@ char printf_buf32[32];
 	} while(0)
 #else
 #define debug32(...)
+#define hexdump(x, y)
 #endif
 
 

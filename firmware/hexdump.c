@@ -19,6 +19,8 @@
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
 
+#ifdef DEBUG
+
 #define hex_print(p) serial_puts((char *)p), serial_putc('\n');
 
 static char nibble[] = {
@@ -75,3 +77,5 @@ void hexdump(const uint8_t *p, unsigned int len)
 		hex_print(line);
 	}
 }
+
+#endif

@@ -34,4 +34,6 @@
 #define likely(x)	(x)
 #define unlikely(x)	(x)
 
+#define ARRAY_SIZE(x)	(sizeof(x) / sizeof((x)[0]))
+
 #endif /* _IO_H */
