@@ -81,12 +81,23 @@ void sha256_update(const uint8_t *input, unsigned int count)
 	}
 }
 
+void sha256_precalc_final(uint8_t *state)
+{
+	int i;
+	uint32_t tmp;
+
+	for (i = 0; i < 6 * 4; i += 4) {
+		tmp = readl(&lm_sha256->pre);
+		memcpy(state + i, (uint8_t *)(&tmp), 4);
+	}
+}
+
 void sha256_final(uint8_t *state)
 {
 	int i;
 	uint32_t tmp;
 
-	for (i = 0; i < 32; i += 4) {
+	for (i = 0; i < 8 * 4; i += 4) {
 		tmp = readl(&lm_sha256->hash);
 		memcpy(state + i, (uint8_t *)(&tmp), 4);
 	}
@@ -98,4 +109,12 @@ void sha256(const uint8_t *input, unsigned int count, uint8_t *state)
 	sha256_update(input, count);
 	sha256_padding(input + (count / SHA256_BLOCK_SIZE) * SHA256_BLOCK_SIZE, count);
 	sha256_final(state);
+}
+
+void sha256_precalc(const uint8_t *input, unsigned int count, uint8_t *state)
+{
+	sha256_init();
+	sha256_update(input, count);
+	sha256_padding(input + (count / SHA256_BLOCK_SIZE) * SHA256_BLOCK_SIZE, count);
+	sha256_precalc_final(state);
 }

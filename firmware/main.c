@@ -23,8 +23,11 @@
 
 #include "hexdump.c"
 
+#define WORK_BUF_LEN	(10)
+
 struct mm_work mm_work;
-struct work work[8];
+struct work work[WORK_BUF_LEN];
+struct result result;
 
 uint8_t pkg[40];
 uint8_t buffer[4*1024];
@@ -150,9 +153,10 @@ static void calc_midstate(struct mm_work *mw, struct work *work)
 
 	sha256_init();
 	sha256_update(data, 64);
-	sha256_final(work->midstate);
+	sha256_final(work->data);
 
-	flip64(work->midstate, work->midstate);
+	flip64(work->data, work->data);
+	memcpy(work->data + 32, mw->header + 64, 12);
 }
 
 /* Total: 4W + 19W = 23W
@@ -161,7 +165,14 @@ static void calc_midstate(struct mm_work *mw, struct work *work)
  */
 static void calc_prepare(struct mm_work *mw, struct work *work)
 {
-	/* TODO: calc the a0/2/3, e0/1/2 */
+	uint32_t precalc[6];
+	sha256_precalc(work->data, 44, (uint8_t *)precalc);
+	memcpy(work->a0, precalc + 0, 4);
+	memcpy(work->a1, precalc + 1, 4);
+	memcpy(work->a2, precalc + 2, 4);
+	memcpy(work->e0, precalc + 3, 4);
+	memcpy(work->e1, precalc + 4, 4);
+	memcpy(work->e2, precalc + 5, 4);
 }
 
 static void gen_work(struct mm_work *mw, struct work *work)
@@ -193,9 +204,87 @@ static void gen_work(struct mm_work *mw, struct work *work)
 	calc_prepare(mw, work);
 }
 
-static void send_work(struct work *work)
+struct lm32_alink *alink = (struct lm32_alink *)ALINK_BASE;
+int alink_full()
 {
+	return (LM32_ALINK_STATE_TXFULL & alink->state);
+}
 
+void send_work(struct work *w)
+{
+	uint32_t tmp;
+	int i;
+
+	while (alink_full()) {};
+
+	memcpy((uint8_t *)(&tmp), w->task_id, 4);
+	writel(tmp, alink->tx);
+
+	memcpy((uint8_t *)(&tmp), w->task_id + 4, 4);
+	writel(tmp, alink->tx);
+
+	memcpy((uint8_t *)(&tmp), w->step, 4);
+	writel(tmp, alink->tx);
+
+	memcpy((uint8_t *)(&tmp), w->timeout, 4);
+	writel(tmp, alink->tx);
+
+	memcpy((uint8_t *)(&tmp), w->clock, 4);
+	writel(tmp, alink->tx);
+
+	memcpy((uint8_t *)(&tmp), w->clock + 4, 4);
+	writel(tmp, alink->tx);
+
+	memcpy((uint8_t *)(&tmp), w->a2, 4);
+	writel(tmp, alink->tx);
+
+	for (i = 0; i < 32 / 4; i += 4) {
+		memcpy((uint8_t *)(&tmp), w->data + i, 4);
+		writel(tmp, alink->tx);
+	}
+
+	memcpy((uint8_t *)(&tmp), w->e0, 4);
+	writel(tmp, alink->tx);
+	memcpy((uint8_t *)(&tmp), w->e1, 4);
+	writel(tmp, alink->tx);
+	memcpy((uint8_t *)(&tmp), w->e2, 4);
+	writel(tmp, alink->tx);
+	memcpy((uint8_t *)(&tmp), w->a0, 4);
+	writel(tmp, alink->tx);
+	memcpy((uint8_t *)(&tmp), w->a1, 4);
+	writel(tmp, alink->tx);
+
+	for (i = 0; i < 12 / 4; i += 4) {
+		memcpy((uint8_t *)(&tmp), w->data + 32 + i, 4);
+		writel(tmp, alink->tx);
+	}
+}
+
+static void submit_result()
+{
+	hexdump((uint8_t *)(&result), 20);
+}
+
+static void read_result()
+{
+	uint32_t tmp;
+
+	while (!(LM32_ALINK_STATE_RXEMPTY & alink->state)) {
+		tmp = readl(alink->rx);
+		memcpy(result.miner_id, (uint8_t *)(&tmp), 4);
+
+		tmp = readl(alink->rx);
+		memcpy(result.task_id, (uint8_t *)(&tmp), 4);
+
+		tmp = readl(alink->rx);
+		memcpy(result.timeout, (uint8_t *)(&tmp), 4);
+
+		tmp = readl(alink->rx);
+		memcpy(result.nonce, (uint8_t *)(&tmp), 4);
+
+		/* TODO: test the result before submit */
+		submit_result();
+	}
 }
 
 static void decode_package(uint8_t *buf)
@@ -226,16 +315,17 @@ int main(void) {
 	while (1) {
 		get_package();
 		decode_package(pkg);
-		hexdump(buffer, 48);
 
 #include "sha256_test.c"
 #include "cb_test1.c"
-		for (i = 0; i < 8; i++) {
+
+		for (i = 0; i < WORK_BUF_LEN; i++) {
+			read_result();
+			/* TODO: try to read result here */
 			init_work(&mm_work, &work[i]);
 			gen_work(&mm_work, &work[i]);
 			send_work(&work[i]);
 		}
-
 	}
 
 	/* Code should be never reach here */

@@ -17,7 +17,8 @@
 #define GPIO_BASE		(0x80000200)
 #define UART1_BASE		(0x80000300)
 #define SHA256_BASE		(0x80000400)
-#define TASK_BASE		(0x80000500)
+#define ALINK_BASE		(0x80000500)
+#define TWOWIRE_PWM_BASE	(0x80000600)
 
 
 /* Line status register */
@@ -68,11 +69,11 @@ struct lm32_sha256 {
 
 
 /* This is the ASIC task FIFO buffer registers */
-#define LM32_TASK_STATE_TXFULL	(1 << 0)
-#define LM32_TASK_STATE_FLUSH	(1 << 1)
-#define LM32_TASK_STATE_TXCOUNT	(0x000000F0)
-#define LM32_TASK_STATE_RXEMPTY	(1 << 16)
-#define LM32_TASK_STATE_RXCOUNT (0x00F00000)
+#define LM32_ALINK_STATE_TXFULL	(1 << 0)
+#define LM32_ALINK_STATE_FLUSH	(1 << 1)
+#define LM32_ALINK_STATE_TXCOUNT	(0x000000F0)
+#define LM32_ALINK_STATE_RXEMPTY	(1 << 16)
+#define LM32_ALINK_STATE_RXCOUNT (0x00F00000)
 
 struct lm32_alink {
 	volatile unsigned int tx;
@@ -81,5 +82,19 @@ struct lm32_alink {
 	volatile unsigned int busy;	/* Read only */
 	volatile unsigned int rx;
 };
+
+/* This is the TwoWire & PWM registers */
+#define LM32_2WIREPWM_CR_ENABLE	(1 << 0)
+#define LM32_2WIREPWM_CR_TSTART	(1 << 1)
+#define LM32_2WIREPWM_CR_TDONE	(1 << 2)
+#define LM32_2WIREPWM_CR_CMD	(0xf0)
+
+struct lm32_2wirepwm {
+	volatile unsigned int cr; /* TWI ctrl register */
+	volatile unsigned int wd; /* TWI write byte */
+	volatile unsigned int rd; /* TWI read byte */
+	volatile unsigned int pwm; /* PWM Counter register */
+};
+
 
 #endif /* _SYSTEM_CONFIG_H_ */
