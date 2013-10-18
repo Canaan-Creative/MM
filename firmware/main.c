@@ -10,12 +10,9 @@
 #include <stdbool.h>
 #include <stdint.h>
 
-#include "sdk.h"
 #include "minilibc.h"
-
 #include "system_config.h"
 #include "defines.h"
-
 #include "io.h"
 #include "serial.h"
 #include "miner.h"

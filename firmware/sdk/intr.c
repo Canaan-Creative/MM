@@ -1,5 +1,4 @@
-/* IRQ handling */
-#include "sdk.h"
+#include <stdint.h>
 
 #define ISR_TABLE_LEN	(32)
 

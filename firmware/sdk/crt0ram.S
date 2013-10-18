@@ -1,6 +1,6 @@
 /* Exception handlers - Must be 32 bytes long. */
-	.global     _start  
         .section    .boot, "ax", @progbits
+	.global     _start  
 _start:    
 _reset_handler:
 	xor     r0, r0, r0

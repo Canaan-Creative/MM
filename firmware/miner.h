@@ -10,7 +10,7 @@
 #define __MINER_H__
 
 #include <stdbool.h>
-#include "sdk.h"
+#include <stdint.h>
 
 struct work {
 	uint32_t nonce2;

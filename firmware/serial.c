@@ -6,9 +6,9 @@
  * For details see the UNLICENSE file at the root of the source tree.
  */
 
-#include "sdk.h"
-#include "minilibc.h"
+#include <stdint.h>
 
+#include "minilibc.h"
 #include "system_config.h"
 #include "io.h"
 

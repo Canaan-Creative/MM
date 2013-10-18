@@ -16,7 +16,6 @@ LDLIBS     += -Bminilibc -lminilibc -lgcc
 CSRCS      = main.c serial.c sha256.c
 SDK_SRCS   = \
 	sdk/crt0ram.S \
-	sdk/utils.S \
 	sdk/intr.c
 OBJS       := $(addsuffix .o,$(basename $(CSRCS) $(SDK_SRCS)))
 

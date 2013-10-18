@@ -7,11 +7,10 @@
  */
 
 #include <stdint.h>
-#include "io.h"
+
 #include "minilibc.h"
 #include "system_config.h"
-#include "defines.h"
-
+#include "io.h"
 #include "sha256.h"
 
 static struct lm32_sha256 *lm_sha256 = (struct lm32_sha256 *)SHA256_BASE;
