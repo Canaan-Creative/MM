@@ -14,6 +14,8 @@
 #define DEBUG		1
 
 #ifdef DEBUG
+void hexdump(const uint8_t *p, unsigned int len);
+
 #include "serial.h"
 char printf_buf32[32];
 #define debug32(...)	do {				\
