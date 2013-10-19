@@ -6,13 +6,12 @@
  * For details see the UNLICENSE file at the root of the source tree.
  */
 
-#ifndef _DEFINES_H
-#define _DEFINES_H
+#ifndef _DEFINES_H_
+#define _DEFINES_H_
 
-#define MM_VERSION	"M201310M\n"
+#define MM_VERSION	"201310"
 
 #define DEBUG		1
-
 #ifdef DEBUG
 void hexdump(const uint8_t *p, unsigned int len);
 
@@ -28,4 +27,4 @@ char printf_buf32[32];
 #endif
 
 
-#endif	/* _DEFINES_H */
+#endif	/* _DEFINES_H_ */

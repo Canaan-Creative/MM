@@ -83,20 +83,21 @@ void miner_init_work(struct mm_work *mw, struct work *work)
 	/* TODO: create the task_id */
 	work->task_id[0] = 0x55;
 	work->task_id[1] = 0xaa;
-	work->task_id[2] = 0xbb;
-	work->task_id[3] = 0x44;
+	work->task_id[2] = 0x66;
+	work->task_id[3] = 0xbb;
+	memcpy(work->task_id + 4, (uint8_t *)(&work->nonce2), 4);
 
 	work->timeout[0] = 0x04;
 	work->timeout[1] = 0xfa;
 	work->timeout[2] = 0x1b;
 	work->timeout[3] = 0xe0;
 
-	work->clock[0] = 0x94;
-	work->clock[1] = 0xe0;
+	work->clock[0] = 0x07;
+	work->clock[1] = 0x00;
 	work->clock[2] = 0x00;
-	work->clock[3] = 0x01;
-	work->clock[4] = 0x00;
-	work->clock[5] = 0x00;
+	work->clock[3] = 0x08;
+	work->clock[4] = 0x74;
+	work->clock[5] = 0x01;
 	work->clock[6] = 0x00;
 	work->clock[7] = 0x00;
 

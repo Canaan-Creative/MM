@@ -23,6 +23,7 @@
 #include "hexdump.c"
 
 #define WORK_BUF_LEN	(8)
+#define adjust_fan(value)	write_pwm(value)
 
 struct mm_work mm_work;
 struct work work[WORK_BUF_LEN];
@@ -75,44 +76,48 @@ static void get_package()
 
 static void submit_result(struct result *r)
 {
-	debug32("Submit result\n");
-	hexdump((uint8_t *)(&r), 20);
+	hexdump((uint8_t *)(r), 20);
 }
 
 static void read_result()
 {
 	while(!alink_rxbuf_empty()) {
+		debug32("Found nonce\n");
+		alink_buf_status();
 		alink_read_result(&result);
+		serial_getc();
 		submit_result(&result);
 	}
 }
 
-#define adjust_fan(value)	write_pwm(value)
 
 int main(void) {
 	int i;
 
 	uart_init();
-	serial_puts(MM_VERSION);
+	debug32("%s\n", MM_VERSION);
 
-	alink_init();
+	alink_init(0xff);
 	adjust_fan(0xff);
 
 #include "sha256_test.c"
 #include "cb_test1.c"
+	for (i = 0; i < WORK_BUF_LEN; i++)
+		send_test_work(i);
+	while (1)
+		read_result();
+
 	while (1) {
 		for (i = 0; i < WORK_BUF_LEN; i++) {
 			/* TODO: try to read result here */
 			miner_init_work(&mm_work, &work[i]);
 			miner_gen_work(&mm_work, &work[i]);
 			alink_send_work(&work[i]);
-			alink_buf_status();
 			read_result();
 		}
 		serial_getc();
 	}
 
-	send_test_work();
 	get_package();
 	decode_package(pkg);
 
