@@ -18,6 +18,7 @@
 #include "miner.h"
 #include "sha256.h"
 #include "alink.h"
+#include "twipwm.h"
 
 #include "hexdump.c"
 
@@ -168,12 +169,6 @@ static void gen_work(struct mm_work *mw, struct work *work)
 	calc_prepare(mw, work);
 }
 
-static void submit_result(struct result *r)
-{
-	debug32("Submit result\n");
-	hexdump((uint8_t *)(&r), 20);
-}
-
 static void decode_package(uint8_t *buf)
 {
 	int i = 0, j = ARRAY_SIZE(pkg);
@@ -193,10 +188,10 @@ static void get_package()
 	}
 }
 
-static void adjust_fan(uint8_t value)
+static void submit_result(struct result *r)
 {
-	struct lm32_2wirepwm *wp = (struct lm32_2wirepwm *)TWOWIRE_PWM_BASE;
-	writel(value, &wp->pwm);
+	debug32("Submit result\n");
+	hexdump((uint8_t *)(&r), 20);
 }
 
 static void read_result()
@@ -206,6 +201,9 @@ static void read_result()
 		submit_result(&result);
 	}
 }
+
+#define adjust_fan(value)	write_pwm(value)
+
 int main(void) {
 	int i;
 
