@@ -87,7 +87,8 @@ always @ ( posedge clk ) begin
 		if( rx_stop )
 			rx_buf[159:128] <= nonce_buf ;
 	end else
-		rx_buf <= rx_buf >> 32 ;
+		//rx_buf <= rx_buf >> 32 ;
+		rx_buf <= {rx_buf[31:0],rx_buf[32*`RX_DATA_LEN-1:32]} ;
 end
 
 //-------------------------------------------------
