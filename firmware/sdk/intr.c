@@ -1,5 +1,3 @@
-#include <stdint.h>
-
 #define ISR_TABLE_LEN	(32)
 
 static void isr_null(void)
@@ -8,7 +6,7 @@ static void isr_null(void)
 
 static void (*isr_table[ISR_TABLE_LEN])(void);
 
-void irq_handler(uint32_t pending)
+void irq_handler(unsigned int pending)
 {
 	int i, j;
 
