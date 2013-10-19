@@ -13,7 +13,7 @@ INCLUDES   = -I. -Isdk -Iminilibc
 LDFLAGS    += -Wl,--gc-sections -Wl,-T,linker.ld -nostartfiles -nodefaultlibs -nostdlib -Wl,-Map=$(PRJ_NAME).map
 LDLIBS     += -Bminilibc -lminilibc -lgcc
 
-CSRCS      = main.c serial.c sha256.c
+CSRCS      = main.c serial.c sha256.c alink.c
 SDK_SRCS   = \
 	sdk/crt0ram.S \
 	sdk/intr.c

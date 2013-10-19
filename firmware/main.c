@@ -17,78 +17,20 @@
 #include "serial.h"
 #include "miner.h"
 #include "sha256.h"
+#include "alink.h"
 
 #include "hexdump.c"
 
-#define WORK_BUF_LEN	(10)
+#define WORK_BUF_LEN	(8)
 
 struct mm_work mm_work;
 struct work work[WORK_BUF_LEN];
 struct result result;
 
+
 uint8_t pkg[40];
 uint8_t buffer[4*1024];
 
-static void delay(volatile uint32_t i)
-{
-	while (i--)
-		;
-}
-
-static void error(uint8_t n)
-{
-	volatile uint32_t *gpio = (uint32_t *)GPIO_BASE;
-	uint8_t i = 0;
-
-	while (1) {
-		delay(4000000);
-		if (i++ %2)
-			writel(0x00000000 | (n << 24), gpio);
-		else
-			writel(0x00000000, gpio);
-	}
-}
-
-static int bin_value(unsigned char ch)
-{
-        if ('0' <= ch && ch <= '9')
-                return ch - '0';
-        else if ('a' <= ch && ch <= 'f')
-                return ch - 'a' + 0x0A;
-        else if ('A' <= ch && ch <= 'F')
-                return ch - 'A' + 0x0A;
-        else
-                return -1;
-}
-
-bool hex2bin(unsigned char *p, const char *hexstr, size_t len)
-{
-	int a, b;
-
-	while (*hexstr && len) {
-		a = bin_value(hexstr[0]);
-		b = bin_value(hexstr[1]);
-		if (a == -1 || b == -1) {
-			serial_puts("E: hex2bin failed:");
-			serial_putc(hexstr[0]);
-			serial_putc(hexstr[1]);
-			serial_putc('\n');
-			return false;
-		}
-
-		a = ((a<<4) & 0xF0);
-		b = ((b   ) & 0x0F);
-		*p = (unsigned char)(a | b);
-
-		hexstr += 2;
-		p++;
-		len--;
-	}
-
-	if (len == 0)
-		return true;
-	return false;
-}
 
 static void flip32(void *dest_p, const void *src_p)
 {
@@ -110,21 +52,38 @@ static void flip64(void *dest_p, const void *src_p)
 		dest[i] = bswap_32(src[i]);
 }
 
-static void gen_hash(uint8_t *data, uint8_t *hash, unsigned int len)
+static void delay(volatile uint32_t i)
 {
-	uint8_t hash1[32];
+	while (i--)
+		;
+}
 
-	sha256(data, len, hash1);
-	sha256(hash1, 32, hash);
+static void error(uint8_t n)
+{
+	volatile uint32_t *gpio = (uint32_t *)GPIO_BASE;
+	uint8_t i = 0;
+
+	while (1) {
+		delay(4000000);
+		if (i++ %2)
+			writel(0x00000000 | (n << 24), gpio);
+		else
+			writel(0x00000000, gpio);
+	}
 }
 
 static void init_work(struct mm_work *mw, struct work *work)
 {
 	/* TODO: create the task_id */
-	work->timeout[0] = 0xff;
-	work->timeout[1] = 0xff;
-	work->timeout[2] = 0xff;
-	work->timeout[3] = 0xff;
+	work->task_id[0] = 0x55;
+	work->task_id[1] = 0xaa;
+	work->task_id[2] = 0xbb;
+	work->task_id[3] = 0x44;
+
+	work->timeout[0] = 0x04;
+	work->timeout[1] = 0xfa;
+	work->timeout[2] = 0x1b;
+	work->timeout[3] = 0xe0;
 
 	work->clock[0] = 0x94;
 	work->clock[1] = 0xe0;
@@ -139,6 +98,14 @@ static void init_work(struct mm_work *mw, struct work *work)
 	work->step[1] = 0x99;
 	work->step[2] = 0x99;
 	work->step[3] = 0x99;
+}
+
+static void gen_hash(uint8_t *data, uint8_t *hash, unsigned int len)
+{
+	uint8_t hash1[32];
+
+	sha256(data, len, hash1);
+	sha256(hash1, 32, hash);
 }
 
 static void calc_midstate(struct mm_work *mw, struct work *work)
@@ -201,87 +168,10 @@ static void gen_work(struct mm_work *mw, struct work *work)
 	calc_prepare(mw, work);
 }
 
-struct lm32_alink *alink = (struct lm32_alink *)ALINK_BASE;
-int alink_full()
+static void submit_result(struct result *r)
 {
-	return (LM32_ALINK_STATE_TXFULL & alink->state);
-}
-
-void send_work(struct work *w)
-{
-	uint32_t tmp;
-	int i;
-
-	debug32("Generated task:\n");
-
-	memcpy((uint8_t *)(&tmp), w->task_id, 4);
-	writel(tmp, alink->tx);
-
-	memcpy((uint8_t *)(&tmp), w->task_id + 4, 4);
-	writel(tmp, alink->tx);
-
-	memcpy((uint8_t *)(&tmp), w->step, 4);
-	writel(tmp, alink->tx);
-
-	memcpy((uint8_t *)(&tmp), w->timeout, 4);
-	writel(tmp, alink->tx);
-
-	memcpy((uint8_t *)(&tmp), w->clock, 4);
-	writel(tmp, alink->tx);
-
-	memcpy((uint8_t *)(&tmp), w->clock + 4, 4);
-	writel(tmp, alink->tx);
-
-	memcpy((uint8_t *)(&tmp), w->a2, 4);
-	writel(tmp, alink->tx);
-
-	for (i = 0; i < 32 / 4; i += 4) {
-		memcpy((uint8_t *)(&tmp), w->data + i, 4);
-		writel(tmp, alink->tx);
-	}
-
-	memcpy((uint8_t *)(&tmp), w->e0, 4);
-	writel(tmp, alink->tx);
-	memcpy((uint8_t *)(&tmp), w->e1, 4);
-	writel(tmp, alink->tx);
-	memcpy((uint8_t *)(&tmp), w->e2, 4);
-	writel(tmp, alink->tx);
-	memcpy((uint8_t *)(&tmp), w->a0, 4);
-	writel(tmp, alink->tx);
-	memcpy((uint8_t *)(&tmp), w->a1, 4);
-	writel(tmp, alink->tx);
-
-	for (i = 0; i < 12 / 4; i += 4) {
-		memcpy((uint8_t *)(&tmp), w->data + 32 + i, 4);
-		writel(tmp, alink->tx);
-	}
-}
-
-static void submit_result()
-{
-	hexdump((uint8_t *)(&result), 20);
-}
-
-static void read_result()
-{
-	uint32_t tmp;
-
-	while (!(LM32_ALINK_STATE_RXEMPTY & alink->state)) {
-		tmp = readl(alink->rx);
-		memcpy(result.miner_id, (uint8_t *)(&tmp), 4);
-
-		tmp = readl(alink->rx);
-		memcpy(result.task_id, (uint8_t *)(&tmp), 4);
-
-		tmp = readl(alink->rx);
-		memcpy(result.timeout, (uint8_t *)(&tmp), 4);
-
-		tmp = readl(alink->rx);
-		memcpy(result.nonce, (uint8_t *)(&tmp), 4);
-
-		/* TODO: test the result before submit */
-		submit_result();
-	}
+	debug32("Submit result\n");
+	hexdump((uint8_t *)(&r), 20);
 }
 
 static void decode_package(uint8_t *buf)
@@ -303,27 +193,45 @@ static void get_package()
 	}
 }
 
+static void adjust_fan(uint8_t value)
+{
+	struct lm32_2wirepwm *wp = (struct lm32_2wirepwm *)TWOWIRE_PWM_BASE;
+	writel(value, &wp->pwm);
+}
+
+static void read_result()
+{
+	while(!alink_rxbuf_empty()) {
+		alink_read_result(&result);
+		submit_result(&result);
+	}
+}
 int main(void) {
 	int i;
 
 	uart_init();
 	serial_puts(MM_VERSION);
 
-	while (1) {
-		get_package();
-		decode_package(pkg);
+	alink_init();
+	adjust_fan(0xff);
 
 #include "sha256_test.c"
 #include "cb_test1.c"
-
+	while (1) {
 		for (i = 0; i < WORK_BUF_LEN; i++) {
 			/* TODO: try to read result here */
 			init_work(&mm_work, &work[i]);
 			gen_work(&mm_work, &work[i]);
-			send_work(&work[i]);
+			alink_send_work(&work[i]);
+			alink_buf_status();
 			read_result();
 		}
+		serial_getc();
 	}
+
+	send_test_work();
+	get_package();
+	decode_package(pkg);
 
 	/* Code should be never reach here */
 	error(0xf);
