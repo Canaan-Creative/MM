@@ -89,13 +89,13 @@ _divide_by_zero_handler:
 
 _interrupt_handler:
 	sw      (sp+0), ra
-	calli   _save_all
-	rcsr	r1, IP
-	calli   irq_handler
-	mvhi    r1, 0xffff
-	ori     r1, r1, 0xffff
-	wcsr	IP, r1
-	bi      _restore_all_and_eret
+	calli   .save_all
+	calli   isr
+	bi      .restore_all_and_eret
+	nop
+	nop
+	nop
+	nop
 
 _system_call_handler:
 	bi _system_call_handler
@@ -125,9 +125,6 @@ _crt0:
 	addi    r1, r1, 4
 	bi      .clearBSS
 
-.callInits:
-	calli	isr_init
-
 .callMain:
 	mvi     r1, 0
 	mvi     r2, 0
@@ -135,8 +132,8 @@ _crt0:
 	calli   main
 
 	/* Save all registers onto the stack */
-_save_all:
-	addi    sp, sp, -128
+.save_all:
+	addi    sp, sp, -56
 	sw      (sp+4), r1
 	sw      (sp+8), r2
 	sw      (sp+12), r3
@@ -147,37 +144,14 @@ _save_all:
 	sw      (sp+32), r8
 	sw      (sp+36), r9
 	sw      (sp+40), r10
-#ifdef MICO32_FULL_CONTEXT_SAVE_RESTORE
-	sw      (sp+44), r11
-	sw      (sp+48), r12
-	sw      (sp+52), r13
-	sw      (sp+56), r14
-	sw      (sp+60), r15
-	sw      (sp+64), r16
-	sw      (sp+68), r17
-	sw      (sp+72), r18
-	sw      (sp+76), r19
-	sw      (sp+80), r20
-	sw      (sp+84), r21
-	sw      (sp+88), r22
-	sw      (sp+92), r23
-	sw      (sp+96), r24
-	sw      (sp+100), r25
-	sw      (sp+104), r26
-	sw      (sp+108), r27
-#endif
-	sw      (sp+120), ea
-	sw      (sp+124), ba
-	/* ra and sp need special handling, as they have been modified */
-	lw      r1, (sp+128)
-	sw      (sp+116), r1
-	mv      r1, sp
-	addi    r1, r1, 128
-	sw      (sp+112), r1
+	sw      (sp+48), ea
+	sw      (sp+52), ba
+	/* ra needs to be moved from initial stack location */
+	lw      r1, (sp+56)
+	sw      (sp+44), r1
 	ret
 
-	/* Restore all registers and return from exception */
-_restore_all_and_eret:
+.restore_all_and_eret:
 	lw      r1, (sp+4)
 	lw      r2, (sp+8)
 	lw      r3, (sp+12)
@@ -188,28 +162,8 @@ _restore_all_and_eret:
 	lw      r8, (sp+32)
 	lw      r9, (sp+36)
 	lw      r10, (sp+40)
-#ifdef MICO32_FULL_CONTEXT_SAVE_RESTORE
-	lw      r11, (sp+44)
-	lw      r12, (sp+48)
-	lw      r13, (sp+52)
-	lw      r14, (sp+56)
-	lw      r15, (sp+60)
-	lw      r16, (sp+64)
-	lw      r17, (sp+68)
-	lw      r18, (sp+72)
-	lw      r19, (sp+76)
-	lw      r20, (sp+80)
-	lw      r21, (sp+84)
-	lw      r22, (sp+88)
-	lw      r23, (sp+92)
-	lw      r24, (sp+96)
-	lw      r25, (sp+100)
-	lw      r26, (sp+104)
-	lw      r27, (sp+108)
-#endif
-	lw      ra, (sp+116)
-	lw      ea, (sp+120)
-	lw      ba, (sp+124)
-	/* Stack pointer must be restored last, in case it has been updated */
-	lw      sp, (sp+112)
+	lw      ra, (sp+44)
+	lw      ea, (sp+48)
+	lw      ba, (sp+52)
+	addi    sp, sp, 56
 	eret

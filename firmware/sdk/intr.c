@@ -1,36 +1,22 @@
-#define ISR_TABLE_LEN	(32)
+/*
+ * Author: Xiangfu Liu <xiangfu@openmobilefree.net>
+ * Bitcoin:	1CanaaniJzgps8EV6Sfmpb7T8RutpaeyFn
+ *
+ * This is free and unencumbered software released into the public domain.
+ * For details see the UNLICENSE file at the root of the source tree.
+ */
 
-static void isr_null(void)
+#include "intr.h"
+#include "system_config.h"
+
+#include "serial.h"
+
+void isr(void)
 {
-}
+	unsigned int irqs;
 
-static void (*isr_table[ISR_TABLE_LEN])(void);
+	irqs = irq_pending() & irq_getmask();
 
-void irq_handler(unsigned int pending)
-{
-	int i, j;
-
-	for (i = 0; i < ISR_TABLE_LEN; i++) {
-		if (pending & 0x01)
-			(*isr_table[i])();
-		pending >>= 1;
-		asm volatile ("user %0, %1, %1, 0x0f" : "=r"(j) : "r"(i));
-	}
-}
-
-void isr_init(void)
-{
-	int i;
-	for (i = 0; i < ISR_TABLE_LEN; i++)
-		isr_table[i] = &isr_null;
-}
-
-void isr_register(int irq, void (*isr)(void))
-{
-	isr_table[irq] = isr;
-}
-
-void isr_unregister(int irq)
-{
-	isr_table[irq] = &isr_null;
+	if (irqs & IRQ_UART)
+		uart_isr();
 }
