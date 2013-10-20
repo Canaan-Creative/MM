@@ -46,22 +46,21 @@ static void error(uint8_t n)
 	volatile uint32_t *gpio = (uint32_t *)GPIO_BASE;
 	uint8_t i = 0;
 
-	while (1) {
+	while (i < 8) {
 		delay(4000000);
-		if (i++ %2)
-			writel(0x00000000 | (n << 24), gpio);
+		if (i++ % 2)
+			writel(n << 24, gpio);
 		else
-			writel(0x00000000, gpio);
+			writel(0, gpio);
 	}
 }
-
 
 static void get_package()
 {
 	int i = 0, j = ARRAY_SIZE(pkg);
 
 	while (j--) {
-		pkg[i] = serial_getc();
+		pkg[i] = uart_read();
 		serial_putc(pkg[i]);
 		i++;
 	}
