@@ -9,7 +9,7 @@
 #include "intr.h"
 #include "system_config.h"
 
-#include "serial.h"
+#include "uart.h"
 
 void isr(void)
 {

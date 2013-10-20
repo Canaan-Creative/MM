@@ -49,8 +49,12 @@ void uart_isr(void)
 		if (tx_produce != tx_consume) {
 			writeb(tx_buf[tx_consume], &uart->rxtx);
 			tx_consume = (tx_consume + 1) & UART_RINGBUFFER_MASK_TX;
-		} else
+		} else {
 			tx_cts = 1;
+			stat = readb(&uart->ier);
+			stat &= ~LM32_UART_IER_THRI;
+			writeb(stat, &uart->ier);
+		}
 	}
 
 	irq_ack(IRQ_UART);
@@ -75,15 +79,23 @@ int uart_read_nonblock(void)
 void uart_write(char c)
 {
 	unsigned int oldmask;
+	unsigned char stat;
+
+	if (c == '\n')
+		uart_write('\r');
 
 	oldmask = irq_getmask();
 	irq_setmask(0);
 
 	if (force_sync) {
-		writeb(c, &uart->rxtx);
-		while (!((readb(&uart->lsr) & (LM32_UART_LSR_THRR | LM32_UART_LSR_TEMT)) == 0x60))
+		while (readb(&uart->lsr) == LM32_UART_LSR_THRR)
 			;
+		writeb(c, &uart->rxtx);
 	} else {
+		stat = readb(&uart->ier);
+		stat |= LM32_UART_IER_THRI;
+		writeb(stat, &uart->ier);
+
 		if (tx_cts) {
 			tx_cts = 0;
 			writeb(c, &uart->rxtx);
@@ -134,30 +146,8 @@ void uart_init(void)
 
 }
 
-unsigned char serial_getc(void)
-{
-	while (!(readb(&uart->lsr) & LM32_UART_LSR_DR))
-		;
-
-	return readb(&uart->rxtx);
-}
-
-
-void serial_putc(const unsigned char c)
-{
-	if (c == '\n')
-		writeb('\r', &uart->rxtx);
-
-	/* Wait for fifo to shift out some bytes */
-	while (readb(&uart->lsr) == LM32_UART_LSR_THRR)
-		;
-	writeb(c, &uart->rxtx);
-	while (readb(&uart->lsr) == LM32_UART_LSR_TEMT)
-		;
-}
-
-void serial_puts(const char *s)
+void uart_puts(const char *s)
 {
 	while (*s)
-		serial_putc(*s++);
+		uart_write(*s++);
 }

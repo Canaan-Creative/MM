@@ -15,11 +15,11 @@
 #ifdef DEBUG
 void hexdump(const uint8_t *p, unsigned int len);
 
-#include "serial.h"
+#include "uart.h"
 char printf_buf32[32];
 #define debug32(...)	do {				\
 		m_sprintf(printf_buf32, __VA_ARGS__);	\
-		serial_puts(printf_buf32);		\
+		uart_puts(printf_buf32);		\
 	} while(0)
 #else
 #define debug32(...)

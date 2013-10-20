@@ -12,7 +12,7 @@
 #include "system_config.h"
 #include "defines.h"
 #include "io.h"
-#include "serial.h"
+#include "uart.h"
 #include "miner.h"
 
 static struct lm32_alink *alink = (struct lm32_alink *)ALINK_BASE;

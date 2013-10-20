@@ -15,7 +15,7 @@
 #include "defines.h"
 #include "io.h"
 #include "intr.h"
-#include "serial.h"
+#include "uart.h"
 #include "miner.h"
 #include "sha256.h"
 #include "alink.h"
@@ -61,7 +61,7 @@ static void get_package()
 
 	while (j--) {
 		pkg[i] = uart_read();
-		serial_putc(pkg[i]);
+		uart_write(pkg[i]);
 		i++;
 	}
 }
@@ -77,7 +77,6 @@ static void read_result()
 		debug32("Found nonce\n");
 		alink_buf_status();
 		alink_read_result(&result);
-		serial_getc();
 		submit_result(&result);
 	}
 }
@@ -90,6 +89,8 @@ int main(int argv, char **argc) {
 	irq_enable(1);
 
 	uart_init();
+	uart_force_sync(0);
+
 	debug32("%s\n", MM_VERSION);
 
 	alink_init(0xff);
@@ -115,7 +116,6 @@ int main(int argv, char **argc) {
 			alink_send_work(&work[i]);
 			read_result();
 		}
-		serial_getc();
 	}
 	error(0xf);
 	return 0;
