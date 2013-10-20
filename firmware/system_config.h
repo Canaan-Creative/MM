@@ -12,6 +12,17 @@
 #define CPU_FREQUENCY		(50 * 1000 * 1000) /* 50Mhz */
 #define UART_BAUD_RATE          (115200)
 
+/* Interrupt
+ * Define at last few lines of verilog/superkdf9/soc/superkdf9_simple.v
+ */
+#define IRQ_GPIO		(0x00000001) /* 0 */
+#define IRQ_SPI			(0x00000002) /* 1 */
+
+#define IRQ_UART		(0x00000008) /* 3 */
+#define IRQ_UARTDEBUG		(0x00000010) /* 4 */
+
+
+/* Registers */
 #define SPI_BASE		(0x80000000)
 #define UART0_BASE		(0x80000100)
 #define GPIO_BASE		(0x80000200)
@@ -20,6 +31,13 @@
 #define ALINK_BASE		(0x80000500)
 #define TWIPWM_BASE		(0x80000600)
 
+
+/* UART */
+#define LM32_UART_IER_RBRI	(1 << 0)
+#define LM32_UART_IER_THRI	(1 << 1)
+
+#define LM32_UART_STAT_RX_EVT	(0x4)
+#define LM32_UART_STAT_TX_EVT	(0x2)
 
 /* Line status register */
 #define LM32_UART_LSR_DR	(1 << 0)
@@ -64,11 +82,11 @@ struct lm32_sha256 {
 	volatile unsigned int din;
 	volatile unsigned int hash;
 	volatile unsigned int hi;
-	volatile unsigned int pre;
+	volatile unsigned int pre; /* Please read the A3255 datasheet */
 };
 
 
-/* This is the ASIC task FIFO buffer registers */
+/* ALINK */
 #define LM32_ALINK_STATE_TXFULL	(1 << 0)
 #define LM32_ALINK_STATE_FLUSH	(1 << 1)
 #define LM32_ALINK_STATE_TXCOUNT	(0x000000F0)
@@ -83,7 +101,7 @@ struct lm32_alink {
 	volatile unsigned int rx;
 };
 
-/* This is the TwoWire & PWM registers */
+/* TWI PWM */
 #define LM32_TWIPWM_CR_ENABLE	(1 << 0)
 #define LM32_TWIPWM_CR_TSTART	(1 << 1)
 #define LM32_TWIPWM_CR_TDONE	(1 << 2)
