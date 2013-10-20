@@ -14,6 +14,7 @@
 #include "system_config.h"
 #include "defines.h"
 #include "io.h"
+#include "intr.h"
 #include "serial.h"
 #include "miner.h"
 #include "sha256.h"
@@ -55,22 +56,14 @@ static void error(uint8_t n)
 }
 
 
-static void decode_package(uint8_t *buf)
-{
-	int i = 0, j = ARRAY_SIZE(pkg);
-
-	while (j--) {
-		buffer[i] = pkg[i];
-		i++;
-	}
-}
-
 static void get_package()
 {
 	int i = 0, j = ARRAY_SIZE(pkg);
 
 	while (j--) {
-		pkg[i++] = serial_getc();
+		pkg[i] = serial_getc();
+		serial_putc(pkg[i]);
+		i++;
 	}
 }
 
@@ -91,8 +84,11 @@ static void read_result()
 }
 
 
-int main(void) {
+int main(int argv, char **argc) {
 	int i;
+
+	irq_setmask(0);
+	irq_enable(1);
 
 	uart_init();
 	debug32("%s\n", MM_VERSION);
@@ -102,11 +98,16 @@ int main(void) {
 
 #include "sha256_test.c"
 #include "cb_test1.c"
+	/* TEST:  */
+	get_package();
+
+	/* TEST: PHY functions */
 	for (i = 0; i < WORK_BUF_LEN; i++)
 		send_test_work(i);
 	while (1)
 		read_result();
 
+	/* TEST: PHY with more data */
 	while (1) {
 		for (i = 0; i < WORK_BUF_LEN; i++) {
 			/* TODO: try to read result here */
@@ -117,11 +118,6 @@ int main(void) {
 		}
 		serial_getc();
 	}
-
-	get_package();
-	decode_package(pkg);
-
-	/* Code should be never reach here */
 	error(0xf);
 	return 0;
 }

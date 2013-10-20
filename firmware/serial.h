@@ -9,9 +9,15 @@
 #ifndef _SERIAL_H
 #define _SERIAL_H
 
-void uart_init(void);
-unsigned char serial_getc();
+unsigned char serial_getc(void);
 void serial_putc(const unsigned char c);
 void serial_puts(const char *s);
+
+void uart_init(void);
+void uart_isr(void);
+int uart_read_nonblock(void);
+char uart_read(void);
+void uart_force_sync(int f);
+void uart_write(char c);
 
 #endif	/* _SERIAL_H */
