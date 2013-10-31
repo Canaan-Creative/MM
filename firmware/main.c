@@ -32,7 +32,7 @@ struct work work[WORK_BUF_LEN];
 struct result result;
 
 
-uint8_t pkg[40];
+uint8_t pkg[P_COUNT];
 uint8_t buffer[4*1024];
 
 
@@ -56,18 +56,56 @@ static void error(uint8_t n)
 	}
 }
 
-static void get_package()
+static void decode_pkg(uint8_t *p, struct mm_work *mw)
 {
-	/* static int i = 0; */
+	switch (p[0]) {
+	case P_STATIC:
+	case P_JOB_ID:
+	case P_COINBASE:
+	case P_MERKLES:
+
+	case P_ACK:
+	case P_NAK:
+
+	default:
+		break;
+	}
+}
+
+static void get_pkg()
+{
 	/* static int j = ARRAY_SIZE(pkg); */
 	static char heada, headv;
+	static char tailo, tailn;
+	static int start, count;
+	char c;
 
 	while (1) {
 		if (uart_read_nonblock()) {
+			c = uart_read();
+
 			heada = headv;
-			headv = uart_read();
+			headv = c;
 			if (heada == H1 && headv == H2) {
 				uart_write('U');
+				start = 1;
+				count = 0;
+			}
+
+			if (start) {
+				pkg[count++] = c;
+			}
+
+			tailo = tailn;
+			tailn = c;
+			if (tailo == T1 && tailn == T2) {
+				uart_write('I');
+				start = 0;
+				if (count != P_COUNT) {
+					debug32("E: package broken\n");
+					/* Send back RESEND  */
+				} else
+					decode_pkg(pkg, &mm_work);
 			}
 		} else
 			break;
@@ -106,14 +144,13 @@ int main(int argv, char **argc) {
 	adjust_fan(0xff);
 
 	while (1) {
-		get_package();
+		get_pkg();
 	}
 #include "sha256_test.c"
 #include "cb_test1.c"
 #include "alink_test.c"
 
 	while (1) {
-		get_package();
 		for (i = 0; i < WORK_BUF_LEN; i++) {
 			miner_init_work(&mm_work, &work[i]);
 			miner_gen_work(&mm_work, &work[i]);
