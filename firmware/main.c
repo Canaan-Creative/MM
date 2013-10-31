@@ -20,6 +20,7 @@
 #include "sha256.h"
 #include "alink.h"
 #include "twipwm.h"
+#include "protocol.h"
 
 #include "hexdump.c"
 
@@ -57,13 +58,21 @@ static void error(uint8_t n)
 
 static void get_package()
 {
-	int i = 0, j = ARRAY_SIZE(pkg);
+	/* static int i = 0; */
+	/* static int j = ARRAY_SIZE(pkg); */
+	static char heada, headv;
 
-	while (j--) {
-		pkg[i] = uart_read();
-		uart_write(pkg[i]);
-		i++;
+	while (1) {
+		if (uart_read_nonblock()) {
+			heada = headv;
+			headv = uart_read();
+			if (heada == H1 && headv == H2) {
+				uart_write('U');
+			}
+		} else
+			break;
 	}
+
 }
 
 static void submit_result(struct result *r)
@@ -89,34 +98,30 @@ int main(int argv, char **argc) {
 	irq_enable(1);
 
 	uart_init();
-	uart_force_sync(0);
+	uart_force_sync(1);
 
 	debug32("%s\n", MM_VERSION);
 
 	alink_init(0xff);
 	adjust_fan(0xff);
 
+	while (1) {
+		get_package();
+	}
 #include "sha256_test.c"
 #include "cb_test1.c"
-	/* TEST:  */
-	get_package();
+#include "alink_test.c"
 
-	/* TEST: PHY functions */
-	for (i = 0; i < WORK_BUF_LEN; i++)
-		send_test_work(i);
-	while (1)
-		read_result();
-
-	/* TEST: PHY with more data */
 	while (1) {
+		get_package();
 		for (i = 0; i < WORK_BUF_LEN; i++) {
-			/* TODO: try to read result here */
 			miner_init_work(&mm_work, &work[i]);
 			miner_gen_work(&mm_work, &work[i]);
 			alink_send_work(&work[i]);
 			read_result();
 		}
 	}
+
 	error(0xf);
 	return 0;
 }
