@@ -88,7 +88,7 @@ void uart_write(char c)
 	irq_setmask(0);
 
 	if (force_sync) {
-		while (readb(&uart->lsr) == LM32_UART_LSR_THRR)
+		while (!(readb(&uart->lsr) & (LM32_UART_LSR_THRR | LM32_UART_LSR_TEMT)))
 			;
 		writeb(c, &uart->rxtx);
 	} else {
@@ -109,7 +109,6 @@ void uart_write(char c)
 
 void uart_force_sync(int f)
 {
-	if (f) while(!tx_cts);
 	force_sync = f;
 }
 
