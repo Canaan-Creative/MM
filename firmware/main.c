@@ -58,14 +58,22 @@ static void error(uint8_t n)
 
 static void decode_pkg(uint8_t *p, struct mm_work *mw)
 {
+	debug32("p[0]: %d\n", p[0]);
 	switch (p[0]) {
-	case P_STATIC:
-	case P_JOB_ID:
-	case P_COINBASE:
-	case P_MERKLES:
-
-	case P_ACK:
-	case P_NAK:
+	case 86: {
+		memcpy((uint8_t *)mw->coinbase_len, p + 1, 4);
+		memcpy((uint8_t *)mw->nonce2_offset, p + 5, 4);
+		memcpy((uint8_t *)mw->nonce2_size, p + 9, 4);
+		memcpy((uint8_t *)mw->merkle_offset, p + 13, 4);
+		memcpy((uint8_t *)mw->nmerkles, p + 17, 4);
+		debug32("dpkg: %d, %d, %d, %d, %d\n",
+			mw->coinbase_len,
+			mw->nonce2_offset,
+			mw->nonce2_size,
+			mw->merkle_offset,
+			mw->nmerkles);
+		break;
+	}
 
 	default:
 		break;
@@ -74,7 +82,6 @@ static void decode_pkg(uint8_t *p, struct mm_work *mw)
 
 static void get_pkg()
 {
-	/* static int j = ARRAY_SIZE(pkg); */
 	static char heada, headv;
 	static char tailo, tailn;
 	static int start, count;
@@ -92,20 +99,21 @@ static void get_pkg()
 				count = 0;
 			}
 
-			if (start) {
+			if (start)
 				pkg[count++] = c;
-			}
 
 			tailo = tailn;
 			tailn = c;
 			if (tailo == T1 && tailn == T2) {
 				uart_write('I');
 				start = 0;
-				if (count != P_COUNT) {
-					debug32("E: package broken\n");
-					/* Send back RESEND  */
-				} else
+				if (count - 1 == P_COUNT) {
 					decode_pkg(pkg, &mm_work);
+					/* Send back ACK */
+				} else {
+					debug32("E: package broken: %d\n", count);
+					/* Send back RESEND */
+				}
 			}
 		} else
 			break;
@@ -146,11 +154,13 @@ int main(int argv, char **argc) {
 	while (1) {
 		get_pkg();
 	}
+
 #include "sha256_test.c"
 #include "cb_test1.c"
 #include "alink_test.c"
 
 	while (1) {
+		get_pkg();
 		for (i = 0; i < WORK_BUF_LEN; i++) {
 			miner_init_work(&mm_work, &work[i]);
 			miner_gen_work(&mm_work, &work[i]);
