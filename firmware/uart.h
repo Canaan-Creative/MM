@@ -17,4 +17,8 @@ void uart_force_sync(int f);
 void uart_write(char c);
 void uart_puts(const char *s);
 
+void uart1_init(void);
+void uart1_write(char c);
+void uart1_puts(const char *s);
+
 #endif	/* _UART_H */

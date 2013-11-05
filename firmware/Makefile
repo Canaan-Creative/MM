@@ -14,7 +14,7 @@ LDFLAGS    += -nostartfiles -nodefaultlibs -nostdlib -Wl,--gc-sections -Wl,-T,li
 LDLIBS     += -Bminilibc -lminilibc -lgcc
 
 SSRCS      = sdk/crt0ram.S sdk/intr.c
-CSRCS      = main.c uart.c sha256.c alink.c twipwm.c miner.c
+CSRCS      = main.c uart.c sha256.c alink.c twipwm.c miner.c crc16.c
 OBJS       := $(addsuffix .o,$(basename $(CSRCS) $(SSRCS)))
 
 BATCHFILE	:= $(shell mktemp)

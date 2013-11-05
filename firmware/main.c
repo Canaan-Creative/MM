@@ -21,6 +21,7 @@
 #include "alink.h"
 #include "twipwm.h"
 #include "protocol.h"
+#include "crc.h"
 
 #include "hexdump.c"
 
@@ -31,10 +32,9 @@ struct mm_work mm_work;
 struct work work[WORK_BUF_LEN];
 struct result result;
 
-
-uint8_t pkg[P_COUNT];
+uint8_t g_pkg[AVA2_P_COUNT - 2];
+uint8_t g_act[AVA2_P_COUNT];
 uint8_t buffer[4*1024];
-
 
 static void delay(volatile uint32_t i)
 {
@@ -56,11 +56,41 @@ static void error(uint8_t n)
 	}
 }
 
+static void encode_pkg(uint8_t *p, int type)
+{
+	int i;
+	uint16_t crc;
+
+	p[0] = AVA2_H1;
+	p[1] = AVA2_H2;
+	p[AVA2_P_COUNT - 2] = AVA2_T1;
+	p[AVA2_P_COUNT - 1] = AVA2_T2;
+
+	p[2] = type;
+	p[3] = 1;
+	p[4] = 1;
+
+	switch(type) {
+	case AVA2_P_ACKDETECT:
+		for (i = 0; i < 32; i++)
+			p[i + 5] = i;
+		break;
+	}
+
+	crc = crc16(p + 5, 32);
+	p[AVA2_P_COUNT - 4] = crc & 0x00ff;
+	p[AVA2_P_COUNT - 3] = (crc & 0xff00) >> 8;
+}
+
 static void decode_pkg(uint8_t *p, struct mm_work *mw)
 {
-	debug32("p[0]: %d\n", p[0]);
+	hexdump(p, AVA2_P_COUNT - 2);
 	switch (p[0]) {
-	case 86: {
+	case 0:
+		encode_pkg(g_act, AVA2_P_ACKDETECT);
+		uart_puts((char *)g_act);
+		break;
+	case 1:
 		memcpy((uint8_t *)mw->coinbase_len, p + 1, 4);
 		memcpy((uint8_t *)mw->nonce2_offset, p + 5, 4);
 		memcpy((uint8_t *)mw->nonce2_size, p + 9, 4);
@@ -73,8 +103,6 @@ static void decode_pkg(uint8_t *p, struct mm_work *mw)
 			mw->merkle_offset,
 			mw->nmerkles);
 		break;
-	}
-
 	default:
 		break;
 	}
@@ -93,22 +121,21 @@ static void get_pkg()
 
 			heada = headv;
 			headv = c;
-			if (heada == H1 && headv == H2) {
-				uart_write('U');
+			if (heada == AVA2_H1 && headv == AVA2_H2) {
 				start = 1;
 				count = 0;
+				continue;
 			}
 
 			if (start)
-				pkg[count++] = c;
+				g_pkg[count++] = c;
 
 			tailo = tailn;
 			tailn = c;
-			if (tailo == T1 && tailn == T2) {
-				uart_write('I');
+			if (tailo == AVA2_T1 && tailn == AVA2_T2) {
 				start = 0;
-				if (count - 1 == P_COUNT) {
-					decode_pkg(pkg, &mm_work);
+				if (count == AVA2_P_COUNT - 2) {
+					decode_pkg(g_pkg, &mm_work);
 					/* Send back ACK */
 				} else {
 					debug32("E: package broken: %d\n", count);

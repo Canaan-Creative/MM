@@ -21,7 +21,7 @@
 
 #ifdef DEBUG
 
-#define hex_print(p) uart_puts((char *)p), uart_write('\n');
+#define hex_print(p) uart1_puts((char *)p), uart1_write('\n');
 
 static char nibble[] = {
 	'0', '1', '2', '3', '4', '5', '6', '7',

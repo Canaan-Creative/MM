@@ -19,7 +19,7 @@ void hexdump(const uint8_t *p, unsigned int len);
 char printf_buf32[32];
 #define debug32(...)	do {				\
 		m_sprintf(printf_buf32, __VA_ARGS__);	\
-		uart_puts(printf_buf32);		\
+		uart1_puts(printf_buf32);		\
 	} while(0)
 #else
 #define debug32(...)

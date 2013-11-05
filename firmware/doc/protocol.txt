@@ -7,7 +7,7 @@ Multiple FPGA controllers are daisy-chained together using TTL UART.
 == Packet structure ==
 Length: 40Bytes
 
-Format: |2B:HEAD|1B:TYPE|1B:IDX|1B:CNT|32B:DATA|1B:CRC|2B:TAIL|
+Format: |2B:HEAD|1B:TYPE|1B:IDX|1B:CNT|32B:DATA|2B:CRC|2B:TAIL|
 
 HEAD: 'AV'
 

@@ -33,6 +33,7 @@ static volatile int tx_cts;
 static int force_sync;
 
 static struct lm32_uart *uart = (struct lm32_uart *)UART0_BASE;
+static struct lm32_uart *uart1 = (struct lm32_uart *)UART1_BASE;
 
 void uart_isr(void)
 {
@@ -149,4 +150,39 @@ void uart_puts(const char *s)
 {
 	while (*s)
 		uart_write(*s++);
+}
+
+
+void uart1_init(void)
+{
+	uint8_t value;
+
+	/* Line control 8 bit, 1 stop, no parity */
+	writeb(LM32_UART_LCR_8BIT, &uart1->lcr);
+
+	/* Modem control, DTR = 1, RTS = 1 */
+	writeb(LM32_UART_MCR_DTR | LM32_UART_MCR_RTS, &uart1->mcr);
+
+	/* Set baud rate */
+	value = (CPU_FREQUENCY / UART_BAUD_RATE) & 0xff;
+	writeb(value, &uart1->divl);
+	value = (CPU_FREQUENCY / UART_BAUD_RATE) >> 8;
+	writeb(value, &uart1->divh);
+
+}
+
+void uart1_write(char c)
+{
+	if (c == '\n')
+		uart1_write('\r');
+
+	while (!(readb(&uart1->lsr) & (LM32_UART_LSR_THRR | LM32_UART_LSR_TEMT)))
+		;
+	writeb(c, &uart1->rxtx);
+}
+
+void uart1_puts(const char *s)
+{
+	while (*s)
+		uart1_write(*s++);
 }
