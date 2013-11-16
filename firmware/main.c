@@ -32,7 +32,7 @@ struct mm_work mm_work;
 struct work work[WORK_BUF_LEN];
 struct result result;
 
-uint8_t g_pkg[AVA2_P_COUNT - 2];
+uint8_t g_pkg[AVA2_P_COUNT];
 uint8_t g_act[AVA2_P_COUNT];
 uint8_t buffer[4*1024];
 
@@ -58,7 +58,6 @@ static void error(uint8_t n)
 
 static void encode_pkg(uint8_t *p, int type)
 {
-	int i;
 	uint16_t crc;
 
 	p[0] = AVA2_H1;
@@ -72,8 +71,9 @@ static void encode_pkg(uint8_t *p, int type)
 
 	switch(type) {
 	case AVA2_P_ACKDETECT:
-		for (i = 0; i < 32; i++)
-			p[i + 5] = i;
+		p[5 + 0] = 'M';
+		p[5 + 1] = 'M';
+		memcpy(p + 5 + 2, MM_VERSION, 6);
 		break;
 	}
 
@@ -84,10 +84,24 @@ static void encode_pkg(uint8_t *p, int type)
 	hexdump(p, AVA2_P_COUNT);
 }
 
-static void decode_pkg(uint8_t *p, struct mm_work *mw)
+static int decode_pkg(uint8_t *p, struct mm_work *mw)
 {
-	hexdump(p, AVA2_P_COUNT - 2);
-	switch (p[0]) {
+	unsigned int expected_crc;
+	unsigned int actual_crc;
+
+	hexdump(p, AVA2_P_COUNT);
+
+	expected_crc = (p[AVA2_P_COUNT - 3] & 0xff) |
+		((p[AVA2_P_COUNT - 4] & 0xff) << 8);
+
+	actual_crc = crc16(p + 5, 32);
+	if(expected_crc != actual_crc) {
+		debug32("PKG CRC failed (expected %08x, got %08x)\n",
+			expected_crc, actual_crc);
+		return 1;
+	}
+
+	switch (p[2]) {
 	case 0:
 		encode_pkg(g_act, AVA2_P_ACKDETECT);
 		uart_nwrite((char *)g_act, AVA2_P_COUNT);
@@ -108,6 +122,8 @@ static void decode_pkg(uint8_t *p, struct mm_work *mw)
 	default:
 		break;
 	}
+
+	return 0;
 }
 
 static void get_pkg()
@@ -124,8 +140,10 @@ static void get_pkg()
 			heada = headv;
 			headv = c;
 			if (heada == AVA2_H1 && headv == AVA2_H2) {
-				start = 1;
-				count = 0;
+				g_pkg[0] = heada;
+				g_pkg[1] = headv;
+				start = 2;
+				count = 2;
 				continue;
 			}
 
@@ -136,7 +154,7 @@ static void get_pkg()
 			tailn = c;
 			if (tailo == AVA2_T1 && tailn == AVA2_T2) {
 				start = 0;
-				if (count == AVA2_P_COUNT - 2) {
+				if (count == AVA2_P_COUNT) {
 					decode_pkg(g_pkg, &mm_work);
 					/* Send back ACK */
 				} else {
