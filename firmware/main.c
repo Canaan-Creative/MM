@@ -80,6 +80,8 @@ static void encode_pkg(uint8_t *p, int type)
 	crc = crc16(p + 5, 32);
 	p[AVA2_P_COUNT - 4] = crc & 0x00ff;
 	p[AVA2_P_COUNT - 3] = (crc & 0xff00) >> 8;
+
+	hexdump(p, AVA2_P_COUNT);
 }
 
 static void decode_pkg(uint8_t *p, struct mm_work *mw)
@@ -88,7 +90,7 @@ static void decode_pkg(uint8_t *p, struct mm_work *mw)
 	switch (p[0]) {
 	case 0:
 		encode_pkg(g_act, AVA2_P_ACKDETECT);
-		uart_puts((char *)g_act);
+		uart_nwrite((char *)g_act, AVA2_P_COUNT);
 		break;
 	case 1:
 		memcpy((uint8_t *)mw->coinbase_len, p + 1, 4);

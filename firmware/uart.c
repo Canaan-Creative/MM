@@ -82,9 +82,6 @@ void uart_write(char c)
 	unsigned int oldmask;
 	unsigned char stat;
 
-	if (c == '\n')
-		uart_write('\r');
-
 	oldmask = irq_getmask();
 	irq_setmask(0);
 
@@ -148,7 +145,16 @@ void uart_init(void)
 
 void uart_puts(const char *s)
 {
-	while (*s)
+	while (*s) {
+		if (*s == '\n')
+			uart_write('\r');
+		uart_write(*s++);
+	}
+}
+
+void uart_nwrite(const char *s, unsigned int l)
+{
+	while (l--)
 		uart_write(*s++);
 }
 
