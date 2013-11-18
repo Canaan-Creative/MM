@@ -60,6 +60,8 @@ static void encode_pkg(uint8_t *p, int type)
 {
 	uint16_t crc;
 
+	memset(p, 0, AVA2_P_COUNT);
+
 	p[0] = AVA2_H1;
 	p[1] = AVA2_H2;
 	p[AVA2_P_COUNT - 2] = AVA2_T1;
@@ -84,6 +86,12 @@ static void encode_pkg(uint8_t *p, int type)
 	hexdump(p, AVA2_P_COUNT);
 }
 
+static void send_pkg(int type)
+{
+	encode_pkg(g_act, type);
+	uart_nwrite((char *)g_act, AVA2_P_COUNT);
+}
+
 static int decode_pkg(uint8_t *p, struct mm_work *mw)
 {
 	unsigned int expected_crc;
@@ -100,13 +108,14 @@ static int decode_pkg(uint8_t *p, struct mm_work *mw)
 			expected_crc, actual_crc);
 		return 1;
 	}
+	/* We think the pkg is correct, send back ACK */
+	send_pkg(AVA2_P_ACK);
 
 	switch (p[2]) {
-	case 0:
-		encode_pkg(g_act, AVA2_P_ACKDETECT);
-		uart_nwrite((char *)g_act, AVA2_P_COUNT);
+	case AVA2_P_DETECT:
+		send_pkg(AVA2_P_ACKDETECT);
 		break;
-	case 1:
+	case AVA2_P_STATIC:
 		memcpy((uint8_t *)mw->coinbase_len, p + 1, 4);
 		memcpy((uint8_t *)mw->nonce2_offset, p + 5, 4);
 		memcpy((uint8_t *)mw->nonce2_size, p + 9, 4);
@@ -119,6 +128,9 @@ static int decode_pkg(uint8_t *p, struct mm_work *mw)
 			mw->merkle_offset,
 			mw->nmerkles);
 		break;
+	case AVA2_P_JOB_ID:
+	case AVA2_P_COINBASE:
+	case AVA2_P_MERKLES:
 	default:
 		break;
 	}
@@ -154,12 +166,11 @@ static void get_pkg()
 			tailn = c;
 			if (tailo == AVA2_T1 && tailn == AVA2_T2) {
 				start = 0;
-				if (count == AVA2_P_COUNT) {
-					decode_pkg(g_pkg, &mm_work);
-					/* Send back ACK */
+				if (count == AVA2_P_COUNT && (!decode_pkg(g_pkg, &mm_work))) {
+					;
 				} else {
 					debug32("E: package broken: %d\n", count);
-					/* Send back RESEND */
+					send_pkg(AVA2_P_NAK);
 				}
 			}
 		} else
