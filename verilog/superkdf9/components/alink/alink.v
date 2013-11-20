@@ -218,7 +218,7 @@ wire [255:0] trig0 = {
 	TX_N[1] ,//35
 	RX_P[1] ,//34
 	RX_N[1] ,//33
-	rx_vld  ,//32
+	rx_wr_en  ,//32
 	rx_din[31:0]//31:0
 } ;
 icon icon_test(.CONTROL0(icon_ctrl_0));
