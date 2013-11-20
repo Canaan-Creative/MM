@@ -25,7 +25,7 @@
 
 #include "hexdump.c"
 
-#define WORK_BUF_LEN	(8)
+#define WORK_BUF_LEN	(1)
 #define adjust_fan(value)	write_pwm(value)
 
 struct mm_work mm_work;
@@ -108,11 +108,10 @@ static int decode_pkg(uint8_t *p, struct mm_work *mw)
 			expected_crc, actual_crc);
 		return 1;
 	}
-	/* We think the pkg is correct, send back ACK */
-	send_pkg(AVA2_P_ACK);
 
 	switch (p[2]) {
 	case AVA2_P_DETECT:
+		send_pkg(AVA2_P_ACK);
 		send_pkg(AVA2_P_ACKDETECT);
 		break;
 	case AVA2_P_STATIC:
@@ -206,12 +205,8 @@ int main(int argv, char **argc) {
 
 	debug32("%s\n", MM_VERSION);
 
-	alink_init(0xff);
-	adjust_fan(0xff);
-
-	while (1) {
-		get_pkg();
-	}
+	alink_init(0x02);
+	adjust_fan(0x0f);
 
 #include "sha256_test.c"
 #include "cb_test1.c"

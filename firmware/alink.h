@@ -11,6 +11,7 @@
 
 void alink_init();
 void alink_buf_status();
+int alink_busy_status();
 int alink_txbuf_full();
 int alink_send_work(struct work *w);
 int alink_rxbuf_empty();

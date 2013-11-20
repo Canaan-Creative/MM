@@ -32,17 +32,24 @@ void alink_init(uint32_t count)
 	writel(count, &alink->en);
 }
 
+int alink_busy_status()
+{
+	return readl(&alink->busy);
+}
+
 void alink_buf_status()
 {
 	uint32_t tmp;
 
 	tmp = readl(&alink->busy);
-	debug32("Buf busy: %08x,", tmp);
+	debug32("Buf busy: 0x%08x,", tmp);
 
 	tmp = readl(&alink->state);
-	debug32(" tx: %d, rx: %d\n",
-		((tmp & 0xf0) >> 4),
-		((tmp & 0xf00000) >> 20) / 5);
+	debug32(" state: 0x%08x (tx: %d, rx: %d(%d))\n",
+		tmp,
+		((tmp & LM32_ALINK_STATE_TXCOUNT) >> 4),
+		((tmp & LM32_ALINK_STATE_RXCOUNT) >> 20),
+		((tmp & LM32_ALINK_STATE_RXCOUNT) >> 20) / 5);
 }
 
 int alink_txbuf_full()
@@ -152,9 +159,9 @@ void send_test_work(int value)
 	msg_blk[8] =0x087e051a;
 	msg_blk[7] =0x88517050;
 	msg_blk[6] =0x4ac1d001;
-	msg_blk[5] =0x74010000; //clock cfg1
-	msg_blk[4] =0x07000008; //clock cfg0
-	msg_blk[3] =0xFFFFFFFF; //time out
+	msg_blk[5] =0x00000000; //clock cfg1
+	msg_blk[4] =0x00000001; //clock cfg0
+	msg_blk[3] =0x000001FF; //time out
 	msg_blk[2] =0x19999999; //step
 	msg_blk[1] =0x89abcdef; //taskid_l
 	msg_blk[0] =value;
