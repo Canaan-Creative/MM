@@ -84,7 +84,7 @@ endgenerate
 //--------------------------------------------
 always @ ( posedge clk ) begin
 	if( rst || reg_flush ) rx_sel <= 32'b0 ;
-	else if( |rx_sel ) rx_sel <= rx_sel ^ (rx_sel & rx_last) ;//clear sel
+	else if( |(rx_sel&rx_last) ) rx_sel <= 32'b0 ;//clear sel
 	else if( ~rx_almost_full && rx_start[0 ] ) rx_sel <= 32'b1<<0  ;
 	else if( ~rx_almost_full && rx_start[1 ] ) rx_sel <= 32'b1<<1  ;
 	else if( ~rx_almost_full && rx_start[2 ] ) rx_sel <= 32'b1<<2  ;

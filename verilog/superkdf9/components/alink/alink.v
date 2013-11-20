@@ -136,7 +136,13 @@ tx_fifo tx_fifo(
 // RX.FIFO
 //-------------------------------------------------
 assign rxempty = rx_data_count < `RX_DATA_LEN ;
-wire rx_almost_full = (rx_data_count + `RX_DATA_LEN+`TX_TASKID_LEN) > `RX_FIFO_DEPTH ; //at list ONE report can be pull into rx_fifo
+wire rx_almost_full = (rx_data_count + `RX_DATA_LEN*2) > `RX_FIFO_DEPTH ; //at list ONE report can be pull into rx_fifo
+`ifdef SIM
+	always @ ( posedge rx_almost_full ) begin
+		#200 ;
+		$display("[WAR] rx fifo full:%d",rx_data_count);
+	end
+`endif
 rx_fifo rx_fifo(
 /*input          */ .clk       (CLK_I           ),
 /*input          */ .srst      (RST_I|reg_flush ),

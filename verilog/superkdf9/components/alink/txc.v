@@ -10,7 +10,7 @@ input                    task_id_vld ,
 input  [31:0]            reg_tout    ,
 input                    tx_task_vld ,//tx fifo not empty
 
-output reg               tx_phy_start,
+output                   tx_phy_start,
 output reg [`PHY_NUM-1:0]tx_phy_sel  ,
 input                    tx_phy_done ,
 
@@ -25,43 +25,27 @@ parameter REQ  = 2'b01 ;
 parameter SENT = 2'b10 ;
 
 wire [`PHY_NUM-1:0] timer_start ;
-wire [`PHY_NUM-1:0] timer_done ;
-always @ ( posedge clk ) begin
-	if( rst )
-		tx_phy_start <= 1'b0 ;
-	else if( cur_state == REQ && nxt_state == SENT )
-		tx_phy_start <= 1'b1 ;
-	else
-		tx_phy_start <= 1'b0 ;
-end
+wire [`PHY_NUM-1:0] timer_busy ;
+assign tx_phy_start = cur_state == REQ && nxt_state == SENT ;
+
 //----------------------------------------------
 // Timer
 //----------------------------------------------
 genvar i ;
 generate
 	for( i=0 ; i < `PHY_NUM ; i = i + 1 ) begin : G
-		assign timer_start[i] = tx_phy_start & tx_phy_sel[i] ;
+		assign timer_start[i] = task_id_vld & tx_phy_sel[i] ;
 
-		reg [31:0] reg_tout_r ;
-		always @ ( posedge clk ) begin
-			if( rst )
-				reg_tout_r <= 32'hffffffff ;
-			else if( task_id_vld )
-				reg_tout_r <= reg_tout ;
-		end
 		tx_timer tx_timer(
 		/*input            */ .clk          (clk                       ) ,
 		/*input            */ .rst          (rst                       ) ,
 		/*input            */ .reg_flush    (reg_flush                 ) ,
-		/*input  [31:0]    */ .reg_tout     (reg_tout_r                ) ,
-		/*input            */ .timer_start  (timer_start[i]&reg_mask[i]) ,
-		/*output           */ .timer_done   (timer_done[i]             ) ,
+		/*input  [31:0]    */ .reg_tout     (reg_tout                  ) ,
+		/*input            */ .timer_start  (timer_start[i]            ) ,
+		/*output           */ .timer_busy   (timer_busy[i]             ) ,
 		/*output reg [31:0]*/ .timer_cnt    (timer_cnt[i*32+32-1:i*32] )     
 		);
-		assign reg_busy[i] =  reg_mask[i] &&
-                                     (|timer_cnt[i*32+32-1:i*32] || 
-                                      timer_start[i]             || 
-                                      timer_done[i]) ;
+		assign reg_busy[i] =  timer_start[i] | timer_busy[i] ;
 
 	end
 endgenerate
@@ -71,7 +55,7 @@ endgenerate
 //----------------------------------------------
 
 always @ ( posedge clk ) begin
-	if( rst )
+	if( rst || reg_flush )
 		cur_state <= IDLE ;
 	else
 		cur_state <= nxt_state ;
@@ -80,10 +64,9 @@ end
 always @ ( * ) begin
 	nxt_state = cur_state ;
 	case( cur_state )
-	IDLE: if( |tx_phy_sel && ~reg_flush ) nxt_state = REQ ;
+	IDLE: if( |tx_phy_sel ) nxt_state = REQ  ;
 	REQ : if( tx_task_vld ) nxt_state = SENT ;
-	      else if( reg_flush ) nxt_state = IDLE ;
-	SENT: if( tx_phy_done || reg_flush) nxt_state = IDLE ;
+	SENT: if( tx_phy_done ) nxt_state = IDLE ;
 	default : nxt_state = IDLE ;
 	endcase
 end
@@ -92,8 +75,10 @@ end
 // Arbiter
 //----------------------------------------------
 always @ ( posedge clk ) begin
-	if( rst || reg_flush ) tx_phy_sel <= 32'b0 ;
-	else if( ~reg_busy[0 ]&&reg_mask[0 ] ) tx_phy_sel <= 32'b1<<0  ;
+if( rst || reg_flush || (cur_state == SENT && nxt_state == IDLE)) 
+	tx_phy_sel <= 32'b0 ;
+else if( cur_state == IDLE ) begin
+	if( ~reg_busy[0 ]&&reg_mask[0 ] ) tx_phy_sel <= 32'b1<<0  ;
 	else if( ~reg_busy[1 ]&&reg_mask[1 ] ) tx_phy_sel <= 32'b1<<1  ;
 	else if( ~reg_busy[2 ]&&reg_mask[2 ] ) tx_phy_sel <= 32'b1<<2  ;
 	else if( ~reg_busy[3 ]&&reg_mask[3 ] ) tx_phy_sel <= 32'b1<<3  ;
@@ -128,5 +113,6 @@ always @ ( posedge clk ) begin
 	else if( ~reg_busy[31]&&reg_mask[31] ) tx_phy_sel <= 32'b1<<31 ;
 `endif
 	else tx_phy_sel <= 32'b0 ;
+end
 end
 endmodule

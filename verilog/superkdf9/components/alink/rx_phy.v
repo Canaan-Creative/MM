@@ -49,7 +49,7 @@ reg [3:0] report_p_d ;
 reg [3:0] report_n_d ;
 
 always@(posedge clk or posedge rst )begin
-	if( reg_flush || rst ) begin
+	if( reg_flush || rst || ~reg_busy) begin
 		report_p_d <= 4'hf ; 
 		report_n_d <= 4'hf ; 
 	end else begin
@@ -59,9 +59,12 @@ always@(posedge clk or posedge rst )begin
 end
 wire rx_0 = ((~report_n_d[3]) && (&report_n_d[2:1])) && ~(|report_p_d[3:1]);
 wire rx_1 = ((~report_p_d[3]) && (&report_p_d[2:1])) && ~(|report_n_d[3:1]);
+wire rx_stop  = (report_p_d[3]^report_n_d[3]) && (report_p_d[2]^report_n_d[2]) && (report_p_d[1]&report_n_d[1]) ;
+/*
 wire rx_stop  = (&report_p_d[3:1] && ~report_n_d[3] && &report_n_d[2:1]) || 
                 (&report_n_d[3:1] && ~report_p_d[3] && &report_p_d[2:1]) || 
                 (~report_p_d[3] && &report_p_d[2:1] && ~report_n_d[3] && &report_n_d[2:1]) ; 
+*/
 
 reg [31:0] nonce_buf;
 always@(posedge clk)begin
@@ -74,23 +77,14 @@ end
 //-------------------------------------------------
 // Receive TaskID&Timer
 //-------------------------------------------------
-reg [32*`RX_DATA_LEN-1:0] rx_buf ;
+reg [31:0] task_id_h_r ;
+reg [31:0] task_id_l_r ;
 always @ ( posedge clk ) begin
-	if( ~rx_vld ) begin
-		rx_buf[31:0] <= MY_RXID ;
-		if( task_id_vld ) begin
-			rx_buf[63:32]  <= task_id_h ;
-			rx_buf[95:64]  <= task_id_l ;
-		end
-		if( rx_start )
-			rx_buf[127:96] <= timer_cnt ;
-		if( rx_stop )
-			rx_buf[159:128] <= nonce_buf ;
-	end else
-		//rx_buf <= rx_buf >> 32 ;
-		rx_buf <= {rx_buf[31:0],rx_buf[32*`RX_DATA_LEN-1:32]} ;
+	if( ~rx_vld && task_id_vld ) begin
+			task_id_h_r  <= task_id_h ;
+			task_id_l_r  <= task_id_l ;
+	end
 end
-
 //-------------------------------------------------
 // Push Out
 //-------------------------------------------------
@@ -107,7 +101,10 @@ always @ ( posedge clk ) begin
 end
 
 assign rx_vld = |push_cnt ;
-assign rx_dat = rx_buf[31:0] ;
+assign rx_dat = push_cnt == 1 ? MY_RXID :
+		push_cnt == 2 ? task_id_h_r :
+		push_cnt == 3 ? task_id_l_r :
+		push_cnt == 4 ? timer_cnt   : nonce_buf ;
 assign rx_start = reg_busy && rx_stop && ~rx_vld ;
 assign rx_last  = push_cnt == `RX_DATA_LEN ;
 endmodule

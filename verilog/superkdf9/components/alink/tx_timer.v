@@ -6,23 +6,29 @@ input             rst          ,
 input             reg_flush    ,
 input  [31:0]     reg_tout     ,
 input             timer_start  ,
-output            timer_done   ,
-output [31:0]     timer_cnt        
+output reg        timer_busy   ,
+output [31:0]     timer_cnt       
 );
 
-reg [31:0] timer ;
+reg [23:0] timer ;
 
-assign timer_cnt = timer ;
+assign timer_cnt = {8'b0,timer} ;
 
 always @ ( posedge clk ) begin
 	if( rst || (timer == reg_tout) || reg_flush )
-		timer <= 32'b0 ;
+		timer <= 24'b0 ;
 	else if( timer_start )
-		timer <= 32'b1 ;
+		timer <= 24'b1 ;
 	else if( |timer && (timer < reg_tout))
-		timer <= 32'b1 + timer ;
+		timer <= 24'b1 + timer ;
 end
 
-assign timer_done = (timer == reg_tout[31:0]) && |reg_tout[31:0] ;
-
+always @ ( posedge clk ) begin
+	if( rst )
+		timer_busy <= 1'b0 ;
+	else if( timer_start )
+		timer_busy <= 1'b1 ;
+	else if ( (timer == reg_tout[23:0]) && |reg_tout[23:0] )
+		timer_busy <= 1'b0 ;
+end
 endmodule
