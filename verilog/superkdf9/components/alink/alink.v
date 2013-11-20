@@ -209,7 +209,9 @@ tx_phy tx_phy(
 // VIO/ILA and ICON {{{
 wire [35:0] icon_ctrl_0;
 wire [255:0] trig0 = {
-                   4'ha                 ,//
+	4'ha                 ,//94:91
+	tx_data_count[10:0],//90:80
+	rx_data_count[9:0],//79:70
 	tx_dout[31:0],//69:38
 	tx_rd_en,//37
 	TX_P[1] ,//36
