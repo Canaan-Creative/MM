@@ -25,7 +25,7 @@
 
 #include "hexdump.c"
 
-#define WORK_BUF_LEN	(1)
+#define WORK_BUF_LEN	(8)
 #define adjust_fan(value)	write_pwm(value)
 
 struct mm_work mm_work;
@@ -195,6 +195,8 @@ static void read_result()
 
 
 int main(int argv, char **argc) {
+	delay(4000000);
+
 	int i;
 
 	irq_setmask(0);
@@ -205,7 +207,7 @@ int main(int argv, char **argc) {
 
 	debug32("%s\n", MM_VERSION);
 
-	alink_init(0x02);
+	alink_init(0xff);
 	adjust_fan(0x0f);
 
 #include "sha256_test.c"

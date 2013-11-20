@@ -161,7 +161,7 @@ void send_test_work(int value)
 	msg_blk[6] =0x4ac1d001;
 	msg_blk[5] =0x00000000; //clock cfg1
 	msg_blk[4] =0x00000001; //clock cfg0
-	msg_blk[3] =0x000001FF; //time out
+	msg_blk[3] =0x000FFFFF; //time out
 	msg_blk[2] =0x19999999; //step
 	msg_blk[1] =0x89abcdef; //taskid_l
 	msg_blk[0] =value;
