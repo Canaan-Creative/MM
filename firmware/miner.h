@@ -58,4 +58,7 @@ struct mm_work {
 	uint8_t *header;
 };
 
+void miner_init_work(struct mm_work *mw, struct work *work);
+void miner_gen_work(struct mm_work *mw, struct work *work);
+
 #endif /* __MINER_H__ */

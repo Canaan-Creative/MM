@@ -6,12 +6,13 @@
  * For details see the UNLICENSE file at the root of the source tree.
  */
 
-#ifndef _SERIAL_H
-#define _SERIAL_H
+#ifndef _TWI_H_
+#define _TWI_H_
 
-void uart_init(void);
-unsigned char serial_getc();
-void serial_putc(const unsigned char c);
-void serial_puts(const char *s);
+void twi_start(void);
+void twi_write(uint8_t value);
+uint8_t twi_read(void);
+void twi_stop(void);
+void write_pwm(uint8_t value);
 
-#endif	/* _SERIAL_H */
+#endif	/* _TWI_H_ */

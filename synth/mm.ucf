@@ -7,6 +7,9 @@ NET "uartSOUT" LOC = R12; # FT232's RX
 NET "uartRESET_N" LOC = R15 | SLEW = QUIETIO;
 NET "hubRESET_N"  LOC = R16 | SLEW = QUIETIO;
 
+NET "uart_debugSIN" LOC = P7;
+NET "uart_debugSOUT" LOC = T7;
+
 # UART debug
 NET   "RX_P[0]" LOC = M15;
 NET   "RX_N[0]" LOC = L14;

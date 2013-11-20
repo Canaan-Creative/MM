@@ -12,21 +12,24 @@
 #include "system_config.h"
 #include "defines.h"
 #include "io.h"
-#include "serial.h"
+#include "uart.h"
 #include "miner.h"
 
 static struct lm32_alink *alink = (struct lm32_alink *)ALINK_BASE;
 
-void alink_init()
+void alink_init(uint32_t count)
 {
 	/* Enalbe how many PHY in controller, base on the count of 1
-	 * 1: 0x1
-	 * 2: 0x3
-	 * 3: 0x7
+	 * 01: 0x1
+	 * 02: 0x3
+	 * 03: 0x7
 	 * ...
-	 * 10: 0x3ff
+	 * 08: 0xff
+	 * 16: 0xffff
+	 * 24: 0xffffff
+	 * 32: 0xffffffff
 	 */
-	writel(0xff, &alink->en);
+	writel(count, &alink->en);
 }
 
 void alink_buf_status()
@@ -126,12 +129,12 @@ void alink_read_result(struct result *r)
 	memcpy(r->nonce, (uint8_t *)(&tmp), 4);
 }
 
-void send_test_work()
+void send_test_work(int value)
 {
 	uint32_t msg_blk[23];
 	int i;
 
-	debug32("Generated test task:\n");
+	debug32("Send test task:\n");
 	msg_blk[22]=0x220f1dbd;
 	msg_blk[21]=0xd8f8ef67;
 	msg_blk[20]=0x12146495;
@@ -149,12 +152,12 @@ void send_test_work()
 	msg_blk[8] =0x087e051a;
 	msg_blk[7] =0x88517050;
 	msg_blk[6] =0x4ac1d001;
-	msg_blk[5] =0x00000000; //clock cfg1
-	msg_blk[4] =0x94E00001; //clock cfg0
+	msg_blk[5] =0x74010000; //clock cfg1
+	msg_blk[4] =0x07000008; //clock cfg0
 	msg_blk[3] =0xFFFFFFFF; //time out
 	msg_blk[2] =0x19999999; //step
 	msg_blk[1] =0x89abcdef; //taskid_l
-	msg_blk[0] =0x01234567; //taskid_h
+	msg_blk[0] =value;
 
 	for (i = 0; i < 23; i++) {
 		writel(msg_blk[i], &alink->tx);

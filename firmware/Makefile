@@ -10,14 +10,12 @@
 -include config.mk
 # ----- Customer ----------------------------------------------------------
 INCLUDES   = -I. -Isdk -Iminilibc
-LDFLAGS    += -Wl,--gc-sections -Wl,-T,linker.ld -nostartfiles -nodefaultlibs -nostdlib -Wl,-Map=$(PRJ_NAME).map
+LDFLAGS    += -nostartfiles -nodefaultlibs -nostdlib -Wl,--gc-sections -Wl,-T,linker.ld -Wl,-Map=$(PRJ_NAME).map
 LDLIBS     += -Bminilibc -lminilibc -lgcc
 
-CSRCS      = main.c serial.c sha256.c alink.c
-SDK_SRCS   = \
-	sdk/crt0ram.S \
-	sdk/intr.c
-OBJS       := $(addsuffix .o,$(basename $(CSRCS) $(SDK_SRCS)))
+SSRCS      = sdk/crt0ram.S sdk/intr.c
+CSRCS      = main.c uart.c sha256.c alink.c twipwm.c miner.c crc16.c
+OBJS       := $(addsuffix .o,$(basename $(CSRCS) $(SSRCS)))
 
 BATCHFILE	:= $(shell mktemp)
 HARDWARE_NAME	= mm

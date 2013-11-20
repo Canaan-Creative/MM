@@ -14,43 +14,27 @@
 #include "system_config.h"
 #include "defines.h"
 #include "io.h"
-#include "serial.h"
+#include "intr.h"
+#include "uart.h"
 #include "miner.h"
 #include "sha256.h"
 #include "alink.h"
+#include "twipwm.h"
+#include "protocol.h"
+#include "crc.h"
 
 #include "hexdump.c"
 
 #define WORK_BUF_LEN	(8)
+#define adjust_fan(value)	write_pwm(value)
 
 struct mm_work mm_work;
 struct work work[WORK_BUF_LEN];
 struct result result;
 
-
-uint8_t pkg[40];
+uint8_t g_pkg[AVA2_P_COUNT];
+uint8_t g_act[AVA2_P_COUNT];
 uint8_t buffer[4*1024];
-
-
-static void flip32(void *dest_p, const void *src_p)
-{
-	uint32_t *dest = dest_p;
-	const uint32_t *src = src_p;
-	int i;
-
-	for (i = 0; i < 8; i++)
-		dest[i] = bswap_32(src[i]);
-}
-
-static void flip64(void *dest_p, const void *src_p)
-{
-	uint32_t *dest = dest_p;
-	const uint32_t *src = src_p;
-	int i;
-
-	for (i = 0; i < 16; i++)
-		dest[i] = bswap_32(src[i]);
-}
 
 static void delay(volatile uint32_t i)
 {
@@ -63,177 +47,186 @@ static void error(uint8_t n)
 	volatile uint32_t *gpio = (uint32_t *)GPIO_BASE;
 	uint8_t i = 0;
 
-	while (1) {
+	while (i < 8) {
 		delay(4000000);
-		if (i++ %2)
-			writel(0x00000000 | (n << 24), gpio);
+		if (i++ % 2)
+			writel(n << 24, gpio);
 		else
-			writel(0x00000000, gpio);
+			writel(0, gpio);
 	}
 }
 
-static void init_work(struct mm_work *mw, struct work *work)
+static void encode_pkg(uint8_t *p, int type)
 {
-	/* TODO: create the task_id */
-	work->task_id[0] = 0x55;
-	work->task_id[1] = 0xaa;
-	work->task_id[2] = 0xbb;
-	work->task_id[3] = 0x44;
+	uint16_t crc;
 
-	work->timeout[0] = 0x04;
-	work->timeout[1] = 0xfa;
-	work->timeout[2] = 0x1b;
-	work->timeout[3] = 0xe0;
+	memset(p, 0, AVA2_P_COUNT);
 
-	work->clock[0] = 0x94;
-	work->clock[1] = 0xe0;
-	work->clock[2] = 0x00;
-	work->clock[3] = 0x01;
-	work->clock[4] = 0x00;
-	work->clock[5] = 0x00;
-	work->clock[6] = 0x00;
-	work->clock[7] = 0x00;
+	p[0] = AVA2_H1;
+	p[1] = AVA2_H2;
+	p[AVA2_P_COUNT - 2] = AVA2_T1;
+	p[AVA2_P_COUNT - 1] = AVA2_T2;
 
-	work->step[0] = 0x19;
-	work->step[1] = 0x99;
-	work->step[2] = 0x99;
-	work->step[3] = 0x99;
-}
+	p[2] = type;
+	p[3] = 1;
+	p[4] = 1;
 
-static void gen_hash(uint8_t *data, uint8_t *hash, unsigned int len)
-{
-	uint8_t hash1[32];
-
-	sha256(data, len, hash1);
-	sha256(hash1, 32, hash);
-}
-
-static void calc_midstate(struct mm_work *mw, struct work *work)
-{
-	unsigned char data[64];
-	uint32_t *data32 = (uint32_t *)data;
-
-	flip64(data32, mw->header);
-
-	sha256_init();
-	sha256_update(data, 64);
-	sha256_final(work->data);
-
-	flip64(work->data, work->data);
-	memcpy(work->data + 32, mw->header + 64, 12);
-}
-
-/* Total: 4W + 19W = 23W
- * TaskID_H:1, TASKID_L:1, STEP:1, TIMEOUT:1,
- * CLK_CFG:2, a2, Midsate:8, e0, e1, e2, a0, a1, Data:3
- */
-static void calc_prepare(struct mm_work *mw, struct work *work)
-{
-	uint32_t precalc[6];
-	sha256_precalc(work->data, 44, (uint8_t *)precalc);
-	memcpy(work->a0, precalc + 0, 4);
-	memcpy(work->a1, precalc + 1, 4);
-	memcpy(work->a2, precalc + 2, 4);
-	memcpy(work->e0, precalc + 3, 4);
-	memcpy(work->e1, precalc + 4, 4);
-	memcpy(work->e2, precalc + 5, 4);
-}
-
-static void gen_work(struct mm_work *mw, struct work *work)
-{
-	uint8_t merkle_root[32], merkle_sha[64];
-	uint32_t *data32, *swap32, tmp32;
-	int i;
-
-	tmp32 = bswap_32(mw->nonce2);
-	memcpy(mw->coinbase + mw->nonce2_offset, (uint8_t *)(&tmp32), sizeof(uint32_t));
-	work->nonce2 = mw->nonce2++;
-
-	gen_hash(mw->coinbase, merkle_root, mw->coinbase_len);
-	memcpy(merkle_sha, merkle_root, 32);
-	for (i = 0; i < mw->nmerkles; i++) {
-		memcpy(merkle_sha + 32, mw->merkles[i], 32);
-		gen_hash(merkle_sha, merkle_root, 64);
-		memcpy(merkle_sha, merkle_root, 32);
+	switch(type) {
+	case AVA2_P_ACKDETECT:
+		p[5 + 0] = 'M';
+		p[5 + 1] = 'M';
+		memcpy(p + 5 + 2, MM_VERSION, 6);
+		break;
 	}
-	data32 = (uint32_t *)merkle_sha;
-	swap32 = (uint32_t *)merkle_root;
-	flip32(swap32, data32);
 
-	memcpy(mw->header + mw->merkle_offset, merkle_root, 32);
+	crc = crc16(p + 5, 32);
+	p[AVA2_P_COUNT - 4] = crc & 0x00ff;
+	p[AVA2_P_COUNT - 3] = (crc & 0xff00) >> 8;
 
-	debug32("Work nonce2:\n"); hexdump((uint8_t *)(&work->nonce2), 4);
-	debug32("Generated header:\n"); hexdump(mw->header, 128);
-	calc_midstate(mw, work);
-	calc_prepare(mw, work);
+	hexdump(p, AVA2_P_COUNT);
+}
+
+static void send_pkg(int type)
+{
+	encode_pkg(g_act, type);
+	uart_nwrite((char *)g_act, AVA2_P_COUNT);
+}
+
+static int decode_pkg(uint8_t *p, struct mm_work *mw)
+{
+	unsigned int expected_crc;
+	unsigned int actual_crc;
+
+	hexdump(p, AVA2_P_COUNT);
+
+	expected_crc = (p[AVA2_P_COUNT - 3] & 0xff) |
+		((p[AVA2_P_COUNT - 4] & 0xff) << 8);
+
+	actual_crc = crc16(p + 5, 32);
+	if(expected_crc != actual_crc) {
+		debug32("PKG CRC failed (expected %08x, got %08x)\n",
+			expected_crc, actual_crc);
+		return 1;
+	}
+	/* We think the pkg is correct, send back ACK */
+	send_pkg(AVA2_P_ACK);
+
+	switch (p[2]) {
+	case AVA2_P_DETECT:
+		send_pkg(AVA2_P_ACKDETECT);
+		break;
+	case AVA2_P_STATIC:
+		memcpy((uint8_t *)mw->coinbase_len, p + 1, 4);
+		memcpy((uint8_t *)mw->nonce2_offset, p + 5, 4);
+		memcpy((uint8_t *)mw->nonce2_size, p + 9, 4);
+		memcpy((uint8_t *)mw->merkle_offset, p + 13, 4);
+		memcpy((uint8_t *)mw->nmerkles, p + 17, 4);
+		debug32("dpkg: %d, %d, %d, %d, %d\n",
+			mw->coinbase_len,
+			mw->nonce2_offset,
+			mw->nonce2_size,
+			mw->merkle_offset,
+			mw->nmerkles);
+		break;
+	case AVA2_P_JOB_ID:
+	case AVA2_P_COINBASE:
+	case AVA2_P_MERKLES:
+	default:
+		break;
+	}
+
+	return 0;
+}
+
+static void get_pkg()
+{
+	static char heada, headv;
+	static char tailo, tailn;
+	static int start, count;
+	char c;
+
+	while (1) {
+		if (uart_read_nonblock()) {
+			c = uart_read();
+
+			heada = headv;
+			headv = c;
+			if (heada == AVA2_H1 && headv == AVA2_H2) {
+				g_pkg[0] = heada;
+				g_pkg[1] = headv;
+				start = 2;
+				count = 2;
+				continue;
+			}
+
+			if (start)
+				g_pkg[count++] = c;
+
+			tailo = tailn;
+			tailn = c;
+			if (tailo == AVA2_T1 && tailn == AVA2_T2) {
+				start = 0;
+				if (count == AVA2_P_COUNT && (!decode_pkg(g_pkg, &mm_work))) {
+					;
+				} else {
+					debug32("E: package broken: %d\n", count);
+					send_pkg(AVA2_P_NAK);
+				}
+			}
+		} else
+			break;
+	}
+
 }
 
 static void submit_result(struct result *r)
 {
-	debug32("Submit result\n");
-	hexdump((uint8_t *)(&r), 20);
-}
-
-static void decode_package(uint8_t *buf)
-{
-	int i = 0, j = ARRAY_SIZE(pkg);
-
-	while (j--) {
-		buffer[i] = pkg[i];
-		i++;
-	}
-}
-
-static void get_package()
-{
-	int i = 0, j = ARRAY_SIZE(pkg);
-
-	while (j--) {
-		pkg[i++] = serial_getc();
-	}
-}
-
-static void adjust_fan(uint8_t value)
-{
-	struct lm32_2wirepwm *wp = (struct lm32_2wirepwm *)TWOWIRE_PWM_BASE;
-	writel(value, &wp->pwm);
+	hexdump((uint8_t *)(r), 20);
 }
 
 static void read_result()
 {
 	while(!alink_rxbuf_empty()) {
+		debug32("Found nonce\n");
+		alink_buf_status();
 		alink_read_result(&result);
 		submit_result(&result);
 	}
 }
-int main(void) {
+
+
+int main(int argv, char **argc) {
 	int i;
 
-	uart_init();
-	serial_puts(MM_VERSION);
+	irq_setmask(0);
+	irq_enable(1);
 
-	alink_init();
+	uart_init();
+	uart_force_sync(1);
+
+	debug32("%s\n", MM_VERSION);
+
+	alink_init(0xff);
 	adjust_fan(0xff);
+
+	while (1) {
+		get_pkg();
+	}
 
 #include "sha256_test.c"
 #include "cb_test1.c"
+#include "alink_test.c"
+
 	while (1) {
+		get_pkg();
 		for (i = 0; i < WORK_BUF_LEN; i++) {
-			/* TODO: try to read result here */
-			init_work(&mm_work, &work[i]);
-			gen_work(&mm_work, &work[i]);
+			miner_init_work(&mm_work, &work[i]);
+			miner_gen_work(&mm_work, &work[i]);
 			alink_send_work(&work[i]);
-			alink_buf_status();
 			read_result();
 		}
-		serial_getc();
 	}
 
-	send_test_work();
-	get_package();
-	decode_package(pkg);
-
-	/* Code should be never reach here */
 	error(0xf);
 	return 0;
 }
