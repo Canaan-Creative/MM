@@ -206,6 +206,23 @@ tx_phy tx_phy(
 /*output [31:0]    */ .TX_N        (TX_N        )  
 );
 
+// VIO/ILA and ICON {{{
+wire [35:0] icon_ctrl_0;
+wire [255:0] trig0 = {
+                   4'ha                 ,//
+	tx_dout[31:0],//69:38
+	tx_rd_en,//37
+	TX_P[1] ,//36
+	TX_N[1] ,//35
+	RX_P[1] ,//34
+	RX_N[1] ,//33
+	rx_vld  ,//32
+	rx_din[31:0]//31:0
+} ;
+icon icon_test(.CONTROL0(icon_ctrl_0));
+ila ila_test(.CONTROL(icon_ctrl_0), .CLK(CLK_I), .TRIG0(trig0)
+);
+
 //-------------------------------------------------
 // RX.PHY
 //-------------------------------------------------
