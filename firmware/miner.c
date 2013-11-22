@@ -87,17 +87,17 @@ void miner_init_work(struct mm_work *mw, struct work *work)
 	work->task_id[3] = 0xbb;
 	memcpy(work->task_id + 4, (uint8_t *)(&work->nonce2), 4);
 
-	work->timeout[0] = 0x04;
-	work->timeout[1] = 0xfa;
-	work->timeout[2] = 0x1b;
-	work->timeout[3] = 0xe0;
+	work->timeout[0] = 0x00;
+	work->timeout[1] = 0x0f;
+	work->timeout[2] = 0xff;
+	work->timeout[3] = 0xff;
 
-	work->clock[0] = 0x07;
+	work->clock[0] = 0x01;
 	work->clock[1] = 0x00;
 	work->clock[2] = 0x00;
-	work->clock[3] = 0x08;
-	work->clock[4] = 0x74;
-	work->clock[5] = 0x01;
+	work->clock[3] = 0x00;
+	work->clock[4] = 0x00;
+	work->clock[5] = 0x00;
 	work->clock[6] = 0x00;
 	work->clock[7] = 0x00;
 
@@ -130,7 +130,7 @@ void miner_gen_work(struct mm_work *mw, struct work *work)
 
 	memcpy(mw->header + mw->merkle_offset, merkle_root, 32);
 
-	debug32("Work nonce2:\n"); hexdump((uint8_t *)(&work->nonce2), 4);
+	debug32("Work nonce2: 0x%08x\n", work->nonce2);
 	debug32("Generated header:\n"); hexdump(mw->header, 128);
 	calc_midstate(mw, work);
 	calc_prepare(mw, work);

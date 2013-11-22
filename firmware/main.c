@@ -29,17 +29,20 @@
 #define adjust_fan(value)	write_pwm(value)
 
 struct mm_work mm_work;
-struct work work[WORK_BUF_LEN];
 struct result result;
 
 uint8_t g_pkg[AVA2_P_COUNT];
 uint8_t g_act[AVA2_P_COUNT];
 uint8_t buffer[4*1024];
 
-static void delay(volatile uint32_t i)
+void delay(unsigned int ms)
 {
-	while (i--)
-		;
+	unsigned int i;
+
+	while (ms--) {
+		for (i = 0; i < CPU_FREQUENCY / 1000 / 5; i++)
+			__asm__ __volatile__("nop");
+	}
 }
 
 static void error(uint8_t n)
@@ -48,7 +51,7 @@ static void error(uint8_t n)
 	uint8_t i = 0;
 
 	while (i < 8) {
-		delay(4000000);
+		delay(1000);
 		if (i++ % 2)
 			writel(n << 24, gpio);
 		else
@@ -195,9 +198,9 @@ static void read_result()
 
 
 int main(int argv, char **argc) {
-	delay(4000000);
+	delay(50);		/* Delay 50ms, wait for alink ready */
 
-	int i;
+	struct work work;
 
 	irq_setmask(0);
 	irq_enable(1);
@@ -212,16 +215,17 @@ int main(int argv, char **argc) {
 
 #include "sha256_test.c"
 #include "cb_test1.c"
-#include "alink_test.c"
 
 	while (1) {
 		get_pkg();
-		for (i = 0; i < WORK_BUF_LEN; i++) {
-			miner_init_work(&mm_work, &work[i]);
-			miner_gen_work(&mm_work, &work[i]);
-			alink_send_work(&work[i]);
-			read_result();
-		}
+	}
+
+	while (1) {
+		get_pkg();
+		miner_init_work(&mm_work, &work);
+		miner_gen_work(&mm_work, &work);
+		alink_send_work(&work);
+		read_result();
 	}
 
 	error(0xf);

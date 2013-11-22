@@ -118,5 +118,4 @@ struct lm32_twipwm {
 	volatile unsigned int pwm; /* PWM Counter register */
 };
 
-
 #endif /* _SYSTEM_CONFIG_H_ */
