@@ -86,6 +86,7 @@ static void encode_pkg(uint8_t *p, int type)
 	p[AVA2_P_COUNT - 4] = crc & 0x00ff;
 	p[AVA2_P_COUNT - 3] = (crc & 0xff00) >> 8;
 
+	debug32("Send:\n");
 	hexdump(p, AVA2_P_COUNT);
 }
 
@@ -100,6 +101,7 @@ static int decode_pkg(uint8_t *p, struct mm_work *mw)
 	unsigned int expected_crc;
 	unsigned int actual_crc;
 
+	debug32("Receive:\n");
 	hexdump(p, AVA2_P_COUNT);
 
 	expected_crc = (p[AVA2_P_COUNT - 3] & 0xff) |
@@ -167,13 +169,18 @@ static void get_pkg()
 			tailo = tailn;
 			tailn = c;
 			if (tailo == AVA2_T1 && tailn == AVA2_T2) {
-				start = 0;
 				if (count == AVA2_P_COUNT && (!decode_pkg(g_pkg, &mm_work))) {
 					;
 				} else {
 					debug32("E: package broken: %d\n", count);
 					send_pkg(AVA2_P_NAK);
 				}
+				start = 0;
+				count = 2;
+			}
+			if (count >= AVA2_P_COUNT) {
+				debug32("E: package broken: %d\n", count);
+				send_pkg(AVA2_P_NAK);
 			}
 		} else
 			break;
