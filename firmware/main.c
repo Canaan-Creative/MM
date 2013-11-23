@@ -82,7 +82,7 @@ static void encode_pkg(uint8_t *p, int type)
 		break;
 	}
 
-	crc = crc16(p + 5, 32);
+	crc = crc16(p + 5, AVA2_P_DATA_LEN);
 	p[AVA2_P_COUNT - 4] = crc & 0x00ff;
 	p[AVA2_P_COUNT - 3] = (crc & 0xff00) >> 8;
 
@@ -101,13 +101,15 @@ static int decode_pkg(uint8_t *p, struct mm_work *mw)
 	unsigned int expected_crc;
 	unsigned int actual_crc;
 
+	uint8_t *data = p + 5;
+
 	debug32("Receive:\n");
 	hexdump(p, AVA2_P_COUNT);
 
 	expected_crc = (p[AVA2_P_COUNT - 3] & 0xff) |
 		((p[AVA2_P_COUNT - 4] & 0xff) << 8);
 
-	actual_crc = crc16(p + 5, 32);
+	actual_crc = crc16(data, AVA2_P_DATA_LEN);
 	if(expected_crc != actual_crc) {
 		debug32("PKG CRC failed (expected %08x, got %08x)\n",
 			expected_crc, actual_crc);
@@ -120,12 +122,12 @@ static int decode_pkg(uint8_t *p, struct mm_work *mw)
 		send_pkg(AVA2_P_ACKDETECT);
 		break;
 	case AVA2_P_STATIC:
-		memcpy((uint8_t *)mw->coinbase_len, p + 1, 4);
-		memcpy((uint8_t *)mw->nonce2_offset, p + 5, 4);
-		memcpy((uint8_t *)mw->nonce2_size, p + 9, 4);
-		memcpy((uint8_t *)mw->merkle_offset, p + 13, 4);
-		memcpy((uint8_t *)mw->nmerkles, p + 17, 4);
-		debug32("dpkg: %d, %d, %d, %d, %d\n",
+		memcpy(&mw->coinbase_len, data, 4);
+		memcpy(&mw->nonce2_offset, data + 4, 4);
+		memcpy(&mw->nonce2_size, data + 8, 4);
+		memcpy(&mw->merkle_offset, data + 12, 4);
+		memcpy(&mw->nmerkles, data + 16, 4);
+		debug32("P_STATIC:  %d, %d, %d, %d, %d\n",
 			mw->coinbase_len,
 			mw->nonce2_offset,
 			mw->nonce2_size,
@@ -133,7 +135,9 @@ static int decode_pkg(uint8_t *p, struct mm_work *mw)
 			mw->nmerkles);
 		break;
 	case AVA2_P_JOB_ID:
+		break;
 	case AVA2_P_COINBASE:
+		
 	case AVA2_P_MERKLES:
 	default:
 		break;

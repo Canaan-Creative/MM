@@ -17,6 +17,7 @@
 #define AVA2_T2	'N'
 
 #define AVA2_P_COUNT	41
+#define AVA2_P_DATA_LEN		(41 - 9)
 
 #define AVA2_P_ERROR	0
 
