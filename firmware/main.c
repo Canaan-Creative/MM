@@ -31,9 +31,9 @@
 struct mm_work mm_work;
 struct result result;
 
-uint8_t g_pkg[AVA2_P_COUNT];
-uint8_t g_act[AVA2_P_COUNT];
-uint8_t buffer[4*1024];
+static uint8_t g_pkg[AVA2_P_COUNT];
+static uint8_t g_act[AVA2_P_COUNT];
+static int new_stratum;
 
 void delay(unsigned int ms)
 {
@@ -100,10 +100,14 @@ static int decode_pkg(uint8_t *p, struct mm_work *mw)
 {
 	unsigned int expected_crc;
 	unsigned int actual_crc;
+	int idx, cnt;
 
 	uint8_t *data = p + 5;
 
-	debug32("Receive:\n");
+	idx = p[3];
+	cnt = p[4];
+
+	debug32("Receive: %d/%d\n", idx, cnt);
 	hexdump(p, AVA2_P_COUNT);
 
 	expected_crc = (p[AVA2_P_COUNT - 3] & 0xff) |
@@ -137,8 +141,23 @@ static int decode_pkg(uint8_t *p, struct mm_work *mw)
 	case AVA2_P_JOB_ID:
 		break;
 	case AVA2_P_COINBASE:
-		
+		if (idx == 1)
+			memset(mw->coinbase, 0, sizeof(mw->coinbase));
+		memcpy(mw->coinbase + (idx - 1) * AVA2_P_DATA_LEN, data, AVA2_P_DATA_LEN);
+		if (idx == cnt)
+			hexdump(mw->coinbase, mw->coinbase_len);
+		break;
 	case AVA2_P_MERKLES:
+		memcpy(mw->merkles[idx - 1], data, AVA2_P_DATA_LEN);
+		hexdump(mw->merkles[idx - 1], 32);
+		break;
+	case AVA2_P_HEADER:
+		memcpy(mw->header + (idx - 1) * AVA2_P_DATA_LEN, data, AVA2_P_DATA_LEN);
+		if (idx == cnt) {
+			hexdump(mw->header, 128);
+			new_stratum = 1;
+		}
+		break;
 	default:
 		break;
 	}
@@ -212,6 +231,7 @@ int main(int argv, char **argc) {
 	delay(50);		/* Delay 50ms, wait for alink ready */
 
 	struct work work;
+	int i;
 
 	irq_setmask(0);
 	irq_enable(1);
@@ -224,15 +244,15 @@ int main(int argv, char **argc) {
 	alink_init(0xff);
 	adjust_fan(0x0f);
 
-#include "sha256_test.c"
-#include "cb_test1.c"
-
+	new_stratum = 0;
 	while (1) {
 		get_pkg();
+		if (new_stratum)
+			break;
 	}
 
-	while (1) {
-		get_pkg();
+	i = 4;
+	while (i--) {
 		miner_init_work(&mm_work, &work);
 		miner_gen_work(&mm_work, &work);
 		alink_send_work(&work);

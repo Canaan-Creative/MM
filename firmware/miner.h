@@ -39,7 +39,7 @@ struct mm_work {
 	uint8_t *jobid;
 
 	size_t coinbase_len;
-	uint8_t *coinbase;
+	uint8_t coinbase[4*1024];
 
 	char *nonce1;
 	uint32_t nonce2;
@@ -48,14 +48,14 @@ struct mm_work {
 
 	int merkle_offset;
 	int nmerkles;
-	uint8_t *merkles[10];
+	uint8_t merkles[10][32];
 
 	uint8_t difficulty; /* number of leading zeros bits required
 			     * (for a valid share) */
 	bool rollntime; /* whether rollntime is accepted */
 	bool clean;	/* flush all prior jobs (cut) */
 
-	uint8_t *header;
+	uint8_t header[128];
 };
 
 void miner_init_work(struct mm_work *mw, struct work *work);
