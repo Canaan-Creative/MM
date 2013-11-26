@@ -58,7 +58,13 @@ static void calc_midstate(struct mm_work *mw, struct work *work)
 	sha256_update(data, 64);
 	sha256_final(work->data);
 
-	flip64(work->data, work->data);
+	/* FIXME: LM32 will crash if I direct use
+	 * flip64(work->data, work->data);
+	 */
+	memcpy(data, work->data, 32);
+	flip64(data32, data32);
+	memcpy(work->data, data, 32);
+
 	memcpy(work->data + 32, mw->header + 64, 12);
 }
 
