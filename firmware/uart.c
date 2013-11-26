@@ -22,16 +22,6 @@ static char rx_buf[UART_RINGBUFFER_SIZE_RX];
 static volatile unsigned int rx_produce;
 static volatile unsigned int rx_consume;
 
-#define UART_RINGBUFFER_SIZE_TX 128
-#define UART_RINGBUFFER_MASK_TX (UART_RINGBUFFER_SIZE_TX-1)
-
-static char tx_buf[UART_RINGBUFFER_SIZE_TX];
-static unsigned int tx_produce;
-static unsigned int tx_consume;
-static volatile int tx_cts;
-
-static int force_sync;
-
 static struct lm32_uart *uart = (struct lm32_uart *)UART0_BASE;
 static struct lm32_uart *uart1 = (struct lm32_uart *)UART1_BASE;
 
@@ -43,18 +33,6 @@ void uart_isr(void)
 		while (readb(&uart->lsr) & LM32_UART_LSR_DR) {
 			rx_buf[rx_produce] = readb(&uart->rxtx);
 			rx_produce = (rx_produce + 1) & UART_RINGBUFFER_MASK_RX;
-		}
-	}
-
-	if (stat & LM32_UART_STAT_TX_EVT) {
-		if (tx_produce != tx_consume) {
-			writeb(tx_buf[tx_consume], &uart->rxtx);
-			tx_consume = (tx_consume + 1) & UART_RINGBUFFER_MASK_TX;
-		} else {
-			tx_cts = 1;
-			stat = readb(&uart->ier);
-			stat &= ~LM32_UART_IER_THRI;
-			writeb(stat, &uart->ier);
 		}
 	}
 
@@ -80,34 +58,15 @@ int uart_read_nonblock(void)
 void uart_write(char c)
 {
 	unsigned int oldmask;
-	unsigned char stat;
 
 	oldmask = irq_getmask();
 	irq_setmask(0);
 
-	if (force_sync) {
-		while (!(readb(&uart->lsr) & (LM32_UART_LSR_THRR | LM32_UART_LSR_TEMT)))
-			;
-		writeb(c, &uart->rxtx);
-	} else {
-		stat = readb(&uart->ier);
-		stat |= LM32_UART_IER_THRI;
-		writeb(stat, &uart->ier);
+	while (!(readb(&uart->lsr) & (LM32_UART_LSR_THRR | LM32_UART_LSR_TEMT)))
+		;
+	writeb(c, &uart->rxtx);
 
-		if (tx_cts) {
-			tx_cts = 0;
-			writeb(c, &uart->rxtx);
-		} else {
-			tx_buf[tx_produce] = c;
-			tx_produce = (tx_produce + 1) & UART_RINGBUFFER_MASK_TX;
-		}
-	}
 	irq_setmask(oldmask);
-}
-
-void uart_force_sync(int f)
-{
-	force_sync = f;
 }
 
 void uart_init(void)
@@ -117,9 +76,6 @@ void uart_init(void)
 
 	rx_produce = 0;
 	rx_consume = 0;
-	tx_produce = 0;
-	tx_consume = 0;
-	tx_cts = 1;
 
 	irq_ack(IRQ_UART);
 

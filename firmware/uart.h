@@ -13,7 +13,6 @@ void uart_init(void);
 void uart_isr(void);
 int uart_read_nonblock(void);
 char uart_read(void);
-void uart_force_sync(int f);
 void uart_write(char c);
 void uart_puts(const char *s);
 void uart_nwrite(const char *s, unsigned int l);

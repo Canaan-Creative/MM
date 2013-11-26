@@ -25,7 +25,6 @@
 
 #include "hexdump.c"
 
-#define WORK_BUF_LEN	(8)
 #define adjust_fan(value)	write_pwm(value)
 
 struct mm_work mm_work;
@@ -124,6 +123,7 @@ static int decode_pkg(uint8_t *p, struct mm_work *mw)
 	case AVA2_P_DETECT:
 		send_pkg(AVA2_P_ACK);
 		send_pkg(AVA2_P_ACKDETECT);
+		new_stratum = 0;
 		break;
 	case AVA2_P_STATIC:
 		memcpy(&mw->coinbase_len, data, 4);
@@ -169,7 +169,7 @@ static void get_pkg()
 {
 	static char heada, headv;
 	static char tailo, tailn;
-	static int start, count;
+	static int start = 0, count = 2;
 	char c;
 
 	while (1) {
@@ -178,10 +178,10 @@ static void get_pkg()
 
 			heada = headv;
 			headv = c;
-			if (heada == AVA2_H1 && headv == AVA2_H2) {
+			if (heada == AVA2_H1 && headv == AVA2_H2 && !start) {
 				g_pkg[0] = heada;
 				g_pkg[1] = headv;
-				start = 2;
+				start = 1;
 				count = 2;
 				continue;
 			}
@@ -237,7 +237,6 @@ int main(int argv, char **argc) {
 	irq_enable(1);
 
 	uart_init();
-	uart_force_sync(1);
 
 	debug32("%s\n", MM_VERSION);
 
@@ -253,6 +252,10 @@ int main(int argv, char **argc) {
 
 	i = 4;
 	while (i--) {
+		get_pkg();
+		if (!new_stratum)
+			continue;
+
 		miner_init_work(&mm_work, &work);
 		miner_gen_work(&mm_work, &work);
 		alink_send_work(&work);

@@ -48,7 +48,7 @@ struct mm_work {
 
 	int merkle_offset;
 	int nmerkles;
-	uint8_t merkles[10][32];
+	uint8_t merkles[20][32];
 
 	uint8_t difficulty; /* number of leading zeros bits required
 			     * (for a valid share) */
