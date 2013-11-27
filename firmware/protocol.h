@@ -19,8 +19,6 @@
 #define AVA2_P_COUNT	41
 #define AVA2_P_DATA_LEN		(41 - 9)
 
-#define AVA2_P_ERROR	0
-
 #define AVA2_P_DETECT	10
 #define AVA2_P_STATIC	11
 #define AVA2_P_JOB_ID	12

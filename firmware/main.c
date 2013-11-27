@@ -9,6 +9,7 @@
 
 #include <stdbool.h>
 #include <stdint.h>
+#include <stddef.h>
 
 #include "minilibc.h"
 #include "system_config.h"
@@ -58,7 +59,7 @@ static void error(uint8_t n)
 	}
 }
 
-static void encode_pkg(uint8_t *p, int type)
+static void encode_pkg(uint8_t *p, int type, uint8_t *buf, unsigned int len)
 {
 	uint16_t crc;
 
@@ -79,6 +80,9 @@ static void encode_pkg(uint8_t *p, int type)
 		p[5 + 1] = 'M';
 		memcpy(p + 5 + 2, MM_VERSION, 6);
 		break;
+	case AVA2_P_NONCE:
+		memcpy(p + 5, buf, len);
+		break;
 	}
 
 	crc = crc16(p + 5, AVA2_P_DATA_LEN);
@@ -89,9 +93,9 @@ static void encode_pkg(uint8_t *p, int type)
 	hexdump(p, AVA2_P_COUNT);
 }
 
-static void send_pkg(int type)
+static void send_pkg(int type, uint8_t *buf, unsigned int len)
 {
-	encode_pkg(g_act, type);
+	encode_pkg(g_act, type, buf, len);
 	uart_nwrite((char *)g_act, AVA2_P_COUNT);
 }
 
@@ -121,9 +125,8 @@ static int decode_pkg(uint8_t *p, struct mm_work *mw)
 
 	switch (p[2]) {
 	case AVA2_P_DETECT:
-		send_pkg(AVA2_P_ACK);
-		send_pkg(AVA2_P_ACKDETECT);
-		new_stratum = 0;
+		send_pkg(AVA2_P_ACK, NULL, 0);
+		send_pkg(AVA2_P_ACKDETECT, (uint8_t *)MM_VERSION, 6);
 		break;
 	case AVA2_P_STATIC:
 		memcpy(&mw->coinbase_len, data, 4);
@@ -137,6 +140,7 @@ static int decode_pkg(uint8_t *p, struct mm_work *mw)
 			mw->nonce2_size,
 			mw->merkle_offset,
 			mw->nmerkles);
+		new_stratum = 0;
 		break;
 	case AVA2_P_JOB_ID:
 		break;
@@ -196,24 +200,19 @@ static void get_pkg()
 					;
 				} else {
 					debug32("E: package broken: %d\n", count);
-					send_pkg(AVA2_P_NAK);
+					send_pkg(AVA2_P_NAK, NULL, 0);
 				}
 				start = 0;
 				count = 2;
 			}
 			if (count >= AVA2_P_COUNT) {
 				debug32("E: package broken: %d\n", count);
-				send_pkg(AVA2_P_NAK);
+				send_pkg(AVA2_P_NAK, NULL, 0);
 			}
 		} else
 			break;
 	}
 
-}
-
-static void submit_result(struct result *r)
-{
-	hexdump((uint8_t *)(r), 20);
 }
 
 static void read_result()
@@ -222,7 +221,7 @@ static void read_result()
 		debug32("Found nonce\n");
 		alink_buf_status();
 		alink_read_result(&result);
-		submit_result(&result);
+		send_pkg(AVA2_P_NONCE, (uint8_t *)&result, 20);
 	}
 }
 
@@ -244,22 +243,24 @@ int main(int argv, char **argc) {
 	adjust_fan(0x0f);
 
 	new_stratum = 0;
-	while (1) {
-		get_pkg();
-		if (new_stratum)
-			break;
-	}
 
 	i = 4;
-	while (i--) {
+	while (1) {
 		get_pkg();
-		if (!new_stratum)
+		if (!new_stratum) {
+			i = 4;
 			continue;
+		}
 
-		miner_init_work(&mm_work, &work);
-		miner_gen_work(&mm_work, &work);
-		alink_send_work(&work);
-		read_result();
+		while (i && i--) {
+			miner_init_work(&mm_work, &work);
+			miner_gen_work(&mm_work, &work);
+			alink_send_work(&work);
+			read_result();
+		}
+
+		/* TODO:
+		 *   Send out heatbeat information */
 	}
 
 	error(0xf);

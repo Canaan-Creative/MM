@@ -39,7 +39,7 @@ struct mm_work {
 	uint8_t *jobid;
 
 	size_t coinbase_len;
-	uint8_t coinbase[4*1024];
+	uint8_t coinbase[4 * 1024];
 
 	char *nonce1;
 	uint32_t nonce2;

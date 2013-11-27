@@ -9,7 +9,7 @@
 #ifndef _DEFINES_H_
 #define _DEFINES_H_
 
-#define MM_VERSION	"201310"
+#define MM_VERSION	"201312"
 
 #define DEBUG		1
 #ifdef DEBUG
