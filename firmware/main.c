@@ -89,8 +89,7 @@ static void encode_pkg(uint8_t *p, int type, uint8_t *buf, unsigned int len)
 	p[AVA2_P_COUNT - 4] = crc & 0x00ff;
 	p[AVA2_P_COUNT - 3] = (crc & 0xff00) >> 8;
 
-	debug32("Send:\n");
-	hexdump(p, AVA2_P_COUNT);
+	debug32("Send: %d\n", type);
 }
 
 static void send_pkg(int type, uint8_t *buf, unsigned int len)
@@ -111,7 +110,6 @@ static int decode_pkg(uint8_t *p, struct mm_work *mw)
 	cnt = p[4];
 
 	debug32("Receive: %d/%d\n", idx, cnt);
-	hexdump(p, AVA2_P_COUNT);
 
 	expected_crc = (p[AVA2_P_COUNT - 3] & 0xff) |
 		((p[AVA2_P_COUNT - 4] & 0xff) << 8);
@@ -153,14 +151,11 @@ static int decode_pkg(uint8_t *p, struct mm_work *mw)
 		break;
 	case AVA2_P_MERKLES:
 		memcpy(mw->merkles[idx - 1], data, AVA2_P_DATA_LEN);
-		hexdump(mw->merkles[idx - 1], 32);
 		break;
 	case AVA2_P_HEADER:
 		memcpy(mw->header + (idx - 1) * AVA2_P_DATA_LEN, data, AVA2_P_DATA_LEN);
-		if (idx == cnt) {
-			hexdump(mw->header, 128);
+		if (idx == cnt)
 			new_stratum = 1;
-		}
 		break;
 	default:
 		break;
@@ -169,50 +164,48 @@ static int decode_pkg(uint8_t *p, struct mm_work *mw)
 	return 0;
 }
 
-static void get_pkg()
+static int get_pkg()
 {
-	static char heada, headv;
-	static char tailo, tailn;
+	static char pre_last, last;
 	static int start = 0, count = 2;
-	char c;
 
 	while (1) {
-		if (uart_read_nonblock()) {
-			c = uart_read();
+		if (!uart_read_nonblock())
+			break;
 
-			heada = headv;
-			headv = c;
-			if (heada == AVA2_H1 && headv == AVA2_H2 && !start) {
-				g_pkg[0] = heada;
-				g_pkg[1] = headv;
-				start = 1;
-				count = 2;
-				continue;
-			}
+		pre_last = last;
+		last = uart_read();
 
-			if (start)
-				g_pkg[count++] = c;
+		if (start)
+			g_pkg[count++] = last;
 
-			tailo = tailn;
-			tailn = c;
-			if (tailo == AVA2_T1 && tailn == AVA2_T2) {
-				if (count == AVA2_P_COUNT && (!decode_pkg(g_pkg, &mm_work))) {
+		if (count == AVA2_P_COUNT) {
+			if (pre_last == AVA2_T1 && last == AVA2_T2) {
+				if (!decode_pkg(g_pkg, &mm_work)) {
 					;
 				} else {
-					debug32("E: package broken: %d\n", count);
+					debug32("E: package broken\n");
 					send_pkg(AVA2_P_NAK, NULL, 0);
+					return 1;
 				}
-				start = 0;
-				count = 2;
-			}
-			if (count >= AVA2_P_COUNT) {
-				debug32("E: package broken: %d\n", count);
+			} else {
+				debug32("E: package broken: %d-%c, %c\n", count, pre_last, last);
 				send_pkg(AVA2_P_NAK, NULL, 0);
+				return 1;
 			}
-		} else
-			break;
+			start = 0;
+			count = 2;
+		}
+
+		if (pre_last == AVA2_H1 && last == AVA2_H2 && !start) {
+			g_pkg[0] = pre_last;
+			g_pkg[1] = last;
+			start = 1;
+			count = 2;
+		}
 	}
 
+	return 0;
 }
 
 static void read_result()
@@ -237,25 +230,26 @@ int main(int argv, char **argc) {
 
 	uart_init();
 
-	debug32("%s\n", MM_VERSION);
-
-	alink_init(0xff);
+	alink_init(0x0f);
 	adjust_fan(0x0f);
 
 	new_stratum = 0;
-
 	i = 4;
+
 	while (1) {
-		get_pkg();
+		if (get_pkg())
+			break;
 		if (!new_stratum) {
 			i = 4;
 			continue;
 		}
 
 		while (i && i--) {
-			miner_init_work(&mm_work, &work);
-			miner_gen_work(&mm_work, &work);
-			alink_send_work(&work);
+			if (!alink_txbuf_full()) {
+				miner_init_work(&mm_work, &work);
+				miner_gen_work(&mm_work, &work);
+				alink_send_work(&work);
+			}
 			read_result();
 		}
 
@@ -266,5 +260,3 @@ int main(int argv, char **argc) {
 	error(0xf);
 	return 0;
 }
-
-/* vim: set ts=4 sw=4 fdm=marker : */

@@ -63,8 +63,8 @@ static void calc_midstate(struct mm_work *mw, struct work *work)
 	 */
 	memcpy(data, work->data, 32);
 	flip64(data32, data32);
-	memcpy(work->data, data, 32);
 
+	memcpy(work->data, data, 32);
 	memcpy(work->data + 32, mw->header + 64, 12);
 }
 
@@ -98,10 +98,10 @@ void miner_init_work(struct mm_work *mw, struct work *work)
 	work->timeout[2] = 0xff;
 	work->timeout[3] = 0xff;
 
-	work->clock[0] = 0x01;
+	work->clock[0] = 0x00;
 	work->clock[1] = 0x00;
 	work->clock[2] = 0x00;
-	work->clock[3] = 0x00;
+	work->clock[3] = 0x01;
 	work->clock[4] = 0x00;
 	work->clock[5] = 0x00;
 	work->clock[6] = 0x00;
@@ -125,10 +125,12 @@ void miner_gen_work(struct mm_work *mw, struct work *work)
 
 	gen_hash(mw->coinbase, merkle_root, mw->coinbase_len);
 	memcpy(merkle_sha, merkle_root, 32);
+	debug32("Miner gen: nmerkles %d\n", mw->nmerkles);
 	for (i = 0; i < mw->nmerkles; i++) {
 		memcpy(merkle_sha + 32, mw->merkles[i], 32);
 		gen_hash(merkle_sha, merkle_root, 64);
 		memcpy(merkle_sha, merkle_root, 32);
+		hexdump(merkle_sha, 32);
 	}
 	data32 = (uint32_t *)merkle_sha;
 	swap32 = (uint32_t *)merkle_root;
