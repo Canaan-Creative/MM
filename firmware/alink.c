@@ -62,9 +62,6 @@ int alink_send_work(struct work *w)
 	uint32_t tmp;
 	int i;
 
-	if (alink_txbuf_full())
-		return 1;
-
 	debug32("Send task:\n");
 
 	memcpy((uint8_t *)(&tmp), w->task_id, 4);
@@ -95,12 +92,14 @@ int alink_send_work(struct work *w)
 	memcpy((uint8_t *)(&tmp), w->a2, 4);
 	writel(tmp, &alink->tx);
 	debug32("%08x", tmp);
+	debug32("\n");
 
 	for (i = 0; i < 32; i += 4) {
 		memcpy((uint8_t *)(&tmp), w->data + i, 4);
 		writel(tmp, &alink->tx);
-		debug32("%08x", tmp);
+		debug32("  %08x", tmp);
 	}
+	debug32("\n");
 
 	memcpy((uint8_t *)(&tmp), w->e0, 4);
 	writel(tmp, &alink->tx);
@@ -122,7 +121,7 @@ int alink_send_work(struct work *w)
 	for (i = 0; i < 12; i += 4) {
 		memcpy((uint8_t *)(&tmp), w->data + 32 + i, 4);
 		writel(tmp, &alink->tx);
-		debug32("%08x", tmp);
+		debug32("  %08x", tmp);
 	}
 	debug32("\n\n");
 	return 0;
