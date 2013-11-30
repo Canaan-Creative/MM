@@ -334,6 +334,7 @@ endmodule
 `include "../components/gpio/gpio.v"
 `include "../components/gpio/tpio.v"
 `include "../components/sha/sha.v"
+`include "../components/sha/dbl_sha.v"
 `include "../components/sha/sha_core.v"
 
 `include "../components/alink/tx_timer.v" 
@@ -381,6 +382,7 @@ wire clk_i , reset_n ;
 clkgen clk (.clkin(ex_clk_i), .clkout(clk_i), .locked(reset_n));
 assign POWER_ON = 1 ;
 
+wire WATCH_DOG ;
 wire [31:0] irom_q_rd, irom_q_wr;
 wire [31:0] dram_q_rd, dram_q_wr /* unused */;
 wire irom_clk_rd, irom_clk_wr;
@@ -523,7 +525,7 @@ assign uartRESET_N = 1'b1;
 assign hubRESET_N  = 1'b1;
 
 reg [2:0] counter;
-wire sys_reset = !counter[2];
+wire sys_reset = !counter[2] || WATCH_DOG ;
 always @(posedge clk_i or negedge reset_n)
 if (reset_n == 1'b0)
 counter <= #1 3'b000;
@@ -1021,7 +1023,8 @@ twi(
 /*output        */ .TWI_SCL_O   (TWI_SCL_O                   ) ,
 /*input         */ .TWI_SDA_I   (TWI_SDA                     ) ,
 /*output        */ .TWI_SDA_OEN (TWI_SDA_OEN                 ) ,
-/*output        */ .PWM         (PWM                         ) 
+/*output        */ .PWM         (PWM                         ) , 
+/*output        */ .WATCH_DOG   (WATCH_DOG                   ) 
 ) ;
 
 assign superkdf9interrupt_n[3] = !uartINTR ;
