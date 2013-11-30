@@ -22,7 +22,8 @@ module twi(
     output         TWI_SCL_O   ,
     input          TWI_SDA_I   ,
     output         TWI_SDA_OEN ,
-    output         PWM          
+    output         PWM         ,
+    output         WATCH_DOG 
 );
 
 assign TWI_ERR_O = 1'b0 ;
@@ -43,10 +44,11 @@ end
 wire i2cr_wr_en  = TWI_STB_I & TWI_WE_I  & ( TWI_ADR_I == `I2CR) & ~TWI_ACK_O ;
 wire i2wd_wr_en  = TWI_STB_I & TWI_WE_I  & ( TWI_ADR_I == `I2WD) & ~TWI_ACK_O ;
 wire pwm_wr_en   = TWI_STB_I & TWI_WE_I  & ( TWI_ADR_I == `PWMC) & ~TWI_ACK_O ;
+wire wdg_wr_en   = TWI_STB_I & TWI_WE_I  & ( TWI_ADR_I == `WDG ) & ~TWI_ACK_O ;
 
 wire i2cr_rd_en  = TWI_STB_I & ~TWI_WE_I  & ( TWI_ADR_I == `I2CR) & ~TWI_ACK_O ;
 wire i2rd_rd_en  = TWI_STB_I & ~TWI_WE_I  & ( TWI_ADR_I == `I2RD) & ~TWI_ACK_O ;
-
+wire wdg_rd_en   = TWI_STB_I & ~TWI_WE_I  & ( TWI_ADR_I == `WDG ) & ~TWI_ACK_O ;
 
 //-----------------------------------------------------
 // PWM
@@ -70,6 +72,29 @@ end
 assign PWM = pwm_cnt >= reg_pwm ;
 
 //-----------------------------------------------------
+// WDG
+//-----------------------------------------------------
+reg wdg_en ;
+reg [25:0] wdg_cnt ;
+
+always @ ( posedge CLK_I or posedge RST_I ) begin
+	if( RST_I )
+		wdg_en <= 1'b0 ;
+	else if( wdg_wr_en )
+		wdg_en <= TWI_DAT_I[0] ;
+end
+
+always @ ( posedge CLK_I or posedge RST_I ) begin
+	if( RST_I )
+		wdg_cnt <= 26'b0 ;
+	else if( wdg_wr_en && (wdg_en || TWI_DAT_I[0]) )
+		wdg_cnt <= TWI_DAT_I[26:1] ;
+	else if( |wdg_cnt )
+		wdg_cnt <= wdg_cnt - 1 ;
+end
+
+assign WATCH_DOG = wdg_en && (wdg_cnt == 1 || wdg_cnt == 2) ;
+//-----------------------------------------------------
 // read
 //-----------------------------------------------------
 reg i2cr_rd_en_r ;
@@ -79,7 +104,8 @@ always @ ( posedge CLK_I ) begin
 	i2cr_rd_en_r <= i2cr_rd_en ;
 end
 
-assign TWI_DAT_O = i2cr_rd_en_r ? {24'b0,reg_i2cr} : {24'b0,reg_i2rd} ;
+assign TWI_DAT_O = i2cr_rd_en_r ? {24'b0,reg_i2cr}     : 
+		   wdg_rd_en    ? {5'b0,wdg_cnt,wdg_en}:{24'b0,reg_i2rd} ;
 
 twi_core twi_core (
 /*input       */ .clk          (CLK_I                ) , 
