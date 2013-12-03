@@ -227,29 +227,27 @@ int main(int argv, char **argc) {
 
 	uart_init();
 
-	alink_init(0x0f);
+	alink_init(0xff);
 	adjust_fan(0x0f);
 
 	new_stratum = 0;
-	i = 4;
 
+	i = 4;
 	while (1) {
 		if (get_pkg())
 			break;
 
 		if (!new_stratum) {
-			i = 4;
 			continue;
 		}
 
-		while (i && i--) {
-			if (!alink_txbuf_full()) {
-				miner_init_work(&mm_work, &work);
-				miner_gen_work(&mm_work, &work);
-				alink_send_work(&work);
-			}
-			read_result();
+		if (!alink_txbuf_full()) {
+			miner_init_work(&mm_work, &work);
+			miner_gen_work(&mm_work, &work);
+			alink_send_work(&work);
 		}
+
+		read_result();
 
 		/* TODO:
 		 *   Send out heatbeat information */
