@@ -33,7 +33,7 @@ struct result result;
 
 static uint8_t g_pkg[AVA2_P_COUNT];
 static uint8_t g_act[AVA2_P_COUNT];
-static int new_stratum;
+static int new_stratum = 0;
 
 void delay(unsigned int ms)
 {
@@ -109,7 +109,7 @@ static int decode_pkg(uint8_t *p, struct mm_work *mw)
 	idx = p[3];
 	cnt = p[4];
 
-	debug32("Receive: %d/%d\n", idx, cnt);
+	debug32("Receive: %d: %d/%d\n", p[2], idx, cnt);
 
 	expected_crc = (p[AVA2_P_COUNT - 3] & 0xff) |
 		((p[AVA2_P_COUNT - 4] & 0xff) << 8);
@@ -146,8 +146,6 @@ static int decode_pkg(uint8_t *p, struct mm_work *mw)
 		if (idx == 1)
 			memset(mw->coinbase, 0, sizeof(mw->coinbase));
 		memcpy(mw->coinbase + (idx - 1) * AVA2_P_DATA_LEN, data, AVA2_P_DATA_LEN);
-		if (idx == cnt)
-			hexdump(mw->coinbase, mw->coinbase_len);
 		break;
 	case AVA2_P_MERKLES:
 		memcpy(mw->merkles[idx - 1], data, AVA2_P_DATA_LEN);
@@ -218,7 +216,6 @@ static void read_result()
 	}
 }
 
-
 int main(int argv, char **argc) {
 	delay(50);		/* Delay 50ms, wait for alink ready */
 
@@ -239,6 +236,7 @@ int main(int argv, char **argc) {
 	while (1) {
 		if (get_pkg())
 			break;
+
 		if (!new_stratum) {
 			i = 4;
 			continue;

@@ -29,14 +29,15 @@ static void flip32(void *dest_p, const void *src_p)
 		dest[i] = bswap_32(src[i]);
 }
 
-static void flip64(void *dest_p, const void *src_p)
+static void flip64(void *dest_p, const uint8_t *src_p)
 {
 	uint32_t *dest = dest_p;
-	const uint32_t *src = src_p;
 	int i;
 
-	for (i = 0; i < 16; i++)
-		dest[i] = bswap_32(src[i]);
+	for (i = 0; i < 16; i++) {
+		dest[i] = src_p[i * 4 + 0] | src_p[i * 4 + 1] << 8 |
+			src_p[i * 4 + 2] << 16 | src_p[i * 4 + 3] << 24;
+	}
 }
 
 static void gen_hash(uint8_t *data, uint8_t *hash, unsigned int len)
@@ -52,6 +53,7 @@ static void calc_midstate(struct mm_work *mw, struct work *work)
 	unsigned char data[64];
 	uint32_t *data32 = (uint32_t *)data;
 
+	hexdump(mw->header, 64);
 	flip64(data32, mw->header);
 
 	sha256_init();
@@ -62,7 +64,7 @@ static void calc_midstate(struct mm_work *mw, struct work *work)
 	 * flip64(work->data, work->data);
 	 */
 	memcpy(data, work->data, 32);
-	flip64(data32, data32);
+	flip64(data32, data);
 
 	memcpy(work->data, data, 32);
 	memcpy(work->data + 32, mw->header + 64, 12);
@@ -130,7 +132,6 @@ void miner_gen_work(struct mm_work *mw, struct work *work)
 		memcpy(merkle_sha + 32, mw->merkles[i], 32);
 		gen_hash(merkle_sha, merkle_root, 64);
 		memcpy(merkle_sha, merkle_root, 32);
-		hexdump(merkle_sha, 32);
 	}
 	data32 = (uint32_t *)merkle_sha;
 	swap32 = (uint32_t *)merkle_root;

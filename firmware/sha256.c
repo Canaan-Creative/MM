@@ -36,24 +36,17 @@ static void write_block(const uint8_t *block)
 
 static void sha256_padding(const uint8_t *input, unsigned int count)
 {
-	int i, len_rem;
-	uint8_t block[64], block1[64];
+	int i, len_rem, block_nb;
+	uint8_t block[SHA256_BLOCK_SIZE], block1[SHA256_BLOCK_SIZE];
 
 	memset(block, 0, ARRAY_SIZE(block));
 	memset(block1, 0, ARRAY_SIZE(block));
 
 	len_rem = count % SHA256_BLOCK_SIZE;
+	block_nb = ((SHA256_BLOCK_SIZE - 9) < (len_rem % SHA256_BLOCK_SIZE));
 
-	if (len_rem <= 32) {
-		for (i = 0; i < len_rem; i++)
-			block[i] = input[i];
-		block[i] = 0x80;
-		block[60] = ((count*8) & 0xff000000) >> 24;
-		block[61] = ((count*8) & 0x00ff0000) >> 16;
-		block[62] = ((count*8) & 0x0000ff00) >> 8;
-		block[63] = ((count*8) & 0x000000ff);
-		write_block(block);
-	} else {
+
+	if (block_nb) {
 		for (i = 0; i < len_rem; i++)
 			block[i] = input[i];
 		block[i] = 0x80;
@@ -65,6 +58,15 @@ static void sha256_padding(const uint8_t *input, unsigned int count)
 
 		write_block(block);
 		write_block(block1);
+	} else {
+		for (i = 0; i < len_rem; i++)
+			block[i] = input[i];
+		block[i] = 0x80;
+		block[60] = ((count*8) & 0xff000000) >> 24;
+		block[61] = ((count*8) & 0x00ff0000) >> 16;
+		block[62] = ((count*8) & 0x0000ff00) >> 8;
+		block[63] = ((count*8) & 0x000000ff);
+		write_block(block);
 	}
 }
 
