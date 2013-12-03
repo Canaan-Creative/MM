@@ -220,7 +220,6 @@ int main(int argv, char **argc) {
 	delay(50);		/* Delay 50ms, wait for alink ready */
 
 	struct work work;
-	int i;
 
 	irq_setmask(0);
 	irq_enable(1);
@@ -232,7 +231,6 @@ int main(int argv, char **argc) {
 
 	new_stratum = 0;
 
-	i = 4;
 	while (1) {
 		if (get_pkg())
 			break;
@@ -250,7 +248,7 @@ int main(int argv, char **argc) {
 		read_result();
 
 		/* TODO:
-		 *   Send out heatbeat information */
+		 *   Send out heatbeat information every 2 seconds */
 	}
 
 	error(0xf);

@@ -135,12 +135,19 @@ void uart1_init(void)
 
 void uart1_write(char c)
 {
+	unsigned int oldmask;
+
+	oldmask = irq_getmask();
+	irq_setmask(0);
+
 	if (c == '\n')
 		uart1_write('\r');
 
 	while (!(readb(&uart1->lsr) & (LM32_UART_LSR_THRR | LM32_UART_LSR_TEMT)))
 		;
 	writeb(c, &uart1->rxtx);
+
+	irq_setmask(oldmask);
 }
 
 void uart1_puts(const char *s)
