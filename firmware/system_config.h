@@ -112,11 +112,15 @@ struct lm32_alink {
 #define LM32_TWIPWM_CR_CMD_STOP		(3 << 4)
 #define LM32_TWIPWM_CR_CMD_RCNOACKT	(4 << 4)
 
+#define LM32_TWIPWM_WDG_ENABLE	(1 << 0);
+/* [26:1] Feed Dog: 0x3~0x3ffffff;[WR] */
+
 struct lm32_twipwm {
 	volatile unsigned int cr; /* TWI ctrl register */
 	volatile unsigned int wd; /* TWI write byte */
 	volatile unsigned int rd; /* TWI read byte */
 	volatile unsigned int pwm; /* PWM Counter register */
+	volatile unsigned int wdg; /* Watch dog ctrl */
 };
 
 #endif /* _SYSTEM_CONFIG_H_ */

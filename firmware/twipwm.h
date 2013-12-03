@@ -15,4 +15,7 @@ uint8_t twi_read(void);
 void twi_stop(void);
 void write_pwm(uint8_t value);
 
+void wdg_init(int enable);
+void wdg_feed(uint32_t value);
+
 #endif	/* _TWI_H_ */

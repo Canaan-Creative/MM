@@ -53,3 +53,13 @@ void write_pwm(uint8_t value)
 {
 	writel(value, &tp->pwm);
 }
+
+void wdg_init(int enable)
+{
+	writel(enable, &tp->wdg);
+}
+
+void wdg_feed(uint32_t value)
+{
+	writel(((value & 0x3ffffff) << 1), &tp->wdg);
+}
