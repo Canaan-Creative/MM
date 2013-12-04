@@ -64,6 +64,7 @@ int alink_send_work(struct work *w)
 
 	debug32("Send task:\n");
 
+	/* The chip configure information */
 	memcpy((uint8_t *)(&tmp), w->task_id, 4);
 	writel(tmp, &alink->tx);
 	debug32("%08x", tmp);
@@ -89,41 +90,43 @@ int alink_send_work(struct work *w)
 	debug32("%08x", tmp);
 	debug32("\n");
 
-	memcpy((uint8_t *)(&tmp), w->a2, 4);
-	writel(tmp, &alink->tx);
-	debug32("%08x", tmp);
-	debug32("\n");
-
-	for (i = 0; i < 32; i += 4) {
-		memcpy((uint8_t *)(&tmp), w->data + i, 4);
+	/* Task data */
+	for (i = 8; i >= 0; i -= 4) {
+		memcpy((uint8_t *)(&tmp), w->data + 32 + i, 4);
 		writel(tmp, &alink->tx);
-		debug32("  %08x", tmp);
+		debug32("%08x", tmp);
 	}
 	debug32("\n");
 
-	memcpy((uint8_t *)(&tmp), w->e0, 4);
-	writel(tmp, &alink->tx);
-	debug32("%08x", tmp);
-	memcpy((uint8_t *)(&tmp), w->e1, 4);
-	writel(tmp, &alink->tx);
-	debug32("%08x", tmp);
-	memcpy((uint8_t *)(&tmp), w->e2, 4);
+	memcpy((uint8_t *)(&tmp), w->a1, 4);
 	writel(tmp, &alink->tx);
 	debug32("%08x", tmp);
 	memcpy((uint8_t *)(&tmp), w->a0, 4);
 	writel(tmp, &alink->tx);
 	debug32("%08x", tmp);
-	memcpy((uint8_t *)(&tmp), w->a1, 4);
+	memcpy((uint8_t *)(&tmp), w->e2, 4);
+	writel(tmp, &alink->tx);
+	debug32("%08x", tmp);
+	memcpy((uint8_t *)(&tmp), w->e1, 4);
+	writel(tmp, &alink->tx);
+	debug32("%08x", tmp);
+	memcpy((uint8_t *)(&tmp), w->e0, 4);
 	writel(tmp, &alink->tx);
 	debug32("%08x", tmp);
 	debug32("\n");
 
-	for (i = 0; i < 12; i += 4) {
-		memcpy((uint8_t *)(&tmp), w->data + 32 + i, 4);
+	for (i = 28; i >= 0; i -= 4) {
+		memcpy((uint8_t *)(&tmp), w->data + i, 4);
 		writel(tmp, &alink->tx);
-		debug32("  %08x", tmp);
+		debug32("%08x", tmp);
 	}
+	debug32("\n");
+
+	memcpy((uint8_t *)(&tmp), w->a2, 4);
+	writel(tmp, &alink->tx);
+	debug32("%08x", tmp);
 	debug32("\n\n");
+
 	return 0;
 }
 
@@ -177,7 +180,7 @@ void send_test_work(int value)
 	msg_blk[6] =0x4ac1d001;
 	msg_blk[5] =0x00000000; //clock cfg1
 	msg_blk[4] =0x00000001; //clock cfg0
-	msg_blk[3] =0x000FFFFF; //time out
+	msg_blk[3] =0xffffffff; //time out
 	msg_blk[2] =0x19999999; //step
 	msg_blk[1] =0x89abcdef; //taskid_l
 	msg_blk[0] =value;
@@ -185,4 +188,5 @@ void send_test_work(int value)
 	for (i = 0; i < 23; i++) {
 		writel(msg_blk[i], &alink->tx);
 	}
+	/* Nonce: 010f0eb6 */
 }
