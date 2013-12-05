@@ -18,6 +18,6 @@ void sha256_init();
 void sha256_update(const uint8_t *input, unsigned int count);
 void sha256_final(uint8_t *state);
 void sha256(const uint8_t *input, unsigned int count, uint8_t *state);
-void sha256_precalc(const uint8_t *input, unsigned int count, uint8_t *state);
+void sha256_precalc(const uint8_t *h, const uint8_t *input, unsigned int count, uint8_t *state);
 
 #endif	/* _SHA256_H_ */

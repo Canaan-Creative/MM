@@ -161,8 +161,9 @@ void send_test_work(int value)
 	int i;
 
 	debug32("Send test task:\n");
-	msg_blk[22]=0x220f1dbd;
-	msg_blk[21]=0xd8f8ef67;
+	msg_blk[22]=0x220f1dbd;	/* a2 */
+
+	msg_blk[21]=0xd8f8ef67;	/* Midstat */
 	msg_blk[20]=0x12146495;
 	msg_blk[19]=0xc44192c0;
 	msg_blk[18]=0x7145fd6d;
@@ -170,20 +171,23 @@ void send_test_work(int value)
 	msg_blk[16]=0x8f41371d;
 	msg_blk[15]=0x65c90d1e;
 	msg_blk[14]=0x9cb18a17;
-	msg_blk[13]=0xfa77fe7d;
-	msg_blk[12]=0x12cdfd7b;
-	msg_blk[11]=0x81677107;
-	msg_blk[10]=0x62a5f25c;
-	msg_blk[9] =0x05b168ae;
-	msg_blk[8] =0x087e051a;
+
+	msg_blk[13]=0xfa77fe7d;	/* e0 */
+	msg_blk[12]=0x12cdfd7b;	/* e1 */
+	msg_blk[11]=0x81677107;	/* e2 */
+	msg_blk[10]=0x62a5f25c;	/* a0 */
+	msg_blk[9] =0x05b168ae;	/* a1 */
+
+	msg_blk[8] =0x087e051a;	/* Data */
 	msg_blk[7] =0x88517050;
 	msg_blk[6] =0x4ac1d001;
+
 	msg_blk[5] =0x00000000; //clock cfg1
 	msg_blk[4] =0x00000001; //clock cfg0
-	msg_blk[3] =0xffffffff; //time out
+	msg_blk[3] =0x2aaaaaaa; // timeout
 	msg_blk[2] =0x19999999; //step
-	msg_blk[1] =0x89abcdef; //taskid_l
-	msg_blk[0] =value;
+	msg_blk[1] =value;
+	msg_blk[0] =0xaabbccdd; //taskid_l
 
 	for (i = 0; i < 23; i++) {
 		writel(msg_blk[i], &alink->tx);

@@ -162,10 +162,11 @@ static int decode_pkg(uint8_t *p, struct mm_work *mw)
 	return 0;
 }
 
+static int start = 0;
 static int get_pkg()
 {
 	static char pre_last, last;
-	static int start = 0, count = 2;
+	static int count = 2;
 
 	while (1) {
 		if (!uart_read_nonblock())
@@ -187,8 +188,11 @@ static int get_pkg()
 					return 1;
 				}
 			} else {
-				debug32("E: package broken: %d-%c, %c\n", count, pre_last, last);
+				debug32("E: package broken: %d-%c, %c\n",
+					count, pre_last, last);
 				send_pkg(AVA2_P_NAK, NULL, 0);
+				start = 0;
+				count = 2;
 				return 1;
 			}
 			start = 0;
@@ -206,38 +210,54 @@ static int get_pkg()
 	return 0;
 }
 
-static void read_result()
+static int read_result()
 {
+	int ret = 0;
+
 	while(!alink_rxbuf_empty()) {
-		debug32("Found nonce\n");
+		ret = 1;
+
+		debug32("Found nonce:\n");
 		alink_buf_status();
 		alink_read_result(&result);
+		hexdump((uint8_t *)&result, 20);
 		send_pkg(AVA2_P_NONCE, (uint8_t *)&result, 20);
 	}
+
+	return ret;
 }
 
 int main(int argv, char **argc) {
-	delay(50);		/* Delay 50ms, wait for alink ready */
-
 	struct work work;
+	int i;
+
+	delay(50);		/* Delay 50ms, wait for alink ready */
+	wdg_init(1);
+	wdg_feed((CPU_FREQUENCY / 1000) * 2); /* Configure the wdg to ~2 second, or it will reset FPGA */
 
 	irq_setmask(0);
 	irq_enable(1);
 
 	uart_init();
+	alink_init(0x3ff);
 
-	alink_init(0xff);
 	adjust_fan(0x0f);
 
 	new_stratum = 0;
-
+	i = 4;
 	while (1) {
+		wdg_feed((CPU_FREQUENCY / 1000) * 2);
+
 		if (get_pkg())
 			break;
 
 		if (!new_stratum) {
+			i = 4;
 			continue;
 		}
+
+		if (start)
+			continue;
 
 		if (!alink_txbuf_full()) {
 			miner_init_work(&mm_work, &work);
@@ -245,11 +265,15 @@ int main(int argv, char **argc) {
 			alink_send_work(&work);
 		}
 
-		read_result();
+		while (read_result())
+			i--;
 
 		/* TODO:
 		 *   Send out heatbeat information every 2 seconds */
 	}
+
+	while (1)
+		read_result();
 
 	error(0xf);
 	return 0;
