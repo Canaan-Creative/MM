@@ -23,7 +23,6 @@ static volatile unsigned int rx_produce;
 static volatile unsigned int rx_consume;
 
 static struct lm32_uart *uart = (struct lm32_uart *)UART0_BASE;
-static struct lm32_uart *uart1 = (struct lm32_uart *)UART1_BASE;
 
 void uart_isr(void)
 {
@@ -115,6 +114,9 @@ void uart_nwrite(const char *s, unsigned int l)
 }
 
 
+#ifdef DEBUG
+static struct lm32_uart *uart1 = (struct lm32_uart *)UART1_BASE;
+
 void uart1_init(void)
 {
 	uint8_t value;
@@ -155,3 +157,4 @@ void uart1_puts(const char *s)
 	while (*s)
 		uart1_write(*s++);
 }
+#endif /* DEBUG */

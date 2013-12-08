@@ -10,6 +10,7 @@
 #define _ALINK_H_
 
 void alink_init();
+void alink_flush_fifo();
 void alink_buf_status();
 int alink_busy_status();
 int alink_txbuf_full();

@@ -32,6 +32,11 @@ void alink_init(uint32_t count)
 	writel(count, &alink->en);
 }
 
+void alink_flush_fifo()
+{
+	writel(LM32_ALINK_STATE_FLUSH, &alink->state);
+}
+
 int alink_busy_status()
 {
 	return readl(&alink->busy);

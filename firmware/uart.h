@@ -17,8 +17,10 @@ void uart_write(char c);
 void uart_puts(const char *s);
 void uart_nwrite(const char *s, unsigned int l);
 
+#ifdef DEBUG
 void uart1_init(void);
 void uart1_write(char c);
 void uart1_puts(const char *s);
+#endif
 
 #endif	/* _UART_H */

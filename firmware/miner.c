@@ -95,10 +95,10 @@ void miner_init_work(struct mm_work *mw, struct work *work)
 	work->task_id[3] = 0xbb;
 	memcpy(work->task_id + 4, (uint8_t *)(&work->nonce2), 4);
 
-	work->timeout[0] = 0xff;
-	work->timeout[1] = 0xff;
-	work->timeout[2] = 0xff;
-	work->timeout[3] = 0xff;
+	work->timeout[0] = 0x02; /* TIMEOUT values N means time on N*NOP */
+	work->timeout[1] = 0x00;
+	work->timeout[2] = 0x00;
+	work->timeout[3] = 0x00;
 
 	work->clock[0] = 0x00;
 	work->clock[1] = 0x00;

@@ -162,14 +162,13 @@ static int decode_pkg(uint8_t *p, struct mm_work *mw)
 	return 0;
 }
 
-static int start = 0;
 static int get_pkg()
 {
 	static char pre_last, last;
-	static int count = 2;
+	static int start = 0, count = 2;
 
 	while (1) {
-		if (!uart_read_nonblock())
+		if (!uart_read_nonblock() && !start)
 			break;
 
 		pre_last = last;
@@ -188,7 +187,7 @@ static int get_pkg()
 					return 1;
 				}
 			} else {
-				debug32("E: package broken: %d-%c, %c\n",
+				debug32("E: package broken: %d-%02x, %02x\n",
 					count, pre_last, last);
 				send_pkg(AVA2_P_NAK, NULL, 0);
 				start = 0;
@@ -229,9 +228,8 @@ static int read_result()
 
 int main(int argv, char **argc) {
 	struct work work;
-	int i;
 
-	delay(50);		/* Delay 50ms, wait for alink ready */
+	delay(60);		/* Delay 60ms, wait for alink ready */
 	wdg_init(1);
 	wdg_feed((CPU_FREQUENCY / 1000) * 2); /* Configure the wdg to ~2 second, or it will reset FPGA */
 
@@ -241,23 +239,19 @@ int main(int argv, char **argc) {
 	uart_init();
 	alink_init(0x3ff);
 
-	adjust_fan(0x0f);
+	adjust_fan(0x1f);
 
 	new_stratum = 0;
-	i = 4;
 	while (1) {
 		wdg_feed((CPU_FREQUENCY / 1000) * 2);
 
 		if (get_pkg())
-			break;
+			break;	/* FIXME */
 
 		if (!new_stratum) {
-			i = 4;
+			alink_flush_fifo();
 			continue;
 		}
-
-		if (start)
-			continue;
 
 		if (!alink_txbuf_full()) {
 			miner_init_work(&mm_work, &work);
@@ -265,15 +259,11 @@ int main(int argv, char **argc) {
 			alink_send_work(&work);
 		}
 
-		while (read_result())
-			i--;
+		read_result();
 
 		/* TODO:
 		 *   Send out heatbeat information every 2 seconds */
 	}
-
-	while (1)
-		read_result();
 
 	error(0xf);
 	return 0;

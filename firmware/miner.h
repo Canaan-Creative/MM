@@ -12,6 +12,8 @@
 #include <stdbool.h>
 #include <stdint.h>
 
+#include "protocol.h"
+
 struct work {
 	uint32_t nonce2;
 	uint8_t	task_id[8];	/* Nonce2 + job_id etc */
@@ -39,16 +41,15 @@ struct mm_work {
 	uint8_t *jobid;
 
 	size_t coinbase_len;
-	uint8_t coinbase[2 * 1024];
+	uint8_t coinbase[AVA2_P_COINBASE_SIZE];
 
-	char *nonce1;
 	uint32_t nonce2;
 	int nonce2_offset;
 	int nonce2_size; /* only 4 is support atm. */
 
 	int merkle_offset;
 	int nmerkles;
-	uint8_t merkles[20][32];
+	uint8_t merkles[AVA2_P_MERKLES_COUNT][32];
 
 	uint8_t difficulty; /* number of leading zeros bits required
 			     * (for a valid share) */
