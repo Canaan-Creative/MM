@@ -26,6 +26,8 @@
 
 #include "hexdump.c"
 
+#define MINER_COUNT	10
+
 #define adjust_fan(value)	write_pwm(value)
 
 struct mm_work mm_work;
@@ -45,6 +47,7 @@ void delay(unsigned int ms)
 	}
 }
 
+#ifdef DEBUG
 static void error(uint8_t n)
 {
 	volatile uint32_t *gpio = (uint32_t *)GPIO_BASE;
@@ -58,6 +61,7 @@ static void error(uint8_t n)
 			writel(0, gpio);
 	}
 }
+#endif
 
 static void encode_pkg(uint8_t *p, int type, uint8_t *buf, unsigned int len)
 {
@@ -109,7 +113,7 @@ static int decode_pkg(uint8_t *p, struct mm_work *mw)
 	idx = p[3];
 	cnt = p[4];
 
-	debug32("Receive: %d: %d/%d\n", p[2], idx, cnt);
+	debug32("Decode: %d: %d/%d\n", p[2], idx, cnt);
 
 	expected_crc = (p[AVA2_P_COUNT - 3] & 0xff) |
 		((p[AVA2_P_COUNT - 4] & 0xff) << 8);
@@ -125,6 +129,7 @@ static int decode_pkg(uint8_t *p, struct mm_work *mw)
 	case AVA2_P_DETECT:
 		send_pkg(AVA2_P_ACK, NULL, 0);
 		send_pkg(AVA2_P_ACKDETECT, (uint8_t *)MM_VERSION, 6);
+		new_stratum = 0;
 		break;
 	case AVA2_P_STATIC:
 		memcpy(&mw->coinbase_len, data, 4);
@@ -146,9 +151,11 @@ static int decode_pkg(uint8_t *p, struct mm_work *mw)
 		if (idx == 1)
 			memset(mw->coinbase, 0, sizeof(mw->coinbase));
 		memcpy(mw->coinbase + (idx - 1) * AVA2_P_DATA_LEN, data, AVA2_P_DATA_LEN);
+		new_stratum = 0;
 		break;
 	case AVA2_P_MERKLES:
 		memcpy(mw->merkles[idx - 1], data, AVA2_P_DATA_LEN);
+		new_stratum = 0;
 		break;
 	case AVA2_P_HEADER:
 		memcpy(mw->header + (idx - 1) * AVA2_P_DATA_LEN, data, AVA2_P_DATA_LEN);
@@ -213,7 +220,7 @@ static int read_result()
 {
 	int ret = 0;
 
-	while(!alink_rxbuf_empty()) {
+	if (!alink_rxbuf_empty()) {
 		ret = 1;
 
 		debug32("Found nonce:\n");
@@ -227,6 +234,7 @@ static int read_result()
 }
 
 int main(int argv, char **argc) {
+	int i;
 	struct work work;
 
 	delay(60);		/* Delay 60ms, wait for alink ready */
@@ -239,32 +247,38 @@ int main(int argv, char **argc) {
 	uart_init();
 	alink_init(0x3ff);
 
-	adjust_fan(0x1f);
+	adjust_fan(0x4f);
 
 	new_stratum = 0;
 	while (1) {
 		wdg_feed((CPU_FREQUENCY / 1000) * 2);
 
-		if (get_pkg())
-			break;	/* FIXME */
+		get_pkg();
 
 		if (!new_stratum) {
 			alink_flush_fifo();
 			continue;
 		}
 
-		if (!alink_txbuf_full()) {
+		if (read_result())
+			continue;
+
+		for (i = 0; i < MINER_COUNT * 2; i++) {
+			if (alink_txbuf_full())
+				break;
 			miner_init_work(&mm_work, &work);
 			miner_gen_work(&mm_work, &work);
 			alink_send_work(&work);
 		}
 
-		read_result();
 
 		/* TODO:
 		 *   Send out heatbeat information every 2 seconds */
 	}
 
+#ifdef DEBUG
 	error(0xf);
+#endif
+
 	return 0;
 }

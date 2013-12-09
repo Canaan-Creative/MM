@@ -88,6 +88,11 @@ static void calc_midstate(struct mm_work *mw, struct work *work)
 
 void miner_init_work(struct mm_work *mw, struct work *work)
 {
+	int timeout;
+
+	int frequency = 1500;
+	int chip_count = 6;
+
 	/* TODO: create the task_id */
 	work->task_id[0] = 0x55;
 	work->task_id[1] = 0xaa;
@@ -95,19 +100,63 @@ void miner_init_work(struct mm_work *mw, struct work *work)
 	work->task_id[3] = 0xbb;
 	memcpy(work->task_id + 4, (uint8_t *)(&work->nonce2), 4);
 
-	work->timeout[0] = 0x02; /* TIMEOUT values N means time on N*NOP */
-	work->timeout[1] = 0x00;
-	work->timeout[2] = 0x00;
-	work->timeout[3] = 0x00;
+	timeout = 4294967 / (frequency * chip_count); /* Time in ms */
+	timeout *= CPU_FREQUENCY / 1000;     /* Time in cpu clock */
+	memcpy(work->timeout, &timeout, 4);
 
-	work->clock[0] = 0x00;
-	work->clock[1] = 0x00;
+	switch (frequency / 2) { /* This is the real clock in Mhz, 1Mhz means 2Mhs */
+	case 1000:
+		work->clock[1] = 0xe0;
+		work->clock[0] = 0x84;
+		break;
+	case 950:
+		work->clock[1] = 0xa0;
+		work->clock[0] = 0x84;
+		break;
+	case 900:
+		work->clock[1] = 0x60;
+		work->clock[0] = 0x84;
+		break;
+	case 850:
+		work->clock[1] = 0x20;
+		work->clock[0] = 0x84;
+		break;
+	case 800:
+		work->clock[1] = 0xe0;
+		work->clock[0] = 0x83;
+		break;
+	case 750:
+		work->clock[1] = 0xa0;
+		work->clock[0] = 0x83;
+		break;
+	case 700:
+		work->clock[1] = 0x60;
+		work->clock[0] = 0x83;
+		break;
+	case 650:
+		work->clock[1] = 0x20;
+		work->clock[0] = 0x83;
+		break;
+	case 600:
+		work->clock[1] = 0xe0;
+		work->clock[0] = 0x82;
+		break;
+	case 550:
+		work->clock[1] = 0xa0;
+		work->clock[0] = 0x82;
+		break;
+	default:        /* 500Mhz etc */
+		work->clock[1] = 0xe0;
+		work->clock[0] = 0x94;
+		break;
+	}
 	work->clock[2] = 0x00;
-	work->clock[3] = 0x01;
+	work->clock[3] = 0x07;	/* 0x0b: idle, 0x07: enable */
+
 	work->clock[4] = 0x00;
 	work->clock[5] = 0x00;
-	work->clock[6] = 0x00;
-	work->clock[7] = 0x00;
+	work->clock[6] = 0x01;
+	work->clock[7] = 0x74;
 
 	work->step[0] = 0x2a;
 	work->step[1] = 0xaa;
@@ -161,7 +210,6 @@ void miner_gen_work(struct mm_work *mw, struct work *work)
 	/* 	0x1c, 0x26, 0x52, 0xfb, 0x52, 0xa0, 0x26, 0xf4, 0x19, 0x06, 0x12, 0x42}; */
 
 	uint32_t tmp;
-
 	
 	memcpy(work_t, work->data, 44);
 	hexdump(work_t, 44);
