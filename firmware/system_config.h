@@ -9,6 +9,10 @@
 #ifndef _SYSTEM_CONFIG_H_
 #define _SYSTEM_CONFIG_H_
 
+#define ASIC_FREQUENCY	1300
+#define ASIC_COUNT	6
+
+
 #define CPU_FREQUENCY		(50 * 1000 * 1000) /* 50Mhz */
 #define UART_BAUD_RATE          (115200)
 

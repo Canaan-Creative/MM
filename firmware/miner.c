@@ -90,9 +90,6 @@ void miner_init_work(struct mm_work *mw, struct work *work)
 {
 	int timeout;
 
-	int frequency = 1300;
-	int chip_count = 6;
-
 	/* TODO: create the task_id */
 	work->task_id[0] = 0x55;
 	work->task_id[1] = 0xaa;
@@ -100,11 +97,11 @@ void miner_init_work(struct mm_work *mw, struct work *work)
 	work->task_id[3] = 0xbb;
 	memcpy(work->task_id + 4, (uint8_t *)(&work->nonce2), 4);
 
-	timeout = 4294967 / (frequency * chip_count); /* Time in ms */
+	timeout = 4294967 / (ASIC_FREQUENCY * ASIC_COUNT); /* Time in ms */
 	timeout *= CPU_FREQUENCY / 1000;     /* Time in cpu clock */
 	memcpy(work->timeout, &timeout, 4);
 
-	switch (frequency / 2) { /* This is the real clock in Mhz, 1Mhz means 2Mhs */
+	switch (ASIC_FREQUENCY / 2) { /* This is the real clock in Mhz, 1Mhz means 2Mhs */
 	case 1000:
 		work->clock[1] = 0xe0;
 		work->clock[0] = 0x84;
