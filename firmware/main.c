@@ -248,7 +248,7 @@ int main(int argv, char **argc) {
 		get_pkg();
 
 		if (!new_stratum)
-			goto receive;
+			continue;
 
 		if (alink_txbuf_count() < (24 * 5)) {
 			miner_gen_work(&mm_work, &work);
@@ -258,7 +258,7 @@ int main(int argv, char **argc) {
 			get_pkg();
 			if (!new_stratum) {
 				alink_flush_fifo();
-				goto receive;
+				continue;
 			}
 		}
 
@@ -268,14 +268,13 @@ int main(int argv, char **argc) {
 			get_pkg();
 			if (!new_stratum) {
 				alink_flush_fifo();
-				goto receive;
+				break;
 			}
 		}
 
 		/* TODO:
 		 *   Send out heatbeat information every 2 seconds */
 
-	receive:
 		wdg_feed((CPU_FREQUENCY / 1000) * 2);
 	}
 
