@@ -134,13 +134,15 @@ static int decode_pkg(uint8_t *p, struct mm_work *mw)
 		memcpy(&mw->merkle_offset, data + 12, 4);
 		memcpy(&mw->nmerkles, data + 16, 4);
 		memcpy(&mw->diff, data + 20, 4);
-		debug32("P_STATIC:  %d, %d, %d, %d, %d, %d\n",
+		g_new_stratum = 0;
+		debug32("D: (%d):  %d, %d, %d, %d, %d, %d\n",
+			g_new_stratum,
 			mw->coinbase_len,
 			mw->nonce2_offset,
 			mw->nonce2_size,
 			mw->merkle_offset,
-			mw->nmerkles);
-		g_new_stratum = 0;
+			mw->nmerkles,
+			mw->diff);
 		break;
 	case AVA2_P_JOB_ID:
 		break;
@@ -156,8 +158,10 @@ static int decode_pkg(uint8_t *p, struct mm_work *mw)
 		break;
 	case AVA2_P_HEADER:
 		memcpy(mw->header + (idx - 1) * AVA2_P_DATA_LEN, data, AVA2_P_DATA_LEN);
-		if (idx == cnt)
+		if (idx == cnt) {
 			g_new_stratum = 1;
+			debug32("D: Header(%d)\n", g_new_stratum);
+		}
 		break;
 	case AVA2_P_ASKNONCE:
 			g_new_stratum = 1;
@@ -171,7 +175,7 @@ static int decode_pkg(uint8_t *p, struct mm_work *mw)
 static int read_result()
 {
 	if (!alink_rxbuf_empty()) {
-		debug32("Found!\n");
+		debug32("D: Found!\n");
 		alink_read_result(&result);
 		send_pkg(AVA2_P_NONCE, (uint8_t *)&result, 20);
 		return 1;

@@ -9,7 +9,7 @@
 #ifndef _SYSTEM_CONFIG_H_
 #define _SYSTEM_CONFIG_H_
 
-#define ASIC_FREQUENCY	1300
+#define ASIC_FREQUENCY	1500
 #define ASIC_COUNT	6
 
 
