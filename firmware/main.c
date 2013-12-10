@@ -216,19 +216,14 @@ static int get_pkg()
 
 static int read_result()
 {
-	int ret = 0;
-
 	if (!alink_rxbuf_empty()) {
-		ret = 1;
-
-		debug32("Found!:\n");
-		alink_buf_status();
+		debug32("Found!\n");
 		alink_read_result(&result);
-		hexdump((uint8_t *)&result, 20);
 		send_pkg(AVA2_P_NONCE, (uint8_t *)&result, 20);
+		return 1;
 	}
 
-	return ret;
+	return 0;
 }
 
 int main(int argv, char **argc) {
@@ -245,7 +240,7 @@ int main(int argv, char **argc) {
 	uart_init();
 	alink_init(0x3ff);
 
-	adjust_fan(0x4f);
+	adjust_fan(0x6f);
 
 	new_stratum = 0;
 	i = 0;
@@ -253,27 +248,23 @@ int main(int argv, char **argc) {
 		get_pkg();
 
 		if (!new_stratum) {
-			alink_flush_fifo();
-			continue;
+			//alink_flush_fifo();
+			goto receive;
 		}
 
-		while (read_result()) {
-			get_pkg();
-			if (!new_stratum)
-				goto receive;
-		}
-
-		for (i = 0; i < MINER_COUNT * 2; i++) {
-			get_pkg();
-			if (!new_stratum)
-				goto receive;
-
-			if (alink_txbuf_full())
-				goto receive;
-
+		if (alink_txbuf_count() < (24 * 5)) {
 			miner_gen_work(&mm_work, &work);
 			miner_init_work(&mm_work, &work);
 			alink_send_work(&work);
+		}
+
+		while (read_result()) {
+			alink_buf_status();
+
+			get_pkg();
+			if (!new_stratum)
+				goto receive;
+
 		}
 
 		/* TODO:

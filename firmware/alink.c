@@ -34,7 +34,9 @@ void alink_init(uint32_t count)
 
 void alink_flush_fifo()
 {
-	writel(LM32_ALINK_STATE_FLUSH, &alink->state);
+	uint32_t value = readl(&alink->state);
+	value |= LM32_ALINK_STATE_FLUSH;
+	writel(value, &alink->state);
 }
 
 int alink_busy_status()
@@ -44,22 +46,32 @@ int alink_busy_status()
 
 void alink_buf_status()
 {
-	uint32_t tmp;
+	uint32_t value;
 
-	tmp = readl(&alink->busy);
-	debug32("Buf busy: 0x%08x,", tmp);
+	value = readl(&alink->busy);
+	debug32("D: PHY busy: %08x,", value);
 
-	tmp = readl(&alink->state);
-	debug32(" state: 0x%08x (tx: %d, rx: %d(%d))\n",
-		tmp,
-		((tmp & LM32_ALINK_STATE_TXCOUNT) >> 4),
-		((tmp & LM32_ALINK_STATE_RXCOUNT) >> 20),
-		((tmp & LM32_ALINK_STATE_RXCOUNT) >> 20) / 5);
+	value = readl(&alink->state);
+	debug32(" state: %08x (tx: %d, rx: %d(%d))\n",
+		value,
+		((value & LM32_ALINK_STATE_TXCOUNT) >> 4),
+		((value & LM32_ALINK_STATE_RXCOUNT) >> 20),
+		((value & LM32_ALINK_STATE_RXCOUNT) >> 20) / 5);
 }
 
 int alink_txbuf_full()
 {
-	return (LM32_ALINK_STATE_TXFULL & readl(&alink->state));
+	uint32_t value = LM32_ALINK_STATE_TXFULL & readl(&alink->state);
+	debug32("D: tx full %d\n", value);
+	return value;
+}
+
+int alink_txbuf_count()
+{
+	uint32_t value;
+
+	value = readl(&alink->state);
+	return 	((value & LM32_ALINK_STATE_TXCOUNT) >> 4);
 }
 
 int alink_send_work(struct work *w)
@@ -67,70 +79,49 @@ int alink_send_work(struct work *w)
 	uint32_t tmp;
 	int i;
 
-	debug32("Send task:\n");
-
 	/* The chip configure information */
 	memcpy((uint8_t *)(&tmp), w->task_id, 4);
 	writel(tmp, &alink->tx);
-	debug32("%08x", tmp);
 
 	memcpy((uint8_t *)(&tmp), w->task_id + 4, 4);
 	writel(tmp, &alink->tx);
-	debug32("%08x", tmp);
 
 	memcpy((uint8_t *)(&tmp), w->step, 4);
 	writel(tmp, &alink->tx);
-	debug32("%08x", tmp);
 
 	memcpy((uint8_t *)(&tmp), w->timeout, 4);
 	writel(tmp, &alink->tx);
-	debug32("%08x", tmp);
 
 	memcpy((uint8_t *)(&tmp), w->clock, 4);
 	writel(tmp, &alink->tx);
-	debug32("%08x", tmp);
 
 	memcpy((uint8_t *)(&tmp), w->clock + 4, 4);
 	writel(tmp, &alink->tx);
-	debug32("%08x", tmp);
-	debug32("\n");
 
 	/* Task data */
 	for (i = 8; i >= 0; i -= 4) {
 		memcpy((uint8_t *)(&tmp), w->data + 32 + i, 4);
 		writel(tmp, &alink->tx);
-		debug32("%08x", tmp);
 	}
-	debug32("\n");
 
 	memcpy((uint8_t *)(&tmp), w->a1, 4);
 	writel(tmp, &alink->tx);
-	debug32("%08x", tmp);
 	memcpy((uint8_t *)(&tmp), w->a0, 4);
 	writel(tmp, &alink->tx);
-	debug32("%08x", tmp);
 	memcpy((uint8_t *)(&tmp), w->e2, 4);
 	writel(tmp, &alink->tx);
-	debug32("%08x", tmp);
 	memcpy((uint8_t *)(&tmp), w->e1, 4);
 	writel(tmp, &alink->tx);
-	debug32("%08x", tmp);
 	memcpy((uint8_t *)(&tmp), w->e0, 4);
 	writel(tmp, &alink->tx);
-	debug32("%08x", tmp);
-	debug32("\n");
 
 	for (i = 28; i >= 0; i -= 4) {
 		memcpy((uint8_t *)(&tmp), w->data + i, 4);
 		writel(tmp, &alink->tx);
-		debug32("%08x", tmp);
 	}
-	debug32("\n");
 
 	memcpy((uint8_t *)(&tmp), w->a2, 4);
 	writel(tmp, &alink->tx);
-	debug32("%08x", tmp);
-	debug32("\n\n");
 
 	return 0;
 }
