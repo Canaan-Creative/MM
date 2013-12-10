@@ -247,24 +247,29 @@ int main(int argv, char **argc) {
 	while (1) {
 		get_pkg();
 
-		if (!new_stratum) {
-			//alink_flush_fifo();
+		if (!new_stratum)
 			goto receive;
-		}
 
 		if (alink_txbuf_count() < (24 * 5)) {
 			miner_gen_work(&mm_work, &work);
 			miner_init_work(&mm_work, &work);
 			alink_send_work(&work);
+
+			get_pkg();
+			if (!new_stratum) {
+				alink_flush_fifo();
+				goto receive;
+			}
 		}
 
 		while (read_result()) {
 			alink_buf_status();
 
 			get_pkg();
-			if (!new_stratum)
+			if (!new_stratum) {
+				alink_flush_fifo();
 				goto receive;
-
+			}
 		}
 
 		/* TODO:
