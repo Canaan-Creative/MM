@@ -92,8 +92,6 @@ static void encode_pkg(uint8_t *p, int type, uint8_t *buf, unsigned int len)
 	crc = crc16(p + 5, AVA2_P_DATA_LEN);
 	p[AVA2_P_COUNT - 4] = crc & 0x00ff;
 	p[AVA2_P_COUNT - 3] = (crc & 0xff00) >> 8;
-
-	debug32("Send: %d\n", type);
 }
 
 static void send_pkg(int type, uint8_t *buf, unsigned int len)
@@ -137,7 +135,8 @@ static int decode_pkg(uint8_t *p, struct mm_work *mw)
 		memcpy(&mw->nonce2_size, data + 8, 4);
 		memcpy(&mw->merkle_offset, data + 12, 4);
 		memcpy(&mw->nmerkles, data + 16, 4);
-		debug32("P_STATIC:  %d, %d, %d, %d, %d\n",
+		memcpy(&mw->diff, data + 20, 4);
+		debug32("P_STATIC:  %d, %d, %d, %d, %d, %d\n",
 			mw->coinbase_len,
 			mw->nonce2_offset,
 			mw->nonce2_size,
@@ -186,16 +185,15 @@ static int get_pkg()
 
 		if (count == AVA2_P_COUNT) {
 			if (pre_last == AVA2_T1 && last == AVA2_T2) {
-				if (!decode_pkg(g_pkg, &mm_work)) {
-					;
-				} else {
-					debug32("E: package broken\n");
+				if (decode_pkg(g_pkg, &mm_work)) {
+					debug32("E: package broken(crc)\n");
 					send_pkg(AVA2_P_NAK, NULL, 0);
+					start = 0;
+					count = 2;
 					return 1;
 				}
 			} else {
-				debug32("E: package broken: %d-%02x, %02x\n",
-					count, pre_last, last);
+				debug32("E: package broken(%02x %02x)\n", pre_last, last);
 				send_pkg(AVA2_P_NAK, NULL, 0);
 				start = 0;
 				count = 2;
@@ -223,7 +221,7 @@ static int read_result()
 	if (!alink_rxbuf_empty()) {
 		ret = 1;
 
-		debug32("Found nonce:\n");
+		debug32("Found!:\n");
 		alink_buf_status();
 		alink_read_result(&result);
 		hexdump((uint8_t *)&result, 20);
@@ -250,9 +248,8 @@ int main(int argv, char **argc) {
 	adjust_fan(0x4f);
 
 	new_stratum = 0;
+	i = 0;
 	while (1) {
-		wdg_feed((CPU_FREQUENCY / 1000) * 2);
-
 		get_pkg();
 
 		if (!new_stratum) {
@@ -260,20 +257,30 @@ int main(int argv, char **argc) {
 			continue;
 		}
 
-		if (read_result())
-			continue;
+		while (read_result()) {
+			get_pkg();
+			if (!new_stratum)
+				goto receive;
+		}
 
 		for (i = 0; i < MINER_COUNT * 2; i++) {
+			get_pkg();
+			if (!new_stratum)
+				goto receive;
+
 			if (alink_txbuf_full())
-				break;
-			miner_init_work(&mm_work, &work);
+				goto receive;
+
 			miner_gen_work(&mm_work, &work);
+			miner_init_work(&mm_work, &work);
 			alink_send_work(&work);
 		}
 
-
 		/* TODO:
 		 *   Send out heatbeat information every 2 seconds */
+
+	receive:
+		wdg_feed((CPU_FREQUENCY / 1000) * 2);
 	}
 
 #ifdef DEBUG

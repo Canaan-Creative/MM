@@ -90,7 +90,7 @@ void miner_init_work(struct mm_work *mw, struct work *work)
 {
 	int timeout;
 
-	int frequency = 1500;
+	int frequency = 1300;
 	int chip_count = 6;
 
 	/* TODO: create the task_id */

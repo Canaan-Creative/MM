@@ -51,12 +51,9 @@ struct mm_work {
 	int nmerkles;
 	uint8_t merkles[AVA2_P_MERKLES_COUNT][32];
 
-	uint8_t difficulty; /* number of leading zeros bits required
-			     * (for a valid share) */
-	bool rollntime; /* whether rollntime is accepted */
-	bool clean;	/* flush all prior jobs (cut) */
-
 	uint8_t header[128];
+
+	int diff;
 };
 
 void miner_init_work(struct mm_work *mw, struct work *work);
