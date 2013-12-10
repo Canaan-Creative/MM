@@ -35,7 +35,7 @@ struct result result;
 
 static uint8_t g_pkg[AVA2_P_COUNT];
 static uint8_t g_act[AVA2_P_COUNT];
-static int new_stratum = 0;
+static int g_new_stratum = 0;
 
 void delay(unsigned int ms)
 {
@@ -125,9 +125,7 @@ static int decode_pkg(uint8_t *p, struct mm_work *mw)
 
 	switch (p[2]) {
 	case AVA2_P_DETECT:
-		send_pkg(AVA2_P_ACK, NULL, 0);
-		send_pkg(AVA2_P_ACKDETECT, (uint8_t *)MM_VERSION, 6);
-		new_stratum = 0;
+		g_new_stratum = 0;
 		break;
 	case AVA2_P_STATIC:
 		memcpy(&mw->coinbase_len, data, 4);
@@ -142,7 +140,7 @@ static int decode_pkg(uint8_t *p, struct mm_work *mw)
 			mw->nonce2_size,
 			mw->merkle_offset,
 			mw->nmerkles);
-		new_stratum = 0;
+		g_new_stratum = 0;
 		break;
 	case AVA2_P_JOB_ID:
 		break;
@@ -150,19 +148,33 @@ static int decode_pkg(uint8_t *p, struct mm_work *mw)
 		if (idx == 1)
 			memset(mw->coinbase, 0, sizeof(mw->coinbase));
 		memcpy(mw->coinbase + (idx - 1) * AVA2_P_DATA_LEN, data, AVA2_P_DATA_LEN);
-		new_stratum = 0;
+		g_new_stratum = 0;
 		break;
 	case AVA2_P_MERKLES:
 		memcpy(mw->merkles[idx - 1], data, AVA2_P_DATA_LEN);
-		new_stratum = 0;
+		g_new_stratum = 0;
 		break;
 	case AVA2_P_HEADER:
 		memcpy(mw->header + (idx - 1) * AVA2_P_DATA_LEN, data, AVA2_P_DATA_LEN);
 		if (idx == cnt)
-			new_stratum = 1;
+			g_new_stratum = 1;
 		break;
+	case AVA2_P_ASKNONCE:
+			g_new_stratum = 1;
 	default:
 		break;
+	}
+
+	return 0;
+}
+
+static int read_result()
+{
+	if (!alink_rxbuf_empty()) {
+		debug32("Found!\n");
+		alink_read_result(&result);
+		send_pkg(AVA2_P_NONCE, (uint8_t *)&result, 20);
+		return 1;
 	}
 
 	return 0;
@@ -184,23 +196,28 @@ static int get_pkg()
 			g_pkg[count++] = last;
 
 		if (count == AVA2_P_COUNT) {
+			start = 0;
+			count = 2;
 			if (pre_last == AVA2_T1 && last == AVA2_T2) {
 				if (decode_pkg(g_pkg, &mm_work)) {
 					debug32("E: package broken(crc)\n");
 					send_pkg(AVA2_P_NAK, NULL, 0);
-					start = 0;
-					count = 2;
 					return 1;
+				} else {
+					send_pkg(AVA2_P_ACK, NULL, 0);
+					switch (g_pkg[2]) {
+					case AVA2_P_DETECT:
+						send_pkg(AVA2_P_ACKDETECT, (uint8_t *)MM_VERSION, 6);
+						break;
+					default:
+						break;
+					}
 				}
 			} else {
 				debug32("E: package broken(%02x %02x)\n", pre_last, last);
 				send_pkg(AVA2_P_NAK, NULL, 0);
-				start = 0;
-				count = 2;
 				return 1;
 			}
-			start = 0;
-			count = 2;
 		}
 
 		if (pre_last == AVA2_H1 && last == AVA2_H2 && !start) {
@@ -209,18 +226,6 @@ static int get_pkg()
 			start = 1;
 			count = 2;
 		}
-	}
-
-	return 0;
-}
-
-static int read_result()
-{
-	if (!alink_rxbuf_empty()) {
-		debug32("Found!\n");
-		alink_read_result(&result);
-		send_pkg(AVA2_P_NONCE, (uint8_t *)&result, 20);
-		return 1;
 	}
 
 	return 0;
@@ -242,12 +247,12 @@ int main(int argv, char **argc) {
 
 	adjust_fan(0x6f);
 
-	new_stratum = 0;
+	g_new_stratum = 0;
 	i = 0;
 	while (1) {
 		get_pkg();
 
-		if (!new_stratum)
+		if (!g_new_stratum)
 			continue;
 
 		if (alink_txbuf_count() < (24 * 5)) {
@@ -256,7 +261,7 @@ int main(int argv, char **argc) {
 			alink_send_work(&work);
 
 			get_pkg();
-			if (!new_stratum) {
+			if (!g_new_stratum) {
 				alink_flush_fifo();
 				continue;
 			}
@@ -266,12 +271,11 @@ int main(int argv, char **argc) {
 			alink_buf_status();
 
 			get_pkg();
-			if (!new_stratum) {
+			if (!g_new_stratum) {
 				alink_flush_fifo();
-				break;
+				continue;
 			}
 		}
-
 		/* TODO:
 		 *   Send out heatbeat information every 2 seconds */
 

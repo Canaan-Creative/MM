@@ -71,7 +71,15 @@ int alink_txbuf_count()
 	uint32_t value;
 
 	value = readl(&alink->state);
-	return 	((value & LM32_ALINK_STATE_TXCOUNT) >> 4);
+	return ((value & LM32_ALINK_STATE_TXCOUNT) >> 4);
+}
+
+int alink_rxbuf_count()
+{
+	uint32_t value;
+
+	value = readl(&alink->state);
+	return ((value & LM32_ALINK_STATE_RXCOUNT) >> 20);
 }
 
 int alink_send_work(struct work *w)
