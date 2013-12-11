@@ -32,13 +32,6 @@ void alink_init(uint32_t count)
 	writel(count, &alink->en);
 }
 
-void alink_flush_fifo()
-{
-	uint32_t value = readl(&alink->state);
-	value |= LM32_ALINK_STATE_FLUSH;
-	writel(value, &alink->state);
-}
-
 int alink_busy_status()
 {
 	return readl(&alink->busy);
@@ -80,6 +73,11 @@ int alink_rxbuf_count()
 
 	value = readl(&alink->state);
 	return ((value & LM32_ALINK_STATE_RXCOUNT) >> 20);
+}
+
+int alink_rxbuf_empty()
+{
+	return (LM32_ALINK_STATE_RXEMPTY & readl(&alink->state));
 }
 
 int alink_send_work(struct work *w)
@@ -132,11 +130,6 @@ int alink_send_work(struct work *w)
 	writel(tmp, &alink->tx);
 
 	return 0;
-}
-
-int alink_rxbuf_empty()
-{
-	return (LM32_ALINK_STATE_RXEMPTY & readl(&alink->state));
 }
 
 void alink_read_result(struct result *r)
@@ -197,4 +190,19 @@ void send_test_work(int value)
 		writel(msg_blk[i], &alink->tx);
 	}
 	/* Nonce: 010f0eb6 */
+}
+
+void alink_flush_fifo()
+{
+	uint32_t value = readl(&alink->state);
+	value |= LM32_ALINK_STATE_FLUSH;
+	writel(value, &alink->state);
+
+	struct result result;
+	while (!alink_rxbuf_empty()) {
+		alink_read_result(&result);
+	}
+
+	while (alink_rxbuf_count() == 0)
+		;
 }

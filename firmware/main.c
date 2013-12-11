@@ -249,15 +249,17 @@ int main(int argv, char **argc) {
 	uart_init();
 	alink_init(0x3ff);
 
-	adjust_fan(0x6f);
+	adjust_fan(0x5f);
 
 	g_new_stratum = 0;
 	i = 0;
 	while (1) {
 		get_pkg();
 
-		if (!g_new_stratum)
+		if (!g_new_stratum) {
+			alink_flush_fifo();
 			continue;
+		}
 
 		if (alink_txbuf_count() < (24 * 5)) {
 			miner_gen_work(&mm_work, &work);
