@@ -17,7 +17,10 @@
 `define CFG_DRAM_ENABLED
 `define CFG_DRAM_EXPOSE
 `define CFG_DRAM_BASE_ADDRESS 32'h4000
-`define CFG_DRAM_LIMIT 32'h5fff
+
+`define CFG_DRAM_LIMIT 32'h7FFF
+// Don't forget update mm.bmm file
+
 `define CFG_DRAM_INIT_FILE_FORMAT "hex"
 `define CFG_DRAM_INIT_FILE "none"
 `define CFG_USER_ENABLED
@@ -25,4 +28,4 @@
 `define RXRDY_ENABLE
 `define TXRDY_ENABLE
 
-`endif // SYSTEM_CONF
+`endif

@@ -161,7 +161,7 @@ rx_fifo rx_fifo(
 //-------------------------------------------------
 txc txc(
 /*input                    */ .clk         (CLK_I       ) ,
-/*input                    */ .rst         (RST_I       ) ,
+/*input                    */ .rst         (RST_I|reg_flush       ) ,
 
 /*input                    */ .reg_flush   (reg_flush   ) ,
 /*input  [`PHY_NUM-1:0]    */ .reg_mask    (reg_mask    ) ,
@@ -185,7 +185,7 @@ txc txc(
 //-------------------------------------------------
 tx_phy tx_phy(
 /*input            */ .clk         (CLK_I       ) ,
-/*input            */ .rst         (RST_I       ) ,
+/*input            */ .rst         (RST_I|reg_flush       ) ,
                                                 
 /*input            */ .reg_flush   (reg_flush   ) ,
                                             
@@ -205,7 +205,7 @@ tx_phy tx_phy(
 /*output [31:0]    */ .TX_P        (TX_P        ) ,
 /*output [31:0]    */ .TX_N        (TX_N        )  
 );
-
+/*
 // VIO/ILA and ICON {{{
 wire [35:0] icon_ctrl_0;
 wire [255:0] trig0 = {
@@ -224,13 +224,13 @@ wire [255:0] trig0 = {
 icon icon_test(.CONTROL0(icon_ctrl_0));
 ila ila_test(.CONTROL(icon_ctrl_0), .CLK(CLK_I), .TRIG0(trig0)
 );
-
+*/
 //-------------------------------------------------
 // RX.PHY
 //-------------------------------------------------
 rxc rxc(
 /*input        */ .clk            (CLK_I          ) ,
-/*input        */ .rst            (RST_I          ) ,
+/*input        */ .rst            (RST_I|reg_flush          ) ,
                                                   
 /*input        */ .reg_flush      (reg_flush      ) ,
 /*input  [31:0]*/ .reg_mask       (reg_mask       ) ,

@@ -11,11 +11,15 @@ ADDRESS_SPACE iram RAMB16 [0x00000000:0x00003FFF]
 	END_BUS_BLOCK;
 END_ADDRESS_SPACE;
 
-ADDRESS_SPACE dram RAMB16 [0x00004000:0x00005FFF]
+ADDRESS_SPACE dram RAMB16 [0x00004000:0x00007FFF]
 	BUS_BLOCK
-		dram/gen_bram[0].bram [31:24];
-		dram/gen_bram[1].bram [23:16];
-		dram/gen_bram[2].bram [15:8];
-		dram/gen_bram[3].bram [7:0];
+		dram/gen_bram[0].bram [31:28];
+		dram/gen_bram[1].bram [27:24];
+		dram/gen_bram[2].bram [23:20];
+		dram/gen_bram[3].bram [19:16];
+		dram/gen_bram[4].bram [15:12];
+		dram/gen_bram[5].bram [11:8];
+		dram/gen_bram[6].bram [7:4];
+		dram/gen_bram[7].bram [3:0];
 	END_BUS_BLOCK;
 END_ADDRESS_SPACE;
