@@ -125,6 +125,7 @@ static int decode_pkg(uint8_t *p, struct mm_work *mw)
 
 	switch (p[2]) {
 	case AVA2_P_DETECT:
+		alink_flush_fifo(); /* Ignore all result and task when new stratum come */
 		g_new_stratum = 0;
 		break;
 	case AVA2_P_STATIC:
@@ -176,6 +177,8 @@ static int read_result()
 {
 	if (!alink_rxbuf_empty()) {
 		debug32("D: Found!\n");
+		alink_buf_status();
+
 		alink_read_result(&result);
 		send_pkg(AVA2_P_NONCE, (uint8_t *)&result, 20);
 		return 1;
@@ -256,10 +259,8 @@ int main(int argv, char **argc) {
 	while (1) {
 		get_pkg();
 
-		if (!g_new_stratum) {
-			alink_flush_fifo();
+		if (!g_new_stratum)
 			continue;
-		}
 
 		if (alink_txbuf_count() < (24 * 5)) {
 			miner_gen_work(&mm_work, &work);
@@ -274,12 +275,11 @@ int main(int argv, char **argc) {
 		}
 
 		while (read_result()) {
-			alink_buf_status();
 
 			get_pkg();
 			if (!g_new_stratum) {
 				alink_flush_fifo();
-				continue;
+				break;
 			}
 		}
 		/* TODO:
