@@ -192,17 +192,12 @@ void send_test_work(int value)
 	/* Nonce: 010f0eb6 */
 }
 
+extern void delay(unsigned int ms);
 void alink_flush_fifo()
 {
 	uint32_t value = readl(&alink->state);
 	value |= LM32_ALINK_STATE_FLUSH;
 	writel(value, &alink->state);
 
-	struct result result;
-	while (!alink_rxbuf_empty()) {
-		alink_read_result(&result);
-	}
-
-	while (alink_rxbuf_count() == 0)
-		;
+	delay(1);
 }

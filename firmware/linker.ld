@@ -7,7 +7,7 @@ INPUT(crti.o crtbegin.o crtend.o crtn.o)
 MEMORY
 {
     Instruction_IM :  ORIGIN = 0x00000000,  LENGTH = 16384
-    Data_IM :  ORIGIN = 0x00004000,  LENGTH = 8192
+    Data_IM :  ORIGIN = 0x00004000,  LENGTH = 16384
 }
 
 SECTIONS

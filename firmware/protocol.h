@@ -16,7 +16,7 @@
 #define AVA2_T1	'O'
 #define AVA2_T2	'N'
 
-#define AVA2_P_COINBASE_SIZE	(2 * 1024)
+#define AVA2_P_COINBASE_SIZE	(5 * 1024)
 #define AVA2_P_MERKLES_COUNT	20
 
 #define AVA2_P_COUNT	41
