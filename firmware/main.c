@@ -164,8 +164,8 @@ static int decode_pkg(uint8_t *p, struct mm_work *mw)
 			debug32("D: Header(%d)\n", g_new_stratum);
 		}
 		break;
-	case AVA2_P_ASKNONCE:
-			g_new_stratum = 1;
+	case AVA2_P_POLLING:
+		g_new_stratum = 1;
 	default:
 		break;
 	}
@@ -182,6 +182,8 @@ static int read_result()
 		alink_read_result(&result);
 		send_pkg(AVA2_P_NONCE, (uint8_t *)&result, 20);
 		return 1;
+	} else {
+		;
 	}
 
 	return 0;

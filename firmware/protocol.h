@@ -28,7 +28,7 @@
 #define AVA2_P_COINBASE	13
 #define AVA2_P_MERKLES	14
 #define AVA2_P_HEADER	15
-#define AVA2_P_ASKNONCE 16
+#define AVA2_P_POLLING  16
 
 #define AVA2_P_ACK		21
 #define AVA2_P_NAK		22
