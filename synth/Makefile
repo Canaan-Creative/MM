@@ -35,9 +35,6 @@ vfiles_nodir := \
 	superkdf9/soc/superkdf9_simple.v 
 
 xilinx_cores := $(addprefix ../ipcores_dir/,\
-	icon.xco\
-	ila.xco\
-	vio.xco\
 	fifo_uart.xco\
 	tx_fifo.xco\
 	rx_fifo.xco\

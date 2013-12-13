@@ -348,10 +348,12 @@ endmodule
 
 `include "../components/twi/twi_define.v"
 `include "../components/twi/twi.v"
+`include "../components/twi/shift.v"
 `include "../components/twi/twi_core.v"
 //module superkdf9_simple ( 
 module mm ( 
-  ex_clk_i 
+  ex_clk_i
+, ex_clk_o
 , uartSIN
 , uartSOUT
 , uartRXRDY_N
@@ -374,12 +376,20 @@ module mm (
 , PWM
 , TWI_SCL
 , TWI_SDA
+
+, SFT_SHCP
+, SFT_DS  
+, SFT_STCP
+, SFT_MR_N
+, SFT_OE_N
+
 );
 output POWER_ON ;
 output PWM ;
 input	ex_clk_i;
+output  ex_clk_o ;
 wire clk_i , reset_n ;
-clkgen clk (.clkin(ex_clk_i), .clkout(clk_i), .locked(reset_n));
+clkgen clk (.clkin(ex_clk_i), .clkout(clk_i), .clk25m(ex_clk_o), .locked(reset_n));
 assign POWER_ON = 1 ;
 
 wire WATCH_DOG ;
@@ -520,6 +530,13 @@ wire        twiTWI_RTY_O;
 wire        twiTWI_en;
 wire        TWI_SCL_O ;
 wire        TWI_SDA_OEN ;
+
+output      SFT_SHCP ;
+output      SFT_DS   ;
+output      SFT_STCP ;
+output      SFT_MR_N ;
+output      SFT_OE_N ;
+
 // Enable the FT232 and HUB
 assign uartRESET_N = 1'b1;
 assign hubRESET_N  = 1'b1;
@@ -1000,10 +1017,10 @@ alink alink(
 assign twiTWI_en = (SHAREDBUS_ADR_I[31:6] == 26'b10000000000000000000011000);
 assign TWI_SCL = TWI_SCL_O == 1'b0 ? 1'b0 : 1'bz ;//p85
 assign TWI_SDA = TWI_SDA_OEN == 1'b0 ? 1'b0 : 1'bz ;//p8
-twi(
+twi u_twi(
 // system clock and reset
-/*input         */ .CLK_I       (clk_i) ,
-/*input         */ .RST_I       (sys_reset) ,
+/*input         */ .CLK_I       (clk_i                       ) ,
+/*input         */ .RST_I       (sys_reset                   ) ,
 
 // wishbone interface signals
 /*input         */ .TWI_CYC_I   (SHAREDBUS_CYC_I & twiTWI_en ) ,//NC
@@ -1024,7 +1041,13 @@ twi(
 /*input         */ .TWI_SDA_I   (TWI_SDA                     ) ,
 /*output        */ .TWI_SDA_OEN (TWI_SDA_OEN                 ) ,
 /*output        */ .PWM         (PWM                         ) , 
-/*output        */ .WATCH_DOG   (WATCH_DOG                   ) 
+/*output        */ .WATCH_DOG   (WATCH_DOG                   ) ,
+
+/*output        */ .SFT_SHCP    (SFT_SHCP                    ) ,
+/*output        */ .SFT_DS      (SFT_DS                      ) ,
+/*output        */ .SFT_STCP    (SFT_STCP                    ) ,
+/*output        */ .SFT_MR_N    (SFT_MR_N                    ) ,
+/*output        */ .SFT_OE_N    (SFT_OE_N                    ) 
 ) ;
 
 assign superkdf9interrupt_n[3] = !uartINTR ;

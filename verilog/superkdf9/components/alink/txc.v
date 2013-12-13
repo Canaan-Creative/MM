@@ -88,13 +88,13 @@ else if( cur_state == IDLE ) begin
 	else if( ~reg_busy[7 ]&&reg_mask[7 ] ) tx_phy_sel <= 32'b1<<7  ;
 	else if( ~reg_busy[8 ]&&reg_mask[8 ] ) tx_phy_sel <= 32'b1<<8  ;
 	else if( ~reg_busy[9 ]&&reg_mask[9 ] ) tx_phy_sel <= 32'b1<<9  ;
-`ifdef PHY_10
 	else if( ~reg_busy[10]&&reg_mask[10] ) tx_phy_sel <= 32'b1<<10 ;
 	else if( ~reg_busy[11]&&reg_mask[11] ) tx_phy_sel <= 32'b1<<11 ;
 	else if( ~reg_busy[12]&&reg_mask[12] ) tx_phy_sel <= 32'b1<<12 ;
 	else if( ~reg_busy[13]&&reg_mask[13] ) tx_phy_sel <= 32'b1<<13 ;
 	else if( ~reg_busy[14]&&reg_mask[14] ) tx_phy_sel <= 32'b1<<14 ;
 	else if( ~reg_busy[15]&&reg_mask[15] ) tx_phy_sel <= 32'b1<<15 ;
+`ifdef PHY_10
 	else if( ~reg_busy[16]&&reg_mask[16] ) tx_phy_sel <= 32'b1<<16 ;
 	else if( ~reg_busy[17]&&reg_mask[17] ) tx_phy_sel <= 32'b1<<17 ;
 	else if( ~reg_busy[18]&&reg_mask[18] ) tx_phy_sel <= 32'b1<<18 ;

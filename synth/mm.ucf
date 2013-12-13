@@ -1,76 +1,115 @@
 # Global controls
-NET "ex_clk_i" LOC = K12;
+NET "ex_clk_i" LOC = J16;
+NET "ex_clk_o" LOC = A9;
 
 # UART <-> FT232
-NET "uartSIN"  LOC = R14; # FT232's TX
-NET "uartSOUT" LOC = R12; # FT232's RX
-NET "uartRESET_N" LOC = R15 | SLEW = QUIETIO;
-NET "hubRESET_N"  LOC = R16 | SLEW = QUIETIO;
+NET "uartSIN"  LOC = C8 ; # FT232's TX
+NET "uartSOUT" LOC = A12; # FT232's RX
+#NET "uartRESET_N" LOC = R15 | SLEW = QUIETIO;
+#NET "hubRESET_N"  LOC = R16 | SLEW = QUIETIO;
 
-NET "uart_debugSIN" LOC = P7;
-NET "uart_debugSOUT" LOC = T7;
+NET "uart_debugSIN" LOC = E16;
+NET "uart_debugSOUT" LOC = E15;
 
 # UART debug
-NET   "RX_P[0]" LOC = M15;
-NET   "RX_N[0]" LOC = L14;
-NET   "TX_N[0]" LOC = K16 | SLEW = QUIETIO;
-NET   "TX_P[0]" LOC = H14 | SLEW = QUIETIO;
-NET   "RX_P[1]"	LOC = F16;
-NET   "RX_N[1]"	LOC = A13; 
-NET   "TX_N[1]"	LOC = A12 | SLEW = QUIETIO;
-NET   "TX_P[1]"	LOC = C10 | SLEW = QUIETIO;
-NET   "RX_P[2]"	LOC = A9;
-NET   "RX_N[2]"	LOC = A8;
-NET   "TX_N[2]"	LOC = A7 | SLEW = QUIETIO;
-NET   "TX_P[2]"	LOC = C6 | SLEW = QUIETIO;
-NET   "RX_P[3]"	LOC = C5;
-NET   "RX_N[3]"	LOC = D5;
-NET   "TX_N[3]"	LOC = A5 | SLEW = QUIETIO;
-NET   "TX_P[3]"	LOC = A6 | SLEW = QUIETIO;
-NET   "RX_P[4]"	LOC = C7;
-NET   "RX_N[4]"	LOC = C8;
-NET   "TX_N[4]"	LOC = B10 | SLEW = QUIETIO;
-NET   "TX_P[4]"	LOC = C11 | SLEW = QUIETIO;
-NET   "RX_P[5]"	LOC = B12;
-NET   "RX_N[5]"	LOC = A14;
-NET   "TX_N[5]"	LOC = B16 | SLEW = QUIETIO;
-NET   "TX_P[5]"	LOC = E13 | SLEW = QUIETIO;
-NET   "RX_P[6]"	LOC = F13;
-NET   "RX_N[6]"	LOC = F15;
-NET   "TX_N[6]"	LOC = H15 | SLEW = QUIETIO;
-NET   "TX_P[6]"	LOC = H13 | SLEW = QUIETIO;
-NET   "RX_P[7]"	LOC = K15;
-NET   "RX_N[7]"	LOC = L13;
-NET   "TX_N[7]"	LOC = E11 | SLEW = QUIETIO;
-NET   "TX_P[7]"	LOC = E12 | SLEW = QUIETIO;
-NET   "RX_P[8]"	LOC = F9;
-NET   "RX_N[8]"	LOC = L16;
-NET   "TX_N[8]"	LOC = H16 | SLEW = QUIETIO;
-NET   "TX_P[8]"	LOC = G16 | SLEW = QUIETIO;
-NET   "RX_P[9]"	LOC = E15;
-NET   "RX_N[9]"	LOC = C13;
-NET   "TX_N[9]"	LOC = A10 | SLEW = QUIETIO;
-NET   "TX_P[9]"	LOC = B8 | SLEW = QUIETIO;
+#NET "uart_debugSIN" LOC = F7 | SLEW = QUIETIO;
+#NET "uart_debugSOUT" LOC = E7 | SLEW = QUIETIO;
 
+# aLink
+NET   "RX_P[0]" LOC = N3;
+NET   "RX_N[0]" LOC = P2;
+NET   "TX_N[0]" LOC = R1 | SLEW = QUIETIO;
+NET   "TX_P[0]" LOC = T5 | SLEW = QUIETIO;
+#NET   "RX_P[1]"	LOC = F16;
+#NET   "RX_N[1]"	LOC = A13; 
+#NET   "TX_N[1]"	LOC = A12 | SLEW = QUIETIO;
+#NET   "TX_P[1]"	LOC = C10 | SLEW = QUIETIO;
+#NET   "RX_P[2]"	LOC = A9;
+#NET   "RX_N[2]"	LOC = A8;
+#NET   "TX_N[2]"	LOC = A7 | SLEW = QUIETIO;
+#NET   "TX_P[2]"	LOC = C6 | SLEW = QUIETIO;
+#NET   "RX_P[3]"	LOC = C5;
+#NET   "RX_N[3]"	LOC = D5;
+#NET   "TX_N[3]"	LOC = A5 | SLEW = QUIETIO;
+#NET   "TX_P[3]"	LOC = A6 | SLEW = QUIETIO;
+#NET   "RX_P[4]"	LOC = C7;
+#NET   "RX_N[4]"	LOC = C8;
+#NET   "TX_N[4]"	LOC = B10 | SLEW = QUIETIO;
+#NET   "TX_P[4]"	LOC = C11 | SLEW = QUIETIO;
+#NET   "RX_P[5]"	LOC = B12;
+#NET   "RX_N[5]"	LOC = A14;
+#NET   "TX_N[5]"	LOC = B16 | SLEW = QUIETIO;
+#NET   "TX_P[5]"	LOC = E13 | SLEW = QUIETIO;
+#NET   "RX_P[6]"	LOC = F13;
+#NET   "RX_N[6]"	LOC = F15;
+#NET   "TX_N[6]"	LOC = H15 | SLEW = QUIETIO;
+#NET   "TX_P[6]"	LOC = H13 | SLEW = QUIETIO;
+#NET   "RX_P[7]"	LOC = K15;
+#NET   "RX_N[7]"	LOC = L13;
+#NET   "TX_N[7]"	LOC = E11 | SLEW = QUIETIO;
+#NET   "TX_P[7]"	LOC = E12 | SLEW = QUIETIO;
+#NET   "RX_P[8]"	LOC = F9;
+#NET   "RX_N[8]"	LOC = L16;
+#NET   "TX_N[8]"	LOC = H16 | SLEW = QUIETIO;
+#NET   "TX_P[8]"	LOC = G16 | SLEW = QUIETIO;
+#NET   "RX_P[9]"	LOC = E15;
+#NET   "RX_N[9]"	LOC = C13;
+#NET   "TX_N[9]"	LOC = A10 | SLEW = QUIETIO;
+#NET   "TX_P[9]"	LOC = B8 | SLEW = QUIETIO;
+#
+#NET   "RX_P[10]" LOC = B5;
+#NET   "RX_N[10]" LOC = A3;
+#NET   "TX_N[10]" LOC = A2 | SLEW = QUIETIO;
+#NET   "TX_P[10]" LOC = B1 | SLEW = QUIETIO;
+#
+#NET   "RX_P[11]" LOC = C2;
+#NET   "RX_N[11]" LOC = C1; 
+#NET   "TX_N[11]" LOC = C3 | SLEW = QUIETIO;
+#NET   "TX_P[11]" LOC = B2 | SLEW = QUIETIO;
+#
+#NET   "RX_P[12]" LOC = B3;
+#NET   "RX_N[12]" LOC = A4;
+#NET   "TX_N[12]" LOC = B6 | SLEW = QUIETIO;
+#NET   "TX_P[12]" LOC = C9 | SLEW = QUIETIO;
+#
+#NET   "RX_P[13]" LOC = A11;
+#NET   "RX_N[13]" LOC = B14;
+#NET   "TX_N[13]" LOC = C15 | SLEW = QUIETIO;
+#NET   "TX_P[13]" LOC = C16 | SLEW = QUIETIO;
+#
+#NET   "RX_P[14]" LOC = D16;
+#NET   "RX_N[14]" LOC = E16;
+#NET   "TX_N[14]" LOC = F14 | SLEW = QUIETIO;
+#NET   "TX_P[14]" LOC = G14 | SLEW = QUIETIO;
+#
+#NET   "RX_P[15]" LOC = J16;
+#NET   "RX_N[15]" LOC = M16;
+#NET   "TX_N[15]" LOC = E10 | SLEW = QUIETIO;
+#NET   "TX_P[15]" LOC = F10 | SLEW = QUIETIO;
+#
+NET   "SFT_SHCP" LOC = K16 ;
+NET   "SFT_DS" LOC = M15 ;
+NET   "SFT_STCP" LOC = K15 ;
+NET   "SFT_MR_N" LOC = K14 ;                                                                        
+NET   "SFT_OE_N" LOC = L16 ;
 
 # LED gpioPIO_BOTH_OUT
-NET "gpioPIO_BOTH_OUT[0]" LOC = J11 | SLEW = QUIETIO;
-NET "gpioPIO_BOTH_OUT[1]" LOC = J12 | SLEW = QUIETIO;
-#NET "gpioPIO_BOTH_OUT[2]" LOC = J13 | SLEW = QUIETIO;
-#NET "gpioPIO_BOTH_OUT[3]" LOC = J14 | SLEW = QUIETIO;
+NET "gpioPIO_BOTH_OUT[0]" LOC = B12 | SLEW = QUIETIO;
+NET "gpioPIO_BOTH_OUT[1]" LOC = A11 | SLEW = QUIETIO;
+NET "gpioPIO_BOTH_OUT[2]" LOC = B10 | SLEW = QUIETIO;
+NET "gpioPIO_BOTH_OUT[3]" LOC = A10 | SLEW = QUIETIO;
 
-NET "TWI_SCL" LOC = J13 | SLEW = QUIETIO;
-NET "TWI_SDA" LOC = J14 | SLEW = QUIETIO;
+NET "TWI_SCL" LOC = D3 | SLEW = QUIETIO;
+NET "TWI_SDA" LOC = E4 | SLEW = QUIETIO;
 
 # SPI Flash: W25Q80BV
-#NET "spiMISO_MASTER" LOC = P10;
-#NET "spiMOSI_MASTER" LOC = T10;
-#NET "spiSCLK_MASTER" LOC = R11;
-#NET "spiSS_N_MASTER" LOC = T3;
-NET "POWER_ON" LOC = N9 | SLEW = QUIETIO;
-NET "PWM" LOC = M13 | SLEW = QUIETIO;
+NET "POWER_ON" LOC = T3 | SLEW = QUIETIO;
+NET "PWM" LOC = A5 | SLEW = QUIETIO;
 
 NET "*" IOSTANDARD = LVCMOS33;
 
 NET "ex_clk_i" TNM_NET = "ex_clk_i";
-TIMESPEC TS_clk = PERIOD "ex_clk_i" 30 ns HIGH 50 %;
+TIMESPEC TS_clk = PERIOD "ex_clk_i" 40 ns HIGH 50 %;
+
+NET "clk_i" TNM_NET = "clk_i";
+TIMESPEC TS_clk_i = PERIOD "clk_i" 20 ns HIGH 50 %;

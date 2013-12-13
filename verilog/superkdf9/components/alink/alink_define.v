@@ -1,4 +1,4 @@
-`define PHY_NUM 10//32
+`define PHY_NUM 16//32
 
 `define TX_FIFO_DEPTH 1024
 `define TX_TASKID_LEN (2+1+1) //TaskID_H+TaskID_L+STEP+Timer = 4word
