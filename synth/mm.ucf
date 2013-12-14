@@ -3,17 +3,14 @@ NET "ex_clk_i" LOC = J16;
 NET "ex_clk_o" LOC = A9;
 
 # UART <-> FT232
-NET "uartSIN"  LOC = C8 ; # FT232's TX
-NET "uartSOUT" LOC = A12; # FT232's RX
+NET "uartSIN"  LOC = A12 ; # FT232's TX
+NET "uartSOUT" LOC = C8  ; # FT232's RX
 #NET "uartRESET_N" LOC = R15 | SLEW = QUIETIO;
 #NET "hubRESET_N"  LOC = R16 | SLEW = QUIETIO;
 
+# UART debug
 NET "uart_debugSIN" LOC = E16;
 NET "uart_debugSOUT" LOC = E15;
-
-# UART debug
-#NET "uart_debugSIN" LOC = F7 | SLEW = QUIETIO;
-#NET "uart_debugSOUT" LOC = E7 | SLEW = QUIETIO;
 
 # aLink
 NET   "RX_P[0]" LOC = N3;
