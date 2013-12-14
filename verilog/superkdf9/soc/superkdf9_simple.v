@@ -383,6 +383,8 @@ module mm (
 , SFT_MR_N
 , SFT_OE_N
 
+, FAN_IN0
+, FAN_IN1
 );
 output POWER_ON ;
 output PWM ;
@@ -537,6 +539,8 @@ output      SFT_STCP ;
 output      SFT_MR_N ;
 output      SFT_OE_N ;
 
+input       FAN_IN0 ;
+input       FAN_IN1 ;
 // Enable the FT232 and HUB
 assign uartRESET_N = 1'b1;
 assign hubRESET_N  = 1'b1;
@@ -1047,7 +1051,10 @@ twi u_twi(
 /*output        */ .SFT_DS      (SFT_DS                      ) ,
 /*output        */ .SFT_STCP    (SFT_STCP                    ) ,
 /*output        */ .SFT_MR_N    (SFT_MR_N                    ) ,
-/*output        */ .SFT_OE_N    (SFT_OE_N                    ) 
+/*output        */ .SFT_OE_N    (SFT_OE_N                    ) , 
+
+/*input         */ .FAN_IN0     (FAN_IN0                     ) ,
+/*input         */ .FAN_IN1     (FAN_IN1                     ) 
 ) ;
 
 assign superkdf9interrupt_n[3] = !uartINTR ;
