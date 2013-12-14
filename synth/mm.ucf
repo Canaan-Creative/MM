@@ -3,8 +3,8 @@ NET "ex_clk_i" LOC = J16;
 NET "ex_clk_o" LOC = A9;
 
 # UART <-> FT232
-NET "uartSIN"  LOC = A12 ; # FT232's TX
-NET "uartSOUT" LOC = C8  ; # FT232's RX
+NET "uartSIN"  LOC = C8  ; # FT232's TX
+NET "uartSOUT" LOC = A12 ; # FT232's RX
 #NET "uartRESET_N" LOC = R15 | SLEW = QUIETIO;
 #NET "hubRESET_N"  LOC = R16 | SLEW = QUIETIO;
 
@@ -98,6 +98,9 @@ NET   "SFT_DS" LOC = M15 ;
 NET   "SFT_STCP" LOC = K15 ;
 NET   "SFT_MR_N" LOC = K14 ;                                                                        
 NET   "SFT_OE_N" LOC = L16 ;
+
+NET   "FAN_IN0" LOC = A6 ;
+NET   "FAN_IN1" LOC = A7 ;
 
 # LED gpioPIO_BOTH_OUT
 NET "gpioPIO_BOTH_OUT[0]" LOC = B12 | SLEW = QUIETIO;
