@@ -29,8 +29,10 @@ module twi(
     output         SFT_DS      ,
     output         SFT_STCP    ,
     output         SFT_MR_N    ,
-    output         SFT_OE_N    
+    output         SFT_OE_N    ,
 
+    input          FAN_IN0     ,
+    input          FAN_IN1     
 );
 
 assign TWI_ERR_O = 1'b0 ;
@@ -58,27 +60,29 @@ wire i2cr_rd_en  = TWI_STB_I & ~TWI_WE_I  & ( TWI_ADR_I == `I2CR) & ~TWI_ACK_O ;
 wire i2rd_rd_en  = TWI_STB_I & ~TWI_WE_I  & ( TWI_ADR_I == `I2RD) & ~TWI_ACK_O ;
 wire wdg_rd_en   = TWI_STB_I & ~TWI_WE_I  & ( TWI_ADR_I == `WDG ) & ~TWI_ACK_O ;
 wire sft_rd_en   = TWI_STB_I & ~TWI_WE_I  & ( TWI_ADR_I == `SFT ) & ~TWI_ACK_O ;
+wire fan0_rd_en  = TWI_STB_I & ~TWI_WE_I  & ( TWI_ADR_I == `FAN0 ) & ~TWI_ACK_O ;
+wire fan1_rd_en  = TWI_STB_I & ~TWI_WE_I  & ( TWI_ADR_I == `FAN1 ) & ~TWI_ACK_O ;
 
 //-----------------------------------------------------
 // PWM
 //-----------------------------------------------------
-reg [7:0] reg_pwm ;
-reg [7:0] pwm_cnt ;
+reg [5:0] reg_pwm ;
+reg [5:0] pwm_cnt ;
 always @ ( posedge CLK_I or posedge RST_I ) begin
 	if( RST_I )
-		reg_pwm <= 8'h00 ;
+		reg_pwm <= 6'h00 ;
 	else if( pwm_wr_en )
-		reg_pwm <= TWI_DAT_I[7:0] ;
+		reg_pwm <= TWI_DAT_I[5:0] ;
 end
 
 always @ ( posedge CLK_I or posedge RST_I ) begin
 	if( RST_I )
-		pwm_cnt <= 8'b0 ;
+		pwm_cnt <= 6'b0 ;
 	else
-		pwm_cnt <= pwm_cnt + 8'b1 ;
+		pwm_cnt <= pwm_cnt + 6'b1 ;
 end
 
-assign PWM = pwm_cnt >= reg_pwm ;
+assign PWM = pwm_cnt < reg_pwm ;
 
 //-----------------------------------------------------
 // WDG
@@ -141,6 +145,44 @@ shift u_shift(
 /*output      */ .sft_oe_n (SFT_OE_N       ) 
 );
 
+//-----------------------------------------------------
+// fan speed
+//-----------------------------------------------------
+reg [25:0] sec_cnt ;//1m
+reg [25:0] fan_cnt0 ;
+reg [25:0] fan_cnt1 ;
+reg [25:0] reg_fan0 ;
+reg [25:0] reg_fan1 ;
+wire [31:0] reg_fan = {6'b0,fan_cnt} ;
+
+always @ ( posedge CLK_I or posedge RST_I ) begin
+	if( RST_I )
+		sec_cnt <= 26'b0 ;
+	else if( sec_cnt == 26'h2faf080 )
+		sec_cnt <= 26'b0 ;
+	else
+		sec_cnt <= 26'b1 + sec_cnt ;
+end
+
+always @ ( posedge CLK_I or posedge RST_I ) begin
+	if( RST_I )
+		fan_cnt0 <= 26'b0 ;
+	else if( sec_cnt == 26'h2faf080 ) begin
+		fan_cnt0 <= 26'b0 ;
+		reg_fan0 <= fan_cnt0 ;
+	end else if( ~FAN_IN0 )
+		fan_cnt0 <= fan_cnt0 + 26'b1 ;
+end
+
+always @ ( posedge CLK_I or posedge RST_I ) begin
+	if( RST_I )
+		fan_cnt1 <= 26'b0 ;
+	else if( sec_cnt == 26'h2faf080 ) begin
+		fan_cnt1 <= 26'b0 ;
+		reg_fan1 <= fan_cnt1 ;
+	end else if( ~FAN_IN1 )
+		fan_cnt1 <= fan_cnt1 + 26'b1 ;
+end
 
 //-----------------------------------------------------
 // read
@@ -148,6 +190,7 @@ shift u_shift(
 reg i2cr_rd_en_r ;
 reg wdg_rd_en_r ;
 reg sft_rd_en_r ;
+reg fan_rd_en_r ;
 
 wire [7:0] reg_i2cr ;
 wire [7:0] reg_i2rd ;
@@ -155,11 +198,15 @@ always @ ( posedge CLK_I ) begin
 	i2cr_rd_en_r <= i2cr_rd_en ;
 	wdg_rd_en_r <= wdg_rd_en ;
 	sft_rd_en_r <= sft_rd_en ;
+	fan_rd_en_r <= fan_rd_en ;
 end
 
 assign TWI_DAT_O = i2cr_rd_en_r ? {24'b0,reg_i2cr}     : 
 		   wdg_rd_en_r  ? {5'b0,wdg_cnt,wdg_en}:
-		   sft_rd_en_r  ? reg_sft : {24'b0,reg_i2rd} ;
+		   sft_rd_en_r  ? reg_sft              : 
+		   fan0_rd_en_r ? {6'b0,reg_fan0}      :
+		   fan1_rd_en_r ? {6'b0,reg_fan1}      :
+                   {24'b0,reg_i2rd} ;
 
 twi_core twi_core (
 /*input       */ .clk          (CLK_I                ) , 
