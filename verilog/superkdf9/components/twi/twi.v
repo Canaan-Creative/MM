@@ -153,7 +153,6 @@ reg [25:0] fan_cnt0 ;
 reg [25:0] fan_cnt1 ;
 reg [25:0] reg_fan0 ;
 reg [25:0] reg_fan1 ;
-wire [31:0] reg_fan = {6'b0,fan_cnt} ;
 
 always @ ( posedge CLK_I or posedge RST_I ) begin
 	if( RST_I )
@@ -190,7 +189,8 @@ end
 reg i2cr_rd_en_r ;
 reg wdg_rd_en_r ;
 reg sft_rd_en_r ;
-reg fan_rd_en_r ;
+reg fan0_rd_en_r ;
+reg fan1_rd_en_r ;
 
 wire [7:0] reg_i2cr ;
 wire [7:0] reg_i2rd ;
@@ -198,7 +198,8 @@ always @ ( posedge CLK_I ) begin
 	i2cr_rd_en_r <= i2cr_rd_en ;
 	wdg_rd_en_r <= wdg_rd_en ;
 	sft_rd_en_r <= sft_rd_en ;
-	fan_rd_en_r <= fan_rd_en ;
+	fan0_rd_en_r <= fan0_rd_en ;
+	fan1_rd_en_r <= fan1_rd_en ;
 end
 
 assign TWI_DAT_O = i2cr_rd_en_r ? {24'b0,reg_i2cr}     : 
