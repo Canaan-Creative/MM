@@ -34,6 +34,7 @@
 #define SHA256_BASE		(0x80000400)
 #define ALINK_BASE		(0x80000500)
 #define TWIPWM_BASE		(0x80000600)
+#define SHIFTER_BASE		(0x80000614)
 
 
 /* UART */
@@ -125,6 +126,10 @@ struct lm32_twipwm {
 	volatile unsigned int rd; /* TWI read byte */
 	volatile unsigned int pwm; /* PWM Counter register */
 	volatile unsigned int wdg; /* Watch dog ctrl */
+};
+
+struct lm32_shifter {
+	volatile unsigned int reg; /* Shifter register for power chip */
 };
 
 #endif /* _SYSTEM_CONFIG_H_ */

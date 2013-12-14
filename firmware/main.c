@@ -47,21 +47,12 @@ void delay(unsigned int ms)
 	}
 }
 
-#ifdef DEBUG
-static void error(uint8_t n)
+static void led(uint8_t value)
 {
 	volatile uint32_t *gpio = (uint32_t *)GPIO_BASE;
-	uint8_t i = 0;
 
-	while (i < 8) {
-		delay(1000);
-		if (i++ % 2)
-			writel(n << 24, gpio);
-		else
-			writel(0, gpio);
-	}
+	writel(value << 24, gpio);
 }
-#endif
 
 static void encode_pkg(uint8_t *p, int type, uint8_t *buf, unsigned int len)
 {
@@ -240,46 +231,13 @@ static int get_pkg()
 	return 0;
 }
 
-void led(){
-        static unsigned int led_tmp = 0xaaaaaaaa ;
-        volatile unsigned int *gpio_pio_data = (unsigned int *)0x80000200 ;
-        *gpio_pio_data = led_tmp ;
-        led_tmp = led_tmp ^ 0xffffffff ;
-}
-
-void shift_done(){
-	unsigned int tmp ;
-        volatile unsigned int *sft = (unsigned int *)0x80000614 ;
-        tmp = *sft&0x8  ;
-	while(tmp != 0x8)
-        	tmp = *sft&0x8  ;
-}
-
-
-void shift(){
-        volatile unsigned int *sft = (unsigned int *)0x80000614 ;
-        *sft = 0x0 ;//reset
-	*sft = 0x1|0x8a00; shift_done();//set shifter 1v
-	*sft = 0x1|0x8a00; shift_done();//set shifter 1v
-	*sft = 0x1|0x8a00; shift_done();//set shifter 1v
-	*sft = 0x1|0x8a00; shift_done();//set shifter 1v
-	*sft = 0x1|0x8a00; shift_done();//set shifter 1v
-
-	*sft = 0x2; shift_done();//shift to reg
-	*sft = 0x2; shift_done();//shift to reg
-	*sft = 0x2; shift_done();//shift to reg
-	*sft = 0x2; shift_done();//shift to reg
-	*sft = 0x2; shift_done();//shift to reg
-
-	*sft = 0x3;//output enable, low active 
-}
-
-
 int main(int argv, char **argc) {
 	int i;
 	struct work work;
 
+	led(0xff);
 	delay(60);		/* Delay 60ms, wait for alink ready */
+
 	wdg_init(1);
 	wdg_feed((CPU_FREQUENCY / 1000) * 2); /* Configure the wdg to ~2 second, or it will reset FPGA */
 
@@ -287,6 +245,8 @@ int main(int argv, char **argc) {
 	irq_enable(1);
 
 	uart_init();
+	debug32("MM - %s\n", MM_VERSION);
+
 	alink_init(0x3ff);
 
 	adjust_fan(0x5f);
@@ -324,10 +284,6 @@ int main(int argv, char **argc) {
 
 		wdg_feed((CPU_FREQUENCY / 1000) * 2);
 	}
-
-#ifdef DEBUG
-	error(0xf);
-#endif
 
 	return 0;
 }
