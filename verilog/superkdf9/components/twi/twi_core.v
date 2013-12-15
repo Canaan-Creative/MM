@@ -13,7 +13,7 @@ input  twi_sda_i    ,
 output twi_sda_oen
 );
 
-parameter TWI_F     = 5 ;
+parameter TWI_F     = 3 ;
 
 parameter START_SDA = 600/TWI_F+1 ;
 parameter SDA_SET   = 700/TWI_F+1 ;
@@ -161,7 +161,7 @@ end
 always @ ( posedge clk ) begin
 	if( rst )
 		rd_buf <= 8'b0 ;
-	else if( cmd_rd && cnt == (SDA_SET+150) && byte_cnt <=7)
+	else if( cmd_rd && cnt == (SDA_SET+100) && byte_cnt <=7)
 		rd_buf <= {rd_buf[6:0],twi_sda_i} ;
 end
 
