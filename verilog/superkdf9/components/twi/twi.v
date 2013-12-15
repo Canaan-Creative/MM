@@ -66,20 +66,20 @@ wire fan1_rd_en  = TWI_STB_I & ~TWI_WE_I  & ( TWI_ADR_I == `FAN1 ) & ~TWI_ACK_O 
 //-----------------------------------------------------
 // PWM
 //-----------------------------------------------------
-reg [5:0] reg_pwm ;
-reg [5:0] pwm_cnt ;
+reg [9:0] reg_pwm ;
+reg [9:0] pwm_cnt ;
 always @ ( posedge CLK_I or posedge RST_I ) begin
 	if( RST_I )
-		reg_pwm <= 6'h00 ;
+		reg_pwm <= 10'h00 ;
 	else if( pwm_wr_en )
-		reg_pwm <= TWI_DAT_I[5:0] ;
+		reg_pwm <= TWI_DAT_I[9:0] ;
 end
 
 always @ ( posedge CLK_I or posedge RST_I ) begin
 	if( RST_I )
-		pwm_cnt <= 6'b0 ;
+		pwm_cnt <= 10'b0 ;
 	else
-		pwm_cnt <= pwm_cnt + 6'b1 ;
+		pwm_cnt <= pwm_cnt + 10'b1 ;
 end
 
 assign PWM = pwm_cnt < reg_pwm ;
