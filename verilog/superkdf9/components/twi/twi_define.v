@@ -4,3 +4,5 @@
 `define PWMC  6'h0c    
 `define WDG   6'h10
 `define SFT   6'h14
+`define FAN0  6'h18
+`define FAN1  6'h1c
