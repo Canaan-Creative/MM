@@ -69,7 +69,7 @@ uint16_t twi_read_2byte(uint8_t addr)
 	twi_start();
 	twi_write((addr << 1) | 0x1);/* slave addr + read */
 	tmp = twi_read();
-	tmp = (twi_read() << 8) | tmp;
+	tmp = (tmp << 8) | twi_read();
 	twi_stop();
 	return (tmp & 0xffff);
 }
@@ -87,4 +87,24 @@ void wdg_init(int enable)
 void wdg_feed(uint32_t value)
 {
 	writel(((value & 0x3ffffff) << 1), &tp->wdg);
+}
+
+uint32_t read_fan0()
+{
+	return readl(&tp->fan0);
+}
+
+uint32_t read_fan1()
+{
+	return readl(&tp->fan1);
+}
+
+uint16_t read_temp0()
+{
+	return (twi_read_2byte(LM32_TWI_REG_TEMP0) >> 4) / 16;
+}
+
+uint16_t read_temp1()
+{
+	return (twi_read_2byte(LM32_TWI_REG_TEMP0) >> 4) / 16;
 }

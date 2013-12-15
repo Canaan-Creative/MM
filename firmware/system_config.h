@@ -120,8 +120,8 @@ struct lm32_alink {
 #define LM32_TWIPWM_WDG_ENABLE	(1 << 0);
 /* [26:1] Feed Dog: 0x3~0x3ffffff;[WR] */
 
-#define LM32_TWI_TEMP0	0x48
-#define LM32_TWI_TEMP1	0x49
+#define LM32_TWI_REG_TEMP0	0x48
+#define LM32_TWI_REG_TEMP1	0x49
 
 struct lm32_twipwm {
 	volatile unsigned int cr; /* TWI ctrl register */
@@ -129,6 +129,9 @@ struct lm32_twipwm {
 	volatile unsigned int rd; /* TWI read byte */
 	volatile unsigned int pwm; /* PWM Counter register */
 	volatile unsigned int wdg; /* Watch dog ctrl */
+	volatile unsigned int pad; /* Watch dog ctrl */
+	volatile unsigned int fan0; /* Watch dog ctrl */
+	volatile unsigned int fan1; /* Watch dog ctrl */
 };
 
 struct lm32_shifter {
