@@ -9,10 +9,9 @@
 #ifndef _TWI_H_
 #define _TWI_H_
 
-void twi_start(void);
-void twi_write(uint8_t value);
-uint8_t twi_read(void);
-void twi_stop(void);
+void twi_write_2byte(uint16_t buf, uint8_t addr);
+uint16_t twi_read_2byte(uint8_t addr);
+
 void write_pwm(uint8_t value);
 
 void wdg_init(int enable);
