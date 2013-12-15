@@ -153,30 +153,37 @@ reg [25:0] fan_cnt0 ;
 reg [25:0] fan_cnt1 ;
 reg [25:0] reg_fan0 ;
 reg [25:0] reg_fan1 ;
+reg [4:0] clk_div ;
+wire fan_clk = clk_div[4] ;
 
 always @ ( posedge CLK_I or posedge RST_I ) begin
+	clk_div <= clk_div + 1 ;
+end
+
+always @ ( posedge fan_clk or posedge RST_I ) begin
 	if( RST_I )
 		sec_cnt <= 26'b0 ;
-	else if( sec_cnt == 26'h2faf080 )
+	else if( sec_cnt == 26'h17d784 )
 		sec_cnt <= 26'b0 ;
 	else
 		sec_cnt <= 26'b1 + sec_cnt ;
 end
 
-always @ ( posedge CLK_I or posedge RST_I ) begin
+always @ ( posedge fan_clk or posedge RST_I ) begin
 	if( RST_I )
 		fan_cnt0 <= 26'b0 ;
-	else if( sec_cnt == 26'h2faf080 ) begin
+	//else if( sec_cnt == 26'h2faf080 ) begin
+	else if( sec_cnt == 26'h17d784 ) begin
 		fan_cnt0 <= 26'b0 ;
 		reg_fan0 <= fan_cnt0 ;
 	end else if( ~FAN_IN0 )
 		fan_cnt0 <= fan_cnt0 + 26'b1 ;
 end
 
-always @ ( posedge CLK_I or posedge RST_I ) begin
+always @ ( posedge fan_clk or posedge RST_I ) begin
 	if( RST_I )
 		fan_cnt1 <= 26'b0 ;
-	else if( sec_cnt == 26'h2faf080 ) begin
+	else if( sec_cnt == 26'h17d784 ) begin
 		fan_cnt1 <= 26'b0 ;
 		reg_fan1 <= fan_cnt1 ;
 	end else if( ~FAN_IN1 )
