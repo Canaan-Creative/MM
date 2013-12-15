@@ -13,7 +13,7 @@ input  twi_sda_i    ,
 output twi_sda_oen
 );
 
-parameter TWI_F     = 20 ;
+parameter TWI_F     = 2 ;
 
 parameter START_SDA = 600/TWI_F+1 ;
 parameter SDA_SET   = 700/TWI_F+1 ;
