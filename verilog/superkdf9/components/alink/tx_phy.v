@@ -161,13 +161,13 @@ assign {TX_P[6 ],TX_N[6 ]} = rx_phy_sel[6 ] ? {TX_Px,TX_Nx} : 2'b11 ;
 assign {TX_P[7 ],TX_N[7 ]} = rx_phy_sel[7 ] ? {TX_Px,TX_Nx} : 2'b11 ;
 assign {TX_P[8 ],TX_N[8 ]} = rx_phy_sel[8 ] ? {TX_Px,TX_Nx} : 2'b11 ;
 assign {TX_P[9 ],TX_N[9 ]} = rx_phy_sel[9 ] ? {TX_Px,TX_Nx} : 2'b11 ;
+`ifdef PHY_10
 assign {TX_P[10],TX_N[10]} = rx_phy_sel[10] ? {TX_Px,TX_Nx} : 2'b11 ;
 assign {TX_P[11],TX_N[11]} = rx_phy_sel[11] ? {TX_Px,TX_Nx} : 2'b11 ;
 assign {TX_P[12],TX_N[12]} = rx_phy_sel[12] ? {TX_Px,TX_Nx} : 2'b11 ;
 assign {TX_P[13],TX_N[13]} = rx_phy_sel[13] ? {TX_Px,TX_Nx} : 2'b11 ;
 assign {TX_P[14],TX_N[14]} = rx_phy_sel[14] ? {TX_Px,TX_Nx} : 2'b11 ;
 assign {TX_P[15],TX_N[15]} = rx_phy_sel[15] ? {TX_Px,TX_Nx} : 2'b11 ;
-`ifdef PHY_10
 assign {TX_P[16],TX_N[16]} = rx_phy_sel[16] ? {TX_Px,TX_Nx} : 2'b11 ;
 assign {TX_P[17],TX_N[17]} = rx_phy_sel[17] ? {TX_Px,TX_Nx} : 2'b11 ;
 assign {TX_P[18],TX_N[18]} = rx_phy_sel[18] ? {TX_Px,TX_Nx} : 2'b11 ;
@@ -185,12 +185,12 @@ assign {TX_P[29],TX_N[29]} = rx_phy_sel[29] ? {TX_Px,TX_Nx} : 2'b11 ;
 assign {TX_P[30],TX_N[30]} = rx_phy_sel[30] ? {TX_Px,TX_Nx} : 2'b11 ;
 assign {TX_P[31],TX_N[31]} = rx_phy_sel[31] ? {TX_Px,TX_Nx} : 2'b11 ;
 `else
-//assign {TX_P[10],TX_N[10]} = 2'b11 ;
-//assign {TX_P[11],TX_N[11]} = 2'b11 ;
-//assign {TX_P[12],TX_N[12]} = 2'b11 ;
-//assign {TX_P[13],TX_N[13]} = 2'b11 ;
-//assign {TX_P[14],TX_N[14]} = 2'b11 ;
-//assign {TX_P[15],TX_N[15]} = 2'b11 ;
+assign {TX_P[10],TX_N[10]} = 2'b11 ;
+assign {TX_P[11],TX_N[11]} = 2'b11 ;
+assign {TX_P[12],TX_N[12]} = 2'b11 ;
+assign {TX_P[13],TX_N[13]} = 2'b11 ;
+assign {TX_P[14],TX_N[14]} = 2'b11 ;
+assign {TX_P[15],TX_N[15]} = 2'b11 ;
 assign {TX_P[16],TX_N[16]} = 2'b11 ;
 assign {TX_P[17],TX_N[17]} = 2'b11 ;
 assign {TX_P[18],TX_N[18]} = 2'b11 ;

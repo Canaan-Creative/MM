@@ -95,13 +95,13 @@ always @ ( posedge clk ) begin
 	else if( ~rx_almost_full && rx_start[7 ] ) rx_sel <= 32'b1<<7  ;
 	else if( ~rx_almost_full && rx_start[8 ] ) rx_sel <= 32'b1<<8  ;
 	else if( ~rx_almost_full && rx_start[9 ] ) rx_sel <= 32'b1<<9  ;
+`ifdef PHY_10
 	else if( ~rx_almost_full && rx_start[10] ) rx_sel <= 32'b1<<10 ;
 	else if( ~rx_almost_full && rx_start[11] ) rx_sel <= 32'b1<<11 ;
 	else if( ~rx_almost_full && rx_start[12] ) rx_sel <= 32'b1<<12 ;
 	else if( ~rx_almost_full && rx_start[13] ) rx_sel <= 32'b1<<13 ;
 	else if( ~rx_almost_full && rx_start[14] ) rx_sel <= 32'b1<<14 ;
 	else if( ~rx_almost_full && rx_start[15] ) rx_sel <= 32'b1<<15 ;
-`ifdef PHY_10
 	else if( ~rx_almost_full && rx_start[16] ) rx_sel <= 32'b1<<16 ;
 	else if( ~rx_almost_full && rx_start[17] ) rx_sel <= 32'b1<<17 ;
 	else if( ~rx_almost_full && rx_start[18] ) rx_sel <= 32'b1<<18 ;
@@ -140,13 +140,13 @@ always @ ( posedge clk ) begin
                  | ({32{rx_sel[7 ]}} & rx_datx[32*8 -1:32*7 ]) 
                  | ({32{rx_sel[8 ]}} & rx_datx[32*9 -1:32*8 ]) 
                  | ({32{rx_sel[9 ]}} & rx_datx[32*10-1:32*9 ]) 
+`ifdef PHY_10 
                  | ({32{rx_sel[10]}} & rx_datx[32*11-1:32*10]) 
                  | ({32{rx_sel[11]}} & rx_datx[32*12-1:32*11]) 
                  | ({32{rx_sel[12]}} & rx_datx[32*13-1:32*12]) 
                  | ({32{rx_sel[13]}} & rx_datx[32*14-1:32*13]) 
                  | ({32{rx_sel[14]}} & rx_datx[32*15-1:32*14]) 
                  | ({32{rx_sel[15]}} & rx_datx[32*16-1:32*15]) 
-`ifdef PHY_10 
                  | ({32{rx_sel[16]}} & rx_datx[32*17-1:32*16]) 
                  | ({32{rx_sel[17]}} & rx_datx[32*18-1:32*17]) 
                  | ({32{rx_sel[18]}} & rx_datx[32*19-1:32*18]) 
