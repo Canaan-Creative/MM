@@ -24,7 +24,6 @@
 #include "shifter.h"
 #include "protocol.h"
 #include "crc.h"
-#include "i2c.h"
 
 #include "hexdump.c"
 
@@ -188,10 +187,7 @@ static int get_pkg()
 {
 	static char pre_last, last;
 	static int start = 0, count = 2;
-	
-	while(1) {
-		
-	}
+
 	while (1) {
 		if (!uart_read_nonblock() && !start)
 			break;
