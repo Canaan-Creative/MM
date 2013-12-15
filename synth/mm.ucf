@@ -3,10 +3,8 @@ NET "ex_clk_i" LOC = J16;
 NET "ex_clk_o" LOC = A9;
 
 # UART <-> FT232
-NET "uartSIN"  LOC = C8  ; # FT232's TX
-NET "uartSOUT" LOC = A12 ; # FT232's RX
-#NET "uartRESET_N" LOC = R15 | SLEW = QUIETIO;
-#NET "hubRESET_N"  LOC = R16 | SLEW = QUIETIO;
+NET "uartSIN"  LOC = C8; # FT232's TX
+NET "uartSOUT" LOC = A12; # FT232's RX
 
 # UART debug
 NET "uart_debugSIN" LOC = E16;
@@ -63,36 +61,6 @@ NET   "RX_N[9]"	LOC = G3;
 NET   "TX_N[9]"	LOC = M4 | SLEW = QUIETIO;
 NET   "TX_P[9]"	LOC = L1 | SLEW = QUIETIO;
 
-#NET   "RX_P[10]" LOC = B5;
-#NET   "RX_N[10]" LOC = A3;
-#NET   "TX_N[10]" LOC = A2 | SLEW = QUIETIO;
-#NET   "TX_P[10]" LOC = B1 | SLEW = QUIETIO;
-#
-#NET   "RX_P[11]" LOC = C2;
-#NET   "RX_N[11]" LOC = C1; 
-#NET   "TX_N[11]" LOC = C3 | SLEW = QUIETIO;
-#NET   "TX_P[11]" LOC = B2 | SLEW = QUIETIO;
-#
-#NET   "RX_P[12]" LOC = B3;
-#NET   "RX_N[12]" LOC = A4;
-#NET   "TX_N[12]" LOC = B6 | SLEW = QUIETIO;
-#NET   "TX_P[12]" LOC = C9 | SLEW = QUIETIO;
-#
-#NET   "RX_P[13]" LOC = A11;
-#NET   "RX_N[13]" LOC = B14;
-#NET   "TX_N[13]" LOC = C15 | SLEW = QUIETIO;
-#NET   "TX_P[13]" LOC = C16 | SLEW = QUIETIO;
-#
-#NET   "RX_P[14]" LOC = D16;
-#NET   "RX_N[14]" LOC = E16;
-#NET   "TX_N[14]" LOC = F14 | SLEW = QUIETIO;
-#NET   "TX_P[14]" LOC = G14 | SLEW = QUIETIO;
-#
-#NET   "RX_P[15]" LOC = J16;
-#NET   "RX_N[15]" LOC = M16;
-#NET   "TX_N[15]" LOC = E10 | SLEW = QUIETIO;
-#NET   "TX_P[15]" LOC = F10 | SLEW = QUIETIO;
-#
 NET   "SFT_SHCP" LOC = K16 ;
 NET   "SFT_DS" LOC = M15 ;
 NET   "SFT_STCP" LOC = K15 ;
@@ -109,8 +77,8 @@ NET "gpioPIO_BOTH_OUT[2]" LOC = B10 | SLEW = QUIETIO;
 NET "gpioPIO_BOTH_OUT[3]" LOC = A10 | SLEW = QUIETIO;
 NET "gpioPIO_BOTH_OUT[4]" LOC = B14 | SLEW = QUIETIO;
 NET "gpioPIO_BOTH_OUT[5]" LOC = B16 | SLEW = QUIETIO;
-NET "gpioPIO_BOTH_OUT[6]" LOC = C16 | SLEW = QUIETIO;
-NET "gpioPIO_BOTH_OUT[7]" LOC = D16 | SLEW = QUIETIO;
+NET "uartSIN_led" LOC = C16 | SLEW = QUIETIO;
+NET "uartSOUT_led" LOC = D16 | SLEW = QUIETIO;
 
 
 NET "TWI_SCL" LOC = D3 | SLEW = QUIETIO;

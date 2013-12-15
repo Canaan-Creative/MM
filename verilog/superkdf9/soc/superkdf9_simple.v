@@ -356,6 +356,9 @@ module mm (
 , ex_clk_o
 , uartSIN
 , uartSOUT
+, uartSIN_led
+, uartSOUT_led
+
 , uartRXRDY_N
 , uartTXRDY_N
 , uartRESET_N
@@ -473,6 +476,13 @@ output  uartRESET_N;
 output  hubRESET_N;
 output  uartRXRDY_N;
 output  uartTXRDY_N;
+
+output  uartSIN_led;
+output  uartSOUT_led;
+
+assign  uartSIN_led = ~uartSIN ;
+assign  uartSOUT_led= ~uartSOUT;
+
 
 wire [31:0] spiSPI_DAT_O;
 wire   spiSPI_ACK_O;
