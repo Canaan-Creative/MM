@@ -157,7 +157,10 @@ reg [4:0] clk_div ;
 wire fan_clk = clk_div[4] ;
 
 always @ ( posedge CLK_I or posedge RST_I ) begin
-	clk_div <= clk_div + 1 ;
+	if( RST_I )
+		clk_div <= 0 ;
+	else
+		clk_div <= clk_div + 1 ;
 end
 
 always @ ( posedge fan_clk or posedge RST_I ) begin
