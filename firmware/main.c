@@ -21,6 +21,7 @@
 #include "sha256.h"
 #include "alink.h"
 #include "twipwm.h"
+#include "shifter.h"
 #include "protocol.h"
 #include "crc.h"
 #include "i2c.h"
@@ -104,6 +105,7 @@ static int decode_pkg(uint8_t *p, struct mm_work *mw)
 	cnt = p[4];
 
 	debug32("Decode: %d: %d/%d\n", p[2], idx, cnt);
+	hexdump(p, AVA2_P_COUNT);
 
 	expected_crc = (p[AVA2_P_COUNT - 3] & 0xff) |
 		((p[AVA2_P_COUNT - 4] & 0xff) << 8);
@@ -173,6 +175,7 @@ static int read_result()
 
 		alink_read_result(&result);
 		send_pkg(AVA2_P_NONCE, (uint8_t *)&result, 20);
+		hexdump((uint8_t *)&result, 20);
 		return 1;
 	} else {
 		;
@@ -239,8 +242,10 @@ int main(int argv, char **argc) {
 	int i;
 	struct work work;
 
-	led(0xff);
+	led(0);
+
 	delay(60);		/* Delay 60ms, wait for alink ready */
+	shift();
 
 	wdg_init(1);
 	wdg_feed((CPU_FREQUENCY / 1000) * 2); /* Configure the wdg to ~2 second, or it will reset FPGA */
@@ -253,17 +258,17 @@ int main(int argv, char **argc) {
 
 	alink_init(0x3ff);
 
-	adjust_fan(0x5f);
+	adjust_fan(0xff);
 
 	g_new_stratum = 0;
-	i = 0;
+	i = 4;
 	while (1) {
 		get_pkg();
 
 		if (!g_new_stratum)
 			continue;
 
-		if (alink_txbuf_count() < (24 * 5)) {
+		if (alink_txbuf_count() < (24 * 10)) {
 			miner_gen_work(&mm_work, &work);
 			miner_init_work(&mm_work, &work);
 			alink_send_work(&work);
@@ -276,18 +281,19 @@ int main(int argv, char **argc) {
 		}
 
 		while (read_result()) {
-
 			get_pkg();
 			if (!g_new_stratum) {
 				alink_flush_fifo();
 				break;
 			}
 		}
+
 		/* TODO:
 		 *   Send out heatbeat information every 2 seconds */
 
 		wdg_feed((CPU_FREQUENCY / 1000) * 2);
 	}
 
+	led(0xff);
 	return 0;
 }

@@ -88,21 +88,28 @@ int alink_send_work(struct work *w)
 	/* The chip configure information */
 	memcpy((uint8_t *)(&tmp), w->task_id, 4);
 	writel(tmp, &alink->tx);
+	debug32("%08x,", tmp);
 
 	memcpy((uint8_t *)(&tmp), w->task_id + 4, 4);
 	writel(tmp, &alink->tx);
+	debug32("%08x,", tmp);
 
 	memcpy((uint8_t *)(&tmp), w->step, 4);
 	writel(tmp, &alink->tx);
+	debug32("%08x,", tmp);
 
 	memcpy((uint8_t *)(&tmp), w->timeout, 4);
 	writel(tmp, &alink->tx);
+	debug32("%08x,", tmp);
 
 	memcpy((uint8_t *)(&tmp), w->clock, 4);
 	writel(tmp, &alink->tx);
+	debug32("%08x,", tmp);
 
 	memcpy((uint8_t *)(&tmp), w->clock + 4, 4);
 	writel(tmp, &alink->tx);
+	debug32("%08x,", tmp);
+	debug32("\n");
 
 	/* Task data */
 	for (i = 8; i >= 0; i -= 4) {

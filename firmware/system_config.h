@@ -9,8 +9,8 @@
 #ifndef _SYSTEM_CONFIG_H_
 #define _SYSTEM_CONFIG_H_
 
-#define ASIC_FREQUENCY	1500
-#define ASIC_COUNT	6
+#define ASIC_FREQUENCY	1400
+#define ASIC_COUNT	7
 
 
 #define CPU_FREQUENCY		(50 * 1000 * 1000) /* 50Mhz */
