@@ -269,7 +269,7 @@ int main(int argv, char **argc)
 
 	alink_init(0x3ff);
 
-	adjust_fan(0xbb);
+	adjust_fan(0x100);
 
 	g_new_stratum = 0;
 	while (1) {

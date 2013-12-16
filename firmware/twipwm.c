@@ -74,7 +74,7 @@ uint16_t twi_read_2byte(uint8_t addr)
 	return (tmp & 0xffff);
 }
 
-void write_pwm(uint8_t value)
+void write_pwm(uint32_t value)
 {
 	writel(value, &tp->pwm);
 }
@@ -97,6 +97,16 @@ uint32_t read_fan0()
 uint32_t read_fan1()
 {
 	return readl(&tp->fan1) * 30;
+}
+
+void adjust_fan(uint32_t value)
+{
+	if (value < 0)
+		value = 0;
+	if (value > 0x3ff)
+		value = 0x3ff;
+
+	write_pwm(value);
 }
 
 uint16_t read_temp0()
