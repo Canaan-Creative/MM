@@ -160,7 +160,9 @@ static int decode_pkg(uint8_t *p, struct mm_work *mw)
 		}
 		break;
 	case AVA2_P_POLLING:
+		break;
 	case AVA2_P_DIFF:
+		break;
 	case AVA2_P_SET:
 		memcpy(&tmp, data, 4);
 		adjust_fan(tmp);
@@ -177,7 +179,6 @@ static int decode_pkg(uint8_t *p, struct mm_work *mw)
 
 static int test_nonce(struct result *ret)
 {
-
 	return 0;
 }
 
