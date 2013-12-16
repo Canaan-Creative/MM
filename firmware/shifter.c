@@ -34,6 +34,11 @@ void adjust_voltage(uint32_t value)
 	/* Reset */
 	writel(0, &sft->reg);
 
+
+	/* The power chip datasheet is here:
+	 *   http://www.onsemi.com/pub_link/Collateral/ADP3208D.PDF
+	 * The high 16bits is the value*/
+
 	/* Set shifter to xx */
 	for (i = 0; i < 5; i++) {
 		writel(value | 0x1, &sft->reg);
