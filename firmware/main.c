@@ -27,8 +27,6 @@
 
 #include "hexdump.c"
 
-#define MINER_COUNT	10
-
 #define adjust_fan(value)	write_pwm(value)
 
 struct mm_work mm_work;
@@ -104,7 +102,6 @@ static int decode_pkg(uint8_t *p, struct mm_work *mw)
 	cnt = p[4];
 
 	debug32("Decode: %d: %d/%d\n", p[2], idx, cnt);
-	hexdump(p, AVA2_P_COUNT);
 
 	expected_crc = (p[AVA2_P_COUNT - 3] & 0xff) |
 		((p[AVA2_P_COUNT - 4] & 0xff) << 8);
@@ -174,7 +171,6 @@ static int read_result()
 
 		alink_read_result(&result);
 		send_pkg(AVA2_P_NONCE, (uint8_t *)&result, 20);
-		hexdump((uint8_t *)&result, 20);
 		return 1;
 	} else {
 		;
@@ -235,7 +231,6 @@ static int get_pkg()
 }
 
 int main(int argv, char **argc) {
-	int i;
 	struct work work;
 
 	led(0);
@@ -254,10 +249,20 @@ int main(int argv, char **argc) {
 
 	alink_init(0x3ff);
 
-	adjust_fan(0xff);
+	adjust_fan(0x0);
+	while (0) {
+		int i = 0;
+		debug32("Debug: Temp: %04d,%04d (%04x, %04x)\n",
+			read_temp0(), read_temp1());
+		debug32("Debug: PWM: %d, Fan0, %08x. Fan1, %08x\n",
+			i, read_fan0(), read_fan1());
+		delay(1000);
+		adjust_fan(i++);
+		if (i == 0x3ff)
+			i = 0;
+	}
 
 	g_new_stratum = 0;
-	i = 4;
 	while (1) {
 		get_pkg();
 

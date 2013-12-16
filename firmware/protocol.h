@@ -29,11 +29,13 @@
 #define AVA2_P_MERKLES	14
 #define AVA2_P_HEADER	15
 #define AVA2_P_POLLING  16
+#define AVA2_P_DIFF	17
+#define AVA2_P_REQUIRE	18
 
 #define AVA2_P_ACK		21
 #define AVA2_P_NAK		22
 #define AVA2_P_NONCE		23
-#define AVA2_P_HEARTBEAT	24
+#define AVA2_P_STATUS		24
 #define AVA2_P_ACKDETECT	25
 
 #endif	/* _PROTOCOL_H_ */

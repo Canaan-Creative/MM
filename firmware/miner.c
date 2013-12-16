@@ -209,7 +209,7 @@ void miner_gen_work(struct mm_work *mw, struct work *work)
 	uint32_t tmp;
 	
 	memcpy(work_t, work->data, 44);
-	hexdump(work_t, 44);
+	/* hexdump(work_t, 44); */
 
 	rev(work_t, 32);
 	rev(work_t + 32, 12);
