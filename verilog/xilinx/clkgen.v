@@ -1,15 +1,22 @@
 module clkgen(input wire clkin, output wire clkout, clk25m, locked);
-reg cnt ;
+//reg cnt ;
 
-always @ ( posedge clkout )
-	cnt <= ~cnt ;
-assign clk25m = cnt ;
-/*
-BUFG clk_pin(
-.I(),
-.O()
+wire clkout_div ;
+//always @ ( posedge clkout )
+//	cnt <= ~cnt ;
+//assign clk25m = cnt ;
+//assign clk25m = clkout_div ;
+ODDR2 ODDR2_inst (
+   .Q (clk25m),   // 1-bit DDR output data
+   .C0(clkout_div),   // 1-bit clock input
+   .C1(~clkout_div),   // 1-bit clock input
+   .CE(1), // 1-bit clock enable input
+   .D0(0), // 1-bit data input (associated with C0)
+   .D1(1), // 1-bit data input (associated with C1)
+   .R (0),   // 1-bit reset input
+   .S (0)    // 1-bit set input
 );
-*/
+
 DCM_CLKGEN #( // {{{
 	.CLKFXDV_DIVIDE(2), // CLKFXDV divide value (2, 4, 8, 16, 32)
 	.CLKFX_DIVIDE(1), // Divide value - D - (1-256)
@@ -22,7 +29,7 @@ DCM_CLKGEN #( // {{{
 ) DCM (
 	.CLKFX(clkout), // 1-bit output: Generated clock output
 	.CLKFX180(), // 1-bit output: Generated clock output 180 degree out of phase from CLKFX.
-	.CLKFXDV(), // 1-bit output: Divided clock output
+	.CLKFXDV(clkout_div), // 1-bit output: Divided clock output
 	.LOCKED(locked), // 1-bit output: Locked output
 	.PROGDONE(), // 1-bit output: Active high output to indicate the successful re-programming
 	.STATUS(), // 2-bit output: DCM_CLKGEN status
