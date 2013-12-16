@@ -72,22 +72,6 @@ static void calc_midstate(struct mm_work *mw, struct work *work)
 	memcpy(work->data + 32, mw->header + 64, 12);
 }
 
-/* Total: 4W + 19W = 23W
- * TaskID_H:1, TASKID_L:1, STEP:1, TIMEOUT:1,
- * CLK_CFG:2, a2, Midsate:8, e0, e1, e2, a0, a1, Data:3
- */
-/* static void calc_prepare(struct work *work, uint8_t *buf) */
-/* { */
-/* 	uint32_t precalc[6]; */
-/* 	sha256_precalc(buf, buf + 32, 44, (uint8_t *)precalc); */
-/* 	memcpy(work->a0, precalc + 0, 4); */
-/* 	memcpy(work->a1, precalc + 1, 4); */
-/* 	memcpy(work->a2, precalc + 2, 4); */
-/* 	memcpy(work->e0, precalc + 3, 4); */
-/* 	memcpy(work->e1, precalc + 4, 4); */
-/* 	memcpy(work->e2, precalc + 5, 4); */
-/* } */
-
 void adjust_freq(uint32_t value)
 {
 	g_asic_freq = value;
@@ -180,6 +164,24 @@ static void rev(unsigned char *s, size_t l)
 	}
 }
 
+/* Total: 4W + 19W = 23W
+ * TaskID_H:1, TASKID_L:1, STEP:1, TIMEOUT:1,
+ * CLK_CFG:2, a2, Midsate:8, e0, e1, e2, a0, a1, Data:3
+ */
+#ifdef HW_PRE_CALC
+static void calc_prepare(struct work *work, uint8_t *buf)
+{
+	uint32_t precalc[6];
+	sha256_precalc(buf, buf + 32, 44, (uint8_t *)precalc);
+	memcpy(work->a0, precalc + 0, 4);
+	memcpy(work->a1, precalc + 1, 4);
+	memcpy(work->a2, precalc + 2, 4);
+	memcpy(work->e0, precalc + 3, 4);
+	memcpy(work->e1, precalc + 4, 4);
+	memcpy(work->e2, precalc + 5, 4);
+}
+#endif
+
 extern void calc_prepare1(struct work *work, uint8_t *buf);
 void miner_gen_work(struct mm_work *mw, struct work *work)
 {
@@ -208,45 +210,48 @@ void miner_gen_work(struct mm_work *mw, struct work *work)
 	calc_midstate(mw, work);
 
 	uint8_t work_t[44];
-	/* uint8_t work_t[] = { */
-	/* 	0x05, 0x4e, 0x53, 0xc3, 0xc4, 0xd4, 0xba, 0x3e, 0x65, 0x40, 0x99, 0x4f, 0x06, 0x67, 0x91, 0x31, */
-	/* 	0xa7, 0x2d, 0x66, 0xaa, 0x68, 0x4f, 0x0e, 0xdb, 0xc3, 0x6d, 0x95, 0x8a, 0x46, 0x6e, 0x4d, 0xb2, */
-	/* 	0x1c, 0x26, 0x52, 0xfb, 0x52, 0xa0, 0x26, 0xf4, 0x19, 0x06, 0x12, 0x42}; */
+#ifdef HW_PRE_CALC
+	uint8_t work_t[] = {
+		0x05, 0x4e, 0x53, 0xc3, 0xc4, 0xd4, 0xba, 0x3e, 0x65, 0x40, 0x99, 0x4f, 0x06, 0x67, 0x91, 0x31,
+		0xa7, 0x2d, 0x66, 0xaa, 0x68, 0x4f, 0x0e, 0xdb, 0xc3, 0x6d, 0x95, 0x8a, 0x46, 0x6e, 0x4d, 0xb2,
+		0x1c, 0x26, 0x52, 0xfb, 0x52, 0xa0, 0x26, 0xf4, 0x19, 0x06, 0x12, 0x42};
+#endif
 
 	uint32_t tmp;
 	
 	memcpy(work_t, work->data, 44);
-	/* hexdump(work_t, 44); */
 
 	rev(work_t, 32);
 	rev(work_t + 32, 12);
 	memcpy(work->data, work_t, 44);
-	/* calc_prepare(work, work_t); */
-	/* memcpy((uint8_t *)(&tmp), work->a1, 4); */
-	/* debug32("%08x", tmp); */
-	/* memcpy((uint8_t *)(&tmp), work->a0, 4); */
-	/* debug32("%08x", tmp); */
-	/* memcpy((uint8_t *)(&tmp), work->e2, 4); */
-	/* debug32("%08x", tmp); */
-	/* memcpy((uint8_t *)(&tmp), work->e1, 4); */
-	/* debug32("%08x", tmp); */
-	/* memcpy((uint8_t *)(&tmp), work->e0, 4); */
-	/* debug32("%08x", tmp); */
-	/* memcpy((uint8_t *)(&tmp), work->a2, 4); */
-	/* debug32("%08x", tmp); */
-	/* debug32("\n"); */
+#ifdef HW_PRE_CALC
+	calc_prepare(work, work_t);
+	memcpy((uint8_t *)(&tmp), work->a1, 4);
+	debug32("%08x,", tmp);
+	memcpy((uint8_t *)(&tmp), work->a0, 4);
+	debug32("%08x,", tmp);
+	memcpy((uint8_t *)(&tmp), work->e2, 4);
+	debug32("%08x,", tmp);
+	memcpy((uint8_t *)(&tmp), work->e1, 4);
+	debug32("%08x,", tmp);
+	memcpy((uint8_t *)(&tmp), work->e0, 4);
+	debug32("%08x,", tmp);
+	memcpy((uint8_t *)(&tmp), work->a2, 4);
+	debug32("%08x", tmp);
+	debug32("\n");
+#endif
 
 	calc_prepare1(work, work->data);
 	memcpy((uint8_t *)(&tmp), work->a1, 4);
-	debug32("%08x", tmp);
+	debug32("%08x,", tmp);
 	memcpy((uint8_t *)(&tmp), work->a0, 4);
-	debug32("%08x", tmp);
+	debug32("%08x,", tmp);
 	memcpy((uint8_t *)(&tmp), work->e2, 4);
-	debug32("%08x", tmp);
+	debug32("%08x,", tmp);
 	memcpy((uint8_t *)(&tmp), work->e1, 4);
-	debug32("%08x", tmp);
+	debug32("%08x,", tmp);
 	memcpy((uint8_t *)(&tmp), work->e0, 4);
-	debug32("%08x", tmp);
+	debug32("%08x,", tmp);
 	memcpy((uint8_t *)(&tmp), work->a2, 4);
 	debug32("%08x", tmp);
 	debug32("\n");

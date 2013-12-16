@@ -22,12 +22,9 @@ void alink_init(uint32_t count)
 	/* Enalbe how many PHY in controller, base on the count of 1
 	 * 01: 0x1
 	 * 02: 0x3
-	 * 03: 0x7
 	 * ...
 	 * 08: 0xff
-	 * 16: 0xffff
-	 * 24: 0xffffff
-	 * 32: 0xffffffff
+	 * 10: 0x3ff
 	 */
 	writel(count, &alink->en);
 }
@@ -93,7 +90,7 @@ int alink_send_work(struct work *w)
 
 	memcpy((uint8_t *)(&tmp), w->clock + 4, 4);
 	writel(tmp, &alink->tx);
-	debug32("%08x,", tmp);
+	debug32("%08x", tmp);
 	debug32("\n");
 
 	/* Task data */
@@ -144,6 +141,18 @@ void alink_read_result(struct result *r)
 	memcpy(r->nonce, (uint8_t *)(&tmp), 4);
 }
 
+
+extern void delay(unsigned int ms);
+void alink_flush_fifo()
+{
+	uint32_t value = readl(&alink->state);
+	value |= LM32_ALINK_STATE_FLUSH;
+	writel(value, &alink->state);
+
+	delay(1);
+}
+
+#ifdef DEBUG
 void send_test_work(int value)
 {
 	uint32_t msg_blk[23];
@@ -184,17 +193,6 @@ void send_test_work(int value)
 	/* Nonce: 010f0eb6 */
 }
 
-extern void delay(unsigned int ms);
-void alink_flush_fifo()
-{
-	uint32_t value = readl(&alink->state);
-	value |= LM32_ALINK_STATE_FLUSH;
-	writel(value, &alink->state);
-
-	delay(1);
-}
-
-#ifdef DEBUG
 void alink_buf_status()
 {
 	uint32_t value;
@@ -210,3 +208,4 @@ void alink_buf_status()
 		((value & LM32_ALINK_STATE_RXCOUNT) >> 20) / 5);
 }
 #endif
+
