@@ -23,4 +23,6 @@ uint32_t read_fan1();
 uint16_t read_temp0();
 uint16_t read_temp1();
 
+#define adjust_fan(value)	write_pwm(value)
+
 #endif	/* _TWI_H_ */

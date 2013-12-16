@@ -19,6 +19,8 @@
 #include "alink.h"
 #include "twipwm.h"
 
+static uint32_t g_asic_freq = ASIC_FREQUENCY;
+
 static void flip32(void *dest_p, const void *src_p)
 {
 	uint32_t *dest = dest_p;
@@ -86,6 +88,11 @@ static void calc_midstate(struct mm_work *mw, struct work *work)
 /* 	memcpy(work->e2, precalc + 5, 4); */
 /* } */
 
+void adjust_freq(uint32_t value)
+{
+	g_asic_freq = value;
+}
+
 void miner_init_work(struct mm_work *mw, struct work *work)
 {
 	int timeout;
@@ -97,7 +104,7 @@ void miner_init_work(struct mm_work *mw, struct work *work)
 	work->task_id[3] = 0xbb;
 	memcpy(work->task_id + 4, (uint8_t *)(&work->nonce2), 4);
 
-	timeout = 4294967 / (ASIC_FREQUENCY * ASIC_COUNT); /* Time in ms */
+	timeout = 4294967 / (g_asic_freq * ASIC_COUNT); /* Time in ms */
 	timeout *= CPU_FREQUENCY / 1000;     /* Time in cpu clock */
 	memcpy(work->timeout, &timeout, 4);
 

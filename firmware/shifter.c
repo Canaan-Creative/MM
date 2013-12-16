@@ -40,3 +40,8 @@ void shift()
 
 	writel(0x3, &sft->reg);	/* output enable, low active  */
 }
+
+void adjust_voltage(uint32_t value)
+{
+
+}

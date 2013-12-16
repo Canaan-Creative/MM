@@ -27,10 +27,8 @@
 
 #include "hexdump.c"
 
-#define adjust_fan(value)	write_pwm(value)
-
-struct mm_work mm_work;
-struct result result;
+static struct mm_work mm_work;
+static struct result result;
 
 static uint8_t g_pkg[AVA2_P_COUNT];
 static uint8_t g_act[AVA2_P_COUNT];
@@ -55,6 +53,7 @@ static void led(uint8_t value)
 
 static void encode_pkg(uint8_t *p, int type, uint8_t *buf, unsigned int len)
 {
+	uint32_t tmp;
 	uint16_t crc;
 
 	memset(p, 0, AVA2_P_COUNT);
@@ -77,6 +76,16 @@ static void encode_pkg(uint8_t *p, int type, uint8_t *buf, unsigned int len)
 	case AVA2_P_NONCE:
 		memcpy(p + 5, buf, len);
 		break;
+	case AVA2_P_REQUIRE:
+		tmp = read_temp0();
+		memcpy(p + 5 + 0, &tmp, 4);
+		tmp = read_temp1();
+		memcpy(p + 5 + 4, &tmp, 4);
+		tmp = read_fan0();
+		memcpy(p + 5 + 8, &tmp, 4);
+		tmp = read_fan1();
+		memcpy(p + 5 + 12, &tmp, 4);
+		break;
 	}
 
 	crc = crc16(p + 5, AVA2_P_DATA_LEN);
@@ -95,6 +104,7 @@ static int decode_pkg(uint8_t *p, struct mm_work *mw)
 	unsigned int expected_crc;
 	unsigned int actual_crc;
 	int idx, cnt;
+	uint32_t tmp;
 
 	uint8_t *data = p + 5;
 
@@ -155,7 +165,14 @@ static int decode_pkg(uint8_t *p, struct mm_work *mw)
 		}
 		break;
 	case AVA2_P_POLLING:
-		g_new_stratum = 1;
+	case AVA2_P_DIFF:
+	case AVA2_P_SET:
+		memcpy(&tmp, data, 4);
+		adjust_fan(tmp);
+		memcpy(&tmp, data + 4, 4);
+		adjust_voltage(tmp);
+		memcpy(&tmp, data + 8, 4);
+		adjust_freq(tmp);
 	default:
 		break;
 	}
@@ -208,6 +225,10 @@ static int get_pkg()
 					case AVA2_P_DETECT:
 						send_pkg(AVA2_P_ACKDETECT, (uint8_t *)MM_VERSION, 6);
 						break;
+					case AVA2_P_POLLING:
+					case AVA2_P_DIFF:
+					case AVA2_P_REQUIRE:
+						send_pkg(AVA2_P_STATUS, (uint8_t *)MM_VERSION, 6);
 					default:
 						break;
 					}
@@ -236,7 +257,7 @@ int main(int argv, char **argc) {
 	led(0);
 
 	delay(60);		/* Delay 60ms, wait for alink ready */
-	shift();
+	shift();		/* Power on the ASICs */
 
 	wdg_init(1);
 	wdg_feed((CPU_FREQUENCY / 1000) * 2); /* Configure the wdg to ~2 second, or it will reset FPGA */
@@ -249,18 +270,7 @@ int main(int argv, char **argc) {
 
 	alink_init(0x3ff);
 
-	adjust_fan(0x0);
-	while (0) {
-		int i = 0;
-		debug32("Debug: Temp: %04d,%04d (%04x, %04x)\n",
-			read_temp0(), read_temp1());
-		debug32("Debug: PWM: %d, Fan0, %08x. Fan1, %08x\n",
-			i, read_fan0(), read_fan1());
-		delay(1000);
-		adjust_fan(i++);
-		if (i == 0x3ff)
-			i = 0;
-	}
+	adjust_fan(0);
 
 	g_new_stratum = 0;
 	while (1) {

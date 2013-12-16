@@ -53,10 +53,12 @@ struct mm_work {
 
 	uint8_t header[128];
 
-	int diff;
+	uint32_t diff;
 };
 
 void miner_init_work(struct mm_work *mw, struct work *work);
 void miner_gen_work(struct mm_work *mw, struct work *work);
+
+void adjust_freq(uint32_t value);
 
 #endif /* __MINER_H__ */
