@@ -6,4 +6,11 @@
  * For details see the UNLICENSE file at the root of the source tree.
  */
 
-void shift();
+#ifndef __SHIFTER_H__
+#define __SHIFTER_H__
+
+#include <stdint.h>
+
+void adjust_voltage(uint32_t value);
+
+#endif	/* __SHIFTER_H__ */
