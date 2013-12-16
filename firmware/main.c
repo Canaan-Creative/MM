@@ -257,7 +257,7 @@ int main(int argv, char **argc) {
 	led(0);
 
 	delay(60);		/* Delay 60ms, wait for alink ready */
-	shift();		/* Power on the ASICs */
+	adjust_voltage(0x8a00);	/* Configure the power supply for ASICs */
 
 	wdg_init(1);
 	wdg_feed((CPU_FREQUENCY / 1000) * 2); /* Configure the wdg to ~2 second, or it will reset FPGA */

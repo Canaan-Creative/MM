@@ -11,7 +11,6 @@
 
 #include <stdint.h>
 
-void shift();
 void adjust_voltage(uint32_t value);
 
 #endif	/* __SHIFTER_H__ */
