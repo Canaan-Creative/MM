@@ -37,21 +37,6 @@ int alink_busy_status()
 	return readl(&alink->busy);
 }
 
-void alink_buf_status()
-{
-	uint32_t value;
-
-	value = readl(&alink->busy);
-	debug32("D: PHY busy: %08x,", value);
-
-	value = readl(&alink->state);
-	debug32(" state: %08x (tx: %d, rx: %d(%d))\n",
-		value,
-		((value & LM32_ALINK_STATE_TXCOUNT) >> 4),
-		((value & LM32_ALINK_STATE_RXCOUNT) >> 20),
-		((value & LM32_ALINK_STATE_RXCOUNT) >> 20) / 5);
-}
-
 int alink_txbuf_full()
 {
 	uint32_t value = LM32_ALINK_STATE_TXFULL & readl(&alink->state);
@@ -208,3 +193,20 @@ void alink_flush_fifo()
 
 	delay(1);
 }
+
+#ifdef DEBUG
+void alink_buf_status()
+{
+	uint32_t value;
+
+	value = readl(&alink->busy);
+	debug32("D: PHY busy: %08x,", value);
+
+	value = readl(&alink->state);
+	debug32(" state: %08x (tx: %d, rx: %d(%d))\n",
+		value,
+		((value & LM32_ALINK_STATE_TXCOUNT) >> 4),
+		((value & LM32_ALINK_STATE_RXCOUNT) >> 20),
+		((value & LM32_ALINK_STATE_RXCOUNT) >> 20) / 5);
+}
+#endif

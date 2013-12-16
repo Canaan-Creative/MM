@@ -27,9 +27,6 @@
 
 #include "hexdump.c"
 
-static struct mm_work mm_work;
-static struct result result;
-
 static uint8_t g_pkg[AVA2_P_COUNT];
 static uint8_t g_act[AVA2_P_COUNT];
 static int g_new_stratum = 0;
@@ -180,23 +177,31 @@ static int decode_pkg(uint8_t *p, struct mm_work *mw)
 	return 0;
 }
 
-static int read_result()
+static int test_nonce(struct result *ret)
 {
-	if (!alink_rxbuf_empty()) {
-		debug32("D: Found!\n");
-		alink_buf_status();
-
-		alink_read_result(&result);
-		send_pkg(AVA2_P_NONCE, (uint8_t *)&result, 20);
-		return 1;
-	} else {
-		;
-	}
 
 	return 0;
 }
 
-static int get_pkg()
+static int read_result(struct result *ret)
+{
+	if (alink_rxbuf_empty())
+		return 0;
+
+#ifdef DEBUG
+	alink_buf_status();
+#endif
+
+	alink_read_result(ret);
+	if (!test_nonce(ret)) {
+		    send_pkg(AVA2_P_NONCE, (uint8_t *)ret, 20);
+		    return 2;
+	}
+
+	return 1;
+}
+
+static int get_pkg(struct mm_work *mw)
 {
 	static char pre_last, last;
 	static int start = 0, count = 2;
@@ -215,7 +220,7 @@ static int get_pkg()
 			start = 0;
 			count = 2;
 			if (pre_last == AVA2_T1 && last == AVA2_T2) {
-				if (decode_pkg(g_pkg, &mm_work)) {
+				if (decode_pkg(g_pkg, mw)) {
 					debug32("E: package broken(crc)\n");
 					send_pkg(AVA2_P_NAK, NULL, 0);
 					return 1;
@@ -252,7 +257,9 @@ static int get_pkg()
 }
 
 int main(int argv, char **argc) {
+	struct mm_work mm_work;
 	struct work work;
+	struct result result;
 
 	led(0);
 
@@ -274,7 +281,7 @@ int main(int argv, char **argc) {
 
 	g_new_stratum = 0;
 	while (1) {
-		get_pkg();
+		get_pkg(&mm_work);
 
 		if (!g_new_stratum)
 			continue;
@@ -284,15 +291,15 @@ int main(int argv, char **argc) {
 			miner_init_work(&mm_work, &work);
 			alink_send_work(&work);
 
-			get_pkg();
+			get_pkg(&mm_work);
 			if (!g_new_stratum) {
 				alink_flush_fifo();
 				continue;
 			}
 		}
 
-		while (read_result()) {
-			get_pkg();
+		while (read_result(&result)) {
+			get_pkg(&mm_work);
 			if (!g_new_stratum) {
 				alink_flush_fifo();
 				break;
