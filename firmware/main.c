@@ -71,7 +71,7 @@ static void encode_pkg(uint8_t *p, int type, uint8_t *buf, unsigned int len)
 	case AVA2_P_NONCE:
 		memcpy(p + 5, buf, len);
 		break;
-	case AVA2_P_REQUIRE:
+	case AVA2_P_STATUS:
 		tmp = read_temp0();
 		memcpy(p + 5 + 0, &tmp, 4);
 		tmp = read_temp1();
@@ -227,10 +227,9 @@ static int get_pkg(struct mm_work *mw)
 				case AVA2_P_DETECT:
 					send_pkg(AVA2_P_ACKDETECT, (uint8_t *)MM_VERSION, 6);
 					break;
-				case AVA2_P_POLLING:
-				case AVA2_P_DIFF:
 				case AVA2_P_REQUIRE:
-					send_pkg(AVA2_P_STATUS, (uint8_t *)MM_VERSION, 6);
+					send_pkg(AVA2_P_STATUS, NULL, 0);
+					break;
 				default:
 					break;
 				}
@@ -270,7 +269,7 @@ int main(int argv, char **argc)
 
 	alink_init(0x3ff);
 
-	adjust_fan(0);
+	adjust_fan(0xbb);
 
 	g_new_stratum = 0;
 	while (1) {
