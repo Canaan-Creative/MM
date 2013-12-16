@@ -91,12 +91,12 @@ void wdg_feed(uint32_t value)
 
 uint32_t read_fan0()
 {
-	return readl(&tp->fan0);
+	return readl(&tp->fan0) * 30;
 }
 
 uint32_t read_fan1()
 {
-	return readl(&tp->fan1);
+	return readl(&tp->fan1) * 30;
 }
 
 uint16_t read_temp0()

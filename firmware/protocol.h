@@ -13,14 +13,11 @@
 #define AVA2_H1	'A'
 #define AVA2_H2	'V'
 
-#define AVA2_T1	'O'
-#define AVA2_T2	'N'
-
 #define AVA2_P_COINBASE_SIZE	(5 * 1024)
 #define AVA2_P_MERKLES_COUNT	20
 
-#define AVA2_P_COUNT	41
-#define AVA2_P_DATA_LEN		(41 - 9)
+#define AVA2_P_COUNT	39
+#define AVA2_P_DATA_LEN		(AVA2_P_COUNT - 7)
 
 #define AVA2_P_DETECT	10
 #define AVA2_P_STATIC	11

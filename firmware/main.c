@@ -57,8 +57,6 @@ static void encode_pkg(uint8_t *p, int type, uint8_t *buf, unsigned int len)
 
 	p[0] = AVA2_H1;
 	p[1] = AVA2_H2;
-	p[AVA2_P_COUNT - 2] = AVA2_T1;
-	p[AVA2_P_COUNT - 1] = AVA2_T2;
 
 	p[2] = type;
 	p[3] = 1;
@@ -86,8 +84,8 @@ static void encode_pkg(uint8_t *p, int type, uint8_t *buf, unsigned int len)
 	}
 
 	crc = crc16(p + 5, AVA2_P_DATA_LEN);
-	p[AVA2_P_COUNT - 4] = crc & 0x00ff;
-	p[AVA2_P_COUNT - 3] = (crc & 0xff00) >> 8;
+	p[AVA2_P_COUNT - 2] = crc & 0x00ff;
+	p[AVA2_P_COUNT - 1] = (crc & 0xff00) >> 8;
 }
 
 static void send_pkg(int type, uint8_t *buf, unsigned int len)
@@ -110,8 +108,8 @@ static int decode_pkg(uint8_t *p, struct mm_work *mw)
 
 	debug32("Decode: %d: %d/%d\n", p[2], idx, cnt);
 
-	expected_crc = (p[AVA2_P_COUNT - 3] & 0xff) |
-		((p[AVA2_P_COUNT - 4] & 0xff) << 8);
+	expected_crc = (p[AVA2_P_COUNT - 1] & 0xff) |
+		((p[AVA2_P_COUNT - 2] & 0xff) << 8);
 
 	actual_crc = crc16(data, AVA2_P_DATA_LEN);
 	if(expected_crc != actual_crc) {
@@ -219,29 +217,23 @@ static int get_pkg(struct mm_work *mw)
 		if (count == AVA2_P_COUNT) {
 			start = 0;
 			count = 2;
-			if (pre_last == AVA2_T1 && last == AVA2_T2) {
-				if (decode_pkg(g_pkg, mw)) {
-					debug32("E: package broken(crc)\n");
-					send_pkg(AVA2_P_NAK, NULL, 0);
-					return 1;
-				} else {
-					send_pkg(AVA2_P_ACK, NULL, 0);
-					switch (g_pkg[2]) {
-					case AVA2_P_DETECT:
-						send_pkg(AVA2_P_ACKDETECT, (uint8_t *)MM_VERSION, 6);
-						break;
-					case AVA2_P_POLLING:
-					case AVA2_P_DIFF:
-					case AVA2_P_REQUIRE:
-						send_pkg(AVA2_P_STATUS, (uint8_t *)MM_VERSION, 6);
-					default:
-						break;
-					}
-				}
-			} else {
-				debug32("E: package broken(%02x %02x)\n", pre_last, last);
+			if (decode_pkg(g_pkg, mw)) {
+				debug32("E: package broken(crc)\n");
 				send_pkg(AVA2_P_NAK, NULL, 0);
 				return 1;
+			} else {
+				send_pkg(AVA2_P_ACK, NULL, 0);
+				switch (g_pkg[2]) {
+				case AVA2_P_DETECT:
+					send_pkg(AVA2_P_ACKDETECT, (uint8_t *)MM_VERSION, 6);
+					break;
+				case AVA2_P_POLLING:
+				case AVA2_P_DIFF:
+				case AVA2_P_REQUIRE:
+					send_pkg(AVA2_P_STATUS, (uint8_t *)MM_VERSION, 6);
+				default:
+					break;
+				}
 			}
 		}
 
@@ -256,7 +248,8 @@ static int get_pkg(struct mm_work *mw)
 	return 0;
 }
 
-int main(int argv, char **argc) {
+int main(int argv, char **argc)
+{
 	struct mm_work mm_work;
 	struct work work;
 	struct result result;
@@ -282,7 +275,6 @@ int main(int argv, char **argc) {
 	g_new_stratum = 0;
 	while (1) {
 		get_pkg(&mm_work);
-
 		if (!g_new_stratum)
 			continue;
 
