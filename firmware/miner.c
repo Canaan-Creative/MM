@@ -72,9 +72,14 @@ static void calc_midstate(struct mm_work *mw, struct work *work)
 	memcpy(work->data + 32, mw->header + 64, 12);
 }
 
-void adjust_freq(uint32_t value)
+void set_asic_freq(uint32_t value)
 {
 	g_asic_freq = value;
+}
+
+uint32_t get_asic_freq()
+{
+	return g_asic_freq;
 }
 
 void miner_init_work(struct mm_work *mw, struct work *work)

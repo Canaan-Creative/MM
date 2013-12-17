@@ -11,6 +11,7 @@
 #include "shifter.h"
 
 static struct lm32_shifter *sft = (struct lm32_shifter *)SHIFTER_BASE;
+static uint32_t g_voltage = 0x8a00; /* 1V */
 
 static void shift_done()
 {
@@ -21,10 +22,16 @@ static void shift_done()
 		tmp = readl(&sft->reg) & 0x8;
 }
 
+uint32_t get_voltage()
+{
+	return g_voltage;
+}
 
-void adjust_voltage(uint32_t value)
+void set_voltage(uint32_t value)
 {
 	int i;
+
+	g_voltage = value;
 
 	if (!value) {
 		writel(0x7, &sft->reg);

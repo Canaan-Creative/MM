@@ -52,6 +52,7 @@ static void encode_pkg(uint8_t *p, int type, uint8_t *buf, unsigned int len)
 {
 	uint32_t tmp;
 	uint16_t crc;
+	uint8_t *data;
 
 	memset(p, 0, AVA2_P_COUNT);
 
@@ -62,28 +63,35 @@ static void encode_pkg(uint8_t *p, int type, uint8_t *buf, unsigned int len)
 	p[3] = 1;
 	p[4] = 1;
 
+	data = p + 5;
 	switch(type) {
 	case AVA2_P_ACKDETECT:
-		p[5 + 0] = 'M';
-		p[5 + 1] = 'M';
-		memcpy(p + 5 + 2, MM_VERSION, 6);
+		data[0] = 'M';
+		data[1] = 'M';
+		memcpy(data + 2, MM_VERSION, 6);
 		break;
 	case AVA2_P_NONCE:
-		memcpy(p + 5, buf, len);
+		memcpy(data, buf, len);
 		break;
 	case AVA2_P_STATUS:
 		tmp = read_temp0();
-		memcpy(p + 5 + 0, &tmp, 4);
+		memcpy(data + 0, &tmp, 4);
 		tmp = read_temp1();
-		memcpy(p + 5 + 4, &tmp, 4);
+		memcpy(data + 4, &tmp, 4);
 		tmp = read_fan0();
-		memcpy(p + 5 + 8, &tmp, 4);
+		memcpy(data + 8, &tmp, 4);
 		tmp = read_fan1();
-		memcpy(p + 5 + 12, &tmp, 4);
+		memcpy(data + 12, &tmp, 4);
+		tmp = get_asic_freq();
+		memcpy(data + 16, &tmp, 4);
+		tmp = get_voltage();
+		memcpy(data + 20, &tmp, 4);
+		break;
+	default:
 		break;
 	}
 
-	crc = crc16(p + 5, AVA2_P_DATA_LEN);
+	crc = crc16(data, AVA2_P_DATA_LEN);
 	p[AVA2_P_COUNT - 2] = crc & 0x00ff;
 	p[AVA2_P_COUNT - 1] = (crc & 0xff00) >> 8;
 }
@@ -141,6 +149,9 @@ static int decode_pkg(uint8_t *p, struct mm_work *mw)
 			mw->diff);
 		break;
 	case AVA2_P_JOB_ID:
+		memcpy(mw->job_id, data, 4);
+		debug32("D: Job ID\n");
+		hexdump(mw->job_id, 4);
 		break;
 	case AVA2_P_COINBASE:
 		if (idx == 1)
@@ -170,9 +181,9 @@ static int decode_pkg(uint8_t *p, struct mm_work *mw)
 		memcpy(&tmp, data, 4);
 		adjust_fan(tmp);
 		memcpy(&tmp, data + 4, 4);
-		adjust_voltage(tmp);
+		set_voltage(tmp);
 		memcpy(&tmp, data + 8, 4);
-		adjust_freq(tmp);
+		set_asic_freq(tmp);
 	default:
 		break;
 	}
@@ -185,8 +196,9 @@ static int test_nonce(struct result *ret)
 	return 0;
 }
 
-static int read_result(struct result *ret)
+static int read_result(struct mm_work *mw, struct result *ret)
 {
+	uint8_t data[AVA2_P_DATA_LEN];
 	if (alink_rxbuf_empty())
 		return 0;
 
@@ -196,8 +208,10 @@ static int read_result(struct result *ret)
 
 	alink_read_result(ret);
 	if (!test_nonce(ret)) {
-		    send_pkg(AVA2_P_NONCE, (uint8_t *)ret, 20);
-		    return 2;
+		memcpy(data, (uint8_t *)ret, 20);
+		memcpy(data + 20, mw->job_id, 4);
+		send_pkg(AVA2_P_NONCE, data, AVA2_P_DATA_LEN);
+		return 2;
 	}
 
 	return 1;
@@ -260,7 +274,7 @@ int main(int argv, char **argc)
 	led(0);
 
 	delay(60);		/* Delay 60ms, wait for alink ready */
-	adjust_voltage(0x8a00);	/* Configure the power supply for ASICs */
+	set_voltage(0x8a00);	/* Configure the power supply for ASICs */
 
 	wdg_init(1);
 	wdg_feed((CPU_FREQUENCY / 1000) * 2); /* Configure the wdg to ~2 second, or it will reset FPGA */
@@ -293,7 +307,7 @@ int main(int argv, char **argc)
 			}
 		}
 
-		while (read_result(&result)) {
+		while (read_result(&mm_work, &result)) {
 			get_pkg(&mm_work);
 			if (!g_new_stratum) {
 				alink_flush_fifo();

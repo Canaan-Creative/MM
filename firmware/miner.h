@@ -38,7 +38,7 @@ struct result {
 };
 
 struct mm_work {
-	uint8_t jobid[4];
+	uint8_t job_id[4];
 
 	size_t coinbase_len;
 	uint8_t coinbase[AVA2_P_COINBASE_SIZE];
@@ -59,6 +59,7 @@ struct mm_work {
 void miner_init_work(struct mm_work *mw, struct work *work);
 void miner_gen_work(struct mm_work *mw, struct work *work);
 
-void adjust_freq(uint32_t value);
+void set_asic_freq(uint32_t value);
+uint32_t get_asic_freq();
 
 #endif /* __MINER_H__ */
