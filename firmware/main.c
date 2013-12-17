@@ -155,13 +155,16 @@ static int decode_pkg(uint8_t *p, struct mm_work *mw)
 	case AVA2_P_HEADER:
 		memcpy(mw->header + (idx - 1) * AVA2_P_DATA_LEN, data, AVA2_P_DATA_LEN);
 		if (idx == cnt) {
+			mw->nonce2 = 0;
 			g_new_stratum = 1;
 			debug32("D: Header(%d)\n", g_new_stratum);
 		}
 		break;
 	case AVA2_P_POLLING:
+		/* TODO: polling result base on ID */
 		break;
 	case AVA2_P_DIFF:
+		memcpy(&(mw->diff), data, 4);
 		break;
 	case AVA2_P_SET:
 		memcpy(&tmp, data, 4);
@@ -270,7 +273,7 @@ int main(int argv, char **argc)
 
 	alink_init(0x3ff);
 
-	adjust_fan(0x100);
+	adjust_fan(100);
 
 	g_new_stratum = 0;
 	while (1) {

@@ -206,7 +206,7 @@ void miner_gen_work(struct mm_work *mw, struct work *work)
 
 	memcpy(mw->header + mw->merkle_offset, merkle_root, 32);
 
-	debug32("Work nonce2: 0x%08x\n", work->nonce2);
+	debug32("Work nonce2: %08x\n", work->nonce2);
 	calc_midstate(mw, work);
 
 	uint8_t work_t[44];
@@ -217,43 +217,40 @@ void miner_gen_work(struct mm_work *mw, struct work *work)
 		0x1c, 0x26, 0x52, 0xfb, 0x52, 0xa0, 0x26, 0xf4, 0x19, 0x06, 0x12, 0x42};
 #endif
 
-	uint32_t tmp;
-	
 	memcpy(work_t, work->data, 44);
-
 	rev(work_t, 32);
 	rev(work_t + 32, 12);
 	memcpy(work->data, work_t, 44);
+
 #ifdef HW_PRE_CALC
 	calc_prepare(work, work_t);
-	memcpy((uint8_t *)(&tmp), work->a1, 4);
-	debug32("%08x,", tmp);
-	memcpy((uint8_t *)(&tmp), work->a0, 4);
-	debug32("%08x,", tmp);
-	memcpy((uint8_t *)(&tmp), work->e2, 4);
-	debug32("%08x,", tmp);
-	memcpy((uint8_t *)(&tmp), work->e1, 4);
-	debug32("%08x,", tmp);
-	memcpy((uint8_t *)(&tmp), work->e0, 4);
-	debug32("%08x,", tmp);
-	memcpy((uint8_t *)(&tmp), work->a2, 4);
-	debug32("%08x", tmp);
+	memcpy((uint8_t *)(&tmp32), work->a1, 4);
+	debug32("%08x,", tmp32);
+	memcpy((uint8_t *)(&tmp32), work->a0, 4);
+	debug32("%08x,", tmp32);
+	memcpy((uint8_t *)(&tmp32), work->e2, 4);
+	debug32("%08x,", tmp32);
+	memcpy((uint8_t *)(&tmp32), work->e1, 4);
+	debug32("%08x,", tmp32);
+	memcpy((uint8_t *)(&tmp32), work->e0, 4);
+	debug32("%08x,", tmp32);
+	memcpy((uint8_t *)(&tmp32), work->a2, 4);
+	debug32("%08x", tmp32);
 	debug32("\n");
 #endif
 
 	calc_prepare1(work, work->data);
-	memcpy((uint8_t *)(&tmp), work->a1, 4);
-	debug32("%08x,", tmp);
-	memcpy((uint8_t *)(&tmp), work->a0, 4);
-	debug32("%08x,", tmp);
-	memcpy((uint8_t *)(&tmp), work->e2, 4);
-	debug32("%08x,", tmp);
-	memcpy((uint8_t *)(&tmp), work->e1, 4);
-	debug32("%08x,", tmp);
-	memcpy((uint8_t *)(&tmp), work->e0, 4);
-	debug32("%08x,", tmp);
-	memcpy((uint8_t *)(&tmp), work->a2, 4);
-	debug32("%08x", tmp);
+	memcpy((uint8_t *)(&tmp32), work->a1, 4);
+	debug32("%08x,", tmp32);
+	memcpy((uint8_t *)(&tmp32), work->a0, 4);
+	debug32("%08x,", tmp32);
+	memcpy((uint8_t *)(&tmp32), work->e2, 4);
+	debug32("%08x,", tmp32);
+	memcpy((uint8_t *)(&tmp32), work->e1, 4);
+	debug32("%08x,", tmp32);
+	memcpy((uint8_t *)(&tmp32), work->e0, 4);
+	debug32("%08x,", tmp32);
+	memcpy((uint8_t *)(&tmp32), work->a2, 4);
+	debug32("%08x", tmp32);
 	debug32("\n");
-
 }
