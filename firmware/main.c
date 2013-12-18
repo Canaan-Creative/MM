@@ -177,6 +177,8 @@ static int decode_pkg(uint8_t *p, struct mm_work *mw)
 	case AVA2_P_DIFF:
 		memcpy(&(mw->diff), data, 4);
 		break;
+	case AVA2_P_REQUIRE:
+		break;
 	case AVA2_P_SET:
 		memcpy(&tmp, data, 4);
 		adjust_fan(tmp);
