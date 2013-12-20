@@ -138,15 +138,17 @@ static int decode_pkg(uint8_t *p, struct mm_work *mw)
 		memcpy(&mw->merkle_offset, data + 12, 4);
 		memcpy(&mw->nmerkles, data + 16, 4);
 		memcpy(&mw->diff, data + 20, 4);
+		memcpy(&mw->pool_no, data + 24, 4);
 		g_new_stratum = 0;
-		debug32("D: (%d):  %d, %d, %d, %d, %d, %d\n",
+		debug32("D: (%d):  %d, %d, %d, %d, %d, %d, %d\n",
 			g_new_stratum,
 			mw->coinbase_len,
 			mw->nonce2_offset,
 			mw->nonce2_size,
 			mw->merkle_offset,
 			mw->nmerkles,
-			mw->diff);
+			mw->diff,
+			mw->pool_no);
 		break;
 	case AVA2_P_JOB_ID:
 		memcpy(mw->job_id, data, 4);

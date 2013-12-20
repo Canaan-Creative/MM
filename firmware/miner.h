@@ -54,6 +54,7 @@ struct mm_work {
 	uint8_t header[128];
 
 	uint32_t diff;
+	uint32_t pool_no;
 };
 
 void miner_init_work(struct mm_work *mw, struct work *work);

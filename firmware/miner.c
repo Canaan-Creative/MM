@@ -86,11 +86,7 @@ void miner_init_work(struct mm_work *mw, struct work *work)
 {
 	int timeout;
 
-	/* TODO: create the task_id */
-	work->task_id[0] = 0x55;
-	work->task_id[1] = 0xaa;
-	work->task_id[2] = 0x66;
-	work->task_id[3] = 0xbb;
+	memcpy(work->task_id, (uint8_t *)(&mw->pool_no), 4);
 	memcpy(work->task_id + 4, (uint8_t *)(&work->nonce2), 4);
 
 	timeout = 4294967 / (g_asic_freq * ASIC_COUNT); /* Time in ms */
