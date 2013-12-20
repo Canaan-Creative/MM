@@ -128,10 +128,12 @@ static int decode_pkg(uint8_t *p, struct mm_work *mw)
 
 	switch (p[2]) {
 	case AVA2_P_DETECT:
-		alink_flush_fifo(); /* Ignore all result and task when new stratum come */
 		g_new_stratum = 0;
+		alink_flush_fifo();
 		break;
 	case AVA2_P_STATIC:
+		g_new_stratum = 0;
+		alink_flush_fifo();
 		memcpy(&mw->coinbase_len, data, 4);
 		memcpy(&mw->nonce2_offset, data + 4, 4);
 		memcpy(&mw->nonce2_size, data + 8, 4);
@@ -139,7 +141,6 @@ static int decode_pkg(uint8_t *p, struct mm_work *mw)
 		memcpy(&mw->nmerkles, data + 16, 4);
 		memcpy(&mw->diff, data + 20, 4);
 		memcpy(&mw->pool_no, data + 24, 4);
-		g_new_stratum = 0;
 		debug32("D: (%d):  %d, %d, %d, %d, %d, %d, %d\n",
 			g_new_stratum,
 			mw->coinbase_len,
@@ -159,11 +160,9 @@ static int decode_pkg(uint8_t *p, struct mm_work *mw)
 		if (idx == 1)
 			memset(mw->coinbase, 0, sizeof(mw->coinbase));
 		memcpy(mw->coinbase + (idx - 1) * AVA2_P_DATA_LEN, data, AVA2_P_DATA_LEN);
-		g_new_stratum = 0;
 		break;
 	case AVA2_P_MERKLES:
 		memcpy(mw->merkles[idx - 1], data, AVA2_P_DATA_LEN);
-		g_new_stratum = 0;
 		break;
 	case AVA2_P_HEADER:
 		memcpy(mw->header + (idx - 1) * AVA2_P_DATA_LEN, data, AVA2_P_DATA_LEN);
@@ -294,9 +293,10 @@ int main(int argv, char **argc)
 
 	alink_init(0x3ff);
 
-	adjust_fan(100);
+	adjust_fan(80);
 
 	g_new_stratum = 0;
+	/* FIXME: Should we ask for new stratum? */
 	while (1) {
 		get_pkg(&mm_work);
 		if (!g_new_stratum)
@@ -308,18 +308,14 @@ int main(int argv, char **argc)
 			alink_send_work(&work);
 
 			get_pkg(&mm_work);
-			if (!g_new_stratum) {
-				alink_flush_fifo();
+			if (!g_new_stratum)
 				continue;
-			}
 		}
 
 		while (read_result(&mm_work, &result)) {
 			get_pkg(&mm_work);
-			if (!g_new_stratum) {
-				alink_flush_fifo();
+			if (!g_new_stratum)
 				break;
-			}
 		}
 
 		/* TODO:

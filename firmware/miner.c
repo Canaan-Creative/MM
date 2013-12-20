@@ -207,7 +207,7 @@ void miner_gen_work(struct mm_work *mw, struct work *work)
 
 	memcpy(mw->header + mw->merkle_offset, merkle_root, 32);
 
-	debug32("Work nonce2: %08x\n", work->nonce2);
+	debug32("D: Work nonce2: %08x\n", work->nonce2);
 	calc_midstate(mw, work);
 
 	uint8_t work_t[44];
@@ -242,16 +242,9 @@ void miner_gen_work(struct mm_work *mw, struct work *work)
 
 	calc_prepare1(work, work->data);
 	memcpy((uint8_t *)(&tmp32), work->a1, 4);
-	debug32("%08x,", tmp32);
 	memcpy((uint8_t *)(&tmp32), work->a0, 4);
-	debug32("%08x,", tmp32);
 	memcpy((uint8_t *)(&tmp32), work->e2, 4);
-	debug32("%08x,", tmp32);
 	memcpy((uint8_t *)(&tmp32), work->e1, 4);
-	debug32("%08x,", tmp32);
 	memcpy((uint8_t *)(&tmp32), work->e0, 4);
-	debug32("%08x,", tmp32);
 	memcpy((uint8_t *)(&tmp32), work->a2, 4);
-	debug32("%08x", tmp32);
-	debug32("\n");
 }
