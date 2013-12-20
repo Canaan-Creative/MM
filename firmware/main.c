@@ -213,7 +213,7 @@ static int read_result(struct mm_work *mw, struct result *ret)
 	alink_read_result(ret);
 	if (!test_nonce(ret)) {
 		memcpy(data, (uint8_t *)ret, 20);
-		memcpy(data + 20, mw->job_id, 4);
+		memcpy(data + 20, mw->job_id, 4); /* Attach the job_id at end */
 		send_pkg(AVA2_P_NONCE, data, AVA2_P_DATA_LEN);
 		return 2;
 	}
