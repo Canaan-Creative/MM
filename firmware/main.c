@@ -175,12 +175,12 @@ static int decode_pkg(uint8_t *p, struct mm_work *mw)
 		/* TODO: polling result base on ID */
 		break;
 	case AVA2_P_DIFF:
-		g_new_stratum = 1;
 		memcpy(&mw->diff, data, 4);
 		break;
 	case AVA2_P_REQUIRE:
 		break;
 	case AVA2_P_SET:
+		g_new_stratum = 1;
 		memcpy(&tmp, data, 4);
 		adjust_fan(tmp);
 		memcpy(&tmp, data + 4, 4);
