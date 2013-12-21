@@ -164,10 +164,6 @@ static int decode_pkg(uint8_t *p, struct mm_work *mw)
 		break;
 	case AVA2_P_HEADER:
 		memcpy(mw->header + (idx - 1) * AVA2_P_DATA_LEN, data, AVA2_P_DATA_LEN);
-		if (idx == cnt) {
-			mw->nonce2 = 0;
-			debug32("D: Header(%d)\n", g_new_stratum);
-		}
 		break;
 	case AVA2_P_POLLING:
 		/* TODO: polling result base on ID */
@@ -178,13 +174,17 @@ static int decode_pkg(uint8_t *p, struct mm_work *mw)
 	case AVA2_P_REQUIRE:
 		break;
 	case AVA2_P_SET:
-		g_new_stratum = 1;
 		memcpy(&tmp, data, 4);
 		adjust_fan(tmp);
 		memcpy(&tmp, data + 4, 4);
 		set_voltage(tmp);
 		memcpy(&tmp, data + 8, 4);
 		set_asic_freq(tmp);
+
+		mw->nonce2 = 0;
+		g_new_stratum = 1;
+		debug32("D: Stratum finished(%d)\n", g_new_stratum);
+		break;
 	default:
 		break;
 	}
@@ -310,21 +310,14 @@ int main(int argv, char **argc)
 		if (!g_new_stratum)
 			continue;
 
-		if (alink_txbuf_count() < (24 * 10)) {
+		if (alink_txbuf_count() < (24 * 5)) {
 			miner_gen_work(&mm_work, &work);
 			miner_init_work(&mm_work, &work);
 			alink_send_work(&work);
-
-			get_pkg(&mm_work);
-			if (!g_new_stratum)
-				continue;
 		}
 
-		while (read_result(&mm_work, &result)) {
-			get_pkg(&mm_work);
-			if (!g_new_stratum)
-				break;
-		}
+		while (read_result(&mm_work, &result))
+			;
 
 		/* TODO:
 		 *   Send out heatbeat information every 2 seconds */
