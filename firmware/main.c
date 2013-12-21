@@ -68,7 +68,7 @@ static void encode_pkg(uint8_t *p, int type, uint8_t *buf, unsigned int len)
 	case AVA2_P_ACKDETECT:
 		data[0] = 'M';
 		data[1] = 'M';
-		memcpy(data + 2, MM_VERSION, 6);
+		memcpy(data + 2, MM_VERSION, 15);
 		break;
 	case AVA2_P_NONCE:
 		memcpy(data, buf, len);

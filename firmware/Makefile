@@ -8,7 +8,7 @@
 #
 
 GIT_VERSION:=$(shell git rev-parse HEAD | cut -c 1-7)
-GIT_STATUS:=$(shell [ -z "`git status -s -uno`" ] || echo +)
+GIT_STATUS:=$(shell ([ -z "`git status -s -uno`" ] && echo 0) || echo +)
 
 CFLAGS += -DMM_VERSION='"201312-$(GIT_VERSION)$(GIT_STATUS)"'
 
