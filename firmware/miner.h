@@ -58,6 +58,7 @@ struct mm_work {
 };
 
 void miner_init_work(struct mm_work *mw, struct work *work);
+void miner_gen_nonce2_work(struct mm_work *mw, uint32_t nonce2, struct work *work);
 void miner_gen_work(struct mm_work *mw, struct work *work);
 
 void set_asic_freq(uint32_t value);

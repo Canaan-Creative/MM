@@ -184,15 +184,15 @@ static void calc_prepare(struct work *work, uint8_t *buf)
 #endif
 
 extern void calc_prepare1(struct work *work, uint8_t *buf);
-void miner_gen_work(struct mm_work *mw, struct work *work)
+void miner_gen_nonce2_work(struct mm_work *mw, uint32_t nonce2, struct work *work)
 {
 	uint8_t merkle_root[32], merkle_sha[64];
 	uint32_t *data32, *swap32, tmp32;
 	int i;
 
-	tmp32 = bswap_32(mw->nonce2);
+	tmp32 = bswap_32(nonce2);
 	memcpy(mw->coinbase + mw->nonce2_offset, (uint8_t *)(&tmp32), sizeof(uint32_t));
-	work->nonce2 = mw->nonce2++;
+	work->nonce2 = nonce2;
 
 	gen_hash(mw->coinbase, merkle_root, mw->coinbase_len);
 	memcpy(merkle_sha, merkle_root, 32);
@@ -247,4 +247,10 @@ void miner_gen_work(struct mm_work *mw, struct work *work)
 	memcpy((uint8_t *)(&tmp32), work->e1, 4);
 	memcpy((uint8_t *)(&tmp32), work->e0, 4);
 	memcpy((uint8_t *)(&tmp32), work->a2, 4);
+}
+
+void miner_gen_work(struct mm_work *mw, struct work *work)
+{
+	miner_gen_nonce2_work(mw, mw->nonce2, work);
+	mw->nonce2++;
 }

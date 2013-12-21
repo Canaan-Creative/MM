@@ -7,6 +7,11 @@
 # For details see the UNLICENSE file at the root of the source tree.
 #
 
+GIT_VERSION:=$(shell git rev-parse HEAD | cut -c 1-7)
+GIT_STATUS:=$(shell [ -z "`git status -s -uno`" ] || echo +)
+
+CFLAGS += -DMM_VERSION='"201312-$(GIT_VERSION)$(GIT_STATUS)"'
+
 -include config.mk
 # ----- Customer ----------------------------------------------------------
 INCLUDES   = -I. -Isdk -Iminilibc
