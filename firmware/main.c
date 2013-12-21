@@ -66,9 +66,7 @@ static void encode_pkg(uint8_t *p, int type, uint8_t *buf, unsigned int len)
 	data = p + 5;
 	switch(type) {
 	case AVA2_P_ACKDETECT:
-		data[0] = 'M';
-		data[1] = 'M';
-		memcpy(data + 2, MM_VERSION, 15);
+		memcpy(data, buf, len);
 		break;
 	case AVA2_P_NONCE:
 		memcpy(data, buf, len);
@@ -256,7 +254,7 @@ static int get_pkg(struct mm_work *mw)
 				send_pkg(AVA2_P_ACK, NULL, 0);
 				switch (g_pkg[2]) {
 				case AVA2_P_DETECT:
-					send_pkg(AVA2_P_ACKDETECT, (uint8_t *)MM_VERSION, 6);
+					send_pkg(AVA2_P_ACKDETECT, (uint8_t *)MM_VERSION, MM_VERSION_LEN);
 					break;
 				case AVA2_P_REQUIRE:
 					send_pkg(AVA2_P_STATUS, NULL, 0);

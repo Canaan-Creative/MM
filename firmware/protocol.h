@@ -10,6 +10,7 @@
 #define _PROTOCOL_H_
 
 /* Avalon2 protocol package type */
+#define MM_VERSION_LEN	15
 #define AVA2_H1	'A'
 #define AVA2_H2	'V'
 
