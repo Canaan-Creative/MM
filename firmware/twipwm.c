@@ -89,6 +89,11 @@ void wdg_feed(uint32_t value)
 	writel(((value & 0x3ffffff) << 1), &tp->wdg);
 }
 
+void reset()
+{
+	wdg_feed(8);
+}
+
 uint32_t read_fan0()
 {
 	return readl(&tp->fan0) * 30;

@@ -180,10 +180,6 @@ static int decode_pkg(uint8_t *p, struct mm_work *mw)
 		set_voltage(tmp);
 		memcpy(&tmp, data + 8, 4);
 		set_asic_freq(tmp);
-
-		mw->nonce2 = 0;
-		g_new_stratum = 1;
-		debug32("D: Stratum finished(%d)\n", g_new_stratum);
 		break;
 	default:
 		break;
@@ -261,6 +257,11 @@ static int get_pkg(struct mm_work *mw)
 				case AVA2_P_REQUIRE:
 					send_pkg(AVA2_P_STATUS, NULL, 0);
 					break;
+				case AVA2_P_SET:
+					mw->nonce2 = 0;
+					g_new_stratum = 1;
+					debug32("D: Stratum finished(%d)\n", g_new_stratum);
+					break;
 				default:
 					break;
 				}
@@ -308,6 +309,7 @@ int main(int argv, char **argc)
 	g_new_stratum = 0;
 	/* FIXME: Should we ask for new stratum? */
 	while (1) {
+		led(0x1);
 		get_pkg(&mm_work);
 		if (!g_new_stratum)
 			continue;
@@ -325,8 +327,9 @@ int main(int argv, char **argc)
 		 *   Send out heatbeat information every 2 seconds */
 
 		wdg_feed((CPU_FREQUENCY / 1000) * 2);
+		led(0);
 	}
 
-	led(0xff);
+	led(0x3f);
 	return 0;
 }
