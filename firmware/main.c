@@ -244,6 +244,8 @@ static int get_pkg(struct mm_work *mw)
 			g_pkg[count++] = last;
 
 		if (count == AVA2_P_COUNT) {
+			pre_last = last = 0;
+
 			start = 0;
 			count = 2;
 			if (decode_pkg(g_pkg, mw)) {
