@@ -302,9 +302,9 @@ int main(int argv, char **argc)
 	uart_init();
 	debug32("MM - %s\n", MM_VERSION);
 
-	alink_init(0x3ff);
+	alink_init(0x3ff);	/* Enable 10 miners */
 
-	adjust_fan(80);
+	adjust_fan(0);		/* Set the fan to 100% */
 
 	g_new_stratum = 0;
 	/* FIXME: Should we ask for new stratum? */
@@ -314,12 +314,14 @@ int main(int argv, char **argc)
 		if (!g_new_stratum)
 			continue;
 
+		led(0x2);
 		if (alink_txbuf_count() < (24 * 5)) {
 			miner_gen_work(&mm_work, &work);
 			miner_init_work(&mm_work, &work);
 			alink_send_work(&work);
 		}
 
+		led(0x4);
 		while (read_result(&mm_work, &result))
 			;
 
