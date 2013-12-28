@@ -93,7 +93,7 @@ void miner_init_work(struct mm_work *mw, struct work *work)
 	timeout *= CPU_FREQUENCY / 1000;     /* Time in cpu clock */
 	memcpy(work->timeout, &timeout, 4);
 
-	switch (ASIC_FREQUENCY / 2) { /* This is the real clock in Mhz, 1Mhz means 2Mhs */
+	switch (g_asic_freq / 2) { /* This is the real clock in Mhz, 1Mhz means 2Mhs */
 	case 1000:
 		work->clock[1] = 0xe0;
 		work->clock[0] = 0x84;
