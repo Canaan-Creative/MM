@@ -248,9 +248,3 @@ void miner_gen_nonce2_work(struct mm_work *mw, uint32_t nonce2, struct work *wor
 	memcpy((uint8_t *)(&tmp32), work->e0, 4);
 	memcpy((uint8_t *)(&tmp32), work->a2, 4);
 }
-
-void miner_gen_work(struct mm_work *mw, struct work *work)
-{
-	miner_gen_nonce2_work(mw, mw->nonce2, work);
-	mw->nonce2++;
-}

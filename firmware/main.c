@@ -96,6 +96,7 @@ static void encode_pkg(uint8_t *p, int type, uint8_t *buf, unsigned int len)
 
 static void send_pkg(int type, uint8_t *buf, unsigned int len)
 {
+	debug32("Send: type %d\n", type);
 	encode_pkg(g_act, type, buf, len);
 	uart_nwrite((char *)g_act, AVA2_P_COUNT);
 }
@@ -244,12 +245,17 @@ static int get_pkg(struct mm_work *mw)
 
 			start = 0;
 			count = 2;
+
+			hexdump(g_pkg, AVA2_P_COUNT);
+
 			if (decode_pkg(g_pkg, mw)) {
 				debug32("E: package broken(crc)\n");
 				send_pkg(AVA2_P_NAK, NULL, 0);
 				return 1;
 			} else {
+#if 0
 				send_pkg(AVA2_P_ACK, NULL, 0);
+#endif
 				switch (g_pkg[2]) {
 				case AVA2_P_DETECT:
 					send_pkg(AVA2_P_ACKDETECT, (uint8_t *)MM_VERSION, MM_VERSION_LEN);
@@ -288,6 +294,7 @@ int main(int argv, char **argc)
 	led(0);
 
 	delay(60);		/* Delay 60ms, wait for alink ready */
+	alink_flush_fifo();
 	set_voltage(0x8a00);	/* Configure the power supply for ASICs
 				 * 0x8a: 1.0v
 				 * 0x82: 1.1v
@@ -316,14 +323,27 @@ int main(int argv, char **argc)
 
 		led(0x2);
 		if (alink_txbuf_count() < (24 * 5)) {
-			miner_gen_work(&mm_work, &work);
+			led(0x8);
+			get_pkg(&mm_work);
+			if (!g_new_stratum)
+				continue;
+			miner_gen_nonce2_work(&mm_work, mm_work.nonce2, &work);
+			get_pkg(&mm_work);
+			if (!g_new_stratum)
+				continue;
+			mm_work.nonce2++;
+			led(0x10);
 			miner_init_work(&mm_work, &work);
+			led(0x20);
 			alink_send_work(&work);
 		}
 
 		led(0x4);
-		while (read_result(&mm_work, &result))
-			;
+		while (read_result(&mm_work, &result)) {
+			get_pkg(&mm_work);
+			if (!g_new_stratum)
+				break;
+		}
 
 		/* TODO:
 		 *   Send out heatbeat information every 2 seconds */
