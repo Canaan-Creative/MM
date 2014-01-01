@@ -2,9 +2,16 @@
 NET "ex_clk_i" LOC = J16;
 NET "ex_clk_o" LOC = A9;
 
+#P1<External>
+#GND GND GND GND GND GND GND GND GND GND
+#GND E16 E15 F16 F15 G16 H15 H16 J14 GND
+
 # UART <-> FT232
 NET "uartSIN"  LOC = C8; # FT232's TX
 NET "uartSOUT" LOC = A12; # FT232's RX
+
+NET "uartSIN_PIN"  LOC = F16; # FT232's TX
+NET "uartSOUT_PIN" LOC = F15; # FT232's RX
 
 # UART debug
 NET "uart_debugSIN" LOC = E16;
@@ -81,8 +88,8 @@ NET "uartSIN_led" LOC = C16 | SLEW = QUIETIO;
 NET "uartSOUT_led" LOC = D16 | SLEW = QUIETIO;
 
 
-NET "TWI_SCL" LOC = D3 | SLEW = QUIETIO;
-NET "TWI_SDA" LOC = E4 | SLEW = QUIETIO;
+NET "TWI_SCL" LOC = D3 ;
+NET "TWI_SDA" LOC = E4 ;
 
 # SPI Flash: W25Q80BV
 NET "POWER_ON" LOC = T3 | SLEW = QUIETIO;
