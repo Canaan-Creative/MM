@@ -6,3 +6,6 @@
 `define SFT   6'h14
 `define FAN0  6'h18
 `define FAN1  6'h1c
+`define TIME  6'h20
+
+`define SEC 'h2faf080
