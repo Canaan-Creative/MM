@@ -32,7 +32,9 @@ module twi(
     output         SFT_OE_N    ,
 
     input          FAN_IN0     ,
-    input          FAN_IN1     
+    input          FAN_IN1     ,
+    output         TIME0_INT   , 
+    output         TIME1_INT     
 );
 
 assign TWI_ERR_O = 1'b0 ;
@@ -55,6 +57,7 @@ wire i2wd_wr_en  = TWI_STB_I & TWI_WE_I  & ( TWI_ADR_I == `I2WD) & ~TWI_ACK_O ;
 wire pwm_wr_en   = TWI_STB_I & TWI_WE_I  & ( TWI_ADR_I == `PWMC) & ~TWI_ACK_O ;
 wire wdg_wr_en   = TWI_STB_I & TWI_WE_I  & ( TWI_ADR_I == `WDG ) & ~TWI_ACK_O ;
 wire sft_wr_en   = TWI_STB_I & TWI_WE_I  & ( TWI_ADR_I == `SFT ) & ~TWI_ACK_O ;
+wire time_wr_en  = TWI_STB_I & TWI_WE_I  & ( TWI_ADR_I == `TIME) & ~TWI_ACK_O ;
 
 wire i2cr_rd_en  = TWI_STB_I & ~TWI_WE_I  & ( TWI_ADR_I == `I2CR) & ~TWI_ACK_O ;
 wire i2rd_rd_en  = TWI_STB_I & ~TWI_WE_I  & ( TWI_ADR_I == `I2RD) & ~TWI_ACK_O ;
@@ -62,6 +65,7 @@ wire wdg_rd_en   = TWI_STB_I & ~TWI_WE_I  & ( TWI_ADR_I == `WDG ) & ~TWI_ACK_O ;
 wire sft_rd_en   = TWI_STB_I & ~TWI_WE_I  & ( TWI_ADR_I == `SFT ) & ~TWI_ACK_O ;
 wire fan0_rd_en  = TWI_STB_I & ~TWI_WE_I  & ( TWI_ADR_I == `FAN0 ) & ~TWI_ACK_O ;
 wire fan1_rd_en  = TWI_STB_I & ~TWI_WE_I  & ( TWI_ADR_I == `FAN1 ) & ~TWI_ACK_O ;
+wire time_rd_en  = TWI_STB_I & ~TWI_WE_I  & ( TWI_ADR_I == `TIME) & ~TWI_ACK_O ;
 
 //-----------------------------------------------------
 // PWM
@@ -192,6 +196,57 @@ always @ ( posedge CLK_I or posedge RST_I ) begin
 end
 
 //-----------------------------------------------------
+// timer
+//-----------------------------------------------------
+//1s 2faf080 SEC
+reg [25:0] tim_cnt ;
+reg [5:0] sec_cnt0 ;
+reg [5:0] sec_cnt1 ;
+reg tim_mask0 ;
+reg tim_mask1 ;
+wire [31:0] reg_tim = {8'b0,sec_cnt1,tim_mask1,1'b0,8'b0,sec_cnt0,tim_mask0,1'b0} ;
+always @ ( posedge CLK_I ) begin
+	if( tim_cnt == `SEC )
+		tim_cnt <= 'b0 ;
+	else
+		tim_cnt <= 'b1 + tim_cnt ;
+end
+
+always @ ( posedge CLK_I or posedge RST_I ) begin
+	if( RST_I )
+		sec_cnt0 <= 'b0 ;
+	else if( time_wr_en && TWI_DAT_I[0] )
+		sec_cnt0 <= TWI_DAT_I[7:2] ;
+	else if( |sec_cnt0 && tim_cnt == `SEC )
+		sec_cnt0 <= sec_cnt0 - 6'b1 ;
+end
+
+always @ ( posedge CLK_I or posedge RST_I ) begin
+	if( RST_I )
+		tim_mask0 <= 1'b1 ;
+	else if( time_wr_en )
+		tim_mask0 <= TWI_DAT_I[1] ;
+end
+
+always @ ( posedge CLK_I or posedge RST_I ) begin
+	if( RST_I )
+		sec_cnt1 <= 'b0 ;
+	else if( time_wr_en && TWI_DAT_I[16] )
+		sec_cnt1 <= TWI_DAT_I[23:18] ;
+	else if( |sec_cnt1 && tim_cnt == `SEC )
+		sec_cnt1 <= sec_cnt1 - 6'b1 ;
+end
+
+always @ ( posedge CLK_I or posedge RST_I ) begin
+	if( RST_I )
+		tim_mask1 <= 1'b1 ;
+	else if( time_wr_en )
+		tim_mask1 <= TWI_DAT_I[17] ;
+end
+
+assign TIME0_INT = ~tim_mask0 && ~|sec_cnt0 ;
+assign TIME1_INT = ~tim_mask1 && ~|sec_cnt1 ;
+//-----------------------------------------------------
 // read
 //-----------------------------------------------------
 reg i2cr_rd_en_r ;
@@ -199,6 +254,7 @@ reg wdg_rd_en_r ;
 reg sft_rd_en_r ;
 reg fan0_rd_en_r ;
 reg fan1_rd_en_r ;
+reg time_rd_en_r ;
 
 wire [7:0] reg_i2cr ;
 wire [7:0] reg_i2rd ;
@@ -208,6 +264,7 @@ always @ ( posedge CLK_I ) begin
 	sft_rd_en_r <= sft_rd_en ;
 	fan0_rd_en_r <= fan0_rd_en ;
 	fan1_rd_en_r <= fan1_rd_en ;
+	time_rd_en_r <= time_rd_en ;
 end
 
 assign TWI_DAT_O = i2cr_rd_en_r ? {24'b0,reg_i2cr}     : 
@@ -215,6 +272,7 @@ assign TWI_DAT_O = i2cr_rd_en_r ? {24'b0,reg_i2cr}     :
 		   sft_rd_en_r  ? reg_sft              : 
 		   fan0_rd_en_r ? {6'b0,reg_fan0}      :
 		   fan1_rd_en_r ? {6'b0,reg_fan1}      :
+		   time_rd_en_r ? reg_tim              :
                    {24'b0,reg_i2rd} ;
 
 twi_core twi_core (
