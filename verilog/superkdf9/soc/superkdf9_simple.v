@@ -356,6 +356,9 @@ module mm (
 , ex_clk_o
 , uartSIN
 , uartSOUT
+, uartSIN_PIN
+, uartSOUT_PIN
+
 , uartSIN_led
 , uartSOUT_led
 
@@ -472,6 +475,9 @@ wire uartUART_en;
 wire uartINTR;
 input  uartSIN;
 output  uartSOUT;
+input   uartSIN_PIN;
+output  uartSOUT_PIN;
+
 output  uartRESET_N;
 output  hubRESET_N;
 output  uartRXRDY_N;
@@ -554,7 +560,8 @@ input       FAN_IN1 ;
 // Enable the FT232 and HUB
 assign uartRESET_N = 1'b1;
 assign hubRESET_N  = 1'b1;
-
+wire TIME0_INT ;
+wire TIME1_INT ;
 reg [2:0] counter;
 wire sys_reset = !counter[2] || WATCH_DOG ;
 always @(posedge clk_i or negedge reset_n)
@@ -814,6 +821,9 @@ assign uartUART_SEL_I = ((
 	SHAREDBUS_ADR_I[1:0] == 2'b01) ? SHAREDBUS_SEL_I[2] : ((
 	SHAREDBUS_ADR_I[1:0] == 2'b10) ? SHAREDBUS_SEL_I[1] : SHAREDBUS_SEL_I[0])));
 assign uartUART_en = (SHAREDBUS_ADR_I[31:4] == 28'b1000000000000000000000010000);
+wire uartSOUT_w ;
+assign uartSOUT = uartSOUT_w ;
+assign uartSOUT_PIN = uartSOUT_w ;
 uart_core 
 #(
 .UART_WB_DAT_WIDTH(8),
@@ -843,8 +853,8 @@ uart_core
 .UART_LOCK_I(SHAREDBUS_LOCK_I),
 .UART_CYC_I(SHAREDBUS_CYC_I & uartUART_en),
 .UART_STB_I(SHAREDBUS_STB_I & uartUART_en),
-.SIN(uartSIN),
-.SOUT(uartSOUT),
+.SIN(uartSIN&uartSIN_PIN),
+.SOUT(uartSOUT_w),
 .RXRDY_N(uartRXRDY_N),
 .TXRDY_N(uartTXRDY_N),
 .INTR(uartINTR),
@@ -1064,7 +1074,9 @@ twi u_twi(
 /*output        */ .SFT_OE_N    (SFT_OE_N                    ) , 
 
 /*input         */ .FAN_IN0     (FAN_IN0                     ) ,
-/*input         */ .FAN_IN1     (FAN_IN1                     ) 
+/*input         */ .FAN_IN1     (FAN_IN1                     ) ,
+/*output        */ .TIME0_INT   (TIME0_INT                   ) , 
+/*output        */ .TIME1_INT   (TIME1_INT                   ) 
 ) ;
 
 assign superkdf9interrupt_n[3] = !uartINTR ;
@@ -1072,8 +1084,8 @@ assign superkdf9interrupt_n[1] = !spiSPI_INT_O ;
 assign superkdf9interrupt_n[0] = !gpioIRQ_O ;
 assign superkdf9interrupt_n[4] = !uart_debugINTR ;
 assign superkdf9interrupt_n[2] = 1;
-assign superkdf9interrupt_n[5] = 1;
-assign superkdf9interrupt_n[6] = 1;
+assign superkdf9interrupt_n[5] = !TIME0_INT;
+assign superkdf9interrupt_n[6] = !TIME1_INT;
 assign superkdf9interrupt_n[7] = 1;
 assign superkdf9interrupt_n[8] = 1;
 assign superkdf9interrupt_n[9] = 1;
