@@ -22,6 +22,7 @@
 #include "alink.h"
 #include "twipwm.h"
 #include "shifter.h"
+#include "timer.h"
 #include "protocol.h"
 #include "crc.h"
 
