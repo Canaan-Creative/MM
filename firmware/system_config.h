@@ -35,6 +35,7 @@
 #define ALINK_BASE		(0x80000500)
 #define TWIPWM_BASE		(0x80000600)
 #define SHIFTER_BASE		(0x80000614)
+#define TIMER_BASE		(0x80000620)
 
 
 /* UART */
@@ -136,6 +137,10 @@ struct lm32_twipwm {
 
 struct lm32_shifter {
 	volatile unsigned int reg; /* Shifter register for power chip */
+};
+
+struct lm32_timer {
+	volatile unsigned int reg; /* Timer register */
 };
 
 #endif /* _SYSTEM_CONFIG_H_ */
