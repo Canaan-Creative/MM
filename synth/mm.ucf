@@ -101,4 +101,4 @@ NET "ex_clk_i" TNM_NET = "ex_clk_i";
 TIMESPEC TS_clk = PERIOD "ex_clk_i" 40 ns HIGH 50 %;
 
 NET "clk_i" TNM_NET = "clk_i";
-TIMESPEC TS_clk_i = PERIOD "clk_i" 20 ns HIGH 50 %;
+TIMESPEC TS_clk_i = PERIOD "clk_i" 10 ns HIGH 50 %;
