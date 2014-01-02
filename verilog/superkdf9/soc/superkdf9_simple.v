@@ -358,7 +358,7 @@ module mm (
 , uartSOUT
 , uartSIN_PIN
 , uartSOUT_PIN
-
+, INT
 , uartSIN_led
 , uartSOUT_led
 
@@ -477,6 +477,7 @@ input  uartSIN;
 output  uartSOUT;
 input   uartSIN_PIN;
 output  uartSOUT_PIN;
+output  INT;
 
 output  uartRESET_N;
 output  hubRESET_N;
@@ -745,24 +746,14 @@ lm32_top
 // VIO/ILA and ICON {{{
 wire [35:0] icon_ctrl_0, icon_ctrl_1;
 wire [255:0] trig0 = {
-                   4'ha                 ,//[82:79]
-/*input         */ sys_reset            ,//78
-/*input         */ shaSHA_en        ,//77
-/*input         */ SHAREDBUS_STB_I      ,//76
-/*input         */ SHAREDBUS_WE_I       ,//75
-/*input  [5:0]  */ SHAREDBUS_ADR_I[5:0] ,//[74:69]
-/*input  [31:0] */ SHAREDBUS_DAT_I[31:0],//[68:37]
-/*output        */ shaSHA_ACK_O     ,//36
-/*output [31:0] */ shaSHA_DAT_O     ,//[35:4]
-/*output [   0] */ TX_P[0]              ,//3
-/*output [   0] */ TX_N[0]              ,//2
-/*input  [   0] */ RX_P[0]              ,//1
-/*input  [   0] */ RX_N[0]               //0
-
+        8'ha                 ,//[15:8]
+	irom_addr_rd[29:0]   ,
+	irom_q_rd[31:0]      ,
+	superkdf9interrupt_n[7:0]
 } ;
-//icon icon_test(.CONTROL0(icon_ctrl_0));
-//ila ila_test(.CONTROL(icon_ctrl_0), .CLK(clk_i), .TRIG0(trig0)
-//);
+icon icon_test(.CONTROL0(icon_ctrl_0));
+ila ila_test(.CONTROL(icon_ctrl_0), .CLK(clk_i), .TRIG0(trig0)
+);
 //vio vio_test(.CONTROL(icon_ctrl_1), .ASYNC_OUT(intr_i));
 // }}}
 
@@ -1111,4 +1102,5 @@ assign superkdf9interrupt_n[28] = 1;
 assign superkdf9interrupt_n[29] = 1;
 assign superkdf9interrupt_n[30] = 1;
 assign superkdf9interrupt_n[31] = 1;
+assign INT = ~(&superkdf9interrupt_n) ;
 endmodule

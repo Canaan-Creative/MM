@@ -38,6 +38,8 @@ xilinx_cores := $(addprefix ../ipcores_dir/,\
 	fifo_uart.xco\
 	tx_fifo.xco\
 	rx_fifo.xco\
+	icon.xco\
+	ila.xco\
 	)
 
 vfiles := $(addprefix ../verilog/, $(vfiles_nodir))
