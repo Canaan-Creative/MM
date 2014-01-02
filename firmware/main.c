@@ -323,18 +323,13 @@ int main(int argv, char **argc)
 
 		led(0x2);
 		if (alink_txbuf_count() < (24 * 5)) {
-			led(0x8);
-			get_pkg(&mm_work);
-			if (!g_new_stratum)
-				continue;
 			miner_gen_nonce2_work(&mm_work, mm_work.nonce2, &work);
 			get_pkg(&mm_work);
 			if (!g_new_stratum)
 				continue;
+
 			mm_work.nonce2++;
-			led(0x10);
 			miner_init_work(&mm_work, &work);
-			led(0x20);
 			alink_send_work(&work);
 		}
 
@@ -352,6 +347,6 @@ int main(int argv, char **argc)
 		led(0);
 	}
 
-	led(0x3f);
+	led(0x1f);
 	return 0;
 }
