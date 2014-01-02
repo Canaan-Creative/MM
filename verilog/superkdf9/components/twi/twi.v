@@ -152,11 +152,11 @@ shift u_shift(
 //-----------------------------------------------------
 // fan speed
 //-----------------------------------------------------
-reg [25:0] sec_cnt ;//1m
-reg [25:0] fan_cnt0 ;
-reg [25:0] fan_cnt1 ;
-reg [25:0] reg_fan0 ;
-reg [25:0] reg_fan1 ;
+reg [26:0] sec_cnt ;//1m
+reg [26:0] fan_cnt0 ;
+reg [26:0] fan_cnt1 ;
+reg [26:0] reg_fan0 ;
+reg [26:0] reg_fan1 ;
 reg [2:0] fan0_f ;
 reg [2:0] fan1_f ;
 wire fan0_neg = ~fan0_f[1] && fan0_f[2] ;
@@ -168,31 +168,31 @@ end
 
 always @ ( posedge CLK_I or posedge RST_I ) begin
 	if( RST_I )
-		sec_cnt <= 26'b0 ;
-	else if( sec_cnt == 26'h2FAF080 )
-		sec_cnt <= 26'b0 ;
+		sec_cnt <= 'b0 ;
+	else if( sec_cnt == `MM_CLK_1S_CNT )
+		sec_cnt <= 'b0 ;
 	else
-		sec_cnt <= 26'b1 + sec_cnt ;
+		sec_cnt <= 'b1 + sec_cnt ;
 end
 
 always @ ( posedge CLK_I or posedge RST_I ) begin
 	if( RST_I )
-		fan_cnt0 <= 26'b0 ;
-	else if( sec_cnt == 26'h2FAF080 ) begin
-		fan_cnt0 <= 26'b0 ;
+		fan_cnt0 <= 'b0 ;
+	else if( sec_cnt == `MM_CLK_1S_CNT ) begin
+		fan_cnt0 <= 'b0 ;
 		reg_fan0 <= fan_cnt0 ;
 	end else if( fan0_neg )
-		fan_cnt0 <= fan_cnt0 + 26'b1 ;
+		fan_cnt0 <= fan_cnt0 + 'b1 ;
 end
 
 always @ ( posedge CLK_I or posedge RST_I ) begin
 	if( RST_I )
-		fan_cnt1 <= 26'b0 ;
-	else if( sec_cnt == 26'h2FAF080 ) begin
-		fan_cnt1 <= 26'b0 ;
+		fan_cnt1 <= 'b0 ;
+	else if( sec_cnt == `MM_CLK_1S_CNT ) begin
+		fan_cnt1 <= 'b0 ;
 		reg_fan1 <= fan_cnt1 ;
 	end else if( fan1_neg )
-		fan_cnt1 <= fan_cnt1 + 26'b1 ;
+		fan_cnt1 <= fan_cnt1 + 'b1 ;
 end
 
 //-----------------------------------------------------
@@ -201,7 +201,11 @@ end
 //1s 2faf080 SEC
 reg [25:0] tim_cnt ;
 reg [5:0] sec_cnt0 ;
+reg [5:0] sec_cnt0_f ;
+reg tim_done0 ;
 reg [5:0] sec_cnt1 ;
+reg [5:0] sec_cnt1_f ;
+reg tim_done1 ;
 reg tim_mask0 ;
 reg tim_mask1 ;
 wire [31:0] reg_tim = {8'b0,sec_cnt1,tim_mask1,1'b0,8'b0,sec_cnt0,tim_mask0,1'b0} ;
@@ -221,6 +225,10 @@ always @ ( posedge CLK_I or posedge RST_I ) begin
 		sec_cnt0 <= sec_cnt0 - 6'b1 ;
 end
 
+always @ ( posedge CLK_I ) begin
+	sec_cnt0_f <= sec_cnt0 ;
+end
+
 always @ ( posedge CLK_I or posedge RST_I ) begin
 	if( RST_I )
 		tim_mask0 <= 1'b1 ;
@@ -235,6 +243,17 @@ always @ ( posedge CLK_I or posedge RST_I ) begin
 		sec_cnt1 <= TWI_DAT_I[23:18] ;
 	else if( |sec_cnt1 && tim_cnt == `SEC )
 		sec_cnt1 <= sec_cnt1 - 6'b1 ;
+end
+
+always @ ( posedge CLK_I ) begin
+	sec_cnt1_f <= sec_cnt1 ;
+end
+
+always @ ( posedge CLK_I or posedge RST_I ) begin
+	if( RST_I )
+		tim_done0 <= 1'b0 ;
+	else if( sec_cnt0 == 0 && sec_cnt0_f == 1 )
+		tim_done0 <= 1'b1 ;
 end
 
 always @ ( posedge CLK_I or posedge RST_I ) begin
