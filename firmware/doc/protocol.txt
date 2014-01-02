@@ -5,36 +5,11 @@ Between cgminer and FPGA controller
 Multiple FPGA controllers are daisy-chained together using TTL UART.
 
 == Packet structure ==
-Length: 40Bytes
+Length: 39Bytes
 
-Format: |2B:HEAD|1B:TYPE|1B:IDX|1B:CNT|32B:DATA|2B:CRC|2B:TAIL|
+Format: |2B:HEAD|1B:TYPE|1B:IDX|1B:CNT|32B:DATA|2B:CRC|
 
 HEAD: 'AV'
-
-TYPE:
-  * STATIC	COUNT:1
-    *coinbase_len
-    *nonce2_offset
-    *nonce2_size
-    *merkle_offset
-    *nmerkle
-
-  * JOB_ID	COUNT:1~32
-  * COINBASE	COUNT:1~128
-  * MERKLES	COUNT:1~64
-  * NONCE1	COUNT:1
-  * DIFFCULTY	COUNT:1
-  * CLEAN	COUNT:1
-
-  * ACK		COUNT:1
-  * NAK		COUNT:1
-  * NONCE	COUNT:1
-  * HEARTBEAT	COUNT:1
-
-CHKSUM:
-  ?
-
-TAIL: 'ON'
 
 == Conceptual model ==
 Cgminer broadcasts this structure (new_task) to all FPGA controllers:
