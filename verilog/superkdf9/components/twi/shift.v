@@ -57,7 +57,7 @@ reg [7:0] data ;
 always @ ( posedge clk ) begin
 	if( vld && cmd == 2'b01 )
 		data <= din ;
-	else if( shcp_cnt[1] )
+	else if( &shcp_cnt[1:0] )
 		data <= data >> 1 ;
 end
 
