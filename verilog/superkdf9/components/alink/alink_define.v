@@ -9,4 +9,4 @@
 `define RX_FIFO_DEPTH 512
 `define RX_DATA_LEN 5 //word
 
-`define TX_PHY_TIMING 4
+`define TX_PHY_TIMING 8
