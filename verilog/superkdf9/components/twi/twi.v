@@ -199,7 +199,7 @@ end
 // timer
 //-----------------------------------------------------
 //1s 2faf080 SEC
-reg [25:0] tim_cnt ;
+reg [26:0] tim_cnt ;
 reg [5:0] sec_cnt0 ;
 reg [5:0] sec_cnt0_f ;
 reg tim_done0 ;
@@ -208,9 +208,9 @@ reg [5:0] sec_cnt1_f ;
 reg tim_done1 ;
 reg tim_mask0 ;
 reg tim_mask1 ;
-wire [31:0] reg_tim = {8'b0,sec_cnt1,tim_mask1,1'b0,8'b0,sec_cnt0,tim_mask0,1'b0} ;
+wire [31:0] reg_tim = {7'b0,tim_done1,sec_cnt1,tim_mask1,1'b0,7'b0,tim_done0,sec_cnt0,tim_mask0,1'b0} ;
 always @ ( posedge CLK_I ) begin
-	if( tim_cnt == `SEC )
+	if( tim_cnt == `MM_CLK_1S_CNT )
 		tim_cnt <= 'b0 ;
 	else
 		tim_cnt <= 'b1 + tim_cnt ;
@@ -221,7 +221,7 @@ always @ ( posedge CLK_I or posedge RST_I ) begin
 		sec_cnt0 <= 'b0 ;
 	else if( time_wr_en && TWI_DAT_I[0] )
 		sec_cnt0 <= TWI_DAT_I[7:2] ;
-	else if( |sec_cnt0 && tim_cnt == `SEC )
+	else if( |sec_cnt0 && tim_cnt == `MM_CLK_1S_CNT )
 		sec_cnt0 <= sec_cnt0 - 6'b1 ;
 end
 
@@ -241,7 +241,7 @@ always @ ( posedge CLK_I or posedge RST_I ) begin
 		sec_cnt1 <= 'b0 ;
 	else if( time_wr_en && TWI_DAT_I[16] )
 		sec_cnt1 <= TWI_DAT_I[23:18] ;
-	else if( |sec_cnt1 && tim_cnt == `SEC )
+	else if( |sec_cnt1 && tim_cnt == `MM_CLK_1S_CNT )
 		sec_cnt1 <= sec_cnt1 - 6'b1 ;
 end
 
@@ -254,7 +254,19 @@ always @ ( posedge CLK_I or posedge RST_I ) begin
 		tim_done0 <= 1'b0 ;
 	else if( sec_cnt0 == 0 && sec_cnt0_f == 1 )
 		tim_done0 <= 1'b1 ;
+	else if( time_wr_en && TWI_DAT_I[8] )
+		tim_done0 <= 1'b0 ;
 end
+
+always @ ( posedge CLK_I or posedge RST_I ) begin
+	if( RST_I )
+		tim_done1 <= 1'b0 ;
+	else if( sec_cnt1 == 0 && sec_cnt1_f == 1 )
+		tim_done1 <= 1'b1 ;
+	else if( time_wr_en && TWI_DAT_I[24] )
+		tim_done1 <= 1'b0 ;
+end
+
 
 always @ ( posedge CLK_I or posedge RST_I ) begin
 	if( RST_I )
@@ -263,8 +275,8 @@ always @ ( posedge CLK_I or posedge RST_I ) begin
 		tim_mask1 <= TWI_DAT_I[17] ;
 end
 
-assign TIME0_INT = ~tim_mask0 && ~|sec_cnt0 ;
-assign TIME1_INT = ~tim_mask1 && ~|sec_cnt1 ;
+assign TIME0_INT = ~tim_mask0 && tim_done0 ;
+assign TIME1_INT = ~tim_mask1 && tim_done1 ;
 //-----------------------------------------------------
 // read
 //-----------------------------------------------------
