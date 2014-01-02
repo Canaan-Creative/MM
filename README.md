@@ -1,17 +1,15 @@
-mm - Miner Manager
+MM - Miner Manager
 ==================
 
-Miner Manager is the Avalon2 bitcoin mining machine's FPGA controller.
+Miner Manager is a task generate firmware that fit FPGA and faster mining machine
 
 Directory Structure
 ===================
 
-* `docs`: various design documentation.
-* `firmware`: code running in LatticeMico32 soft processor.
-* `ipcores_dir`: ip cores
-* `sim`:
-* `synth`: directory for synthesize and build of the hardware part.
-* `verilog`: HDL.
+* `firmware`: C code running in LatticeMico32 soft processor
+* `ipcores_dir`: IP cores
+* `synth`: Directory for synthesize and build of the hardware part
+* `verilog`: The VerilogHDL source code
 
 How to build?
 =============
@@ -21,9 +19,11 @@ by default we are using /home/Xilinx/14.6/ISE_DS/
 
 1. $ make -C firmware/toolchain # Install the lm32-rtems-4.11- toolchain under /opt
 2. $ make -C firmware           # Generate the final bitstream file .bit/.mcs under firmware/
+3. $ make -C firmware load      # Load the config bit file to FPAG by using Xilix Platform cable
 
 LICENSE
 =======
+
 This is free and unencumbered public domain software. For more information,
 see http://unlicense.org/ or the accompanying UNLICENSE file.
 
