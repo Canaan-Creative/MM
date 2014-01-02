@@ -8,4 +8,3 @@
 `define FAN1  6'h1c
 `define TIME  6'h20
 
-`define SEC 'h2faf080
