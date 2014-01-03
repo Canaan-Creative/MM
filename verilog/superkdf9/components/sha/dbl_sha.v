@@ -19,7 +19,7 @@ cnt   _0__|_1-------------------31|_0_
 */
 
 reg start ;
-reg [4:0] cnt ;//0~31
+reg [3:0] cnt ;//0~31
 reg [255:0] hash_r ;
 
 always @ ( posedge clk or posedge rst ) begin
@@ -27,24 +27,24 @@ always @ ( posedge clk or posedge rst ) begin
 		start <= 1'b0 ;
 	else if( reg_dbl )
 		start <= 1'b1 ;
-	else if( cnt == 31 )
+	else if( cnt == 15 )
 		start <= 1'b0 ;
 end
 
 always @ ( posedge clk or posedge rst ) begin
 	if( rst )
-		cnt <= 5'b0 ;
+		cnt <= 'b0 ;
 	else if( start )
-		cnt <= cnt + 5'b1 ;
+		cnt <= cnt + 'b1 ;
 end
 
 always @ ( posedge clk ) begin
 	if( done )
 		hash_r <= hash ;
-	else if( start && cnt != 15 )
+	else if( start && cnt != 7 )
 		hash_r <= hash_r << 32 ;
 	else if( start )//cnt == 15
-		hash_r <= 256'h80000000_00000000_00000000_00000100 ;
+		hash_r <= 256'h80000000_00000000_00000000_00000000_00000000_00000000_00000000_00000100 ;
 end
 
 assign dbl_vld = start ;
