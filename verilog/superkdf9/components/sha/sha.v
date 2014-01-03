@@ -71,7 +71,7 @@ always @ ( posedge CLK_I or posedge RST_I ) begin
 		reg_done <= 1'b0 ;
 	else if( done )
 		reg_done <= 1'b1 ;
-	else if( sha_din_wr_en )
+	else if( sha_din_wr_en || (sha_cmd_wr_en && SHA_DAT_I[3]))
 		reg_done <= 1'b0 ;
 end
 
