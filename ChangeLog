@@ -1,0 +1,4 @@
+Version 201401
+* First working stable release
+* Direct using stratum message. generate works inside FPGA
+* Documents: http://downloads.canaan-creative.com/software/mm/MM_SOC_Specification.pdf

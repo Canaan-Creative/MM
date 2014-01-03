@@ -9,10 +9,11 @@ Length: 39Bytes
 
 Format: |2B:HEAD|1B:TYPE|1B:IDX|1B:CNT|32B:DATA|2B:CRC|
 
-HEAD: 'AV'
+HEAD: 'A' 'V'
 
 == Conceptual model ==
-Cgminer broadcasts this structure (new_task) to all FPGA controllers:
+Cgminer broadcasts this structure (new_task) to all FPGA controllers, 
+Each FPGA controller selects its own partition of extranonce in coinbase txn.
 {
     int coinbase_len;
     int nonce2_offset;
@@ -28,7 +29,6 @@ Cgminer broadcasts this structure (new_task) to all FPGA controllers:
     hash256 merkles[nbranches];
     uint8_t header[128];
 }
-Each FPGA controller selects its own partition of extranonce in coinbase txn.
 
 FPGA controllers send this structure (result) back to cgminer:
 {
