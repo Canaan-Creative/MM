@@ -61,7 +61,7 @@ always @ ( posedge CLK_I or posedge RST_I ) begin
 	if( RST_I )
 		reg_init <= 1'b0 ;
 	else if( sha_cmd_wr_en )
-		reg_init <= SHA_DAT_I[0]/*||SHA_DAT_I[3]*/ ;
+		reg_init <= SHA_DAT_I[0]||SHA_DAT_I[3] ;
 	else
 		reg_init <= 1'b0 ;
 end
