@@ -112,6 +112,23 @@ void sha256(const uint8_t *input, unsigned int count, uint8_t *state)
 	sha256_final(state);
 }
 
+static void sha256_double()
+{
+	writel(LM32_SHA256_CMD_DBL, &lm_sha256->cmd);
+	while (!(readl(&lm_sha256->cmd) & LM32_SHA256_CMD_DONE))
+		;
+}
+
+void dsha256(const uint8_t *input, unsigned int count, uint8_t *state)
+{
+
+	sha256_init();
+	sha256_update(input, count);
+	sha256_padding(input + (count / SHA256_BLOCK_SIZE) * SHA256_BLOCK_SIZE, count);
+	sha256_double();
+	sha256_final(state);
+}
+
 void sha256_precalc(const uint8_t *h, const uint8_t *input, unsigned int count, uint8_t *state)
 {
 	int i;

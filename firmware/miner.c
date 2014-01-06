@@ -44,10 +44,13 @@ static void flip64(void *dest_p, const uint8_t *src_p)
 
 static void gen_hash(uint8_t *data, uint8_t *hash, unsigned int len)
 {
+#if 1
 	uint8_t hash1[32];
-
 	sha256(data, len, hash1);
 	sha256(hash1, 32, hash);
+#else
+	dsha256(data, len, hash);
+#endif
 }
 
 static void calc_midstate(struct mm_work *mw, struct work *work)
