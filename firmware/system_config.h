@@ -82,7 +82,7 @@ struct lm32_uart {
  */
 #define LM32_SHA256_CMD_INIT	(1 << 0)
 #define LM32_SHA256_CMD_DONE	(1 << 1)
-#define LM32_SHA256_CMD_H_RESET	(1 << 2)
+#define LM32_SHA256_CMD_RST	(1 << 2)
 #define LM32_SHA256_CMD_DBL	(1 << 3)
 
 struct lm32_sha256 {
