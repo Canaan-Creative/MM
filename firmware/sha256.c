@@ -134,13 +134,21 @@ void sha256_precalc(const uint8_t *h, const uint8_t *input, unsigned int count, 
 {
 	int i;
 	uint32_t tmp;
+	uint8_t digest[12];
 
-	sha256_init();
-	for (i = 0; i < 32; i += 4) {
+	writel(LM32_SHA256_CMD_RST, &lm_sha256->cmd);
+	for (i = 28; i >= 0; i -= 4) {
 		memcpy((uint8_t *)(&tmp), h + i, 4);
 		writel(tmp, &lm_sha256->hi);
 	}
-	sha256_update(input, count);
-	sha256_padding(input + (count / SHA256_BLOCK_SIZE) * SHA256_BLOCK_SIZE, count);
+	writel(LM32_SHA256_CMD_INIT, &lm_sha256->cmd);
+
+
+	memcpy(digest + 0, input + 8, 4);
+	memcpy(digest + 4, input + 4, 4);
+	memcpy(digest + 8, input + 0, 4);
+
+	sha256_update(digest, count);
+	sha256_padding(digest + (count / SHA256_BLOCK_SIZE) * SHA256_BLOCK_SIZE, count);
 	sha256_precalc_final(state);
 }
