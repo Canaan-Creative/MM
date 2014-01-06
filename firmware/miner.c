@@ -42,17 +42,6 @@ static void flip64(void *dest_p, const uint8_t *src_p)
 	}
 }
 
-static void gen_hash(uint8_t *data, uint8_t *hash, unsigned int len)
-{
-#if 1
-	uint8_t hash1[32];
-	sha256(data, len, hash1);
-	sha256(hash1, 32, hash);
-#else
-	dsha256(data, len, hash);
-#endif
-}
-
 static void calc_midstate(struct mm_work *mw, struct work *work)
 {
 	unsigned char data[64];
@@ -197,11 +186,11 @@ void miner_gen_nonce2_work(struct mm_work *mw, uint32_t nonce2, struct work *wor
 	memcpy(mw->coinbase + mw->nonce2_offset, (uint8_t *)(&tmp32), sizeof(uint32_t));
 	work->nonce2 = nonce2;
 
-	gen_hash(mw->coinbase, merkle_root, mw->coinbase_len);
+	dsha256(mw->coinbase, mw->coinbase_len, merkle_root);
 	memcpy(merkle_sha, merkle_root, 32);
 	for (i = 0; i < mw->nmerkles; i++) {
 		memcpy(merkle_sha + 32, mw->merkles[i], 32);
-		gen_hash(merkle_sha, merkle_root, 64);
+		dsha256(merkle_sha, 64, merkle_root);
 		memcpy(merkle_sha, merkle_root, 32);
 	}
 	data32 = (uint32_t *)merkle_sha;
