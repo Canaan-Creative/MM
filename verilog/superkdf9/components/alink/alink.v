@@ -48,6 +48,7 @@ wire                  reg_flush   ;
 wire                  txfull      ;
 
 wire [31:0]           reg_mask    ;
+wire                  reg_scan    ;
 wire [31:0]           busy        ;
 
 wire                  rxfifo_pop  ;
@@ -109,6 +110,7 @@ alink_slave alink_slave(
 /*input                       */ .txfull      (txfull        ) ,
                                                              
 /*output reg [31:0]           */ .reg_mask    (reg_mask      ) ,
+/*output reg                  */ .reg_scan    (reg_scan      ) ,
 /*input  [31:0]               */ .busy        (busy          ) ,
                                                              
 /*output                      */ .rxfifo_pop  (rxfifo_pop    ) ,
@@ -160,23 +162,23 @@ rx_fifo rx_fifo(
 // TX.arbiter
 //-------------------------------------------------
 txc txc(
-/*input                    */ .clk         (CLK_I       ) ,
-/*input                    */ .rst         (RST_I|reg_flush       ) ,
+/*input                    */ .clk         (CLK_I           ) ,
+/*input                    */ .rst         (RST_I|reg_flush ) ,
 
-/*input                    */ .reg_flush   (reg_flush   ) ,
-/*input  [`PHY_NUM-1:0]    */ .reg_mask    (reg_mask    ) ,
-/*input                    */ .task_id_vld (task_id_vld ) ,
-/*input  [31:0]            */ .reg_tout    (reg_tout    ) ,
-/*input                    */ .tx_task_vld (tx_task_vld ) ,//tx fifo not empty
+/*input                    */ .reg_flush   (reg_flush       ) ,
+/*input  [`PHY_NUM-1:0]    */ .reg_mask    (reg_mask        ) ,
+/*input                    */ .task_id_vld (task_id_vld     ) ,
+/*input  [31:0]            */ .reg_tout    (reg_tout        ) ,
+/*input                    */ .tx_task_vld (tx_task_vld     ) ,//tx fifo not empty
 
-/*output reg               */ .tx_phy_start(tx_phy_start) ,
-/*output reg [`PHY_NUM-1:0]*/ .tx_phy_sel  (tx_phy_sel  ) ,
-/*input                    */ .tx_phy_done (tx_phy_done ) ,
+/*output reg               */ .tx_phy_start(tx_phy_start    ) ,
+/*output reg [`PHY_NUM-1:0]*/ .tx_phy_sel  (tx_phy_sel      ) ,
+/*input                    */ .tx_phy_done (tx_phy_done     ) ,
 
-/*output reg [1:0]         */ .cur_state   (cur_state   ) ,
-/*output reg [1:0]         */ .nxt_state   (nxt_state   ) ,
-/*output [32*`PHY_NUM-1:0] */ .timer_cnt   (timer_cnt   ) ,//to slave
-/*output [`PHY_NUM-1:0]    */ .reg_busy    (busy        )  
+/*output reg [1:0]         */ .cur_state   (cur_state       ) ,
+/*output reg [1:0]         */ .nxt_state   (nxt_state       ) ,
+/*output [32*`PHY_NUM-1:0] */ .timer_cnt   (timer_cnt       ) ,//to slave
+/*output [`PHY_NUM-1:0]    */ .reg_busy    (busy            )  
 );
 
 
@@ -184,26 +186,27 @@ txc txc(
 // TX.PHY
 //-------------------------------------------------
 tx_phy tx_phy(
-/*input            */ .clk         (CLK_I       ) ,
-/*input            */ .rst         (RST_I|reg_flush       ) ,
+/*input            */ .clk         (CLK_I           ) ,
+/*input            */ .rst         (RST_I|reg_flush ) ,
                                                 
-/*input            */ .reg_flush   (reg_flush   ) ,
+/*input            */ .reg_flush   (reg_flush       ) ,
+/*input            */ .reg_scan    (reg_scan        ) ,
                                             
-/*input            */ .tx_phy_start(tx_phy_start) ,
-/*input  [31:0]    */ .tx_phy_sel  (tx_phy_sel  ) ,
-/*output           */ .tx_phy_done (tx_phy_done ) , 
-                                                
-/*input  [31:0]    */ .tx_dout     (tx_dout     ) ,
-/*output           */ .tx_rd_en    (tx_rd_en    ) ,
+/*input            */ .tx_phy_start(tx_phy_start    ) ,
+/*input  [31:0]    */ .tx_phy_sel  (tx_phy_sel      ) ,
+/*output           */ .tx_phy_done (tx_phy_done     ) , 
+                                                    
+/*input  [31:0]    */ .tx_dout     (tx_dout         ) ,
+/*output           */ .tx_rd_en    (tx_rd_en        ) ,
 
-/*output reg       */ .task_id_vld  (task_id_vld) ,
-/*output reg [31:0]*/ .rx_phy_sel   (rx_phy_sel ) ,
-/*output reg [31:0]*/ .task_id_h    (task_id_h  ) ,
-/*output reg [31:0]*/ .task_id_l    (task_id_l  ) ,
-/*output reg [31:0]*/ .reg_tout     (reg_tout   ) ,
+/*output reg       */ .task_id_vld (task_id_vld     ) ,
+/*output reg [31:0]*/ .rx_phy_sel  (rx_phy_sel      ) ,
+/*output reg [31:0]*/ .task_id_h   (task_id_h       ) ,
+/*output reg [31:0]*/ .task_id_l   (task_id_l       ) ,
+/*output reg [31:0]*/ .reg_tout    (reg_tout        ) ,
 
-/*output [31:0]    */ .TX_P        (TX_P        ) ,
-/*output [31:0]    */ .TX_N        (TX_N        )  
+/*output [31:0]    */ .TX_P        (TX_P            ) ,
+/*output [31:0]    */ .TX_N        (TX_N            )  
 );
 /*
 // VIO/ILA and ICON {{{

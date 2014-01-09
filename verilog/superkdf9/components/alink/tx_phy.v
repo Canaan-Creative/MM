@@ -1,17 +1,18 @@
 
 `include "alink_define.v"
 module tx_phy(
-input         clk          ,
-input         rst          ,
+input             clk          ,
+input             rst          ,
 
-input         reg_flush    ,
+input             reg_flush    ,
+input             reg_scan     ,
 
-input         tx_phy_start ,
-input  [31:0] tx_phy_sel   ,
-output        tx_phy_done  , 
+input             tx_phy_start ,
+input  [31:0]     tx_phy_sel   ,
+output            tx_phy_done  , 
 
-input  [31:0] tx_dout      ,//TxFIFO data input
-output        tx_rd_en     ,//TxFIFO pop
+input  [31:0]     tx_dout      ,//TxFIFO data input
+output            tx_rd_en     ,//TxFIFO pop
 
 output reg        task_id_vld  ,
 output reg [31:0] rx_phy_sel   ,
@@ -118,6 +119,9 @@ always @ ( posedge clk ) begin
 		task_id_vld <= 1'b0 ;
 end
 
+wire [31:0] scan_nonce = task_id_l ;
+wire [7:0]  scan_no   = task_id_h[7:0] ;
+reg  [7:0]  scan_cnt ;
 
 //----------------------------------------------
 // Shifter
@@ -230,20 +234,24 @@ always @ ( posedge clk or posedge rst ) begin
 		tx_buf <= 32'b0 ;
 		nonce_over_flow <= 1'b0 ;
 		nonce_buf <= 33'b0 ;
+		scan_cnt <= 8'b0 ;
 	end else if( cur_state == IDLE && nxt_state == TASK ) begin
 		nonce_over_flow <= 1'b0 ;
 		nonce_buf <= 33'b0 ;
+		scan_cnt <= 8'b0 ;
 	end else if( ~TX_Px && ~TX_Nx && tick ) begin
 		tx_buf <= {1'b0,tx_buf[31:1]} ;
 	end else if( hash_pop ) begin
 		tx_buf <= tx_dout ;
 	end else if( cur_state == HASH && nxt_state == NONCE ) begin
-		tx_buf <= 32'b0 ;
+		tx_buf <= (reg_scan && (scan_no == scan_cnt)) ? scan_nonce : {32{reg_scan}} | 32'b0 ;
 		nonce_buf <= nonce_buf + {1'b0,reg_step} ;
+		scan_cnt <= reg_scan + scan_cnt ;
 	end else if( cur_state == NONCE && ~|tx_buf_flg ) begin
-		tx_buf <= nonce_buf[31:0] ;
+		tx_buf <= (reg_scan && (scan_no == scan_cnt)) ? scan_nonce : {32{reg_scan}} | nonce_buf[31:0] ;
 		nonce_buf <= nonce_buf + {1'b0,reg_step} ;
 		nonce_over_flow <= ((nonce_buf)>33'hffff_ffff) ? 1'b1:1'b0 ;
+		scan_cnt <= reg_scan + scan_cnt ;
 	end
 end
 

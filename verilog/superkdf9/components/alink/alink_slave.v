@@ -29,6 +29,7 @@ module alink_slave(
     input                        txfull      ,
 
     output reg [31:0]            reg_mask    ,
+    output reg                   reg_scan    ,
     input  [31:0]                busy        ,
 
     output                       rxfifo_pop  ,
@@ -86,13 +87,21 @@ end
 // Register.state
 //-----------------------------------------------------
 reg [3:0] reg_flush_r ;
-wire [31:0] rd_state = {2'b0,rxcnt[9:0],3'b0,rxempty,
+wire [31:0] rd_state = {reg_scan,1'b0,rxcnt[9:0],3'b0,rxempty,
 			1'b0,txcnt[10:0],2'b0,reg_flush,txfull} ;
+
 always @ ( posedge clk ) begin
 	if( alink_state_wr_en )
 		reg_flush_r <= {3'b0,ALINK_DAT_I[1]} ;
 	else
 		reg_flush_r <= reg_flush_r << 1 ;
+end
+
+always @ ( posedge clk ) begin
+	if( rst )
+		reg_scan <= 1'b0 ;
+	else if( alink_state_wr_en )
+		reg_scan <= ALINK_DAT_I[31] ;
 end
 
 assign reg_flush = |reg_flush_r ;
