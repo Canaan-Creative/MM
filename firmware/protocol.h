@@ -30,6 +30,7 @@
 #define AVA2_P_DIFF	17
 #define AVA2_P_REQUIRE	18
 #define AVA2_P_SET	19
+#define AVA2_P_TARGET	20
 
 #define AVA2_P_ACK		21
 #define AVA2_P_NAK		22

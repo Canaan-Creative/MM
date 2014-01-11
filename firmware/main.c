@@ -183,24 +183,12 @@ static int decode_pkg(uint8_t *p, struct mm_work *mw)
 		memcpy(&tmp, data + 8, 4);
 		set_asic_freq(tmp);
 		break;
+	case AVA2_P_TARGET:
+		memcpy(mw->target, data, AVA2_P_DATA_LEN);
+		break;
 	default:
 		break;
 	}
-
-	return 0;
-}
-
-static int test_nonce(struct mm_work *mw, struct result *ret)
-{
-#if 0
-	struct work work;
-	uint32_t nonce2, nonce;
-
-	memcpy((uint8_t *)(&nonce2), ret + 8, 4);
-	memcpy((uint8_t *)(&nonce), ret + 16, 4);
-
-	miner_gen_nonce2_work(mw, nonce2, &work);
-#endif
 
 	return 0;
 }
@@ -216,7 +204,8 @@ static int read_result(struct mm_work *mw, struct result *ret)
 #endif
 
 	alink_read_result(ret);
-	if (!test_nonce(mw, ret)) {
+	test_nonce(mw, ret);
+	{
 		memcpy(data, (uint8_t *)ret, 20);
 		memcpy(data + 20, mw->job_id, 4); /* Attach the job_id at end */
 		send_pkg(AVA2_P_NONCE, data, AVA2_P_DATA_LEN);
@@ -254,7 +243,7 @@ static int get_pkg(struct mm_work *mw)
 				send_pkg(AVA2_P_NAK, NULL, 0);
 				return 1;
 			} else {
-#if 0
+#ifdef CFG_ENABLE_ACK
 				send_pkg(AVA2_P_ACK, NULL, 0);
 #endif
 				switch (g_pkg[2]) {
