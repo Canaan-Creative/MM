@@ -31,6 +31,13 @@
 static uint8_t g_pkg[AVA2_P_COUNT];
 static uint8_t g_act[AVA2_P_COUNT];
 static int g_new_stratum = 0;
+static int g_local_work = 0;
+
+#define RET_RINGBUFFER_SIZE_RX 16
+#define RET_RINGBUFFER_MASK_RX (RET_RINGBUFFER_SIZE_RX-1)
+static uint8_t ret_buf[RET_RINGBUFFER_SIZE_RX][AVA2_P_DATA_LEN];
+static volatile unsigned int ret_produce = 0;
+static volatile unsigned int ret_consume = 0;
 
 void delay(unsigned int ms)
 {
@@ -102,6 +109,15 @@ static void send_pkg(int type, uint8_t *buf, unsigned int len)
 	uart_nwrite((char *)g_act, AVA2_P_COUNT);
 }
 
+static int polling()
+{
+	uint8_t *data = ret_buf[ret_consume];
+	ret_consume = (ret_consume + 1) & RET_RINGBUFFER_MASK_RX;
+	send_pkg(AVA2_P_NONCE, data, AVA2_P_DATA_LEN);
+
+	return 0;
+}
+
 static int decode_pkg(uint8_t *p, struct mm_work *mw)
 {
 	unsigned int expected_crc;
@@ -168,7 +184,7 @@ static int decode_pkg(uint8_t *p, struct mm_work *mw)
 		memcpy(mw->header + (idx - 1) * AVA2_P_DATA_LEN, data, AVA2_P_DATA_LEN);
 		break;
 	case AVA2_P_POLLING:
-		/* TODO: polling result base on ID */
+		polling();
 		break;
 	case AVA2_P_DIFF:
 		memcpy(&mw->diff, data, 4);
@@ -195,7 +211,7 @@ static int decode_pkg(uint8_t *p, struct mm_work *mw)
 
 static int read_result(struct mm_work *mw, struct result *ret)
 {
-	uint8_t data[AVA2_P_DATA_LEN];
+	uint8_t *data;
 	if (alink_rxbuf_empty())
 		return 0;
 
@@ -204,13 +220,19 @@ static int read_result(struct mm_work *mw, struct result *ret)
 #endif
 
 	alink_read_result(ret);
-	test_nonce(mw, ret);
-	{
+	if (test_nonce(mw, ret)) {
+		data = ret_buf[ret_produce];
+		ret_produce = (ret_produce + 1) & RET_RINGBUFFER_MASK_RX;
+
 		memcpy(data, (uint8_t *)ret, 20);
-		memcpy(data + 20, mw->job_id, 4); /* Attach the job_id at end */
+		memcpy(data + 20, mw->job_id, 4); /* Attach the job_id */
+		memcpy(data + 24, &g_local_work, 4); /* Attach the local works */
+
 		send_pkg(AVA2_P_NONCE, data, AVA2_P_DATA_LEN);
+		g_local_work = 0;
 		return 2;
-	}
+	} else
+		g_local_work++;
 
 	return 1;
 }

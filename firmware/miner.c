@@ -232,11 +232,9 @@ bool fulltest(const unsigned char *hash, const unsigned char *target)
 	bool rc = true;
 	int i;
 
-	hexdump(hash, 32);
-	hexdump(target, 32);
 	for (i = 28 / 4; i >= 0; i--) {
-		uint32_t h32tmp = hash32[i];
-		uint32_t t32tmp = target32[i];
+		uint32_t h32tmp = bswap_32(hash32[i]);
+		uint32_t t32tmp = bswap_32(target32[i]);
 
 		if (h32tmp > t32tmp) {
 			rc = false;
@@ -247,6 +245,7 @@ bool fulltest(const unsigned char *hash, const unsigned char *target)
 			break;
 		}
 	}
+
 	return rc;
 }
 
