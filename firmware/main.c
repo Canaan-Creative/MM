@@ -31,6 +31,14 @@
 static uint8_t g_pkg[AVA2_P_COUNT];
 static uint8_t g_act[AVA2_P_COUNT];
 static int g_new_stratum = 0;
+static int g_local_work = 0;
+static int g_modular_id = 0x0;	/* Default ID is B:11 */
+
+#define RET_RINGBUFFER_SIZE_RX 16
+#define RET_RINGBUFFER_MASK_RX (RET_RINGBUFFER_SIZE_RX-1)
+static uint8_t ret_buf[RET_RINGBUFFER_SIZE_RX][AVA2_P_DATA_LEN];
+static volatile unsigned int ret_produce = 0;
+static volatile unsigned int ret_consume = 0;
 
 void delay(unsigned int ms)
 {
@@ -85,6 +93,7 @@ static void encode_pkg(uint8_t *p, int type, uint8_t *buf, unsigned int len)
 		memcpy(data + 16, &tmp, 4);
 		tmp = get_voltage();
 		memcpy(data + 20, &tmp, 4);
+		memcpy(data + 24, &g_local_work, 4);
 		break;
 	default:
 		break;
@@ -100,6 +109,25 @@ static void send_pkg(int type, uint8_t *buf, unsigned int len)
 	debug32("Send: type %d\n", type);
 	encode_pkg(g_act, type, buf, len);
 	uart_nwrite((char *)g_act, AVA2_P_COUNT);
+}
+
+static void polling()
+{
+	uint8_t *data;
+
+	if (ret_consume == ret_produce) {
+		send_pkg(AVA2_P_STATUS, NULL, 0);
+
+		g_local_work = 0;
+		return;
+	}
+
+	data = ret_buf[ret_consume];
+	ret_consume = (ret_consume + 1) & RET_RINGBUFFER_MASK_RX;
+	send_pkg(AVA2_P_NONCE, data, AVA2_P_DATA_LEN);
+	g_local_work = 0;
+
+	return;
 }
 
 static int decode_pkg(uint8_t *p, struct mm_work *mw)
@@ -168,10 +196,9 @@ static int decode_pkg(uint8_t *p, struct mm_work *mw)
 		memcpy(mw->header + (idx - 1) * AVA2_P_DATA_LEN, data, AVA2_P_DATA_LEN);
 		break;
 	case AVA2_P_POLLING:
-		/* TODO: polling result base on ID */
-		break;
-	case AVA2_P_DIFF:
-		memcpy(&mw->diff, data, 4);
+		memcpy(&tmp, data, 4);
+		if (g_modular_id == tmp)
+			polling();
 		break;
 	case AVA2_P_REQUIRE:
 		break;
@@ -183,6 +210,9 @@ static int decode_pkg(uint8_t *p, struct mm_work *mw)
 		memcpy(&tmp, data + 8, 4);
 		set_asic_freq(tmp);
 		break;
+	case AVA2_P_TARGET:
+		memcpy(mw->target, data, AVA2_P_DATA_LEN);
+		break;
 	default:
 		break;
 	}
@@ -190,24 +220,9 @@ static int decode_pkg(uint8_t *p, struct mm_work *mw)
 	return 0;
 }
 
-static int test_nonce(struct mm_work *mw, struct result *ret)
-{
-#if 0
-	struct work work;
-	uint32_t nonce2, nonce;
-
-	memcpy((uint8_t *)(&nonce2), ret + 8, 4);
-	memcpy((uint8_t *)(&nonce), ret + 16, 4);
-
-	miner_gen_nonce2_work(mw, nonce2, &work);
-#endif
-
-	return 0;
-}
-
 static int read_result(struct mm_work *mw, struct result *ret)
 {
-	uint8_t data[AVA2_P_DATA_LEN];
+	uint8_t *data;
 	if (alink_rxbuf_empty())
 		return 0;
 
@@ -216,12 +231,16 @@ static int read_result(struct mm_work *mw, struct result *ret)
 #endif
 
 	alink_read_result(ret);
-	if (!test_nonce(mw, ret)) {
+	if (test_nonce(mw, ret)) {
+		data = ret_buf[ret_produce];
+		ret_produce = (ret_produce + 1) & RET_RINGBUFFER_MASK_RX;
+
 		memcpy(data, (uint8_t *)ret, 20);
-		memcpy(data + 20, mw->job_id, 4); /* Attach the job_id at end */
-		send_pkg(AVA2_P_NONCE, data, AVA2_P_DATA_LEN);
+		memcpy(data + 20, mw->job_id, 4); /* Attach the job_id */
+		memcpy(data + 24, &g_local_work, 4); /* Attach the local works */
 		return 2;
-	}
+	} else
+		g_local_work++;
 
 	return 1;
 }
@@ -247,14 +266,14 @@ static int get_pkg(struct mm_work *mw)
 			start = 0;
 			count = 2;
 
-			hexdump(g_pkg, AVA2_P_COUNT);
-
 			if (decode_pkg(g_pkg, mw)) {
 				debug32("E: package broken(crc)\n");
+#ifdef CFG_ENABLE_ACK
 				send_pkg(AVA2_P_NAK, NULL, 0);
+#endif
 				return 1;
 			} else {
-#if 0
+#ifdef CFG_ENABLE_ACK
 				send_pkg(AVA2_P_ACK, NULL, 0);
 #endif
 				switch (g_pkg[2]) {

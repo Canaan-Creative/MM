@@ -21,7 +21,7 @@
 
 static uint32_t g_asic_freq = ASIC_FREQUENCY;
 
-static void flip32(void *dest_p, const void *src_p)
+static inline void flip32(void *dest_p, const void *src_p)
 {
 	uint32_t *dest = dest_p;
 	const uint32_t *src = src_p;
@@ -31,7 +31,7 @@ static void flip32(void *dest_p, const void *src_p)
 		dest[i] = bswap_32(src[i]);
 }
 
-static void flip64(void *dest_p, const uint8_t *src_p)
+static inline void flip64(void *dest_p, const uint8_t *src_p)
 {
 	uint32_t *dest = dest_p;
 	int i;
@@ -40,6 +40,16 @@ static void flip64(void *dest_p, const uint8_t *src_p)
 		dest[i] = src_p[i * 4 + 0] | src_p[i * 4 + 1] << 8 |
 			src_p[i * 4 + 2] << 16 | src_p[i * 4 + 3] << 24;
 	}
+}
+
+static inline void flip80(void *dest_p, const void *src_p)
+{
+	uint32_t *dest = dest_p;
+	const uint32_t *src = src_p;
+	int i;
+
+	for (i = 0; i < 20; i++)
+		dest[i] = bswap_32(src[i]);
 }
 
 static void calc_midstate(struct mm_work *mw, struct work *work)
@@ -196,6 +206,7 @@ void miner_gen_nonce2_work(struct mm_work *mw, uint32_t nonce2, struct work *wor
 	flip32(swap32, data32);
 
 	memcpy(mw->header + mw->merkle_offset, merkle_root, 32);
+	memcpy(work->header, mw->header, 128);
 
 	debug32("D: Work nonce2: %08x\n", work->nonce2);
 	calc_midstate(mw, work);
@@ -212,4 +223,57 @@ void miner_gen_nonce2_work(struct mm_work *mw, uint32_t nonce2, struct work *wor
 	memcpy((uint8_t *)(&tmp32), work->e1, 4);
 	memcpy((uint8_t *)(&tmp32), work->e0, 4);
 	memcpy((uint8_t *)(&tmp32), work->a2, 4);
+}
+
+bool fulltest(const unsigned char *hash, const unsigned char *target)
+{
+	uint32_t *hash32 = (uint32_t *)hash;
+	uint32_t *target32 = (uint32_t *)target;
+	bool rc = true;
+	int i;
+
+	for (i = 28 / 4; i >= 0; i--) {
+		uint32_t h32tmp = bswap_32(hash32[i]);
+		uint32_t t32tmp = bswap_32(target32[i]);
+
+		if (h32tmp > t32tmp) {
+			rc = false;
+			break;
+		}
+		if (h32tmp < t32tmp) {
+			rc = true;
+			break;
+		}
+	}
+
+	return rc;
+}
+
+bool test_nonce(struct mm_work *mw, struct result *ret)
+{
+	/* Decode nonce2 and nonce */
+	uint32_t nonce2, nonce;
+	memcpy((uint8_t *)(&nonce2), ret->task_id + 4, 4);
+	memcpy((uint8_t *)(&nonce), ret->nonce, 4);
+	nonce -= 0x180;
+
+	/* Generate the work base on nonce2 */
+	struct work work;
+	debug32("Test: %08x %08x\n", nonce2, nonce);
+	miner_gen_nonce2_work(mw, nonce2, &work);
+
+	/* Write the nonce to block header */
+	uint32_t *work_nonce = (uint32_t *)(work.header + 64 + 12);
+	*work_nonce = bswap_32(nonce);
+
+	/* Regen hash */
+	uint32_t *data32 = (uint32_t *)(work.header);
+	unsigned char swap[80];
+	uint32_t *swap32 = (uint32_t *)swap;
+	unsigned char hash1[32];
+	flip80(swap32, data32);
+	dsha256(swap, 80, hash1);
+
+	/* Compare hash with target */
+	return fulltest(hash1, mw->target);
 }

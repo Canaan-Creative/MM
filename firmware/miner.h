@@ -28,6 +28,7 @@ struct work {
 	uint8_t a0[4];
 	uint8_t a1[4];
 	uint8_t data[44]; 	/* midstate[32] + data[12] */
+	uint8_t header[128]; 	/* Block header */
 };
 
 struct result {
@@ -55,10 +56,13 @@ struct mm_work {
 
 	uint32_t diff;
 	uint32_t pool_no;
+
+	uint8_t	target[32];
 };
 
 void miner_init_work(struct mm_work *mw, struct work *work);
 void miner_gen_nonce2_work(struct mm_work *mw, uint32_t nonce2, struct work *work);
+bool test_nonce(struct mm_work *mw, struct result *ret);
 
 void set_asic_freq(uint32_t value);
 uint32_t get_asic_freq();

@@ -7,6 +7,7 @@
 # For details see the UNLICENSE file at the root of the source tree.
 #
 
+BIN_DIR:=$(shell date +%Y-%m-%d)
 GIT_VERSION:=$(shell git rev-parse HEAD | cut -c 1-7)
 GIT_STATUS:=$(shell ([ -z "`git status -s -uno`" ] && echo 0) || echo +)
 
@@ -24,7 +25,7 @@ OBJS       := $(addsuffix .o,$(basename $(CSRCS) $(SSRCS)))
 
 BATCHFILE	:= $(shell mktemp)
 HARDWARE_NAME	= mm
-PRJ_NAME	= main
+PRJ_NAME	= mm
 
 isedir  ?= /home/Xilinx/14.6/ISE_DS/
 xil_env ?= . $(isedir)/settings$(shell getconf LONG_BIT).sh &>/dev/null
@@ -34,6 +35,9 @@ xil_env ?= . $(isedir)/settings$(shell getconf LONG_BIT).sh &>/dev/null
 
 # C rules
 all: $(PRJ_NAME).objdump $(PRJ_NAME).hexdump $(HARDWARE_NAME).bit $(HARDWARE_NAME).mcs
+	mkdir -p bin/${BIN_DIR}
+	cp $(PRJ_NAME).elf $^ bin/${BIN_DIR}
+	cd bin/${BIN_DIR} && md5sum -b * > md5sums
 
 $(PRJ_NAME).objdump: $(PRJ_NAME).elf
 	$(CROSS)objdump -D $^ > $@
