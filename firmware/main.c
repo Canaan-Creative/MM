@@ -32,6 +32,7 @@ static uint8_t g_pkg[AVA2_P_COUNT];
 static uint8_t g_act[AVA2_P_COUNT];
 static int g_new_stratum = 0;
 static int g_local_work = 0;
+static int g_modular_id = 0x0;	/* Default ID is B:11 */
 
 #define RET_RINGBUFFER_SIZE_RX 16
 #define RET_RINGBUFFER_MASK_RX (RET_RINGBUFFER_SIZE_RX-1)
@@ -195,7 +196,9 @@ static int decode_pkg(uint8_t *p, struct mm_work *mw)
 		memcpy(mw->header + (idx - 1) * AVA2_P_DATA_LEN, data, AVA2_P_DATA_LEN);
 		break;
 	case AVA2_P_POLLING:
-		polling();
+		memcpy(&tmp, data, 4);
+		if (g_modular_id == tmp)
+			polling();
 		break;
 	case AVA2_P_REQUIRE:
 		break;
