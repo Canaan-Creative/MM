@@ -73,6 +73,8 @@ static void encode_pkg(uint8_t *p, int type, uint8_t *buf, unsigned int len)
 	p[4] = 1;
 
 	data = p + 5;
+	memcpy(data + 28, &g_modular_id, 4); /* Attach the modular_id at end */
+
 	switch(type) {
 	case AVA2_P_ACKDETECT:
 		memcpy(data, buf, len);
@@ -239,7 +241,7 @@ static int read_result(struct mm_work *mw, struct result *ret)
 		memcpy(data, (uint8_t *)ret, 20);
 		memcpy(data + 20, mw->job_id, 4); /* Attach the job_id */
 		memcpy(data + 24, &g_local_work, 4); /* Attach the local works */
-		memcpy(data + 28, &g_modular_id, 4); /* Attach the local works */
+		memcpy(data + 28, &g_modular_id, 4); /* Attach the modular_id at end */
 		return 2;
 	} else
 		g_local_work++;
@@ -251,6 +253,7 @@ static int get_pkg(struct mm_work *mw)
 {
 	static char pre_last, last;
 	static int start = 0, count = 2;
+	int tmp;
 
 	while (1) {
 		if (!uart_read_nonblock() && !start)
@@ -280,7 +283,9 @@ static int get_pkg(struct mm_work *mw)
 #endif
 				switch (g_pkg[2]) {
 				case AVA2_P_DETECT:
-					send_pkg(AVA2_P_ACKDETECT, (uint8_t *)MM_VERSION, MM_VERSION_LEN);
+					memcpy(&tmp, g_pkg + 5, 4);
+					if (g_modular_id == tmp)
+						send_pkg(AVA2_P_ACKDETECT, (uint8_t *)MM_VERSION, MM_VERSION_LEN);
 					break;
 				case AVA2_P_REQUIRE:
 					send_pkg(AVA2_P_STATUS, NULL, 0);
