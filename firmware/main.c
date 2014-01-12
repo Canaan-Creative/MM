@@ -32,7 +32,7 @@ static uint8_t g_pkg[AVA2_P_COUNT];
 static uint8_t g_act[AVA2_P_COUNT];
 static int g_new_stratum = 0;
 static int g_local_work = 0;
-static int g_modular_id = 0x0;	/* Default ID is B:11 */
+static int g_modular_id = 0;	/* Default ID is B:11 */
 
 #define RET_RINGBUFFER_SIZE_RX 16
 #define RET_RINGBUFFER_MASK_RX (RET_RINGBUFFER_SIZE_RX-1)
@@ -284,7 +284,7 @@ static int get_pkg(struct mm_work *mw)
 					send_pkg(AVA2_P_STATUS, NULL, 0);
 					break;
 				case AVA2_P_SET:
-					mw->nonce2 = 0;
+					mw->nonce2 = (0xffffffff / 3) * g_modular_id;
 					g_new_stratum = 1;
 					debug32("D: Stratum finished(%d)\n", g_new_stratum);
 					break;
