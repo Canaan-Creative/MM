@@ -325,7 +325,6 @@ assign WBM1_ERR_I = (selected == 2'd2 ? WBS_ERR_O : 0);
 assign WBM1_RTY_I = (selected == 2'd2 ? WBS_RTY_O : 0);
 
 endmodule
-
 `include "../components/lm32_top/lm32_functions.v" // for clogb2_v1
 `include "../components/lm32_top/lm32_include.v" // for {IROM,DRAM}_ADDR_WIDTH
 `include "../components/lm32_top/lm32_include_all.v"
@@ -350,6 +349,13 @@ endmodule
 `include "../components/twi/twi.v"
 `include "../components/twi/shift.v"
 `include "../components/twi/twi_core.v"
+
+`include "../components/uart_pro/async_receiver.v"
+`include "../components/uart_pro/async_transmitter.v"
+`include "../components/uart_pro/uart_pro_define.v"
+`include "../components/uart_pro/uart_pro.v"
+`include "../components/uart_pro/uart_txc.v"
+
 //module superkdf9_simple ( 
 module mm ( 
   ex_clk_i
@@ -361,6 +367,7 @@ module mm (
 , INT
 , uartSIN_led
 , uartSOUT_led
+, NONCE_led
 
 , uartRXRDY_N
 , uartTXRDY_N
@@ -520,10 +527,18 @@ wire uart_debugINTR;
 input  uart_debugSIN;
 output  uart_debugSOUT;
 //alink
-output [31:0] TX_P ;
-output [31:0] TX_N ;
-input  [31:0] RX_P ;
-input  [31:0] RX_N ;
+output [`PHY_NUM-1:0] TX_P ;
+output [`PHY_NUM-1:0] TX_N ;
+input  [`PHY_NUM-1:0] RX_P ;
+input  [`PHY_NUM-1:0] RX_N ;
+
+output [4:0] NONCE_led ;
+wire [4:0] ALINK_led ;
+assign NONCE_led[0] = (~(RX_P[0] & RX_N[0] & RX_P[1] & RX_N[1])) | ALINK_led[0] ;
+assign NONCE_led[1] = (~(RX_P[2] & RX_N[2] & RX_P[3] & RX_N[3])) | ALINK_led[1] ;
+assign NONCE_led[2] = (~(RX_P[4] & RX_N[4] & RX_P[5] & RX_N[5])) | ALINK_led[2] ;
+assign NONCE_led[3] = (~(RX_P[6] & RX_N[6] & RX_P[7] & RX_N[7])) | ALINK_led[3] ;
+assign NONCE_led[4] = (~(RX_P[8] & RX_N[8] & RX_P[9] & RX_N[9])) | ALINK_led[4] ;
 
 //sha core
 wire [31:0] shaSHA_DAT_O;
@@ -815,6 +830,8 @@ assign uartUART_en = (SHAREDBUS_ADR_I[31:4] == 28'b1000000000000000000000010000)
 wire uartSOUT_w ;
 assign uartSOUT = uartSOUT_w ;
 assign uartSOUT_PIN = uartSOUT_w ;
+
+`ifndef UART_PRO_EN
 uart_core 
 #(
 .UART_WB_DAT_WIDTH(8),
@@ -850,6 +867,33 @@ uart_core
 .TXRDY_N(uartTXRDY_N),
 .INTR(uartINTR),
 .CLK(clk_i), .RESET(sys_reset));
+`else
+uart_pro U_uart_pro(
+	// system clock and reset
+/*input         */.CLK_I      (clk_i                        ) ,
+/*input         */.RST_I      (sys_reset                    ) ,
+
+// wishbone interface signals
+/*input         */.PRO_CYC_I  (SHAREDBUS_CYC_I & uartUART_en) ,//NC
+/*input         */.PRO_STB_I  (SHAREDBUS_STB_I & uartUART_en) ,
+/*input         */.PRO_WE_I   (SHAREDBUS_WE_I               ) ,
+/*input         */.PRO_LOCK_I (SHAREDBUS_LOCK_I             ) ,//NC
+/*input  [2:0]  */.PRO_CTI_I  (SHAREDBUS_CTI_I              ) ,//NC
+/*input  [1:0]  */.PRO_BTE_I  (SHAREDBUS_BTE_I              ) ,//NC
+/*input  [5:0]  */.PRO_ADR_I  (SHAREDBUS_ADR_I[3:0]         ) ,
+/*input  [31:0] */.PRO_DAT_I  (uartUART_DAT_I[7:0]          ) ,
+/*input  [3:0]  */.PRO_SEL_I  (uartUART_SEL_I               ) ,
+/*output reg    */.PRO_ACK_O  (uartUART_ACK_O               ) ,
+/*output        */.PRO_ERR_O  (uartUART_ERR_O               ) ,//const 0
+/*output        */.PRO_RTY_O  (uartUART_RTY_O               ) ,//const 0
+/*output [31:0] */.PRO_DAT_O  (uartUART_DAT_O[7:0]          ) ,
+
+//Uart Pro interface
+/*input         */.PRO_RX     (uartSIN&uartSIN_PIN          ) ,	
+/*output        */.PRO_TX     (uartSOUT_w                   ) ,
+/*output        */.PRO_INT    (uartINTR                     ) 	
+);
+`endif
 
 
 wire [31:0] spiSPI_DAT_I;
@@ -1025,7 +1069,8 @@ alink alink(
 /*output [31:0] */ .TX_N        (TX_N                            ) ,
 //RX.PHY                                                         
 /*input  [31:0] */ .RX_P        (RX_P                            ) ,
-/*input  [31:0] */ .RX_N        (RX_N                            )
+/*input  [31:0] */ .RX_N        (RX_N                            ) ,
+/*output [4:0]  */ .ALINK_led   (ALINK_led                       )
 );
 
 
