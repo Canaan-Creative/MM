@@ -37,7 +37,7 @@ int alink_busy_status()
 int alink_txbuf_full()
 {
 	uint32_t value = LM32_ALINK_STATE_TXFULL & readl(&alink->state);
-	debug32("D: tx full %d\n", value);
+	debug32("TX: full %d\n", value);
 	return value;
 }
 
@@ -151,7 +151,7 @@ void send_test_work(int value)
 	uint32_t msg_blk[23];
 	int i;
 
-	debug32("Send test task:\n");
+	debug32("Task: send\n");
 	msg_blk[22]=0x220f1dbd;	/* a2 */
 
 	msg_blk[21]=0xd8f8ef67;	/* Midstat */
@@ -191,10 +191,10 @@ void alink_buf_status()
 	uint32_t value;
 
 	value = readl(&alink->busy);
-	debug32("D: PHY busy: %08x,", value);
+	debug32("Alink: B: %08x,", value);
 
 	value = readl(&alink->state);
-	debug32(" state: %08x (tx: %d, rx: %d(%d))\n",
+	debug32(" S: %08x (tx: %d, rx: %d(%d))\n",
 		value,
 		((value & LM32_ALINK_STATE_TXCOUNT) >> 4),
 		((value & LM32_ALINK_STATE_RXCOUNT) >> 20),

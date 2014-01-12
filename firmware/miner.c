@@ -208,7 +208,7 @@ void miner_gen_nonce2_work(struct mm_work *mw, uint32_t nonce2, struct work *wor
 	memcpy(mw->header + mw->merkle_offset, merkle_root, 32);
 	memcpy(work->header, mw->header, 128);
 
-	debug32("D: Work nonce2: %08x\n", work->nonce2);
+	debug32("Work: nonce2 %08x\n", work->nonce2);
 	calc_midstate(mw, work);
 
 	memcpy(work_t, work->data, 44);

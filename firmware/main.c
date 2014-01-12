@@ -108,7 +108,7 @@ static void encode_pkg(uint8_t *p, int type, uint8_t *buf, unsigned int len)
 
 static void send_pkg(int type, uint8_t *buf, unsigned int len)
 {
-	debug32("Send: type %d\n", type);
+	debug32("Send: %d\n", type);
 	encode_pkg(g_act, type, buf, len);
 	uart_nwrite((char *)g_act, AVA2_P_COUNT);
 }
@@ -144,14 +144,14 @@ static int decode_pkg(uint8_t *p, struct mm_work *mw)
 	idx = p[3];
 	cnt = p[4];
 
-	debug32("Decode: %d: %d/%d\n", p[2], idx, cnt);
+	debug32("Decode: %d %d/%d\n", p[2], idx, cnt);
 
 	expected_crc = (p[AVA2_P_COUNT - 1] & 0xff) |
 		((p[AVA2_P_COUNT - 2] & 0xff) << 8);
 
 	actual_crc = crc16(data, AVA2_P_DATA_LEN);
 	if(expected_crc != actual_crc) {
-		debug32("PKG CRC failed (expected %08x, got %08x)\n",
+		debug32("PKG: CRC failed (W %08x, R %08x)\n",
 			expected_crc, actual_crc);
 		return 1;
 	}
@@ -183,7 +183,6 @@ static int decode_pkg(uint8_t *p, struct mm_work *mw)
 		break;
 	case AVA2_P_JOB_ID:
 		memcpy(mw->job_id, data, 4);
-		debug32("D: Job ID\n");
 		hexdump(mw->job_id, 4);
 		break;
 	case AVA2_P_COINBASE:
@@ -199,7 +198,7 @@ static int decode_pkg(uint8_t *p, struct mm_work *mw)
 		break;
 	case AVA2_P_POLLING:
 		memcpy(&tmp, data, 4);
-		debug32("D: ID: %d-%d\n", g_modular_id, tmp);
+		debug32("ID: %d-%d\n", g_modular_id, tmp);
 		if (g_modular_id == tmp)
 			polling();
 		break;
@@ -272,7 +271,6 @@ static int get_pkg(struct mm_work *mw)
 			count = 2;
 
 			if (decode_pkg(g_pkg, mw)) {
-				debug32("E: package broken(crc)\n");
 #ifdef CFG_ENABLE_ACK
 				send_pkg(AVA2_P_NAK, NULL, 0);
 #endif
@@ -293,7 +291,7 @@ static int get_pkg(struct mm_work *mw)
 				case AVA2_P_SET:
 					mw->nonce2 = (0xffffffff / 3) * g_modular_id;
 					g_new_stratum = 1;
-					debug32("D: Stratum finished(%d)\n", g_new_stratum);
+					debug32("Hashing (%d)\n", g_new_stratum);
 					break;
 				default:
 					break;
@@ -332,7 +330,7 @@ int main(int argv, char **argc)
 	irq_enable(1);
 
 	uart_init();
-	debug32("MM - %s\n", MM_VERSION);
+	debug32("%d:MM-%s\n", g_modular_id, MM_VERSION);
 
 	alink_init(0x3ff);	/* Enable 10 miners */
 
