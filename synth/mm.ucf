@@ -69,32 +69,46 @@ NET   "RX_N[9]"	LOC = G3;
 NET   "TX_N[9]"	LOC = M4 | SLEW = QUIETIO;
 NET   "TX_P[9]"	LOC = L1 | SLEW = QUIETIO;
 
-NET   "SFT_SHCP" LOC = K16 ;
-NET   "SFT_DS" LOC = M15 ;
-NET   "SFT_STCP" LOC = K15 ;
-NET   "SFT_MR_N" LOC = K14 ;                                                                        
-NET   "SFT_OE_N" LOC = L16 ;
+NET   "SFT_SHCP" LOC = K16;
+NET   "SFT_DS" LOC = M15;
+NET   "SFT_STCP" LOC = K15;
+NET   "SFT_MR_N" LOC = K14;                                                                        
+NET   "SFT_OE_N" LOC = L16;
 
-NET   "FAN_IN0" LOC = A6 ;
-NET   "FAN_IN1" LOC = A7 ;
+NET   "FAN_IN0" LOC = A6;
+NET   "FAN_IN1" LOC = A7;
 
 # LED gpioPIO_BOTH_OUT
-NET "gpioPIO_BOTH_OUT[0]" LOC = B12 | SLEW = QUIETIO;
-NET "gpioPIO_BOTH_OUT[1]" LOC = A11 | SLEW = QUIETIO;
-NET "gpioPIO_BOTH_OUT[2]" LOC = B10 | SLEW = QUIETIO;
-NET "gpioPIO_BOTH_OUT[3]" LOC = A10 | SLEW = QUIETIO;
-NET "gpioPIO_BOTH_OUT[4]" LOC = B14 | SLEW = QUIETIO;
-#ID
-NET "gpioPIO_BOTH_OUT[5]" LOC = A14 | SLEW = QUIETIO;
-NET "gpioPIO_BOTH_OUT[6]" LOC = C9 | SLEW = QUIETIO;
+#                      SIN         
+#                      |   SOUT
+#                      |   |   GPIO0
+#                      |   |   |
+# B12 A11 B10 A10 B14 B16 C16 D16
+#  |   |   |   |   |
+#  |   |   |   |   NONCE89
+#  |   |   |   NONCE67
+#  |   |   NONCE45
+#  |   NONCE23
+#  NONCE01
 
-NET "INT" LOC = B16 | SLEW = QUIETIO;
-NET "uartSIN_led" LOC = C16 | SLEW = QUIETIO;
-NET "uartSOUT_led" LOC = D16 | SLEW = QUIETIO;
+NET "NONCE_led[0]" LOC = B12 | SLEW = QUIETIO;
+NET "NONCE_led[1]" LOC = A11 | SLEW = QUIETIO;
+NET "NONCE_led[2]" LOC = B10 | SLEW = QUIETIO;
+NET "NONCE_led[3]" LOC = A10 | SLEW = QUIETIO;
+NET "NONCE_led[4]" LOC = B14 | SLEW = QUIETIO;
+
+NET "uartSIN_led" LOC = B16 | SLEW = QUIETIO;
+NET "uartSOUT_led" LOC = C16 | SLEW = QUIETIO;
+
+NET "gpioPIO_BOTH_OUT[0]" LOC = D16 | SLEW = QUIETIO;
+
+#GPIO read ID
+NET "gpioPIO_BOTH_OUT[4]" LOC = A14 | SLEW = QUIETIO;
+NET "gpioPIO_BOTH_OUT[5]" LOC = C9 | SLEW = QUIETIO;
 
 
-NET "TWI_SCL" LOC = D3 ;
-NET "TWI_SDA" LOC = E4 ;
+NET "TWI_SCL" LOC = D3;
+NET "TWI_SDA" LOC = E4;
 
 # SPI Flash: W25Q80BV
 NET "POWER_ON" LOC = T3 | SLEW = QUIETIO;
