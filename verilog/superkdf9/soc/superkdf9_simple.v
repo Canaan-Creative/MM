@@ -350,12 +350,13 @@ endmodule
 `include "../components/twi/shift.v"
 `include "../components/twi/twi_core.v"
 
+`ifdef UART_PRO_EN
 `include "../components/uart_pro/async_receiver.v"
 `include "../components/uart_pro/async_transmitter.v"
 `include "../components/uart_pro/uart_pro_define.v"
 `include "../components/uart_pro/uart_pro.v"
 `include "../components/uart_pro/uart_txc.v"
-
+`endif
 //module superkdf9_simple ( 
 module mm ( 
   ex_clk_i
