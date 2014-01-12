@@ -197,6 +197,7 @@ static int decode_pkg(uint8_t *p, struct mm_work *mw)
 		break;
 	case AVA2_P_POLLING:
 		memcpy(&tmp, data, 4);
+		debug32("D: ID: %d-%d\n", g_modular_id, tmp);
 		if (g_modular_id == tmp)
 			polling();
 		break;
@@ -238,6 +239,7 @@ static int read_result(struct mm_work *mw, struct result *ret)
 		memcpy(data, (uint8_t *)ret, 20);
 		memcpy(data + 20, mw->job_id, 4); /* Attach the job_id */
 		memcpy(data + 24, &g_local_work, 4); /* Attach the local works */
+		memcpy(data + 28, &g_modular_id, 4); /* Attach the local works */
 		return 2;
 	} else
 		g_local_work++;
