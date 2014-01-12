@@ -65,7 +65,7 @@ reflash: $(HARDWARE_NAME).mcs
 	echo identify		>> $(BATCHFILE)
 	echo attachFlash -p 1 -spi W25Q80BV		>> $(BATCHFILE)
 	echo assignfiletoattachedflash -p 1 -file $<	>> $(BATCHFILE)
-	echo program -p 1 -dataWidth 4 -spionly -e -v -loadfpga >> $(BATCHFILE)
+	echo program -p 1 -dataWidth 4 -spionly -erase -loadfpga >> $(BATCHFILE)
 	echo exit		>> $(BATCHFILE)
 	$(xil_env) && impact -batch $(BATCHFILE)
 	@rm -f $(BATCHFILE)
