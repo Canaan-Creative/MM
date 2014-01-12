@@ -54,7 +54,7 @@ static void led(uint8_t value)
 {
 	volatile uint32_t *gpio = (uint32_t *)GPIO_BASE;
 
-	writel(value << 24, gpio);
+	writel(value & 0x1, gpio);
 }
 
 static void encode_pkg(uint8_t *p, int type, uint8_t *buf, unsigned int len)
@@ -311,8 +311,6 @@ int main(int argv, char **argc)
 	struct work work;
 	struct result result;
 
-	led(0);
-
 	delay(60);		/* Delay 60ms, wait for alink ready */
 	alink_flush_fifo();
 	set_voltage(0x8a00);	/* Configure the power supply for ASICs
@@ -341,7 +339,6 @@ int main(int argv, char **argc)
 		if (!g_new_stratum)
 			continue;
 
-		led(0x2);
 		if (alink_txbuf_count() < (24 * 5)) {
 			miner_gen_nonce2_work(&mm_work, mm_work.nonce2, &work);
 			get_pkg(&mm_work);
@@ -353,7 +350,6 @@ int main(int argv, char **argc)
 			alink_send_work(&work);
 		}
 
-		led(0x4);
 		while (read_result(&mm_work, &result)) {
 			get_pkg(&mm_work);
 			if (!g_new_stratum)
@@ -367,6 +363,5 @@ int main(int argv, char **argc)
 		led(0);
 	}
 
-	led(0x1f);
 	return 0;
 }
