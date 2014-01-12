@@ -54,7 +54,7 @@ static void led(uint8_t value)
 {
 	volatile uint32_t *gpio = (uint32_t *)GPIO_BASE;
 
-	writel(value & 0x1, gpio);
+	writel(value << 24, gpio);
 }
 
 static void encode_pkg(uint8_t *p, int type, uint8_t *buf, unsigned int len)
