@@ -251,33 +251,29 @@ bool fulltest(const unsigned char *hash, const unsigned char *target)
 
 bool test_nonce(struct mm_work *mw, struct result *ret)
 {
-	/* Generate the work base on nonce2 */
-	struct work work;
+	/* Decode nonce2 and nonce */
 	uint32_t nonce2, nonce;
-
 	memcpy((uint8_t *)(&nonce2), ret->task_id + 4, 4);
 	memcpy((uint8_t *)(&nonce), ret->nonce, 4);
 	nonce -= 0x180;
 
-
+	/* Generate the work base on nonce2 */
+	struct work work;
 	debug32("Test: %08x %08x\n", nonce2, nonce);
 	miner_gen_nonce2_work(mw, nonce2, &work);
-
 
 	/* Write the nonce to block header */
 	uint32_t *work_nonce = (uint32_t *)(work.header + 64 + 12);
 	*work_nonce = bswap_32(nonce);
-
 
 	/* Regen hash */
 	uint32_t *data32 = (uint32_t *)(work.header);
 	unsigned char swap[80];
 	uint32_t *swap32 = (uint32_t *)swap;
 	unsigned char hash1[32];
-
 	flip80(swap32, data32);
 	dsha256(swap, 80, hash1);
-	/* Regen hash end */
 
+	/* Compare hash with target */
 	return fulltest(hash1, mw->target);
 }
