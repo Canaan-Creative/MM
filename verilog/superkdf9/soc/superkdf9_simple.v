@@ -535,23 +535,17 @@ input  [`PHY_NUM-1:0] RX_N ;
 
 output [4:0] NONCE_led ;
 wire [4:0] ALINK_led ;
+reg [4:0] NONCE_led_f ;
 reg [4:0] NONCE_led_r ;
 wire [4:0] NONCE_led_w ;
 
-always @ (negedge NONCE_led_w[0])begin
-	NONCE_led_r[0] <= ~NONCE_led_r[0];
-end
-always @ (negedge NONCE_led_w[1])begin
-	NONCE_led_r[1] <= ~NONCE_led_r[1];
-end
-always @ (negedge NONCE_led_w[2])begin
-	NONCE_led_r[2] <= ~NONCE_led_r[2];
-end
-always @ (negedge NONCE_led_w[3])begin
-	NONCE_led_r[3] <= ~NONCE_led_r[3];
-end
-always @ (negedge NONCE_led_w[4])begin
-	NONCE_led_r[4] <= ~NONCE_led_r[4];
+always @ (posedge clk_i)begin
+	NONCE_led_f <= NONCE_led_w ;
+	NONCE_led_r[0] <= NONCE_led_w[0]&~NONCE_led_f[0] ? ~NONCE_led_r[0] : NONCE_led_r[0];
+	NONCE_led_r[1] <= NONCE_led_w[1]&~NONCE_led_f[1] ? ~NONCE_led_r[1] : NONCE_led_r[1];
+	NONCE_led_r[2] <= NONCE_led_w[2]&~NONCE_led_f[2] ? ~NONCE_led_r[2] : NONCE_led_r[2];
+	NONCE_led_r[3] <= NONCE_led_w[3]&~NONCE_led_f[3] ? ~NONCE_led_r[3] : NONCE_led_r[3];
+	NONCE_led_r[4] <= NONCE_led_w[4]&~NONCE_led_f[4] ? ~NONCE_led_r[4] : NONCE_led_r[4];
 end
 
 assign NONCE_led_w[0] = RX_P[0] & RX_N[0] & RX_P[1] & RX_N[1];
