@@ -482,9 +482,9 @@ wire   uartUART_RTY_O;
 wire uartUART_en;
 wire uartINTR;
 input  uartSIN;
-output  uartSOUT;
+inout  uartSOUT;
 input   uartSIN_PIN;
-output  uartSOUT_PIN;
+inout   uartSOUT_PIN;
 output  INT;
 
 output  uartRESET_N;
@@ -496,7 +496,7 @@ output  uartSIN_led;
 output  uartSOUT_led;
 
 assign  uartSIN_led = ~uartSIN ;
-assign  uartSOUT_led= ~uartSOUT;
+assign  uartSOUT_led= ~uartSOUT_w;
 
 
 wire [31:0] spiSPI_DAT_O;
@@ -829,8 +829,8 @@ assign uartUART_SEL_I = ((
 	SHAREDBUS_ADR_I[1:0] == 2'b10) ? SHAREDBUS_SEL_I[1] : SHAREDBUS_SEL_I[0])));
 assign uartUART_en = (SHAREDBUS_ADR_I[31:4] == 28'b1000000000000000000000010000);
 wire uartSOUT_w ;
-assign uartSOUT = uartSOUT_w ;
-assign uartSOUT_PIN = uartSOUT_w ;
+assign uartSOUT     = uartSOUT_w ? 1'bz : 1'b0;
+assign uartSOUT_PIN = uartSOUT_w ? 1'bz : 1'b0;
 
 `ifndef UART_PRO_EN
 uart_core 
