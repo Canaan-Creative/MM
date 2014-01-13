@@ -535,11 +535,36 @@ input  [`PHY_NUM-1:0] RX_N ;
 
 output [4:0] NONCE_led ;
 wire [4:0] ALINK_led ;
-assign NONCE_led[0] = (~(RX_P[0] & RX_N[0] & RX_P[1] & RX_N[1])) | ALINK_led[0] ;
-assign NONCE_led[1] = (~(RX_P[2] & RX_N[2] & RX_P[3] & RX_N[3])) | ALINK_led[1] ;
-assign NONCE_led[2] = (~(RX_P[4] & RX_N[4] & RX_P[5] & RX_N[5])) | ALINK_led[2] ;
-assign NONCE_led[3] = (~(RX_P[6] & RX_N[6] & RX_P[7] & RX_N[7])) | ALINK_led[3] ;
-assign NONCE_led[4] = (~(RX_P[8] & RX_N[8] & RX_P[9] & RX_N[9])) | ALINK_led[4] ;
+reg [4:0] NONCE_led_r ;
+wire [4:0] NONCE_led_w ;
+
+always @ (negedge NONCE_led_w[0])begin
+	NONCE_led_r[0] <= ~NONCE_led_r[0];
+end
+always @ (negedge NONCE_led_w[1])begin
+	NONCE_led_r[1] <= ~NONCE_led_r[1];
+end
+always @ (negedge NONCE_led_w[2])begin
+	NONCE_led_r[2] <= ~NONCE_led_r[2];
+end
+always @ (negedge NONCE_led_w[3])begin
+	NONCE_led_r[3] <= ~NONCE_led_r[3];
+end
+always @ (negedge NONCE_led_w[4])begin
+	NONCE_led_r[4] <= ~NONCE_led_r[4];
+end
+
+assign NONCE_led_w[0] = RX_P[0] & RX_N[0] & RX_P[1] & RX_N[1];
+assign NONCE_led_w[1] = RX_P[2] & RX_N[2] & RX_P[3] & RX_N[3];
+assign NONCE_led_w[2] = RX_P[4] & RX_N[4] & RX_P[5] & RX_N[5];
+assign NONCE_led_w[3] = RX_P[6] & RX_N[6] & RX_P[7] & RX_N[7];
+assign NONCE_led_w[4] = RX_P[8] & RX_N[8] & RX_P[9] & RX_N[9];
+
+assign NONCE_led[0] = NONCE_led_r[0] || ALINK_led[0] ;
+assign NONCE_led[1] = NONCE_led_r[1] || ALINK_led[1] ;
+assign NONCE_led[2] = NONCE_led_r[2] || ALINK_led[2] ;
+assign NONCE_led[3] = NONCE_led_r[3] || ALINK_led[3] ;
+assign NONCE_led[4] = NONCE_led_r[4] || ALINK_led[4] ;
 
 //sha core
 wire [31:0] shaSHA_DAT_O;
