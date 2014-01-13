@@ -316,10 +316,10 @@ static void read_modular_id()
 {
 	uint32_t value;
 
-	writel(0x00000000, &gpio->tri); /* Mark GPIO[4] GPIO[5] as input */
+	writel(0x01000000, &gpio->tri); /* Mark GPIO[4] GPIO[5] as input */
 	value = readl(&gpio->value);
 
-	g_modular_id = (value >> 28) & 0x3;
+	g_modular_id = 0; /* (value >> 28) & 0x3; */
 }
 
 int main(int argv, char **argc)
@@ -341,14 +341,14 @@ int main(int argv, char **argc)
 	irq_setmask(0);
 	irq_enable(1);
 
+	read_modular_id();
+
 	uart_init();
 	debug32("%d:MM-%s\n", g_modular_id, MM_VERSION);
 
 	alink_init(0x3ff);	/* Enable 10 miners */
 
 	adjust_fan(0);		/* Set the fan to 100% */
-
-	read_modular_id();
 
 	g_new_stratum = 0;
 	/* FIXME: Should we ask for new stratum? */
