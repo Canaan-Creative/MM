@@ -25,6 +25,8 @@
 #define IRQ_UART		(0x00000008) /* 3 */
 #define IRQ_UARTDEBUG		(0x00000010) /* 4 */
 
+#define IRQ_TIMER0		(0x00000020) /* 5 */
+#define IRQ_TIMER1		(0x00000040) /* 6 */
 
 /* Registers */
 #define SPI_BASE		(0x80000000)
