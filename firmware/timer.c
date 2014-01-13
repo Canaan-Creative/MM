@@ -9,6 +9,7 @@
 #include "system_config.h"
 #include "io.h"
 #include "timer.h"
+#include "intr.h"
 
 static struct lm32_timer *tim = (struct lm32_timer *)TIMER_BASE;
 
@@ -57,10 +58,31 @@ uint32_t timer_read(unsigned char timer)
 	return tmp;
 }
 
-void timer_int_clean()
+void timer_int_clean(unsigned char timer)
 {
 	unsigned int tmp;
-	tmp = readl(&tim->reg) & 0x20002;	/*read timer int mask*/
-	tmp = tmp | 0x01000100;	/* clean */
+	if (timer == 0) {
+		tmp = readl(&tim->reg) & 0x00002;	/*read timer int mask*/
+		tmp = tmp | 0x00000100;	/* clean */
+	} else {
+		tmp = readl(&tim->reg) & 0x20000;	/*read timer int mask*/
+		tmp = tmp | 0x01000000;	/* clean */
+	}
 	writel(tmp, &tim->reg);
+}
+
+void timer0_isr(void)
+{
+	/* DO SOMETHING */
+
+	timer_int_clean(0);
+	irq_ack(IRQ_TIMER0);
+}
+
+void timer1_isr(void)
+{
+	/* DO SOMETHING */
+
+	timer_int_clean(1);
+	irq_ack(IRQ_TIMER0);
 }

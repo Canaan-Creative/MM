@@ -10,6 +10,7 @@
 #include "system_config.h"
 
 #include "uart.h"
+#include "timer.h"
 
 void isr(void)
 {
@@ -19,4 +20,10 @@ void isr(void)
 
 	if (irqs & IRQ_UART)
 		uart_isr();
+
+	if (irqs & IRQ_TIMER0)
+		timer0_isr();
+
+	if (irqs & IRQ_TIMER1)
+		timer1_isr();
 }

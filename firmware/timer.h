@@ -11,6 +11,8 @@
 
 #include <stdint.h>
 
+void timer0_isr(void);
+void timer1_isr(void);
 void timer_mask_set(unsigned char timer);
 void timer_mask_clean(unsigned char timer);
 void timer_set(unsigned char timer, unsigned char load);

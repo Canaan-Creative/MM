@@ -117,6 +117,8 @@ static void polling()
 {
 	uint8_t *data;
 
+	timer_set(0, 2);
+
 	if (ret_consume == ret_produce) {
 		send_pkg(AVA2_P_STATUS, NULL, 0);
 
@@ -339,7 +341,7 @@ int main(int argv, char **argc)
 	g_new_stratum = 0;
 	/* FIXME: Should we ask for new stratum? */
 	while (1) {
-		led(0x1);
+		led(0);
 		get_pkg(&mm_work);
 		if (!g_new_stratum)
 			continue;
@@ -361,12 +363,14 @@ int main(int argv, char **argc)
 				break;
 		}
 
-		/* TODO:
-		 *   Send out heatbeat information every 2 seconds */
+		if (!timer_read(0)) {
+			;	/* FIXME:  */
+		}
 
 		wdg_feed((CPU_FREQUENCY / 1000) * 2);
-		led(0);
+		led(1);
 	}
 
+	led(1);
 	return 0;
 }
