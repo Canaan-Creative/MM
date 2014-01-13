@@ -10,9 +10,11 @@ NET "ex_clk_o" LOC = A9;
 # UART <-> FT232
 NET "uartSIN"  LOC = C8; # FT232's TX
 NET "uartSOUT" LOC = A12; # FT232's RX
+NET "uartSOUT" PULLUP; # FT232's RX
 
 NET "uartSIN_PIN"  LOC = F16; # FT232's TX
 NET "uartSOUT_PIN" LOC = F15; # FT232's RX
+NET "uartSOUT_PIN" PULLUP; # FT232's RX
 
 # UART debug
 NET "uart_debugSIN" LOC = E16;
