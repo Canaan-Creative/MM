@@ -40,6 +40,8 @@ static uint8_t ret_buf[RET_RINGBUFFER_SIZE_RX][AVA2_P_DATA_LEN];
 static volatile unsigned int ret_produce = 0;
 static volatile unsigned int ret_consume = 0;
 
+static struct lm32_gpio *gpio = (struct lm32_gpio *)GPIO_BASE;
+
 void delay(unsigned int ms)
 {
 	unsigned int i;
@@ -50,11 +52,9 @@ void delay(unsigned int ms)
 	}
 }
 
-static void led(uint8_t value)
+static inline void led(uint8_t value)
 {
-	volatile uint32_t *gpio = (uint32_t *)GPIO_BASE;
-
-	writel(value << 24, gpio);
+	writel(value << 24, &gpio->value);
 }
 
 static void encode_pkg(uint8_t *p, int type, uint8_t *buf, unsigned int len)
@@ -312,6 +312,16 @@ static int get_pkg(struct mm_work *mw)
 	return 0;
 }
 
+static void read_modular_id()
+{
+	uint32_t value;
+
+	writel(0x00000000, &gpio->tri); /* Mark GPIO[4] GPIO[5] as input */
+	value = readl(&gpio->value);
+
+	g_modular_id = (value >> 28) & 0x3;
+}
+
 int main(int argv, char **argc)
 {
 	struct mm_work mm_work;
@@ -337,6 +347,8 @@ int main(int argv, char **argc)
 	alink_init(0x3ff);	/* Enable 10 miners */
 
 	adjust_fan(0);		/* Set the fan to 100% */
+
+	read_modular_id();
 
 	g_new_stratum = 0;
 	/* FIXME: Should we ask for new stratum? */

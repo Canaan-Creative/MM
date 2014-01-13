@@ -40,6 +40,11 @@
 #define TIMER_BASE		(0x80000620)
 
 
+struct lm32_gpio {
+	volatile unsigned int value;
+	volatile unsigned int tri;
+};
+
 /* UART */
 #define LM32_UART_IER_RBRI	(1 << 0)
 #define LM32_UART_IER_THRI	(1 << 1)
