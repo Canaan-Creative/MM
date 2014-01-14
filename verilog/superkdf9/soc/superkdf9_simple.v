@@ -921,6 +921,7 @@ assign spiSPI_DAT_I = SHAREDBUS_DAT_I[31:0];
 wire [3:0] spiSPI_SEL_I;
 assign spiSPI_SEL_I = SHAREDBUS_SEL_I;
 assign spiSPI_en = (SHAREDBUS_ADR_I[31:8] == 24'b100000000000000000000000);
+`ifdef SPI_EN
 spi 
 #(
 .MASTER(1),
@@ -952,14 +953,24 @@ spi
 .SCLK_MASTER(spiSCLK_MASTER),
 .SPI_INT_O(spiSPI_INT_O),
 .CLK_I(clk_i), .RST_I(sys_reset));
-
+`else
+assign spiSPI_DAT_O  = 'b0;
+assign spiSPI_ACK_O  = 'b0;
+assign spiSPI_ERR_O  = 'b0;
+assign spiSPI_RTY_O  = 'b0;
+assign spiMOSI_MASTER= 'b0;
+assign spiSS_N_MASTER= 'b0;
+assign spiSCLK_MASTER= 'b0;
+assign spiSPI_INT_O  = 'b0;
+`endif
 
 wire [31:0] gpioGPIO_DAT_I;
 assign gpioGPIO_DAT_I = SHAREDBUS_DAT_I[31:0];
 wire [3:0] gpioGPIO_SEL_I;
 assign gpioGPIO_SEL_I = SHAREDBUS_SEL_I;
 assign gpioGPIO_en = (SHAREDBUS_ADR_I[31:4] == 28'b1000000000000000000000100000);
-/*
+
+`ifdef GPIO_EN
 gpio 
 #(
 .GPIO_WB_DAT_WIDTH(32),
@@ -995,12 +1006,13 @@ gpio
 .PIO_BOTH_OUT(gpioPIO_BOTH_OUT),
 .IRQ_O(gpioIRQ_O),
 .CLK_I(clk_i), .RST_I(sys_reset));
-*/
-assign gpioGPIO_DAT_O = 1'b0;
-assign gpioGPIO_ACK_O = 1'b0;
-assign gpioGPIO_ERR_O = 1'b0;
-assign gpioGPIO_RTY_O = 1'b0;
-assign gpioIRQ_O      = 1'b0;
+`else
+assign gpioGPIO_DAT_O = 'b0;
+assign gpioGPIO_ACK_O = 'b0;
+assign gpioGPIO_ERR_O = 'b0;
+assign gpioGPIO_RTY_O = 'b0;
+assign gpioIRQ_O      = 'b0;
+`endif
 
 wire [7:0] uart_debugUART_DAT_I;
 assign uart_debugUART_DAT_I = ((
