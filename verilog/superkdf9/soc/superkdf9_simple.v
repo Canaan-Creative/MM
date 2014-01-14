@@ -378,8 +378,8 @@ module mm (
 , spiMOSI_MASTER
 , spiSS_N_MASTER
 , spiSCLK_MASTER
-, gpioPIO_BOTH_IN
-, gpioPIO_BOTH_OUT
+, gpioPIO_IN
+, gpioPIO_OUT
 , uart_debugSIN
 , uart_debugSOUT
 , TX_P
@@ -516,8 +516,8 @@ wire   gpioGPIO_ERR_O;
 wire   gpioGPIO_RTY_O;
 wire gpioGPIO_en;
 wire gpioIRQ_O;
-input [32-1:0] gpioPIO_BOTH_IN;
-output [32-1:0] gpioPIO_BOTH_OUT;
+input [3:0] gpioPIO_IN;
+output [3:0] gpioPIO_OUT;
 
 wire [7:0] uart_debugUART_DAT_O;
 wire   uart_debugUART_ACK_O;
@@ -959,6 +959,7 @@ assign gpioGPIO_DAT_I = SHAREDBUS_DAT_I[31:0];
 wire [3:0] gpioGPIO_SEL_I;
 assign gpioGPIO_SEL_I = SHAREDBUS_SEL_I;
 assign gpioGPIO_en = (SHAREDBUS_ADR_I[31:4] == 28'b1000000000000000000000100000);
+/*
 gpio 
 #(
 .GPIO_WB_DAT_WIDTH(32),
@@ -994,7 +995,12 @@ gpio
 .PIO_BOTH_OUT(gpioPIO_BOTH_OUT),
 .IRQ_O(gpioIRQ_O),
 .CLK_I(clk_i), .RST_I(sys_reset));
-
+*/
+assign gpioGPIO_DAT_O = 1'b0;
+assign gpioGPIO_ACK_O = 1'b0;
+assign gpioGPIO_ERR_O = 1'b0;
+assign gpioGPIO_RTY_O = 1'b0;
+assign gpioIRQ_O      = 1'b0;
 
 wire [7:0] uart_debugUART_DAT_I;
 assign uart_debugUART_DAT_I = ((
@@ -1132,7 +1138,9 @@ twi u_twi(
 /*input         */ .FAN_IN0     (FAN_IN0                     ) ,
 /*input         */ .FAN_IN1     (FAN_IN1                     ) ,
 /*output        */ .TIME0_INT   (TIME0_INT                   ) , 
-/*output        */ .TIME1_INT   (TIME1_INT                   ) 
+/*output        */ .TIME1_INT   (TIME1_INT                   ) ,
+/*output        */ .GPIO_OUT    (gpioPIO_OUT                 ) ,
+/*input  [1:0]  */ .GPIO_IN     (gpioPIO_IN                  )
 ) ;
 
 assign superkdf9interrupt_n[3] = !uartINTR ;
