@@ -86,3 +86,14 @@ void timer1_isr(void)
 	timer_int_clean(1);
 	irq_ack(IRQ_TIMER0);
 }
+
+void led(uint8_t value)
+{
+	writel(value, &tim->gpio);
+}
+
+int read_modular_id()
+{
+	return (readl(&tim->gpio) >> 4) & 0x3;
+}
+

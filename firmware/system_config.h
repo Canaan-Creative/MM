@@ -19,9 +19,6 @@
 /* Interrupt
  * Define at last few lines of verilog/superkdf9/soc/superkdf9_simple.v
  */
-#define IRQ_GPIO		(0x00000001) /* 0 */
-#define IRQ_SPI			(0x00000002) /* 1 */
-
 #define IRQ_UART		(0x00000008) /* 3 */
 #define IRQ_UARTDEBUG		(0x00000010) /* 4 */
 
@@ -29,21 +26,13 @@
 #define IRQ_TIMER1		(0x00000040) /* 6 */
 
 /* Registers */
-#define SPI_BASE		(0x80000000)
 #define UART0_BASE		(0x80000100)
-#define GPIO_BASE		(0x80000200)
 #define UART1_BASE		(0x80000300)
 #define SHA256_BASE		(0x80000400)
 #define ALINK_BASE		(0x80000500)
 #define TWIPWM_BASE		(0x80000600)
 #define SHIFTER_BASE		(0x80000614)
 #define TIMER_BASE		(0x80000620)
-
-
-struct lm32_gpio {
-	volatile unsigned int value;
-	volatile unsigned int tri;
-};
 
 /* UART */
 #define LM32_UART_IER_RBRI	(1 << 0)
@@ -149,6 +138,7 @@ struct lm32_shifter {
 
 struct lm32_timer {
 	volatile unsigned int reg; /* Timer register */
+	volatile unsigned int gpio; /* GPIO register */
 };
 
 #endif /* _SYSTEM_CONFIG_H_ */

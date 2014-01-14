@@ -32,15 +32,13 @@ static uint8_t g_pkg[AVA2_P_COUNT];
 static uint8_t g_act[AVA2_P_COUNT];
 static int g_new_stratum = 0;
 static int g_local_work = 0;
-static int g_modular_id = 0;	/* Default ID is B:11 */
+static int g_modular_id = 0;	/* Default ID is 0 */
 
 #define RET_RINGBUFFER_SIZE_RX 16
 #define RET_RINGBUFFER_MASK_RX (RET_RINGBUFFER_SIZE_RX-1)
 static uint8_t ret_buf[RET_RINGBUFFER_SIZE_RX][AVA2_P_DATA_LEN];
 static volatile unsigned int ret_produce = 0;
 static volatile unsigned int ret_consume = 0;
-
-static struct lm32_gpio *gpio = (struct lm32_gpio *)GPIO_BASE;
 
 void delay(unsigned int ms)
 {
@@ -50,11 +48,6 @@ void delay(unsigned int ms)
 		for (i = 0; i < CPU_FREQUENCY / 1000 / 5; i++)
 			__asm__ __volatile__("nop");
 	}
-}
-
-static inline void led(uint8_t value)
-{
-	writel(value << 24, &gpio->value);
 }
 
 static void encode_pkg(uint8_t *p, int type, uint8_t *buf, unsigned int len)
@@ -312,16 +305,6 @@ static int get_pkg(struct mm_work *mw)
 	return 0;
 }
 
-static void read_modular_id()
-{
-	uint32_t value;
-
-	writel(0x01000000, &gpio->tri); /* Mark GPIO[4] GPIO[5] as input */
-	value = readl(&gpio->value);
-
-	g_modular_id = 0; /* (value >> 28) & 0x3; */
-}
-
 int main(int argv, char **argc)
 {
 	struct mm_work mm_work;
@@ -341,7 +324,7 @@ int main(int argv, char **argc)
 	irq_setmask(0);
 	irq_enable(1);
 
-	read_modular_id();
+	g_modular_id = read_modular_id();
 
 	uart_init();
 	debug32("%d:MM-%s\n", g_modular_id, MM_VERSION);
