@@ -34,7 +34,10 @@ module twi(
     input          FAN_IN0     ,
     input          FAN_IN1     ,
     output         TIME0_INT   , 
-    output         TIME1_INT     
+    output         TIME1_INT   ,
+
+    output [3:0]   GPIO_OUT    ,
+    input  [3:0]   GPIO_IN 
 );
 
 assign TWI_ERR_O = 1'b0 ;
@@ -58,14 +61,16 @@ wire pwm_wr_en   = TWI_STB_I & TWI_WE_I  & ( TWI_ADR_I == `PWMC) & ~TWI_ACK_O ;
 wire wdg_wr_en   = TWI_STB_I & TWI_WE_I  & ( TWI_ADR_I == `WDG ) & ~TWI_ACK_O ;
 wire sft_wr_en   = TWI_STB_I & TWI_WE_I  & ( TWI_ADR_I == `SFT ) & ~TWI_ACK_O ;
 wire time_wr_en  = TWI_STB_I & TWI_WE_I  & ( TWI_ADR_I == `TIME) & ~TWI_ACK_O ;
+wire gpio_wr_en  = TWI_STB_I & TWI_WE_I  & ( TWI_ADR_I == `GPIO) & ~TWI_ACK_O ;
 
 wire i2cr_rd_en  = TWI_STB_I & ~TWI_WE_I  & ( TWI_ADR_I == `I2CR) & ~TWI_ACK_O ;
 wire i2rd_rd_en  = TWI_STB_I & ~TWI_WE_I  & ( TWI_ADR_I == `I2RD) & ~TWI_ACK_O ;
 wire wdg_rd_en   = TWI_STB_I & ~TWI_WE_I  & ( TWI_ADR_I == `WDG ) & ~TWI_ACK_O ;
 wire sft_rd_en   = TWI_STB_I & ~TWI_WE_I  & ( TWI_ADR_I == `SFT ) & ~TWI_ACK_O ;
-wire fan0_rd_en  = TWI_STB_I & ~TWI_WE_I  & ( TWI_ADR_I == `FAN0 ) & ~TWI_ACK_O ;
-wire fan1_rd_en  = TWI_STB_I & ~TWI_WE_I  & ( TWI_ADR_I == `FAN1 ) & ~TWI_ACK_O ;
+wire fan0_rd_en  = TWI_STB_I & ~TWI_WE_I  & ( TWI_ADR_I == `FAN0) & ~TWI_ACK_O ;
+wire fan1_rd_en  = TWI_STB_I & ~TWI_WE_I  & ( TWI_ADR_I == `FAN1) & ~TWI_ACK_O ;
 wire time_rd_en  = TWI_STB_I & ~TWI_WE_I  & ( TWI_ADR_I == `TIME) & ~TWI_ACK_O ;
+wire gpio_rd_en  = TWI_STB_I & ~TWI_WE_I  & ( TWI_ADR_I == `GPIO) & ~TWI_ACK_O ;
 
 //-----------------------------------------------------
 // PWM
@@ -278,6 +283,24 @@ end
 assign TIME0_INT = ~tim_mask0 && tim_done0 ;
 assign TIME1_INT = ~tim_mask1 && tim_done1 ;
 //-----------------------------------------------------
+// GPIO
+//-----------------------------------------------------
+reg [3:0] reg_gout ;
+reg [3:0] reg_gin  ;
+wire [31:0] reg_gpio = {24'b0,reg_gin,reg_gout} ;
+always @ ( posedge CLK_I or posedge RST_I ) begin
+	if( RST_I )
+		reg_gout <= 'b0 ;
+	else if( gpio_wr_en )
+		reg_gout <= TWI_DAT_I[3:0] ;
+end
+assign GPIO_OUT = reg_gout ;
+always @ ( posedge CLK_I ) begin
+	reg_gin <= GPIO_IN ;
+end
+
+
+//-----------------------------------------------------
 // read
 //-----------------------------------------------------
 reg i2cr_rd_en_r ;
@@ -286,6 +309,7 @@ reg sft_rd_en_r ;
 reg fan0_rd_en_r ;
 reg fan1_rd_en_r ;
 reg time_rd_en_r ;
+reg gpio_rd_en_r ;
 
 wire [7:0] reg_i2cr ;
 wire [7:0] reg_i2rd ;
@@ -296,6 +320,7 @@ always @ ( posedge CLK_I ) begin
 	fan0_rd_en_r <= fan0_rd_en ;
 	fan1_rd_en_r <= fan1_rd_en ;
 	time_rd_en_r <= time_rd_en ;
+	gpio_rd_en_r <= gpio_rd_en ;
 end
 
 assign TWI_DAT_O = i2cr_rd_en_r ? {24'b0,reg_i2cr}     : 
@@ -304,6 +329,7 @@ assign TWI_DAT_O = i2cr_rd_en_r ? {24'b0,reg_i2cr}     :
 		   fan0_rd_en_r ? {6'b0,reg_fan0}      :
 		   fan1_rd_en_r ? {6'b0,reg_fan1}      :
 		   time_rd_en_r ? reg_tim              :
+		   gpio_rd_en_r ? reg_gpio             :
                    {24'b0,reg_i2rd} ;
 
 twi_core twi_core (

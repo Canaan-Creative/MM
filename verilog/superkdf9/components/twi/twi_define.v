@@ -7,4 +7,5 @@
 `define FAN0  6'h18
 `define FAN1  6'h1c
 `define TIME  6'h20
+`define GPIO  6'h24
 
