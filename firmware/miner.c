@@ -87,6 +87,7 @@ uint32_t get_asic_freq()
 void miner_init_work(struct mm_work *mw, struct work *work)
 {
 	int timeout;
+	int asic_freq;
 
 	memcpy(work->task_id, (uint8_t *)(&mw->pool_no), 4);
 	memcpy(work->task_id + 4, (uint8_t *)(&work->nonce2), 4);
@@ -95,52 +96,9 @@ void miner_init_work(struct mm_work *mw, struct work *work)
 	timeout *= CPU_FREQUENCY / 1000;     /* Time in cpu clock */
 	memcpy(work->timeout, &timeout, 4);
 
-	switch (g_asic_freq / 2) { /* This is the real clock in Mhz, 1Mhz means 2Mhs */
-	case 1000:
-		work->clock[1] = 0xe0;
-		work->clock[0] = 0x84;
-		break;
-	case 950:
-		work->clock[1] = 0xa0;
-		work->clock[0] = 0x84;
-		break;
-	case 900:
-		work->clock[1] = 0x60;
-		work->clock[0] = 0x84;
-		break;
-	case 850:
-		work->clock[1] = 0x20;
-		work->clock[0] = 0x84;
-		break;
-	case 800:
-		work->clock[1] = 0xe0;
-		work->clock[0] = 0x83;
-		break;
-	case 750:
-		work->clock[1] = 0xa0;
-		work->clock[0] = 0x83;
-		break;
-	case 700:
-		work->clock[1] = 0x60;
-		work->clock[0] = 0x83;
-		break;
-	case 650:
-		work->clock[1] = 0x20;
-		work->clock[0] = 0x83;
-		break;
-	case 600:
-		work->clock[1] = 0xe0;
-		work->clock[0] = 0x82;
-		break;
-	case 550:
-		work->clock[1] = 0xa0;
-		work->clock[0] = 0x82;
-		break;
-	default:        /* 500Mhz etc */
-		work->clock[1] = 0xe0;
-		work->clock[0] = 0x94;
-		break;
-	}
+	asic_freq = g_asic_freq * 32 / 50 + 0x7FE0;
+	work->clock[0] = (asic_freq & 0xff00) >> 8;
+	work->clock[1] = asic_freq & 0xff;
 	work->clock[2] = 0x00;
 	work->clock[3] = 0x07;	/* 0x0b: idle, 0x07: enable */
 

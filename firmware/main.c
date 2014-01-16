@@ -311,6 +311,8 @@ int main(int argv, char **argc)
 	struct work work;
 	struct result result;
 
+	led(1);
+
 	delay(60);		/* Delay 60ms, wait for alink ready */
 	alink_flush_fifo();
 	set_voltage(0x8a00);	/* Configure the power supply for ASICs
@@ -333,10 +335,9 @@ int main(int argv, char **argc)
 
 	adjust_fan(0);		/* Set the fan to 100% */
 
+	led(0);
 	g_new_stratum = 0;
-	/* FIXME: Should we ask for new stratum? */
-	while (1) {
-		led(0);
+	while (1) {		/* FIXME: Should we ask for new stratum? */
 		get_pkg(&mm_work);
 		if (!g_new_stratum)
 			continue;
@@ -363,9 +364,7 @@ int main(int argv, char **argc)
 		}
 
 		wdg_feed((CPU_FREQUENCY / 1000) * 2);
-		led(1);
 	}
 
-	led(1);
 	return 0;
 }
