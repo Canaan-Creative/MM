@@ -183,11 +183,11 @@ void miner_gen_nonce2_work(struct mm_work *mw, uint32_t nonce2, struct work *wor
 	memcpy((uint8_t *)(&tmp32), work->a2, 4);
 }
 
-bool fulltest(const unsigned char *hash, const unsigned char *target)
+int fulltest(const unsigned char *hash, const unsigned char *target)
 {
 	uint32_t *hash32 = (uint32_t *)hash;
 	uint32_t *target32 = (uint32_t *)target;
-	bool rc = true;
+	int rc = 1;
 	int i;
 
 	for (i = 28 / 4; i >= 0; i--) {
@@ -195,11 +195,11 @@ bool fulltest(const unsigned char *hash, const unsigned char *target)
 		uint32_t t32tmp = bswap_32(target32[i]);
 
 		if (h32tmp > t32tmp) {
-			rc = false;
+			rc = NONCE_VALID;
 			break;
 		}
 		if (h32tmp < t32tmp) {
-			rc = true;
+			rc = NONCE_DIFF;
 			break;
 		}
 	}
@@ -207,7 +207,7 @@ bool fulltest(const unsigned char *hash, const unsigned char *target)
 	return rc;
 }
 
-bool test_nonce(struct mm_work *mw, struct result *ret)
+int test_nonce(struct mm_work *mw, struct result *ret)
 {
 	/* Decode nonce2 and nonce */
 	uint32_t nonce2, nonce;
@@ -229,9 +229,14 @@ bool test_nonce(struct mm_work *mw, struct result *ret)
 	unsigned char swap[80];
 	uint32_t *swap32 = (uint32_t *)swap;
 	unsigned char hash1[32];
+	uint32_t *hash_32 = (uint32_t *)(hash1 + 28);
+
 	flip80(swap32, data32);
 	dsha256(swap, 80, hash1);
 
+	if (*hash_32 != 0)
+		return NONCE_HW;
 	/* Compare hash with target */
+
 	return fulltest(hash1, mw->target);
 }

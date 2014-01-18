@@ -30,9 +30,10 @@
 
 static uint8_t g_pkg[AVA2_P_COUNT];
 static uint8_t g_act[AVA2_P_COUNT];
+static int g_modular_id = 0;	/* Default ID is 0 */
 static int g_new_stratum = 0;
 static int g_local_work = 0;
-static int g_modular_id = 0;	/* Default ID is 0 */
+static int g_hw_work = 0;
 
 #define RET_RINGBUFFER_SIZE_RX 16
 #define RET_RINGBUFFER_MASK_RX (RET_RINGBUFFER_SIZE_RX-1)
@@ -76,19 +77,19 @@ static void encode_pkg(uint8_t *p, int type, uint8_t *buf, unsigned int len)
 		memcpy(data, buf, len);
 		break;
 	case AVA2_P_STATUS:
-		tmp = read_temp0();
+		tmp = read_temp0() << 16 | read_temp1();
 		memcpy(data + 0, &tmp, 4);
-		tmp = read_temp1();
+
+		tmp = read_fan0() << 16 | read_fan1();
 		memcpy(data + 4, &tmp, 4);
-		tmp = read_fan0();
-		memcpy(data + 8, &tmp, 4);
-		tmp = read_fan1();
-		memcpy(data + 12, &tmp, 4);
+
 		tmp = get_asic_freq();
-		memcpy(data + 16, &tmp, 4);
+		memcpy(data + 8, &tmp, 4);
 		tmp = get_voltage();
-		memcpy(data + 20, &tmp, 4);
-		memcpy(data + 24, &g_local_work, 4);
+		memcpy(data + 12, &tmp, 4);
+
+		memcpy(data + 16, &g_local_work, 4);
+		memcpy(data + 20, &g_hw_work, 4);
 		break;
 	default:
 		break;
@@ -116,14 +117,13 @@ static void polling()
 		send_pkg(AVA2_P_STATUS, NULL, 0);
 
 		g_local_work = 0;
+		g_hw_work = 0;
 		return;
 	}
 
 	data = ret_buf[ret_consume];
 	ret_consume = (ret_consume + 1) & RET_RINGBUFFER_MASK_RX;
-	send_pkg(AVA2_P_NONCE, data, AVA2_P_DATA_LEN);
-	g_local_work = 0;
-
+	send_pkg(AVA2_P_NONCE, data, AVA2_P_DATA_LEN - 4);
 	return;
 }
 
@@ -220,6 +220,8 @@ static int decode_pkg(uint8_t *p, struct mm_work *mw)
 static int read_result(struct mm_work *mw, struct result *ret)
 {
 	uint8_t *data;
+	int nonce;
+
 	if (alink_rxbuf_empty())
 		return 0;
 
@@ -228,17 +230,21 @@ static int read_result(struct mm_work *mw, struct result *ret)
 #endif
 
 	alink_read_result(ret);
-	if (test_nonce(mw, ret)) {
+	g_local_work++;
+
+	nonce = test_nonce(mw, ret);
+	if (nonce == NONCE_HW) {
+		g_hw_work++;
+		return 1;
+	}
+
+	if (nonce == NONCE_DIFF) {
 		data = ret_buf[ret_produce];
 		ret_produce = (ret_produce + 1) & RET_RINGBUFFER_MASK_RX;
 
 		memcpy(data, (uint8_t *)ret, 20);
 		memcpy(data + 20, mw->job_id, 4); /* Attach the job_id */
-		memcpy(data + 24, &g_local_work, 4); /* Attach the local works */
-		memcpy(data + 28, &g_modular_id, 4); /* Attach the modular_id at end */
-		return 2;
-	} else
-		g_local_work++;
+	}
 
 	return 1;
 }
@@ -312,13 +318,12 @@ int main(int argv, char **argc)
 	struct result result;
 
 	led(1);
-
 	delay(60);		/* Delay 60ms, wait for alink ready */
 	alink_flush_fifo();
-	set_voltage(0x8a00);	/* Configure the power supply for ASICs
-				 * 0x8a: 1.0v
-				 * 0x82: 1.1v
-				 */
+	alink_init(0x3ff);	/* Enable all 10 miners */
+	adjust_fan(0);		/* Set the fan to 100% */
+	set_voltage(0x8a00);	/* Set voltage to 1.0v */
+	/* TODO: test chips here. test fan and temp sensors */
 
 	wdg_init(1);
 	wdg_feed((CPU_FREQUENCY / 1000) * 2); /* Configure the wdg to ~2 second, or it will reset FPGA */
@@ -330,12 +335,8 @@ int main(int argv, char **argc)
 
 	uart_init();
 	debug32("%d:MM-%s\n", g_modular_id, MM_VERSION);
-
-	alink_init(0x3ff);	/* Enable 10 miners */
-
-	adjust_fan(0);		/* Set the fan to 100% */
-
 	led(0);
+
 	g_new_stratum = 0;
 	while (1) {		/* FIXME: Should we ask for new stratum? */
 		get_pkg(&mm_work);

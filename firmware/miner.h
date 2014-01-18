@@ -14,6 +14,10 @@
 
 #include "protocol.h"
 
+#define NONCE_HW	0
+#define NONCE_VALID	1
+#define NONCE_DIFF	2
+
 struct work {
 	uint32_t nonce2;
 	uint8_t	task_id[8];	/* Nonce2 + job_id etc */
@@ -62,7 +66,7 @@ struct mm_work {
 
 void miner_init_work(struct mm_work *mw, struct work *work);
 void miner_gen_nonce2_work(struct mm_work *mw, uint32_t nonce2, struct work *work);
-bool test_nonce(struct mm_work *mw, struct result *ret);
+int test_nonce(struct mm_work *mw, struct result *ret);
 
 void set_asic_freq(uint32_t value);
 uint32_t get_asic_freq();
