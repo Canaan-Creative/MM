@@ -35,6 +35,9 @@ static int g_new_stratum = 0;
 static int g_local_work = 0;
 static int g_hw_work = 0;
 
+static uint32_t g_nonce2_offset = 0;
+static uint32_t g_nonce2_range = 0xffffffff;
+
 #define RET_RINGBUFFER_SIZE_RX 16
 #define RET_RINGBUFFER_MASK_RX (RET_RINGBUFFER_SIZE_RX-1)
 static uint8_t ret_buf[RET_RINGBUFFER_SIZE_RX][AVA2_P_DATA_LEN];
@@ -206,6 +209,9 @@ static int decode_pkg(uint8_t *p, struct mm_work *mw)
 		set_voltage(tmp);
 		memcpy(&tmp, data + 8, 4);
 		set_asic_freq(tmp);
+
+		memcpy(&g_nonce2_offset, data + 12, 4);
+		memcpy(&g_nonce2_range, data + 16, 4);
 		break;
 	case AVA2_P_TARGET:
 		memcpy(mw->target, data, AVA2_P_DATA_LEN);
@@ -290,7 +296,7 @@ static int get_pkg(struct mm_work *mw)
 					send_pkg(AVA2_P_STATUS, NULL, 0);
 					break;
 				case AVA2_P_SET:
-					mw->nonce2 = (0xffffffff / 3) * g_modular_id;
+					mw->nonce2 = g_nonce2_offset + (g_nonce2_range / AVA2_DEFAULT_MODULARS) * g_modular_id;
 					g_new_stratum = 1;
 					debug32("Hashing (%d)\n", g_new_stratum);
 					break;
@@ -332,6 +338,7 @@ int main(int argv, char **argc)
 	irq_enable(1);
 
 	g_modular_id = read_modular_id();
+	g_modular_id = 2;
 
 	uart_init();
 	debug32("%d:MM-%s\n", g_modular_id, MM_VERSION);
