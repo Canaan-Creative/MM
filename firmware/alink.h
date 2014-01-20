@@ -19,9 +19,6 @@ int alink_rxbuf_count();
 int alink_send_work(struct work *w);
 int alink_rxbuf_empty();
 void alink_read_result(struct result *r);
-
-#ifdef DEBUG
-void send_test_work();
-#endif
+void alink_asic_test();
 
 #endif	/* _ALINK_H_ */

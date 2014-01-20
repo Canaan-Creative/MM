@@ -145,13 +145,12 @@ void alink_flush_fifo()
 	delay(1);
 }
 
-#ifdef DEBUG
-void send_test_work(int value)
+static void asic_test_work(int chip)
 {
 	uint32_t msg_blk[23];
 	int i;
 
-	debug32("Task: send\n");
+	debug32("Chip/Core: %d/?\n", chip);
 	msg_blk[22]=0x220f1dbd;	/* a2 */
 
 	msg_blk[21]=0xd8f8ef67;	/* Midstat */
@@ -175,10 +174,10 @@ void send_test_work(int value)
 
 	msg_blk[5] =0x00000000; /* Clock cfg1 */
 	msg_blk[4] =0x00000001; /* Clock cfg0 */
-	msg_blk[3] =0x2aaaaaaa; /* Timeout */
+	msg_blk[3] =0x2aafffff; /* Timeout */
 	msg_blk[2] =0x19999999; /* Step */
-	msg_blk[1] =value;	/* Task ID H */
-	msg_blk[0] =0xaabbccdd; /* Task ID L */
+	msg_blk[1] =0x010f0eb6 - 8192;	/* Nonce */
+	msg_blk[0] =chip;	/* Chip index */
 
 	for (i = 0; i < 23; i++) {
 		writel(msg_blk[i], &alink->tx);
@@ -186,6 +185,7 @@ void send_test_work(int value)
 	/* Nonce: 010f0eb6 */
 }
 
+#ifdef DEBUG
 void alink_buf_status()
 {
 	uint32_t value;
@@ -202,3 +202,24 @@ void alink_buf_status()
 }
 #endif
 
+void alink_asic_test()
+{
+	int i, j;
+	struct result result;
+
+	writel(0x80000000, &alink->state); /* Enable chip scan mode */
+
+	for (i = 0; i < AVA2_DEFAULT_MINERS; i++) {
+		alink_init(1 << i);	/* Enable i miners */
+		for (j = 0; j < 1; j++) {
+			asic_test_work(j);		/* Test asic cores  */
+#ifdef DEBUG
+			if (alink_rxbuf_empty()) {
+				alink_buf_status();
+#endif
+			}
+			alink_read_result(&result);
+			hexdump((uint8_t *)&result, sizeof(struct result));
+		}
+	}
+}

@@ -326,10 +326,9 @@ int main(int argv, char **argc)
 	led(1);
 	delay(60);		/* Delay 60ms, wait for alink ready */
 	alink_flush_fifo();
-	alink_init(0x3ff);	/* Enable all 10 miners */
-	adjust_fan(0);		/* Set the fan to 100% */
+	adjust_fan(0x1ff);		/* Set the fan to 100% */
 	set_voltage(0x8a00);	/* Set voltage to 1.0v */
-	/* TODO: test chips here. test fan and temp sensors */
+	alink_asic_test();	/* Test ASIC */
 
 	wdg_init(1);
 	wdg_feed((CPU_FREQUENCY / 1000) * 2); /* Configure the wdg to ~2 second, or it will reset FPGA */
@@ -338,15 +337,16 @@ int main(int argv, char **argc)
 	irq_enable(1);
 
 	g_modular_id = read_modular_id();
-	g_modular_id = 2;
 
 	uart_init();
 	debug32("%d:MM-%s\n", g_modular_id, MM_VERSION);
 	led(0);
 
+	alink_init(0x3ff);
 	g_new_stratum = 0;
 	while (1) {		/* FIXME: Should we ask for new stratum? */
 		get_pkg(&mm_work);
+		wdg_feed((CPU_FREQUENCY / 1000) * 2);
 		if (!g_new_stratum)
 			continue;
 
@@ -368,10 +368,8 @@ int main(int argv, char **argc)
 		}
 
 		if (!timer_read(0)) {
-			;	/* FIXME:  */
+			;	/* TODO: Idle chips */
 		}
-
-		wdg_feed((CPU_FREQUENCY / 1000) * 2);
 	}
 
 	return 0;
