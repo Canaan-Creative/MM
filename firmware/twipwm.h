@@ -23,7 +23,7 @@ uint32_t read_fan1();
 uint16_t read_temp0();
 uint16_t read_temp1();
 
-void adjust_fan(uint32_t value);
+void adjust_fan(uint32_t pwm);
 void reset();
 
 #endif	/* _TWI_H_ */

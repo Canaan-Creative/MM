@@ -195,10 +195,20 @@ static int decode_pkg(uint8_t *p, struct mm_work *mw)
 		memcpy(mw->header + (idx - 1) * AVA2_P_DATA_LEN, data, AVA2_P_DATA_LEN);
 		break;
 	case AVA2_P_POLLING:
-		memcpy(&tmp, data, 4);
+		memcpy(&tmp, data + 28, 4);
 		debug32("ID: %d-%d\n", g_modular_id, tmp);
 		if (g_modular_id == tmp)
 			polling();
+
+		memcpy(&tmp, data + 24, 4);
+		if (tmp) {
+			memcpy(&tmp, data, 4);
+			adjust_fan(tmp);
+			memcpy(&tmp, data + 4, 4);
+			set_voltage(tmp);
+			memcpy(&tmp, data + 8, 4);
+			set_asic_freq(tmp);
+		}
 		break;
 	case AVA2_P_REQUIRE:
 		break;
@@ -212,6 +222,9 @@ static int decode_pkg(uint8_t *p, struct mm_work *mw)
 
 		memcpy(&g_nonce2_offset, data + 12, 4);
 		memcpy(&g_nonce2_range, data + 16, 4);
+
+		mw->nonce2 = g_nonce2_offset + (g_nonce2_range / AVA2_DEFAULT_MODULARS) * g_modular_id;
+		g_new_stratum = 1;
 		break;
 	case AVA2_P_TARGET:
 		memcpy(mw->target, data, AVA2_P_DATA_LEN);
@@ -283,22 +296,20 @@ static int get_pkg(struct mm_work *mw)
 #endif
 				return 1;
 			} else {
+				/* Here we send back PKG if necessary */
 #ifdef CFG_ENABLE_ACK
 				send_pkg(AVA2_P_ACK, NULL, 0);
 #endif
 				switch (g_pkg[2]) {
 				case AVA2_P_DETECT:
-					memcpy(&tmp, g_pkg + 5, 4);
+					memcpy(&tmp, g_pkg + 5 + 28, 4);
 					if (g_modular_id == tmp)
 						send_pkg(AVA2_P_ACKDETECT, (uint8_t *)MM_VERSION, MM_VERSION_LEN);
 					break;
 				case AVA2_P_REQUIRE:
-					send_pkg(AVA2_P_STATUS, NULL, 0);
-					break;
-				case AVA2_P_SET:
-					mw->nonce2 = g_nonce2_offset + (g_nonce2_range / AVA2_DEFAULT_MODULARS) * g_modular_id;
-					g_new_stratum = 1;
-					debug32("Hashing (%d)\n", g_new_stratum);
+					memcpy(&tmp, g_pkg + 5 + 28, 4);
+					if (g_modular_id == tmp)
+						send_pkg(AVA2_P_STATUS, NULL, 0);
 					break;
 				default:
 					break;
@@ -354,6 +365,7 @@ int main(int argv, char **argc)
 		if (!timer_read(0)) {
 			g_new_stratum = 0;
 			set_voltage(0x8f00);	/* FIXME: Set voltage to 0v or IDLE chips? */
+			adjust_fan(0x1ff);
 		}
 
 		if (!g_new_stratum)

@@ -206,6 +206,7 @@ void alink_asic_test()
 	int i, j, k, core;
 	uint32_t nonce;
 	struct result result;
+	int core_test[AVA2_DEFAULT_MINERS][ASIC_COUNT];
 
 	writel(LM32_ALINK_STATE_TEST, &alink->state); /* Enable alink scan mode */
 
@@ -234,6 +235,7 @@ void alink_asic_test()
 					core++;
 				}
 			}
+			core_test[i][j] = core;
 			debug32(".");
 			if (core)
 				debug32("M: %d, C: %d, Core: %d\n", i, j, core);

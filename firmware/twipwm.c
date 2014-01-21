@@ -104,8 +104,14 @@ uint32_t read_fan1()
 	return readl(&tp->fan1) * 30;
 }
 
-void adjust_fan(uint32_t value)
+void adjust_fan(uint32_t pwm)
 {
+	static uint32_t value = 0x3ff;
+
+	if (value == pwm)
+		return;
+
+	value = pwm;
 	if (value < 0)
 		value = 0;
 	if (value > 0x3ff)
