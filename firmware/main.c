@@ -363,14 +363,13 @@ int main(int argv, char **argc)
 	alink_init(0x3ff);
 	timer_set(0, IDLE_TIME);
 	g_new_stratum = 0;
-	while (1) {		/* FIXME: Should we ask for new stratum? */
+	while (1) {
 		get_pkg(&mm_work);
 
 		wdg_feed((CPU_FREQUENCY / 1000) * 2);
-		if (!timer_read(0)) {
+		if (!timer_read(0) && g_new_stratum) {
 			g_new_stratum = 0;
-			set_voltage(0x8f00);	/* FIXME: Set voltage to 0v or IDLE chips? */
-			adjust_fan(0x1ff);
+			/* FIXME: should idle chip */
 		}
 
 		if (!g_new_stratum)

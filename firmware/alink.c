@@ -145,7 +145,7 @@ void alink_flush_fifo()
 	delay(1);
 }
 
-static void asic_test_work(int chip, int core)
+static void asic_test_work(int chip, int core, int gate)
 {
 	uint32_t msg_blk[23];
 	int i;
@@ -172,7 +172,7 @@ static void asic_test_work(int chip, int core)
 	msg_blk[6]  = 0x4ac1d001;
 
 	msg_blk[5]  = 0x00000174;	/* Clock at 1Ghs */
-	msg_blk[4]  = 0x82600007;
+	msg_blk[4]  = 0x82600000 | (gate ? 0xb : 0x7);
 	msg_blk[3]  = 0x0000ffff;	/* The real timeout is 0x75d1 */
 	msg_blk[2]  = 0x24924925;	/* Step for 7 chips */
 	msg_blk[1]  = (0x010f1036 ^ core) - 5 * 128  ;	/* Nonce start, have to be N * 128 */
@@ -202,6 +202,19 @@ void alink_buf_status()
 #endif
 
 extern void send_pkg(int type, uint8_t *buf, unsigned int len);
+void alink_asic_idle()
+{
+	int i;
+
+	for (i = 0; i < AVA2_DEFAULT_MINERS; i++) {
+		debug32("%d", i);
+		alink_init(1 << i);	/* Enable i miners */
+		asic_test_work(i, 0, 1);
+		while (!alink_txbuf_count())
+			;
+	}
+}
+
 void alink_asic_test()
 {
 	int i, j, k, core;
@@ -217,7 +230,7 @@ void alink_asic_test()
 		for (j = 0; j < ASIC_COUNT; j++) {
 			core = 0;
 			for (k = 0; k < 128; k++) {
-				asic_test_work(j, k);		/* Test asic cores  */
+				asic_test_work(j, k, 0);		/* Test asic cores  */
 
 				while (!alink_txbuf_count())
 					;
