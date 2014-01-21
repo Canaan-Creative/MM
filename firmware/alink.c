@@ -236,7 +236,7 @@ void alink_asic_test()
 			core_test[j + 1] = core;
 			debug32("%3d", core);
 		}
-		core_test[0] = i;
+		core_test[0] = i + 1;
 		/* Send out one pkg */
 		send_pkg(AVA2_P_TEST_RET, core_test, ASIC_COUNT + 1);
 	}
