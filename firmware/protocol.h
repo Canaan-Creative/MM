@@ -30,11 +30,13 @@
 #define AVA2_P_TARGET	17
 #define AVA2_P_REQUIRE	18
 #define AVA2_P_SET	19
+#define AVA2_P_TEST	20
 
 #define AVA2_P_ACK		21
 #define AVA2_P_NAK		22
 #define AVA2_P_NONCE		23
 #define AVA2_P_STATUS		24
 #define AVA2_P_ACKDETECT	25
+#define AVA2_P_TEST_RET		26
 
 #endif	/* _PROTOCOL_H_ */

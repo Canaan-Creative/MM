@@ -28,6 +28,7 @@
 
 #include "hexdump.c"
 
+#define IDLE_TIME	5
 static uint8_t g_pkg[AVA2_P_COUNT];
 static uint8_t g_act[AVA2_P_COUNT];
 static int g_modular_id = 0;	/* Default ID is 0 */
@@ -74,9 +75,8 @@ static void encode_pkg(uint8_t *p, int type, uint8_t *buf, unsigned int len)
 
 	switch(type) {
 	case AVA2_P_ACKDETECT:
-		memcpy(data, buf, len);
-		break;
 	case AVA2_P_NONCE:
+	case AVA2_P_TEST_RET:
 		memcpy(data, buf, len);
 		break;
 	case AVA2_P_STATUS:
@@ -103,7 +103,7 @@ static void encode_pkg(uint8_t *p, int type, uint8_t *buf, unsigned int len)
 	p[AVA2_P_COUNT - 1] = (crc & 0xff00) >> 8;
 }
 
-static void send_pkg(int type, uint8_t *buf, unsigned int len)
+void send_pkg(int type, uint8_t *buf, unsigned int len)
 {
 	debug32("Send: %d\n", type);
 	encode_pkg(g_act, type, buf, len);
@@ -114,7 +114,7 @@ static void polling()
 {
 	uint8_t *data;
 
-	timer_set(0, 2);
+	timer_set(0, IDLE_TIME);
 
 	if (ret_consume == ret_produce) {
 		send_pkg(AVA2_P_STATUS, NULL, 0);
@@ -229,6 +229,14 @@ static int decode_pkg(uint8_t *p, struct mm_work *mw)
 	case AVA2_P_TARGET:
 		memcpy(mw->target, data, AVA2_P_DATA_LEN);
 		break;
+	case AVA2_P_TEST:
+		memcpy(&tmp, data + 28, 4);
+		if (g_modular_id == tmp) {
+			set_voltage(0x8a00);
+			alink_asic_test();	/* Test ASIC */
+			alink_init(0x3ff);
+		}
+		break;
 	default:
 		break;
 	}
@@ -339,9 +347,6 @@ int main(int argv, char **argc)
 	set_voltage(0x8a00);	/* Set voltage to 1.0v */
 
 	alink_flush_fifo();
-#if 1
-	alink_asic_test();	/* Test ASIC */
-#endif
 
 	wdg_init(1);
 	wdg_feed((CPU_FREQUENCY / 1000) * 2); /* Configure the wdg to ~2 second, or it will reset FPGA */
@@ -356,7 +361,7 @@ int main(int argv, char **argc)
 	led(0);
 
 	alink_init(0x3ff);
-	timer_set(0, 2);
+	timer_set(0, IDLE_TIME);
 	g_new_stratum = 0;
 	while (1) {		/* FIXME: Should we ask for new stratum? */
 		get_pkg(&mm_work);

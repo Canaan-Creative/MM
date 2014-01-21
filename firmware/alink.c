@@ -201,16 +201,18 @@ void alink_buf_status()
 }
 #endif
 
+extern void send_pkg(int type, uint8_t *buf, unsigned int len);
 void alink_asic_test()
 {
 	int i, j, k, core;
 	uint32_t nonce;
 	struct result result;
-	int core_test[AVA2_DEFAULT_MINERS][ASIC_COUNT];
+	uint8_t core_test[ASIC_COUNT + 1];
 
 	writel(LM32_ALINK_STATE_TEST, &alink->state); /* Enable alink scan mode */
 
 	for (i = 0; i < AVA2_DEFAULT_MINERS; i++) {
+		debug32("%d:", i);
 		alink_init(1 << i);	/* Enable i miners */
 		for (j = 0; j < ASIC_COUNT; j++) {
 			core = 0;
@@ -226,20 +228,17 @@ void alink_asic_test()
 				if (!alink_rxbuf_empty()) {
 					alink_read_result(&result);
 					memcpy(&nonce, result.nonce, 4);
-					if (nonce != 0x010f1036) {
-						debug32("M: %d, C: %d, Core: %d broken(%08x)\n", i, j, k, nonce);
+					if (nonce != 0x010f1036)
 						core++;
-					}
-				} else {
-					debug32("M: %d, C: %d, Core: %d dead\n", i, j, k);
+				} else
 					core++;
-				}
 			}
-			core_test[i][j] = core;
-			debug32(".");
-			if (core)
-				debug32("M: %d, C: %d, Core: %d\n", i, j, core);
+			core_test[j + 1] = core;
+			debug32("%3d", core);
 		}
+		core_test[0] = i;
+		/* Send out one pkg */
+		send_pkg(AVA2_P_TEST_RET, core_test, ASIC_COUNT + 1);
 	}
 
 	writel(0, &alink->state); /* Enable alink hash mode */

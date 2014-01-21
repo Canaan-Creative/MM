@@ -49,7 +49,6 @@ void set_voltage(uint32_t value)
 	/* Reset */
 	writel(0, &sft->reg);
 
-
 	/* The power chip datasheet is here:
 	 *   http://www.onsemi.com/pub_link/Collateral/ADP3208D.PDF
 	 * REV_BITS((VALUE < 1) & 1) << 16: is the value, the */
