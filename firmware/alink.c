@@ -150,38 +150,38 @@ static void asic_test_work(int chip, int core)
 	uint32_t msg_blk[23];
 	int i;
 
-	msg_blk[22]=0x220f1dbd;	/* a2 */
+	msg_blk[22] = 0x220f1dbd;	/* a2 */
 
-	msg_blk[21]=0xd8f8ef67;	/* Midstat */
-	msg_blk[20]=0x12146495;
-	msg_blk[19]=0xc44192c0;
-	msg_blk[18]=0x7145fd6d;
-	msg_blk[17]=0x974bf4bb;
-	msg_blk[16]=0x8f41371d;
-	msg_blk[15]=0x65c90d1e;
-	msg_blk[14]=0x9cb18a17;
+	msg_blk[21] = 0xd8f8ef67;	/* Midstat */
+	msg_blk[20] = 0x12146495;
+	msg_blk[19] = 0xc44192c0;
+	msg_blk[18] = 0x7145fd6d;
+	msg_blk[17] = 0x974bf4bb;
+	msg_blk[16] = 0x8f41371d;
+	msg_blk[15] = 0x65c90d1e;
+	msg_blk[14] = 0x9cb18a17;
 
-	msg_blk[13]=0xfa77fe7d;	/* e0 */
-	msg_blk[12]=0x12cdfd7b;	/* e1 */
-	msg_blk[11]=0x81677107;	/* e2 */
-	msg_blk[10]=0x62a5f25c;	/* a0 */
-	msg_blk[9] =0x05b168ae;	/* a1 */
+	msg_blk[13] = 0xfa77fe7d;	/* e0 */
+	msg_blk[12] = 0x12cdfd7b;	/* e1 */
+	msg_blk[11] = 0x81677107;	/* e2 */
+	msg_blk[10] = 0x62a5f25c;	/* a0 */
+	msg_blk[9]  = 0x05b168ae;	/* a1 */
 
-	msg_blk[8] =0x087e051a;	/* Data */
-	msg_blk[7] =0x88517050;
-	msg_blk[6] =0x4ac1d001;
+	msg_blk[8]  = 0x087e051a;	/* Data */
+	msg_blk[7]  = 0x88517050;
+	msg_blk[6]  = 0x4ac1d001;
 
-	msg_blk[5] =0x00000174;
-	msg_blk[4] =0x82600007; /* Clock at 1Ghs */
-	msg_blk[3] =0x0000ffff;	/* Timeout 0x75d1 */
-	msg_blk[2] =0x24924925;	/* Step for 7 chips */
-	msg_blk[1] =(0x010f1036 ^ core) - 5 * 128  ;	/* Nonce start */
-	msg_blk[0] =chip;	/* Chip index */
+	msg_blk[5]  = 0x00000174;	/* Clock at 1Ghs */
+	msg_blk[4]  = 0x82600007;
+	msg_blk[3]  = 0x0000ffff;	/* The real timeout is 0x75d1 */
+	msg_blk[2]  = 0x24924925;	/* Step for 7 chips */
+	msg_blk[1]  = (0x010f1036 ^ core) - 5 * 128  ;	/* Nonce start, have to be N * 128 */
+	msg_blk[0]  = chip;	/* Chip index */
 
 	for (i = 0; i < 23; i++) {
 		writel(msg_blk[i], &alink->tx);
 	}
-	/* Nonce - 0x180: 010f0eb6 */
+	/* Return nonce - 0x180 = Real: 010f0eb6 */
 }
 
 #ifdef DEBUG
@@ -230,7 +230,9 @@ void alink_asic_test()
 					core++;
 				}
 			}
-			debug32("M: %d, C: %d, Core: %d\n", i, j, core);
+			debug32(".");
+			if (core)
+				debug32("M: %d, C: %d, Core: %d\n", i, j, core);
 		}
 	}
 

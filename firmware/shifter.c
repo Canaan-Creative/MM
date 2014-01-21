@@ -11,7 +11,7 @@
 #include "shifter.h"
 
 static struct lm32_shifter *sft = (struct lm32_shifter *)SHIFTER_BASE;
-static uint32_t g_voltage = 0x8a00; /* 1V */
+static uint32_t g_voltage = 0x8f00; /* 0V */
 
 static void shift_done()
 {
@@ -30,10 +30,13 @@ uint32_t get_voltage()
 /* NOTICE: Always delay 10ms after set voltage */
 extern void delay(unsigned int ms);
 
-#define VOLTAGE_DELAY	20
+#define VOLTAGE_DELAY	50
 void set_voltage(uint32_t value)
 {
 	int i;
+
+	if (g_voltage == value)
+		return;
 
 	g_voltage = value;
 
@@ -49,7 +52,7 @@ void set_voltage(uint32_t value)
 
 	/* The power chip datasheet is here:
 	 *   http://www.onsemi.com/pub_link/Collateral/ADP3208D.PDF
-	 * The high 16bits is the value*/
+	 * REV_BITS((VALUE < 1) & 1) << 16: is the value, the */
 
 	/* Set shifter to xx */
 	for (i = 0; i < 5; i++) {

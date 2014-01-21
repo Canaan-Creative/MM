@@ -48,7 +48,7 @@ void delay(unsigned int ms)
 {
 	unsigned int i;
 
-	while (ms--) {
+	while (ms && ms--) {
 		for (i = 0; i < CPU_FREQUENCY / 1000 / 5; i++)
 			__asm__ __volatile__("nop");
 	}
@@ -351,8 +351,10 @@ int main(int argv, char **argc)
 		get_pkg(&mm_work);
 
 		wdg_feed((CPU_FREQUENCY / 1000) * 2);
-		if (!timer_read(0))
-			set_voltage(0x8f00);	/* Set voltage to 0v */
+		if (!timer_read(0)) {
+			g_new_stratum = 0;
+			set_voltage(0x8f00);	/* FIXME: Set voltage to 0v or IDLE chips? */
+		}
 
 		if (!g_new_stratum)
 			continue;

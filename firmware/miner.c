@@ -76,6 +76,9 @@ static void calc_midstate(struct mm_work *mw, struct work *work)
 
 void set_asic_freq(uint32_t value)
 {
+	if (g_asic_freq == value)
+		return;
+
 	g_asic_freq = value;
 }
 
