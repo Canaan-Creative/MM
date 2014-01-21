@@ -27,14 +27,19 @@ uint32_t get_voltage()
 	return g_voltage;
 }
 
+/* NOTICE: Always delay 10ms after set voltage */
+extern void delay(unsigned int ms);
+
+#define VOLTAGE_DELAY	20
 void set_voltage(uint32_t value)
 {
 	int i;
 
 	g_voltage = value;
 
-	if (!value) {
+	if (value == 0x8f00) {
 		writel(0x7, &sft->reg);
+		delay(VOLTAGE_DELAY);
 		return;
 	}
 
@@ -60,4 +65,5 @@ void set_voltage(uint32_t value)
 
 	/* Output enable, low active  */
 	writel(0x3, &sft->reg);
+	delay(VOLTAGE_DELAY);
 }

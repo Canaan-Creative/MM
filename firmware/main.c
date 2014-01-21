@@ -324,9 +324,8 @@ int main(int argv, char **argc)
 	struct result result;
 
 	led(1);
-	adjust_fan(0x1ff);		/* Set the fan to 100% */
+	adjust_fan(0);		/* Set the fan to 100% */
 	set_voltage(0x8a00);	/* Set voltage to 1.0v */
-	delay(10);		/* Delay 10ms for power ready */
 
 	alink_flush_fifo();
 #if 1
@@ -346,10 +345,15 @@ int main(int argv, char **argc)
 	led(0);
 
 	alink_init(0x3ff);
+	timer_set(0, 2);
 	g_new_stratum = 0;
 	while (1) {		/* FIXME: Should we ask for new stratum? */
 		get_pkg(&mm_work);
+
 		wdg_feed((CPU_FREQUENCY / 1000) * 2);
+		if (!timer_read(0))
+			set_voltage(0x8f00);	/* Set voltage to 0v */
+
 		if (!g_new_stratum)
 			continue;
 
@@ -368,10 +372,6 @@ int main(int argv, char **argc)
 			get_pkg(&mm_work);
 			if (!g_new_stratum)
 				break;
-		}
-
-		if (!timer_read(0)) {
-			;	/* TODO: Idle chips */
 		}
 	}
 
