@@ -225,8 +225,12 @@ void alink_asic_test()
 				if (!alink_rxbuf_empty()) {
 					alink_read_result(&result);
 					memcpy(&nonce, result.nonce, 4);
+					if (nonce != 0x010f1036) {
+						debug32("M: %d, C: %d, Core: %d broken(%08x)\n", i, j, k, nonce);
+						core++;
+					}
 				} else {
-					debug32("M: %d, C: %d, Core Dead: %d\n", i, j, k);
+					debug32("M: %d, C: %d, Core: %d dead\n", i, j, k);
 					core++;
 				}
 			}
