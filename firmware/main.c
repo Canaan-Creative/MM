@@ -324,11 +324,14 @@ int main(int argv, char **argc)
 	struct result result;
 
 	led(1);
-	delay(60);		/* Delay 60ms, wait for alink ready */
-	alink_flush_fifo();
 	adjust_fan(0x1ff);		/* Set the fan to 100% */
 	set_voltage(0x8a00);	/* Set voltage to 1.0v */
+	delay(10);		/* Delay 10ms for power ready */
+
+	alink_flush_fifo();
+#if 1
 	alink_asic_test();	/* Test ASIC */
+#endif
 
 	wdg_init(1);
 	wdg_feed((CPU_FREQUENCY / 1000) * 2); /* Configure the wdg to ~2 second, or it will reset FPGA */

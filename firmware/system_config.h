@@ -98,6 +98,7 @@ struct lm32_sha256 {
 #define LM32_ALINK_STATE_TXCOUNT	(0x00007FF0)
 #define LM32_ALINK_STATE_RXEMPTY	(1 << 16)
 #define LM32_ALINK_STATE_RXCOUNT	(0x3FF00000)
+#define LM32_ALINK_STATE_TEST	(1 << 31)
 
 struct lm32_alink {
 	volatile unsigned int tx;
