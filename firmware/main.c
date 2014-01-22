@@ -28,7 +28,7 @@
 
 #include "hexdump.c"
 
-#define IDLE_TIME	5
+#define IDLE_TIME	2	/* Seconds */
 static uint8_t g_pkg[AVA2_P_COUNT];
 static uint8_t g_act[AVA2_P_COUNT];
 static int g_modular_id = 0;	/* Default ID is 0 */
@@ -158,10 +158,12 @@ static int decode_pkg(uint8_t *p, struct mm_work *mw)
 	case AVA2_P_DETECT:
 		g_new_stratum = 0;
 		alink_flush_fifo();
+		timer_set(0, IDLE_TIME);
 		break;
 	case AVA2_P_STATIC:
 		g_new_stratum = 0;
 		alink_flush_fifo();
+		timer_set(0, IDLE_TIME);
 		memcpy(&mw->coinbase_len, data, 4);
 		memcpy(&mw->nonce2_offset, data + 4, 4);
 		memcpy(&mw->nonce2_size, data + 8, 4);
@@ -234,7 +236,6 @@ static int decode_pkg(uint8_t *p, struct mm_work *mw)
 		if (g_modular_id == tmp) {
 			set_voltage(0x8a00);
 			alink_asic_test();	/* Test ASIC */
-			alink_init(0x3ff);
 		}
 		break;
 	default:
@@ -344,8 +345,6 @@ int main(int argv, char **argc)
 
 	led(1);
 	adjust_fan(0);		/* Set the fan to 100% */
-	set_voltage(0x8a00);	/* Set voltage to 1.0v */
-
 	alink_flush_fifo();
 
 	wdg_init(1);
@@ -360,16 +359,22 @@ int main(int argv, char **argc)
 	debug32("%d:MM-%s\n", g_modular_id, MM_VERSION);
 	led(0);
 
-	alink_init(0x3ff);
 	timer_set(0, IDLE_TIME);
 	g_new_stratum = 0;
+
+	alink_asic_idle();
+	adjust_fan(0x1ff);
+	set_voltage(0x8f00);
+
 	while (1) {
 		get_pkg(&mm_work);
 
 		wdg_feed((CPU_FREQUENCY / 1000) * 2);
 		if (!timer_read(0) && g_new_stratum) {
 			g_new_stratum = 0;
-			/* FIXME: should idle chip */
+			alink_asic_idle();
+			adjust_fan(0x1ff);
+			set_voltage(0x8f00);
 		}
 
 		if (!g_new_stratum)

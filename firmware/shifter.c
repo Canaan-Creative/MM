@@ -30,7 +30,7 @@ uint32_t get_voltage()
 /* NOTICE: Always delay 10ms after set voltage */
 extern void delay(unsigned int ms);
 
-#define VOLTAGE_DELAY	50
+#define VOLTAGE_DELAY	100
 void set_voltage(uint32_t value)
 {
 	int i;

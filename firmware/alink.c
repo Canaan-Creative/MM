@@ -173,7 +173,7 @@ static void asic_test_work(int chip, int core, int gate)
 
 	msg_blk[5]  = 0x00000174;	/* Clock at 1Ghs */
 	msg_blk[4]  = 0x82600000 | (gate ? 0xb : 0x7);
-	msg_blk[3]  = 0x0000ffff;	/* The real timeout is 0x75d1 */
+	msg_blk[3]  = (gate ? 0x2fffffff : 0x0000ffff);	/* The real timeout is 0x75d1 */
 	msg_blk[2]  = 0x24924925;	/* Step for 7 chips */
 	msg_blk[1]  = (0x010f1036 ^ core) - 5 * 128  ;	/* Nonce start, have to be N * 128 */
 	msg_blk[0]  = chip;	/* Chip index */
@@ -206,13 +206,18 @@ void alink_asic_idle()
 {
 	int i;
 
+	alink_flush_fifo();
 	for (i = 0; i < AVA2_DEFAULT_MINERS; i++) {
 		debug32("%d", i);
 		alink_init(1 << i);	/* Enable i miners */
 		asic_test_work(i, 0, 1);
 		while (!alink_txbuf_count())
 			;
+		while (!alink_busy_status())
+			;
+		delay(1);
 	}
+	alink_init(0x3ff);
 }
 
 void alink_asic_test()
@@ -255,4 +260,5 @@ void alink_asic_test()
 	}
 
 	writel(0, &alink->state); /* Enable alink hash mode */
+	alink_init(0x3ff);
 }
