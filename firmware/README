@@ -1,7 +1,0 @@
-== Memo ==
-JSMN http://zserge.com/jsmn.html
-  jsmn (pronounced like 'jasmine') is a minimalistic JSON parser in C.
-  It can be easily integrated into the resource-limited projects or embedded systems.
-
-== TODO ==
-* Hardware double sha256()
