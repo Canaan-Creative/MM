@@ -210,6 +210,8 @@ static int decode_pkg(uint8_t *p, struct mm_work *mw)
 			set_voltage(tmp);
 			memcpy(&tmp, data + 8, 4);
 			set_asic_freq(tmp);
+
+			alink_flush_fifo();
 		}
 		break;
 	case AVA2_P_REQUIRE:
@@ -226,6 +228,8 @@ static int decode_pkg(uint8_t *p, struct mm_work *mw)
 		memcpy(&g_nonce2_range, data + 16, 4);
 
 		mw->nonce2 = g_nonce2_offset + (g_nonce2_range / AVA2_DEFAULT_MODULARS) * g_modular_id;
+		alink_flush_fifo();
+
 		g_new_stratum = 1;
 		break;
 	case AVA2_P_TARGET:
