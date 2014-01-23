@@ -236,7 +236,9 @@ static int decode_pkg(uint8_t *p, struct mm_work *mw)
 		memcpy(&tmp, data + 28, 4);
 		if (g_modular_id == tmp) {
 			set_voltage(0x8a00);
+			led(1);
 			alink_asic_test();	/* Test ASIC */
+			led(0);
 		}
 		break;
 	default:
@@ -355,7 +357,6 @@ int main(int argv, char **argc)
 	irq_enable(1);
 
 	g_modular_id = read_modular_id();
-	g_modular_id = 2;
 
 	uart_init();
 	debug32("%d:MM-%s\n", g_modular_id, MM_VERSION);
