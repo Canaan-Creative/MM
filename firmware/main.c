@@ -239,6 +239,7 @@ static int decode_pkg(uint8_t *p, struct mm_work *mw)
 			led(1);
 			alink_asic_test();	/* Test ASIC */
 			led(0);
+			set_voltage(0x8f00);
 		}
 		break;
 	default:
