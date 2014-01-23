@@ -28,7 +28,7 @@
 
 #include "hexdump.c"
 
-#define IDLE_TIME	2	/* Seconds */
+#define IDLE_TIME	5	/* Seconds */
 static uint8_t g_pkg[AVA2_P_COUNT];
 static uint8_t g_act[AVA2_P_COUNT];
 static int g_modular_id = 0;	/* Default ID is 0 */
