@@ -114,8 +114,6 @@ static void polling()
 {
 	uint8_t *data;
 
-	timer_set(0, IDLE_TIME);
-
 	if (ret_consume == ret_produce) {
 		send_pkg(AVA2_P_STATUS, NULL, 0);
 
@@ -154,16 +152,15 @@ static int decode_pkg(uint8_t *p, struct mm_work *mw)
 		return 1;
 	}
 
+	timer_set(0, IDLE_TIME);
 	switch (p[2]) {
 	case AVA2_P_DETECT:
 		g_new_stratum = 0;
 		alink_flush_fifo();
-		timer_set(0, IDLE_TIME);
 		break;
 	case AVA2_P_STATIC:
 		g_new_stratum = 0;
 		alink_flush_fifo();
-		timer_set(0, IDLE_TIME);
 		memcpy(&mw->coinbase_len, data, 4);
 		memcpy(&mw->nonce2_offset, data + 4, 4);
 		memcpy(&mw->nonce2_size, data + 8, 4);
@@ -358,6 +355,7 @@ int main(int argv, char **argc)
 	irq_enable(1);
 
 	g_modular_id = read_modular_id();
+	g_modular_id = 2;
 
 	uart_init();
 	debug32("%d:MM-%s\n", g_modular_id, MM_VERSION);
