@@ -1,9 +1,18 @@
 MM - Miner Manager
 ==================
 
-Miner Manager is a task generate firmware that fit FPGA and faster mining machine
+Miner Manager is a bitcoin task generator firmware that fit FPGA and faster mining machine
 
-Directory Structure
+Main objectives
+=============
+* It is using stratum protocol
+* Generator the task inside FPGA. all Double-SHA256 was done by FPGA. far more faster then CPU
+* Test the nonce inside the FPGA. only report the >= DIFF taskes back to host (cgminer)
+* It fit any kinds of bitcoin mining ASIC, (you may needs some VerilogHDL coding)
+* It have LM32 CPU inside, fit in XC6SLX16 small FPGAs
+* The MM datasheet: http://downloads.canaan-creative.com/software/mm/MM_SOC_Specification.pdf
+
+Directory structure
 ===================
 
 * `firmware`: C code running in LatticeMico32 soft processor
@@ -21,7 +30,13 @@ by default we are using /home/Xilinx/14.6/ISE_DS/
 2. $ make -C firmware           # Generate the final bitstream file .bit/.mcs under firmware/
 3. $ make -C firmware load      # Load the config bit file to FPAG by using Xilix Platform cable
 
-LICENSE
+Discussion
+==========
+* IRC: #avalon @freenode.net
+* Mailing list: http://lists.canaan-creative.com/
+* Documents/Downloads: https://en.bitcoin.it/wiki/Avalon2
+
+License
 =======
 
 This is free and unencumbered public domain software. For more information,
