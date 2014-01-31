@@ -1,17 +1,21 @@
-= Protocol =
+Protocol
+========
 Between cgminer and FPGA controller
 
-== Physical link ==
+Physical link
+=============
 Multiple FPGA controllers are daisy-chained together using TTL UART.
 
-== Packet structure ==
+Packet structure
+================
 Length: 39Bytes
 
 Format: |2B:HEAD|1B:TYPE|1B:IDX|1B:CNT|32B:DATA|2B:CRC|
 
 HEAD: 'A' 'V'
 
-== Conceptual model ==
+Conceptual model
+================
 Cgminer broadcasts this structure (new_task) to all FPGA controllers, 
 Each FPGA controller selects its own partition of extranonce in coinbase txn.
 {
