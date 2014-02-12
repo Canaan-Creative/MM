@@ -22,6 +22,15 @@ NET "uart_debugSIN" LOC = E16;
 NET "uart_debugSOUT" LOC = E15;
 
 # aLink
+#
+# FPGA   1-0   3-2   5-4   7-6   9-8   FAN
+##########################################
+#      11  01
+#  17  12  02
+#  16  13  03
+#  15  14  04
+#  07  06  05
+#
 NET   "RX_P[0]" LOC = N3;
 NET   "RX_N[0]" LOC = P2;
 NET   "TX_N[0]" LOC = R1 | SLEW = QUIETIO;
