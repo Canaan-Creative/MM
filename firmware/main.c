@@ -348,6 +348,10 @@ int main(int argv, char **argc)
 	struct result result;
 
 	led(1);
+	uart_init();
+	alink_a3240_test();
+	return 0;
+
 	adjust_fan(0);		/* Set the fan to 100% */
 	alink_flush_fifo();
 

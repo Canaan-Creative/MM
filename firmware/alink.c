@@ -145,6 +145,64 @@ void alink_flush_fifo()
 	delay(1);
 }
 
+unsigned int asic_test_a3240_work(int core)//0 to 767
+{
+	uint32_t msg_blk[23], exp_nonce, send_nonce;
+	uint32_t core_big = core&0xfffff0, core_small = core&0xf;
+	int i;
+	if(core_small == 0){
+		msg_blk[ 6] = 0x4ac1d001;
+		msg_blk[ 7] = 0x89517050;
+		msg_blk[ 8] = 0x087e051a;
+		msg_blk[ 9] = 0x06b168ae;
+		msg_blk[10] = 0x62a5f25c;
+		msg_blk[11] = 0x00639107;
+		msg_blk[12] = 0x13cdfd7b;
+		msg_blk[13] = 0xfa77fe7d;
+		msg_blk[14] = 0x9cb18a17;
+		msg_blk[15] = 0x65c90d1e;
+		msg_blk[16] = 0x8f41371d;
+		msg_blk[17] = 0x974bf4bb;
+		msg_blk[18] = 0x7145fd6d;
+		msg_blk[19] = 0xc44192c0;
+		msg_blk[20] = 0x12146495;
+		msg_blk[21] = 0xd8f8ef67;
+		msg_blk[22] = 0xa2cb45c1;
+		send_nonce  = 0x1bee2ba0;
+	} else {
+		msg_blk[ 6] = 0xe8dc86b1;
+		msg_blk[ 7] = 0x2d547050;
+		msg_blk[ 8] = 0x087e051a;
+		msg_blk[ 9] = 0x6e18f645;
+		msg_blk[10] = 0x6d0fd9da;
+		msg_blk[11] = 0xdac8ce29;
+		msg_blk[12] = 0x1c9fc4ed;
+		msg_blk[13] = 0x8119ce2a;
+		msg_blk[14] = 0x983dab15;
+		msg_blk[15] = 0x33cde02a;
+		msg_blk[16] = 0x528caf7e;
+		msg_blk[17] = 0xeea79cd6;
+		msg_blk[18] = 0x7848c34b;
+		msg_blk[19] = 0x222e8b87;
+		msg_blk[20] = 0x25a54bbe;
+		msg_blk[21] = 0xe06e5fab;
+		msg_blk[22] = 0x9d8d4242;
+		send_nonce  = 0xc168f161;
+	}
+
+	msg_blk[ 4] = 0x00000001;
+	msg_blk[ 5] = 0x00000000;
+	msg_blk[ 3] = 0x0000ffff;	/* The real timeout is 0x75d1 */
+	msg_blk[ 2] = 0x24924925;	/* Step for 7 chips */
+	msg_blk[ 1] = send_nonce ^ core_big;	/* Nonce start */
+	msg_blk[ 0] = 0x00000000;	/* Chip index */
+	exp_nonce   = send_nonce + 0x6000;
+	for (i = 0; i < 23; i++) {
+		writel(msg_blk[i], &alink->tx);
+	}
+	return exp_nonce;
+}
+
 static void asic_test_work(int chip, int core, int gate)
 {
 	uint32_t msg_blk[23];
@@ -261,4 +319,41 @@ void alink_asic_test()
 
 	writel(0, &alink->state); /* Enable alink hash mode */
 	alink_init(0x3ff);
+}
+
+void alink_a3240_test()
+{
+	int k, error_cnt=0, pass_cnt=0;
+	uint32_t nonce, exp_nonce;
+	struct result result;
+
+	writel(LM32_ALINK_STATE_TEST, &alink->state); /* Enable alink scan mode */
+
+	alink_init(0x1);/* Enable 0 miners */
+	for (k = 0; k < 768; k++) {
+		exp_nonce = asic_test_a3240_work(k);		/* Test asic cores  */
+		while (!alink_txbuf_count())
+			;
+		while (!alink_busy_status())
+			;
+
+		delay(1);
+		if (!alink_rxbuf_empty()){
+			alink_read_result(&result);
+			memcpy(&nonce, result.nonce, 4);
+			if (nonce != exp_nonce){
+				debug32("Error small core %3d\n", k);
+				error_cnt++;
+			} else {
+				debug32("Pass small core %3d\n", k);
+				pass_cnt++;
+			}
+		} else {
+			debug32("Error small core %3d\n", k);
+			error_cnt++;
+		}
+	}
+
+	 debug32("Pass core number %3d\n", pass_cnt);
+	 debug32("Error core number %3d\n", error_cnt);
 }
