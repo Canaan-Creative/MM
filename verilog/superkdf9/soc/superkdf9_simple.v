@@ -277,41 +277,41 @@ begin
 	end
 end
 
-assign WBS_ADR_I = 
-	(selected == 2'd1 ? WBM0_ADR_O : 
-	(selected == 2'd2 ? WBM1_ADR_O : 
+assign WBS_ADR_I =
+	(selected == 2'd1 ? WBM0_ADR_O :
+	(selected == 2'd2 ? WBM1_ADR_O :
 	0));
-assign WBS_DAT_I_INT = 
-	(selected == 2'd1 ? WBM0_DAT_O_INT : 
-	(selected == 2'd2 ? WBM1_DAT_O_INT : 
+assign WBS_DAT_I_INT =
+	(selected == 2'd1 ? WBM0_DAT_O_INT :
+	(selected == 2'd2 ? WBM1_DAT_O_INT :
 	0));
-assign WBS_SEL_I_INT = 
-	(selected == 2'd1 ? WBM0_SEL_O_INT : 
-	(selected == 2'd2 ? WBM1_SEL_O_INT : 
+assign WBS_SEL_I_INT =
+	(selected == 2'd1 ? WBM0_SEL_O_INT :
+	(selected == 2'd2 ? WBM1_SEL_O_INT :
 	0));
-assign WBS_WE_I = 
-	(selected == 2'd1 ? WBM0_WE_O : 
-	(selected == 2'd2 ? WBM1_WE_O : 
+assign WBS_WE_I =
+	(selected == 2'd1 ? WBM0_WE_O :
+	(selected == 2'd2 ? WBM1_WE_O :
 	0));
-assign WBS_CTI_I = 
-	(selected == 2'd1 ? WBM0_CTI_O : 
-	(selected == 2'd2 ? WBM1_CTI_O : 
+assign WBS_CTI_I =
+	(selected == 2'd1 ? WBM0_CTI_O :
+	(selected == 2'd2 ? WBM1_CTI_O :
 	0));
-assign WBS_BTE_I = 
-	(selected == 2'd1 ? WBM0_BTE_O : 
-	(selected == 2'd2 ? WBM1_BTE_O : 
+assign WBS_BTE_I =
+	(selected == 2'd1 ? WBM0_BTE_O :
+	(selected == 2'd2 ? WBM1_BTE_O :
 	0));
-assign WBS_LOCK_I = 
-	(selected == 2'd1 ? WBM0_LOCK_O : 
-	(selected == 2'd2 ? WBM1_LOCK_O : 
+assign WBS_LOCK_I =
+	(selected == 2'd1 ? WBM0_LOCK_O :
+	(selected == 2'd2 ? WBM1_LOCK_O :
 	0));
-assign WBS_CYC_I = 
-	(selected == 2'd1 ? WBM0_CYC_O : 
-	(selected == 2'd2 ? WBM1_CYC_O : 
+assign WBS_CYC_I =
+	(selected == 2'd1 ? WBM0_CYC_O :
+	(selected == 2'd2 ? WBM1_CYC_O :
 	0));
-assign WBS_STB_I = 
-	(selected == 2'd1 ? WBM0_STB_O : 
-	(selected == 2'd2 ? WBM1_STB_O : 
+assign WBS_STB_I =
+	(selected == 2'd1 ? WBM0_STB_O :
+	(selected == 2'd2 ? WBM1_STB_O :
 	0));
 
 assign WBM0_DAT_I_INT = WBS_DAT_O_INT;
@@ -336,7 +336,7 @@ endmodule
 `include "../components/sha/dbl_sha.v"
 `include "../components/sha/sha_core.v"
 
-`include "../components/alink/tx_timer.v" 
+`include "../components/alink/tx_timer.v"
 `include "../components/alink/txc.v"
 `include "../components/alink/alink_slave.v"
 `include "../components/alink/alink_define.v"
@@ -357,14 +357,12 @@ endmodule
 `include "../components/uart_pro/uart_pro.v"
 `include "../components/uart_pro/uart_txc.v"
 `endif
-//module superkdf9_simple ( 
-module mm ( 
+//module superkdf9_simple (
+module mm (
   ex_clk_i
 , ex_clk_o
 , uartSIN
 , uartSOUT
-, uartSIN_PIN
-, uartSOUT_PIN
 , INT
 , uartSIN_led
 , uartSOUT_led
@@ -392,7 +390,7 @@ module mm (
 , TWI_SDA
 
 , SFT_SHCP
-, SFT_DS  
+, SFT_DS
 , SFT_STCP
 , SFT_MR_N
 , SFT_OE_N
@@ -483,8 +481,6 @@ wire uartUART_en;
 wire uartINTR;
 input  uartSIN;
 inout  uartSOUT;
-input   uartSIN_PIN;
-inout   uartSOUT_PIN;
 output  INT;
 
 output  uartRESET_N;
@@ -516,7 +512,7 @@ wire   gpioGPIO_ERR_O;
 wire   gpioGPIO_RTY_O;
 wire gpioGPIO_en;
 wire gpioIRQ_O;
-input [3:0] gpioPIO_IN;
+input [6:0] gpioPIO_IN;
 output [3:0] gpioPIO_OUT;
 
 wire [7:0] uart_debugUART_DAT_O;
@@ -663,38 +659,38 @@ arbiter (
 .WBS_STB_I(SHAREDBUS_STB_I),
 .clk (clk_i),
 .reset (sys_reset));
-assign SHAREDBUS_DAT_O = 
-uartUART_en ? {4{uartUART_DAT_O[7:0]}} : 
-spiSPI_en ? spiSPI_DAT_O : 
-gpioGPIO_en ? gpioGPIO_DAT_O : 
-uart_debugUART_en ? {4{uart_debugUART_DAT_O[7:0]}} : 
-shaSHA_en ? shaSHA_DAT_O : 
-alinkALINK_en ? alinkALINK_DAT_O : 
-twiTWI_en ? twiTWI_DAT_O : 
+assign SHAREDBUS_DAT_O =
+uartUART_en ? {4{uartUART_DAT_O[7:0]}} :
+spiSPI_en ? spiSPI_DAT_O :
+gpioGPIO_en ? gpioGPIO_DAT_O :
+uart_debugUART_en ? {4{uart_debugUART_DAT_O[7:0]}} :
+shaSHA_en ? shaSHA_DAT_O :
+alinkALINK_en ? alinkALINK_DAT_O :
+twiTWI_en ? twiTWI_DAT_O :
 0;
 assign SHAREDBUS_ERR_O = SHAREDBUS_CYC_I & !(
-(!uartUART_ERR_O & uartUART_en) | 
-(!spiSPI_ERR_O & spiSPI_en) | 
-(!gpioGPIO_ERR_O & gpioGPIO_en) | 
-(!uart_debugUART_ERR_O & uart_debugUART_en) | 
+(!uartUART_ERR_O & uartUART_en) |
+(!spiSPI_ERR_O & spiSPI_en) |
+(!gpioGPIO_ERR_O & gpioGPIO_en) |
+(!uart_debugUART_ERR_O & uart_debugUART_en) |
 (!shaSHA_ERR_O & shaSHA_en ) |
 (!alinkALINK_ERR_O & alinkALINK_en ) |
 (!twiTWI_ERR_O & twiTWI_en ) |
 0);
-assign SHAREDBUS_ACK_O = 
-uartUART_en ? uartUART_ACK_O : 
-spiSPI_en ? spiSPI_ACK_O : 
-gpioGPIO_en ? gpioGPIO_ACK_O : 
-uart_debugUART_en ? uart_debugUART_ACK_O : 
+assign SHAREDBUS_ACK_O =
+uartUART_en ? uartUART_ACK_O :
+spiSPI_en ? spiSPI_ACK_O :
+gpioGPIO_en ? gpioGPIO_ACK_O :
+uart_debugUART_en ? uart_debugUART_ACK_O :
 shaSHA_en ? shaSHA_ACK_O :
 alinkALINK_en ? alinkALINK_ACK_O :
 twiTWI_en ? twiTWI_ACK_O :
 0;
-assign SHAREDBUS_RTY_O = 
-uartUART_en ? uartUART_RTY_O : 
-spiSPI_en ? spiSPI_RTY_O : 
-gpioGPIO_en ? gpioGPIO_RTY_O : 
-uart_debugUART_en ? uart_debugUART_RTY_O : 
+assign SHAREDBUS_RTY_O =
+uartUART_en ? uartUART_RTY_O :
+spiSPI_en ? spiSPI_RTY_O :
+gpioGPIO_en ? gpioGPIO_RTY_O :
+uart_debugUART_en ? uart_debugUART_RTY_O :
 shaSHA_en ? shaSHA_RTY_O :
 alinkALINK_en ? alinkALINK_RTY_O :
 twiTWI_en ? twiTWI_RTY_O :
@@ -704,8 +700,8 @@ assign superkdf9DEBUG_DAT_I = 0;
 wire [3:0] superkdf9DEBUG_SEL_I;
 assign superkdf9DEBUG_SEL_I = 0;
 assign superkdf9DEBUG_en = 0;
-lm32_top 
- superkdf9( 
+lm32_top
+ superkdf9(
 .I_ADR_O(superkdf9I_ADR_O),
 .I_DAT_O(superkdf9I_DAT_O),
 .I_DAT_I(superkdf9I_DAT_I),
@@ -781,7 +777,7 @@ lm32_top
 // VIO/ILA and ICON {{{
 wire [35:0] icon_ctrl_0, icon_ctrl_1;
 wire [255:0] trig0 = {
-        8'ha                 ,//[15:8]
+	8'ha                 ,//[15:8]
 	irom_addr_rd[29:0]   ,
 	irom_q_rd[31:0]      ,
 	superkdf9interrupt_n[7:0]
@@ -849,10 +845,9 @@ assign uartUART_SEL_I = ((
 assign uartUART_en = (SHAREDBUS_ADR_I[31:4] == 28'b1000000000000000000000010000);
 wire uartSOUT_w ;
 assign uartSOUT     = uartSOUT_w ? 1'bz : 1'b0;
-assign uartSOUT_PIN = uartSOUT_w ? 1'bz : 1'b0;
 
 `ifndef UART_PRO_EN
-uart_core 
+uart_core
 #(
 .UART_WB_DAT_WIDTH(8),
 .UART_WB_ADR_WIDTH(4),
@@ -867,7 +862,7 @@ uart_core
 .LCR_PARITY_STICK(0),
 .LCR_SET_BREAK(0),
 .FIFO(1))
- uart( 
+ uart(
 .UART_ADR_I(SHAREDBUS_ADR_I[3:0]),
 .UART_DAT_I(uartUART_DAT_I[7:0]),
 .UART_DAT_O(uartUART_DAT_O[7:0]),
@@ -881,7 +876,7 @@ uart_core
 .UART_LOCK_I(SHAREDBUS_LOCK_I),
 .UART_CYC_I(SHAREDBUS_CYC_I & uartUART_en),
 .UART_STB_I(SHAREDBUS_STB_I & uartUART_en),
-.SIN(uartSIN&uartSIN_PIN),
+.SIN(uartSIN),
 .SOUT(uartSOUT_w),
 .RXRDY_N(uartRXRDY_N),
 .TXRDY_N(uartTXRDY_N),
@@ -909,9 +904,9 @@ uart_pro U_uart_pro(
 /*output [31:0] */.PRO_DAT_O  (uartUART_DAT_O[7:0]          ) ,
 
 //Uart Pro interface
-/*input         */.PRO_RX     (uartSIN&uartSIN_PIN          ) ,	
+/*input         */.PRO_RX     (uartSIN                      ) ,
 /*output        */.PRO_TX     (uartSOUT_w                   ) ,
-/*output        */.PRO_INT    (uartINTR                     ) 	
+/*output        */.PRO_INT    (uartINTR                     )
 );
 `endif
 
@@ -922,7 +917,7 @@ wire [3:0] spiSPI_SEL_I;
 assign spiSPI_SEL_I = SHAREDBUS_SEL_I;
 assign spiSPI_en = (SHAREDBUS_ADR_I[31:8] == 24'b100000000000000000000000);
 `ifdef SPI_EN
-spi 
+spi
 #(
 .MASTER(1),
 .SLAVE_NUMBER(32'h1),
@@ -933,7 +928,7 @@ spi
 .SHIFT_DIRECTION(0),
 .CLOCK_PHASE(0),
 .CLOCK_POLARITY(0))
- spi( 
+ spi(
 .SPI_ADR_I(SHAREDBUS_ADR_I[31:0]),
 .SPI_DAT_I(spiSPI_DAT_I[31:0]),
 .SPI_DAT_O(spiSPI_DAT_O[31:0]),
@@ -971,7 +966,7 @@ assign gpioGPIO_SEL_I = SHAREDBUS_SEL_I;
 assign gpioGPIO_en = (SHAREDBUS_ADR_I[31:4] == 28'b1000000000000000000000100000);
 
 `ifdef GPIO_EN
-gpio 
+gpio
 #(
 .GPIO_WB_DAT_WIDTH(32),
 .GPIO_WB_ADR_WIDTH(4),
@@ -988,7 +983,7 @@ gpio
 .EITHER_EDGE_IRQ(1),
 .POSE_EDGE_IRQ(0),
 .NEGE_EDGE_IRQ(0))
- gpio( 
+ gpio(
 .GPIO_ADR_I(SHAREDBUS_ADR_I[3:0]),
 .GPIO_DAT_I(gpioGPIO_DAT_I[31:0]),
 .GPIO_DAT_O(gpioGPIO_DAT_O[31:0]),
@@ -1025,7 +1020,7 @@ assign uart_debugUART_SEL_I = ((
 	SHAREDBUS_ADR_I[1:0] == 2'b01) ? SHAREDBUS_SEL_I[2] : ((
 	SHAREDBUS_ADR_I[1:0] == 2'b10) ? SHAREDBUS_SEL_I[1] : SHAREDBUS_SEL_I[0])));
 assign uart_debugUART_en = (SHAREDBUS_ADR_I[31:4] == 28'b1000000000000000000000110000);
-uart_core 
+uart_core
 #(
 .UART_WB_DAT_WIDTH(8),
 .UART_WB_ADR_WIDTH(4),
@@ -1040,7 +1035,7 @@ uart_core
 .LCR_PARITY_STICK(0),
 .LCR_SET_BREAK(0),
 .FIFO(1))
- uart_debug( 
+ uart_debug(
 .UART_ADR_I(SHAREDBUS_ADR_I[3:0]),
 .UART_DAT_I(uart_debugUART_DAT_I[7:0]),
 .UART_DAT_O(uart_debugUART_DAT_O[7:0]),
@@ -1078,7 +1073,7 @@ sha sha256(
 /*output reg   */ .SHA_ACK_O (shaSHA_ACK_O                ) ,
 /*output       */ .SHA_ERR_O (shaSHA_ERR_O                ) ,//const 0
 /*output       */ .SHA_RTY_O (shaSHA_RTY_O                ) ,//const 0
-/*output [31:0]*/ .SHA_DAT_O (shaSHA_DAT_O                )  
+/*output [31:0]*/ .SHA_DAT_O (shaSHA_DAT_O                )
 );
 
 assign alinkALINK_en = (SHAREDBUS_ADR_I[31:6] == 26'b10000000000000000000010100);
@@ -1105,7 +1100,7 @@ alink alink(
 //TX.PHY
 /*output [31:0] */ .TX_P        (TX_P                            ) ,
 /*output [31:0] */ .TX_N        (TX_N                            ) ,
-//RX.PHY                                                         
+//RX.PHY
 /*input  [31:0] */ .RX_P        (RX_P                            ) ,
 /*input  [31:0] */ .RX_N        (RX_N                            ) ,
 /*output [4:0]  */ .ALINK_led   (ALINK_led                       )
@@ -1138,21 +1133,21 @@ twi u_twi(
 /*output        */ .TWI_SCL_O   (TWI_SCL_O                   ) ,
 /*input         */ .TWI_SDA_I   (TWI_SDA                     ) ,
 /*output        */ .TWI_SDA_OEN (TWI_SDA_OEN                 ) ,
-/*output        */ .PWM         (PWM                         ) , 
+/*output        */ .PWM         (PWM                         ) ,
 /*output        */ .WATCH_DOG   (WATCH_DOG                   ) ,
 
 /*output        */ .SFT_SHCP    (SFT_SHCP                    ) ,
 /*output        */ .SFT_DS      (SFT_DS                      ) ,
 /*output        */ .SFT_STCP    (SFT_STCP                    ) ,
 /*output        */ .SFT_MR_N    (SFT_MR_N                    ) ,
-/*output        */ .SFT_OE_N    (SFT_OE_N                    ) , 
+/*output        */ .SFT_OE_N    (SFT_OE_N                    ) ,
 
 /*input         */ .FAN_IN0     (FAN_IN0                     ) ,
 /*input         */ .FAN_IN1     (FAN_IN1                     ) ,
-/*output        */ .TIME0_INT   (TIME0_INT                   ) , 
+/*output        */ .TIME0_INT   (TIME0_INT                   ) ,
 /*output        */ .TIME1_INT   (TIME1_INT                   ) ,
 /*output        */ .GPIO_OUT    (gpioPIO_OUT                 ) ,
-/*input  [1:0]  */ .GPIO_IN     (gpioPIO_IN                  )
+/*input  [6:0]  */ .GPIO_IN     (gpioPIO_IN                  )
 ) ;
 
 assign superkdf9interrupt_n[3] = !uartINTR ;

@@ -3,7 +3,7 @@ module twi(
     // system clock and reset
     input          CLK_I       ,
     input          RST_I       ,
-    
+
     // wishbone interface signals
     input          TWI_CYC_I   ,//NC
     input          TWI_STB_I   ,
@@ -23,7 +23,7 @@ module twi(
     input          TWI_SDA_I   ,
     output         TWI_SDA_OEN ,
     output         PWM         ,
-    output         WATCH_DOG   , 
+    output         WATCH_DOG   ,
 
     output         SFT_SHCP    ,
     output         SFT_DS      ,
@@ -33,11 +33,11 @@ module twi(
 
     input          FAN_IN0     ,
     input          FAN_IN1     ,
-    output         TIME0_INT   , 
+    output         TIME0_INT   ,
     output         TIME1_INT   ,
 
     output [3:0]   GPIO_OUT    ,
-    input  [3:0]   GPIO_IN 
+    input  [6:0]   GPIO_IN
 );
 
 assign TWI_ERR_O = 1'b0 ;
@@ -47,12 +47,12 @@ assign TWI_RTY_O = 1'b0 ;
 // WB bus ACK
 //-----------------------------------------------------
 always @ ( posedge CLK_I or posedge RST_I ) begin
-        if( RST_I )
-                TWI_ACK_O <= 1'b0 ;
-        else if( TWI_STB_I && (~TWI_ACK_O) )
-                TWI_ACK_O <= 1'b1 ;
-        else 
-                TWI_ACK_O <= 1'b0 ;
+	if( RST_I )
+		TWI_ACK_O <= 1'b0 ;
+	else if( TWI_STB_I && (~TWI_ACK_O) )
+		TWI_ACK_O <= 1'b1 ;
+	else
+		TWI_ACK_O <= 1'b0 ;
 end
 
 wire i2cr_wr_en  = TWI_STB_I & TWI_WE_I  & ( TWI_ADR_I == `I2CR) & ~TWI_ACK_O ;
@@ -151,7 +151,7 @@ shift u_shift(
 /*output      */ .sft_ds   (SFT_DS         ) ,
 /*output      */ .sft_stcp (SFT_STCP       ) ,
 /*output      */ .sft_mr_n (SFT_MR_N       ) ,
-/*output      */ .sft_oe_n (SFT_OE_N       ) 
+/*output      */ .sft_oe_n (SFT_OE_N       )
 );
 
 //-----------------------------------------------------
@@ -286,8 +286,8 @@ assign TIME1_INT = ~tim_mask1 && tim_done1 ;
 // GPIO
 //-----------------------------------------------------
 reg [3:0] reg_gout ;
-reg [3:0] reg_gin  ;
-wire [31:0] reg_gpio = {24'b0,reg_gin,reg_gout} ;
+reg [6:0] reg_gin  ;
+wire [31:0] reg_gpio = {21'b0,reg_gin,reg_gout} ;
 always @ ( posedge CLK_I or posedge RST_I ) begin
 	if( RST_I )
 		reg_gout <= 'b0 ;
@@ -323,21 +323,21 @@ always @ ( posedge CLK_I ) begin
 	gpio_rd_en_r <= gpio_rd_en ;
 end
 
-assign TWI_DAT_O = i2cr_rd_en_r ? {24'b0,reg_i2cr}     : 
+assign TWI_DAT_O = i2cr_rd_en_r ? {24'b0,reg_i2cr}     :
 		   wdg_rd_en_r  ? {5'b0,wdg_cnt,wdg_en}:
-		   sft_rd_en_r  ? reg_sft              : 
+		   sft_rd_en_r  ? reg_sft              :
 		   fan0_rd_en_r ? {6'b0,reg_fan0}      :
 		   fan1_rd_en_r ? {6'b0,reg_fan1}      :
 		   time_rd_en_r ? reg_tim              :
 		   gpio_rd_en_r ? reg_gpio             :
-                   {24'b0,reg_i2rd} ;
+		   {24'b0,reg_i2rd} ;
 
 twi_core twi_core (
-/*input       */ .clk          (CLK_I                ) , 
+/*input       */ .clk          (CLK_I                ) ,
 /*input       */ .rst          (RST_I                ) ,
 /*input       */ .wr           (i2cr_wr_en|i2wd_wr_en) , //we
 /*input  [7:0]*/ .data_in      (TWI_DAT_I[7:0]       ) ,//dat1
-/*input  [7:0]*/ .wr_addr      ({2'b0,TWI_ADR_I}     ) ,//adr1 
+/*input  [7:0]*/ .wr_addr      ({2'b0,TWI_ADR_I}     ) ,//adr1
 /*output [7:0]*/ .i2cr         (reg_i2cr             ) ,
 /*output [7:0]*/ .i2rd         (reg_i2rd             ) ,
 /*output      */ .twi_scl_o    (TWI_SCL_O            ) ,
@@ -346,4 +346,3 @@ twi_core twi_core (
 );
 
 endmodule
-
