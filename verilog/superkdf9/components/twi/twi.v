@@ -37,7 +37,7 @@ module twi(
     output         TIME1_INT   ,
 
     output [3:0]   GPIO_OUT    ,
-    input  [3:0]   GPIO_IN 
+    input  [6:0]   GPIO_IN 
 );
 
 assign TWI_ERR_O = 1'b0 ;
@@ -286,8 +286,8 @@ assign TIME1_INT = ~tim_mask1 && tim_done1 ;
 // GPIO
 //-----------------------------------------------------
 reg [3:0] reg_gout ;
-reg [3:0] reg_gin  ;
-wire [31:0] reg_gpio = {24'b0,reg_gin,reg_gout} ;
+reg [6:0] reg_gin  ;
+wire [31:0] reg_gpio = {21'b0,reg_gin,reg_gout} ;
 always @ ( posedge CLK_I or posedge RST_I ) begin
 	if( RST_I )
 		reg_gout <= 'b0 ;

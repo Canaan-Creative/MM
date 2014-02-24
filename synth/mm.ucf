@@ -12,11 +12,6 @@ NET "uartSIN"  LOC = C8; # FT232's TX
 NET "uartSOUT" LOC = A12; # FT232's RX
 NET "uartSOUT" PULLUP; # FT232's RX
 
-NET "uartSIN_PIN"  LOC = F16; # FT232's TX
-NET "uartSIN_PIN" PULLUP; # FT232's RX
-NET "uartSOUT_PIN" LOC = F15; # FT232's RX
-NET "uartSOUT_PIN" PULLUP; # FT232's RX
-
 # UART debug
 NET "uart_debugSIN" LOC = E16;
 NET "uart_debugSOUT" LOC = E15;
@@ -108,7 +103,12 @@ NET "gpioPIO_OUT[0]" LOC = D16 | SLEW = QUIETIO;
 #GPIO read ID
 NET "gpioPIO_IN[0]" LOC = A14 | SLEW = QUIETIO;
 NET "gpioPIO_IN[1]" LOC = C9 | SLEW = QUIETIO;
-
+#GPIO read Power good
+NET "gpioPIO_IN[2]" LOC = J14 | SLEW = QUIETIO;
+NET "gpioPIO_IN[3]" LOC = H16 | SLEW = QUIETIO;
+NET "gpioPIO_IN[4]" LOC = H15 | SLEW = QUIETIO;
+NET "gpioPIO_IN[5]" LOC = G16 | SLEW = QUIETIO;
+NET "gpioPIO_IN[6]" LOC = F15 | SLEW = QUIETIO;
 
 NET "TWI_SCL" LOC = D3;
 NET "TWI_SDA" LOC = E4;

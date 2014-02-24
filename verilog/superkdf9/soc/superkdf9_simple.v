@@ -363,8 +363,6 @@ module mm (
 , ex_clk_o
 , uartSIN
 , uartSOUT
-, uartSIN_PIN
-, uartSOUT_PIN
 , INT
 , uartSIN_led
 , uartSOUT_led
@@ -483,8 +481,6 @@ wire uartUART_en;
 wire uartINTR;
 input  uartSIN;
 inout  uartSOUT;
-input   uartSIN_PIN;
-inout   uartSOUT_PIN;
 output  INT;
 
 output  uartRESET_N;
@@ -516,7 +512,7 @@ wire   gpioGPIO_ERR_O;
 wire   gpioGPIO_RTY_O;
 wire gpioGPIO_en;
 wire gpioIRQ_O;
-input [3:0] gpioPIO_IN;
+input [6:0] gpioPIO_IN;
 output [3:0] gpioPIO_OUT;
 
 wire [7:0] uart_debugUART_DAT_O;
@@ -849,7 +845,6 @@ assign uartUART_SEL_I = ((
 assign uartUART_en = (SHAREDBUS_ADR_I[31:4] == 28'b1000000000000000000000010000);
 wire uartSOUT_w ;
 assign uartSOUT     = uartSOUT_w ? 1'bz : 1'b0;
-assign uartSOUT_PIN = uartSOUT_w ? 1'bz : 1'b0;
 
 `ifndef UART_PRO_EN
 uart_core 
@@ -881,7 +876,7 @@ uart_core
 .UART_LOCK_I(SHAREDBUS_LOCK_I),
 .UART_CYC_I(SHAREDBUS_CYC_I & uartUART_en),
 .UART_STB_I(SHAREDBUS_STB_I & uartUART_en),
-.SIN(uartSIN&uartSIN_PIN),
+.SIN(uartSIN),
 .SOUT(uartSOUT_w),
 .RXRDY_N(uartRXRDY_N),
 .TXRDY_N(uartTXRDY_N),
@@ -909,7 +904,7 @@ uart_pro U_uart_pro(
 /*output [31:0] */.PRO_DAT_O  (uartUART_DAT_O[7:0]          ) ,
 
 //Uart Pro interface
-/*input         */.PRO_RX     (uartSIN&uartSIN_PIN          ) ,	
+/*input         */.PRO_RX     (uartSIN                      ) ,	
 /*output        */.PRO_TX     (uartSOUT_w                   ) ,
 /*output        */.PRO_INT    (uartINTR                     ) 	
 );
@@ -1152,7 +1147,7 @@ twi u_twi(
 /*output        */ .TIME0_INT   (TIME0_INT                   ) , 
 /*output        */ .TIME1_INT   (TIME1_INT                   ) ,
 /*output        */ .GPIO_OUT    (gpioPIO_OUT                 ) ,
-/*input  [1:0]  */ .GPIO_IN     (gpioPIO_IN                  )
+/*input  [6:0]  */ .GPIO_IN     (gpioPIO_IN                  )
 ) ;
 
 assign superkdf9interrupt_n[3] = !uartINTR ;
