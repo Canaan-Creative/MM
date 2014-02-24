@@ -31,7 +31,7 @@
 #define IDLE_TIME	5	/* Seconds */
 static uint8_t g_pkg[AVA2_P_COUNT];
 static uint8_t g_act[AVA2_P_COUNT];
-static int g_modular_id = 0;	/* Default ID is 0 */
+static int g_module_id = 0;	/* Default ID is 0 */
 static int g_new_stratum = 0;
 static int g_local_work = 0;
 static int g_hw_work = 0;
@@ -71,7 +71,7 @@ static void encode_pkg(uint8_t *p, int type, uint8_t *buf, unsigned int len)
 	p[4] = 1;
 
 	data = p + 5;
-	memcpy(data + 28, &g_modular_id, 4); /* Attach the modular_id at end */
+	memcpy(data + 28, &g_module_id, 4); /* Attach the module_id at end */
 
 	switch(type) {
 	case AVA2_P_ACKDETECT:
@@ -195,8 +195,8 @@ static int decode_pkg(uint8_t *p, struct mm_work *mw)
 		break;
 	case AVA2_P_POLLING:
 		memcpy(&tmp, data + 28, 4);
-		debug32("ID: %d-%d\n", g_modular_id, tmp);
-		if (g_modular_id == tmp)
+		debug32("ID: %d-%d\n", g_module_id, tmp);
+		if (g_module_id == tmp)
 			polling();
 
 		memcpy(&tmp, data + 24, 4);
@@ -224,7 +224,7 @@ static int decode_pkg(uint8_t *p, struct mm_work *mw)
 		memcpy(&g_nonce2_offset, data + 12, 4);
 		memcpy(&g_nonce2_range, data + 16, 4);
 
-		mw->nonce2 = g_nonce2_offset + (g_nonce2_range / AVA2_DEFAULT_MODULARS) * g_modular_id;
+		mw->nonce2 = g_nonce2_offset + (g_nonce2_range / AVA2_DEFAULT_MODULES) * g_module_id;
 		alink_flush_fifo();
 
 		g_new_stratum = 1;
@@ -234,7 +234,7 @@ static int decode_pkg(uint8_t *p, struct mm_work *mw)
 		break;
 	case AVA2_P_TEST:
 		memcpy(&tmp, data + 28, 4);
-		if (g_modular_id == tmp) {
+		if (g_module_id == tmp) {
 			set_voltage(0x8a00);
 			led(1);
 			alink_asic_test();	/* Test ASIC */
@@ -316,12 +316,12 @@ static int get_pkg(struct mm_work *mw)
 				switch (g_pkg[2]) {
 				case AVA2_P_DETECT:
 					memcpy(&tmp, g_pkg + 5 + 28, 4);
-					if (g_modular_id == tmp)
+					if (g_module_id == tmp)
 						send_pkg(AVA2_P_ACKDETECT, (uint8_t *)MM_VERSION, MM_VERSION_LEN);
 					break;
 				case AVA2_P_REQUIRE:
 					memcpy(&tmp, g_pkg + 5 + 28, 4);
-					if (g_modular_id == tmp)
+					if (g_module_id == tmp)
 						send_pkg(AVA2_P_STATUS, NULL, 0);
 					break;
 				default:
@@ -357,10 +357,10 @@ int main(int argv, char **argc)
 	irq_setmask(0);
 	irq_enable(1);
 
-	g_modular_id = read_modular_id();
+	g_module_id = read_module_id();
 
 	uart_init();
-	debug32("%d:MM-%s\n", g_modular_id, MM_VERSION);
+	debug32("%d:MM-%s\n", g_module_id, MM_VERSION);
 	led(0);
 
 	timer_set(0, IDLE_TIME);

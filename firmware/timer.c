@@ -92,8 +92,12 @@ void led(uint8_t value)
 	writel(value, &tim->gpio);
 }
 
-int read_modular_id()
+int read_module_id()
 {
 	return (readl(&tim->gpio) >> 4) & 0x3;
 }
 
+int read_power_good()
+{
+	return (readl(&tim->gpio) >> 6) & 0x1f;
+}
