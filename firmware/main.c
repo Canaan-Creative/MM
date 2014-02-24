@@ -93,6 +93,9 @@ static void encode_pkg(uint8_t *p, int type, uint8_t *buf, unsigned int len)
 
 		memcpy(data + 16, &g_local_work, 4);
 		memcpy(data + 20, &g_hw_work, 4);
+
+		tmp = read_power_good();
+		memcpy(data + 24, &tmp, 4);
 		break;
 	default:
 		break;
