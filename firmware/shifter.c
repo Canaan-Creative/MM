@@ -30,42 +30,58 @@ uint32_t get_voltage()
 /* NOTICE: Always delay 10ms after set voltage */
 extern void delay(unsigned int ms);
 
-#define VOLTAGE_DELAY	100
-void set_voltage(uint32_t value)
+#define VOLTAGE_DELAY	200
+static void shifte_value(uint32_t *value, int count)
 {
 	int i;
 
-	if (g_voltage == value)
-		return;
-
-	g_voltage = value;
-
-	if (value == 0x8f00) {
-		writel(0x7, &sft->reg);
-		delay(VOLTAGE_DELAY);
-		return;
-	}
-
-	/* Reset */
-	writel(0, &sft->reg);
-
-	/* The power chip datasheet is here:
-	 *   http://www.onsemi.com/pub_link/Collateral/ADP3208D.PDF
-	 * REV_BITS((VALUE < 1) & 1) << 16: is the value, the */
-
-	/* Set shifter to xx */
-	for (i = 0; i < 5; i++) {
-		writel(value | 0x1, &sft->reg);
+	/* Set shifter to xx [FPGA 0 1 2 3 4 FAN] */
+	for (i = 0; i < count; i++) {
+		writel(value[i] | 0x1, &sft->reg);
 		shift_done();
 	}
 
 	/* Shift to reg */
-	for (i = 0; i < 5; i++) {
+	for (i = 0; i < count; i++) {
 		writel(0x2, &sft->reg);
 		shift_done();
 	}
 
 	/* Output enable, low active  */
 	writel(0x3, &sft->reg);
-	delay(VOLTAGE_DELAY);
+}
+
+
+/* The power chip datasheet is here:
+ *   http://www.onsemi.com/pub_link/Collateral/ADP3208D.PDF
+ * REV_BITS((VALUE < 1) & 1) << 16: is the value, the */
+
+void set_voltage(uint32_t value)
+{
+	int i;
+	uint32_t value_array[5];
+
+	if (g_voltage == value)
+		return;
+
+	g_voltage = value;
+
+	/* Reset */
+	writel(0, &sft->reg);
+
+	if (value == 0x8f00) {	/* Poweroff */
+		writel(0x7, &sft->reg);
+		delay(VOLTAGE_DELAY);
+		return;
+	}
+
+	for (i = 0; i < 5; i++)
+		value_array[i] = 0x8f00;
+
+	/* Poweron one by one */
+	for (i = 0; i < 5; i++) {
+		value_array[i] = value;
+		shifte_value(value_array, i);
+		delay(VOLTAGE_DELAY);
+	}
 }
