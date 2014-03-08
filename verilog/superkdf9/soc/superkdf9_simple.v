@@ -325,6 +325,7 @@ assign WBM1_ERR_I = (selected == 2'd2 ? WBS_ERR_O : 0);
 assign WBM1_RTY_I = (selected == 2'd2 ? WBS_RTY_O : 0);
 
 endmodule
+`define A3233_TEST
 `include "../components/lm32_top/lm32_functions.v" // for clogb2_v1
 `include "../components/lm32_top/lm32_include.v" // for {IROM,DRAM}_ADDR_WIDTH
 `include "../components/lm32_top/lm32_include_all.v"
@@ -344,6 +345,7 @@ endmodule
 `include "../components/alink/tx_phy.v"
 `include "../components/alink/rx_phy.v"
 `include "../components/alink/alink.v"
+`include "../components/alink/pn_check.v"
 
 `include "../components/twi/twi_define.v"
 `include "../components/twi/twi.v"
@@ -491,9 +493,8 @@ output  uartTXRDY_N;
 output  uartSIN_led;
 output  uartSOUT_led;
 
-assign  uartSIN_led = ~uartSIN ;
-assign  uartSOUT_led= ~uartSOUT_w;
-
+assign  uartSIN_led = ~uart_debugSIN;//~uartSIN ;
+assign  uartSOUT_led= ~uart_debugSOUT;//~uartSOUT_w;
 
 wire [31:0] spiSPI_DAT_O;
 wire   spiSPI_ACK_O;
@@ -529,6 +530,8 @@ output [`PHY_NUM-1:0] TX_N ;
 input  [`PHY_NUM-1:0] RX_P ;
 input  [`PHY_NUM-1:0] RX_N ;
 
+assign TX_P[1] = RX_P[1];
+assign TX_N[1] = RX_N[1];
 output [4:0] NONCE_led ;
 wire [4:0] ALINK_led ;
 reg [4:0] NONCE_led_f ;
@@ -1098,14 +1101,15 @@ alink alink(
 /*output [31:0] */ .ALINK_DAT_O (alinkALINK_DAT_O                ) ,
 
 //TX.PHY
-/*output [31:0] */ .TX_P        (TX_P                            ) ,
-/*output [31:0] */ .TX_N        (TX_N                            ) ,
+/*output [31:0] */ .TX_P        (TX_P[0]                       ) ,
+/*output [31:0] */ .TX_N        (TX_N[0]                       ) ,
 //RX.PHY                                                         
-/*input  [31:0] */ .RX_P        (RX_P                            ) ,
-/*input  [31:0] */ .RX_N        (RX_N                            ) ,
+/*input  [31:0] */ .RX_P        ({30'b111111111111111111111111111111,RX_P[1:0]}) ,
+/*input  [31:0] */ .RX_N        ({30'b111111111111111111111111111111,RX_N[1:0]}) ,
 /*output [4:0]  */ .ALINK_led   (ALINK_led                       )
 );
-
+assign TX_P[9:2] = 'b0;
+assign TX_N[9:2] = 'b0;
 
 assign twiTWI_en = (SHAREDBUS_ADR_I[31:6] == 26'b10000000000000000000011000);
 assign TWI_SCL = TWI_SCL_O == 1'b0 ? 1'b0 : 1'bz ;//p85

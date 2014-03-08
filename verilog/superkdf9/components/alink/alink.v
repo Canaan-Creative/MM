@@ -83,8 +83,8 @@ wire        task_id_vld  ;
 wire [31:0] rx_phy_sel   ;
 wire [31:0] task_id_h    ;
 wire [31:0] task_id_l    ;
-
-
+wire [32*20-1:0] cfgo_data;
+wire             cfgo_vld;
 //-------------------------------------------------
 // Slave
 //-------------------------------------------------
@@ -122,7 +122,10 @@ alink_slave alink_slave(
 /*input  [31:0]               */ .busy        (busy          ) ,
                                                              
 /*output                      */ .rxfifo_pop  (rxfifo_pop    ) ,
-/*input  [31:0]               */ .rxfifo_dout (rxfifo_dout   )   
+/*input  [31:0]               */ .rxfifo_dout (rxfifo_dout   ) ,
+
+/*input                       */ .cfgo_vld    (cfgo_vld      ) ,
+/*input  [20*32-1:0]          */ .cfgo_data   (cfgo_data     )  
 );
 
 //-------------------------------------------------
@@ -261,6 +264,19 @@ rxc rxc(
                                                   
 /*input  [31:0]*/ .RX_P           (RX_P           ) ,
 /*input  [31:0]*/ .RX_N           (RX_N           )  
+);
+
+//-------------------------------------------------
+// CFG PN CHECK
+//-------------------------------------------------
+pn_check pn_check(
+/*input                 */ .clk      (CLK_I   ),
+/*input                 */ .rst      (RST_I|reg_flush   ),
+/*input                 */ .reg_flush(reg_flush),
+/*input                 */ .CFGO_P   (RX_P[1]  ),
+/*input 		*/ .CFGO_N   (RX_N[1]  ),
+/*output reg            */ .vld      (cfgo_vld ),
+/*output reg [32*21-1:0]*/ .cfgo_data(cfgo_data)
 );
 
 endmodule

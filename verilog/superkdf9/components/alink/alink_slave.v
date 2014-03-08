@@ -33,7 +33,10 @@ module alink_slave(
     input  [31:0]                busy        ,
 
     output                       rxfifo_pop  ,
-    input  [31:0]                rxfifo_dout   
+    input  [31:0]                rxfifo_dout ,
+
+    input                        cfgo_vld    ,
+    input  [20*32-1:0]           cfgo_data
 );
 
 parameter ALINK_TXFIFO  = 6'h00 ;
@@ -41,6 +44,7 @@ parameter ALINK_STATE   = 6'h04 ;
 parameter ALINK_MASK    = 6'h08 ;
 parameter ALINK_BUSY    = 6'h0c ;
 parameter ALINK_RXFIFO  = 6'h10 ;
+parameter ALINK_CHECK   = 6'h14 ;
 
 //-----------------------------------------------------
 // WB bus ACK
@@ -74,6 +78,7 @@ wire alink_busy_rd_en = ALINK_STB_I & ~ALINK_WE_I & ( ALINK_ADR_I == ALINK_BUSY 
 wire alink_rxfifo_wr_en = ALINK_STB_I & ALINK_WE_I  & ( ALINK_ADR_I == ALINK_RXFIFO ) & ~ALINK_ACK_O ;
 wire alink_rxfifo_rd_en = ALINK_STB_I & ~ALINK_WE_I & ( ALINK_ADR_I == ALINK_RXFIFO ) & ~ALINK_ACK_O ;
 
+wire alink_check_rd_en = ALINK_STB_I & ~ALINK_WE_I & ( ALINK_ADR_I == ALINK_CHECK ) & ~ALINK_ACK_O ;
 
 //-----------------------------------------------------
 // Register.txfifo
@@ -129,11 +134,20 @@ wire [31:0] rd_rxfifo = rxfifo_dout[31:0] ;
 //-----------------------------------------------------
 assign rxfifo_pop = alink_rxfifo_rd_en ;
 
+reg [20*32-1:0] cfgo_data_r;
+always @ (posedge clk) begin
+	if( cfgo_vld )
+		cfgo_data_r <= cfgo_data;
+	else if(alink_check_rd_en)
+		cfgo_data_r <= cfgo_data_r >> 32;
+end
+
 always @ ( posedge clk ) begin
 	case( 1'b1 )
 		alink_state_rd_en  : ALINK_DAT_O <= rd_state  ;
 		alink_busy_rd_en   : ALINK_DAT_O <= rd_busy   ;
 		alink_rxfifo_rd_en : ALINK_DAT_O <= rd_rxfifo ;
+		alink_check_rd_en  : ALINK_DAT_O <= cfgo_data_r[31:0] ;
 		default: ALINK_DAT_O <= 32'hdeaddead ; 
 	endcase
 end

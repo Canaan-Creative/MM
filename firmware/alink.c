@@ -134,8 +134,22 @@ void alink_read_result(struct result *r)
 	memcpy(r->nonce, (uint8_t *)(&tmp), 4);
 }
 
+uint32_t alink_read_check(uint32_t *cfgo_buf)
+{
+	uint32_t tmp, i;
+	cfgo_buf[19] = 0xffffffff;
+
+	for(i=0;i<20;i++){
+		tmp = readl(&alink->check);
+		//debug32("get rpt = %08x, exp = %08x\n", tmp, cfgo_buf[i]);
+		if(cfgo_buf[i] != tmp)
+			return 1;
+	}
+	return 0;
+}
 
 extern void delay(unsigned int ms);
+extern void delays(unsigned int ms);
 void alink_flush_fifo()
 {
 	uint32_t value = readl(&alink->state);
@@ -145,11 +159,12 @@ void alink_flush_fifo()
 	delay(1);
 }
 
-unsigned int asic_test_a3240_work(int core)//0 to 767
+unsigned int asic_test_a3240_work(int core, uint32_t * cfgo_buf, unsigned int clk_cfg)//0 to 767
 {
 	uint32_t msg_blk[23], exp_nonce, send_nonce;
 	uint32_t core_big = core&0xfffff0, core_small = core&0xf;
 	int i;
+	for(i=0;i<20;i++) cfgo_buf[i] = i;
 	if(core_small == 0){
 		msg_blk[ 6] = 0x4ac1d001;
 		msg_blk[ 7] = 0x89517050;
@@ -456,16 +471,17 @@ unsigned int asic_test_a3240_work(int core)//0 to 767
                 send_nonce  = 0xa2bfe63f;
 	}
 
-	msg_blk[ 4] = 0x00000001;
+	msg_blk[ 4] = clk_cfg;//0x00000001;
 	msg_blk[ 5] = 0x00000000;
 	msg_blk[ 3] = 0x0000ffff;	/* The real timeout is 0x75d1 */
-	msg_blk[ 2] = 0x24924925;	/* Step for 7 chips */
+	msg_blk[ 2] = 0xffffffff;	/* Step for 2 chips */
 	msg_blk[ 1] = send_nonce ^ core_big;	/* Nonce start */
-	msg_blk[ 0] = 0x00000000;	/* Chip index */
+	msg_blk[ 0] = 0x00000001;	/* Chip index */
 	exp_nonce   = send_nonce + 0x6000;
 	for (i = 0; i < 23; i++) {
 		writel(msg_blk[i], &alink->tx);
 	}
+	for(i=0;i<20;i++) cfgo_buf[i] = msg_blk[i+4];
 	return exp_nonce;
 }
 
@@ -586,18 +602,81 @@ void alink_asic_test()
 	writel(0, &alink->state); /* Enable alink hash mode */
 	alink_init(0x3ff);
 }
-
-void alink_a3240_test()
+uint32_t alink_a3240_test(uint32_t k_max, uint32_t f, uint32_t dbg)
 {
-	int k, error_cnt=0, pass_cnt=0;
+	int k, error_cnt=0, pass_cnt=0, cfgo_cnt=0, get_nonce_cnt = 0;
 	uint32_t nonce, exp_nonce;
 	struct result result;
+	uint32_t cfgo_buf[20];
+	uint32_t clk_cfg;
+
+	if(f == 200 ) clk_cfg = 0xb3e00007;
+	else if(f == 225 ) clk_cfg = 0xb4600007;
+	else if(f == 250 ) clk_cfg = 0xb4e00007;
+	else if(f == 275 ) clk_cfg = 0xb5600007;
+	else if(f == 300 ) clk_cfg = 0xb5e00007;
+	else if(f == 325 ) clk_cfg = 0xb6600007;
+	else if(f == 350 ) clk_cfg = 0xb6e00007;
+	else if(f == 375 ) clk_cfg = 0xa3a00007;
+	else if(f == 375 ) clk_cfg = 0xb7600007;
+	else if(f == 400 ) clk_cfg = 0xa3e00007;
+	else if(f == 425 ) clk_cfg = 0xa4200007;
+	else if(f == 450 ) clk_cfg = 0xa4600007;
+	else if(f == 475 ) clk_cfg = 0xa4a00007;
+	else if(f == 500 ) clk_cfg = 0xa4e00007;
+	else if(f == 525 ) clk_cfg = 0xa5200007;
+	else if(f == 550 ) clk_cfg = 0xa5600007;
+	else if(f == 575 ) clk_cfg = 0xa5a00007;
+	else if(f == 600 ) clk_cfg = 0xa5e00007;
+	else if(f == 625 ) clk_cfg = 0xa6200007;
+	else if(f == 650 ) clk_cfg = 0xa6600007;
+	else if(f == 675 ) clk_cfg = 0xa6a00007;
+	else if(f == 700 ) clk_cfg = 0xa6e00007;
+	else if(f == 725 ) clk_cfg = 0xa7200007;
+	else if(f == 750 ) clk_cfg = 0x93a00007;
+	else if(f == 750 ) clk_cfg = 0xa7600007;
+	else if(f == 775 ) clk_cfg = 0x93c00007;
+	else if(f == 800 ) clk_cfg = 0x93e00007;
+	else if(f == 825 ) clk_cfg = 0x94000007;
+	else if(f == 850 ) clk_cfg = 0x94200007;
+	else if(f == 875 ) clk_cfg = 0x94400007;
+	else if(f == 900 ) clk_cfg = 0x94600007;
+	else if(f == 925 ) clk_cfg = 0x94800007;
+	else if(f == 950 ) clk_cfg = 0x94a00007;
+	else if(f == 975 ) clk_cfg = 0x94c00007;
+	else if(f == 1000) clk_cfg = 0x94e00007;
+	else if(f == 1025) clk_cfg = 0x95000007;
+	else if(f == 1050) clk_cfg = 0x95200007;
+	else if(f == 1075) clk_cfg = 0x95400007;
+	else if(f == 1100) clk_cfg = 0x95600007;
+	else if(f == 1125) clk_cfg = 0x95800007;
+	else if(f == 1150) clk_cfg = 0x95a00007;
+	else if(f == 1175) clk_cfg = 0x95c00007;
+	else if(f == 1200) clk_cfg = 0x95e00007;
+	else if(f == 1225) clk_cfg = 0x96000007;
+	else if(f == 1250) clk_cfg = 0x96200007;
+	else if(f == 1275) clk_cfg = 0x96400007;
+	else if(f == 1300) clk_cfg = 0x96600007;
+	else if(f == 1325) clk_cfg = 0x96800007;
+	else if(f == 1350) clk_cfg = 0x96a00007;
+	else if(f == 1375) clk_cfg = 0x96c00007;
+	else if(f == 1400) clk_cfg = 0x96e00007;
+	else if(f == 1425) clk_cfg = 0x97000007;
+	else if(f == 1450) clk_cfg = 0x97200007;
+	else if(f == 1475) clk_cfg = 0x97400007;
+	else if(f == 1500) clk_cfg = 0x83a00007;
+	else if(f == 1500) clk_cfg = 0x97600007;
+	else if(f == 1525) clk_cfg = 0x83a00007;
+	else if(f == 1550) clk_cfg = 0x83c00007;
+	else if(f == 1575) clk_cfg = 0x83c00007;
+	else if(f == 1600) clk_cfg = 0x83e00007;
+	else clk_cfg = 0x00000001;
 
 	writel(LM32_ALINK_STATE_TEST, &alink->state); /* Enable alink scan mode */
 
 	alink_init(0x1);/* Enable 0 miners */
-	for (k = 0; k < 768; k++) {
-		exp_nonce = asic_test_a3240_work(k);		/* Test asic cores  */
+	for (k = 0; k < k_max; k++) {
+		exp_nonce = asic_test_a3240_work(k, cfgo_buf, clk_cfg);		/* Test asic cores  */
 		while (!alink_txbuf_count())
 			;
 		while (!alink_busy_status())
@@ -607,19 +686,38 @@ void alink_a3240_test()
 		if (!alink_rxbuf_empty()){
 			alink_read_result(&result);
 			memcpy(&nonce, result.nonce, 4);
+			get_nonce_cnt++;
+			if(dbg) debug32("Core%03d, GotNonce = 0x%08x, ExpNonce = 0x%08x\n", k, nonce,exp_nonce);
 			if (nonce != exp_nonce){
-				debug32("Error small core %3d\n", k);
+				if(dbg) debug32("Error small core %3d\n", k);
 				error_cnt++;
 			} else {
-				debug32("Pass small core %3d\n", k);
+				if(dbg) debug32("Pass small core %3d\n", k);
 				pass_cnt++;
 			}
 		} else {
-			debug32("Error small core %3d\n", k);
 			error_cnt++;
+		}
+
+		if(alink_read_check(cfgo_buf)){
+			if(dbg) debug32("CFG Output check Error\n");
+			cfgo_cnt++;
+		}else{
+			if(dbg) debug32("CFG Output check Pass\n");
 		}
 	}
 
-	 debug32("Pass core number %3d\n", pass_cnt);
-	 debug32("Error core number %3d\n", error_cnt);
+	debug32("\n==============================================\n");
+	debug32("= F = %dMHz, Clock Cfg0 = 0x%08x\n", f, clk_cfg);
+	debug32("= Pass Core Number %3d\n", pass_cnt);
+	debug32("= Get Nonce Number %3d\n", get_nonce_cnt);
+	debug32("= Error Core Number %3d\n", error_cnt);
+	debug32("= Error CFG  Output %3d\n", cfgo_cnt);
+	delay(100);
+	asic_test_a3240_work(k, cfgo_buf, (clk_cfg&0xfffffff0)|0xb); /* Gate  */
+	debug32("= Clock Gate Done!\n");
+
+	if((pass_cnt == k_max) && (cfgo_cnt == 0) && (error_cnt == 0)) return 0;
+	else return 1;
 }
+

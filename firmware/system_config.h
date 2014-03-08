@@ -106,6 +106,7 @@ struct lm32_alink {
 	volatile unsigned int en;
 	volatile unsigned int busy;	/* Read only */
 	volatile unsigned int rx;
+	volatile unsigned int check;
 };
 
 /* TWI PWM */

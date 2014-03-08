@@ -55,6 +55,16 @@ void delay(unsigned int ms)
 	}
 }
 
+void delays(unsigned int ms)
+{
+	unsigned int i;
+
+	while (ms && ms--) {
+		for (i = 0; i < CPU_FREQUENCY / 1000 / 5 / 2; i++)
+			__asm__ __volatile__("nop");
+	}
+}
+
 static void encode_pkg(uint8_t *p, int type, uint8_t *buf, unsigned int len)
 {
 	uint32_t tmp;
@@ -346,10 +356,30 @@ int main(int argv, char **argc)
 	struct mm_work mm_work;
 	struct work work;
 	struct result result;
+	uint32_t error;
 
-	led(1);
+	uint32_t core_number = 768;
+	uint32_t frequence   = 600;
+	uint32_t dbg = 0;
+
+
+	delay(200);
 	uart_init();
-	alink_a3240_test();
+	if(1){
+		delay(400);
+		alink_flush_fifo();
+		delay(20);
+		error = alink_a3240_test(core_number, frequence, dbg);
+	}
+	while(error==0){
+		led(0xf);
+		delay(200);
+		led(0x0);
+		delay(200);
+	}
+
+	while(error==1)led(0x1);
+
 	return 0;
 
 	adjust_fan(0);		/* Set the fan to 100% */
