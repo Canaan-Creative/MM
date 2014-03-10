@@ -17,6 +17,8 @@
 
 static struct lm32_alink *alink = (struct lm32_alink *)ALINK_BASE;
 
+#define MODULE_ENABLE 0x1
+
 void alink_init(uint32_t count)
 {
 	/* Enalbe how many PHY in controller, base on the count of 1
@@ -217,7 +219,7 @@ void alink_asic_idle()
 			;
 		delay(1);
 	}
-	alink_init(0x3ff);
+	alink_init(MODULE_ENABLE);
 }
 
 void alink_asic_test()
@@ -260,5 +262,5 @@ void alink_asic_test()
 	}
 
 	writel(0, &alink->state); /* Enable alink hash mode */
-	alink_init(0x3ff);
+	alink_init(MODULE_ENABLE);
 }
