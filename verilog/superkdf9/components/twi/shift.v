@@ -41,7 +41,7 @@ end
 //--------------------------------------------------
 // shcp counter
 //--------------------------------------------------
-reg [4:0] shcp_cnt ;
+reg [5:0] shcp_cnt ;
 always @ ( posedge clk ) begin
 	if( rst )
 		shcp_cnt <= 0 ;
@@ -51,13 +51,13 @@ always @ ( posedge clk ) begin
 		shcp_cnt <= shcp_cnt + 1 ;
 end
 
-assign sft_shcp = shcp_cnt[1] ;
+assign sft_shcp = shcp_cnt[2] ;
 
 reg [7:0] data ;
 always @ ( posedge clk ) begin
 	if( vld && cmd == 2'b01 )
 		data <= din ;
-	else if( &shcp_cnt[1:0] )
+	else if( &shcp_cnt[2:0] )
 		data <= data >> 1 ;
 end
 
@@ -67,7 +67,7 @@ assign sft_ds = (vld&&cmd==2'b01) ? din[0] : data[0] ;
 //--------------------------------------------------
 // sft_stcp
 //--------------------------------------------------
-reg [4:0] stcp_cnt ;
+reg [5:0] stcp_cnt ;
 always @ ( posedge clk ) begin
 	if( rst )
 		stcp_cnt <= 0 ;
@@ -76,11 +76,11 @@ always @ ( posedge clk ) begin
 	else if( |stcp_cnt )
 		stcp_cnt <= stcp_cnt + 1 ;
 end
-assign sft_stcp = stcp_cnt[1] ;
+assign sft_stcp = stcp_cnt[2] ;
 
 //--------------------------------------------------
 // done
 //--------------------------------------------------
-assign done = (stcp_cnt == 31) || (shcp_cnt == 31) ;
+assign done = (stcp_cnt == 63) || (shcp_cnt == 63) ;
 
 endmodule
