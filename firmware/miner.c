@@ -286,7 +286,7 @@ int test_nonce(struct mm_work *mw, struct result *ret)
 	uint32_t nonce2, nonce;
 	memcpy((uint8_t *)(&nonce2), ret->task_id + 4, 4);
 	memcpy((uint8_t *)(&nonce), ret->nonce, 4);
-	nonce -= 0x180;
+	nonce -= 0x1000;
 
 	/* Generate the work base on nonce2 */
 	struct work work;

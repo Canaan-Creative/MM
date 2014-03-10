@@ -15,7 +15,7 @@
 #include "uart.h"
 #include "miner.h"
 
-#define MODULE_ENABLE 0x1
+#define MODULE_ENABLE 0x3ff
 
 static struct lm32_alink *alink = (struct lm32_alink *)ALINK_BASE;
 
