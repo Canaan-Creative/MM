@@ -116,9 +116,9 @@ void miner_init_work(struct mm_work *mw, struct work *work)
 	else if (g_asic_freq== 475 ) asic_freq = 0xa4a00007;
 	else if (g_asic_freq== 500 ) asic_freq = 0xa4e00007;
 	else if (g_asic_freq== 525 ) asic_freq = 0xa5200007;
-	else if (g_asic_freq== 550 ) asic_freq = 0xa5600007;
+	else if (g_asic_freq== 550 ) asic_freq = 0x12a00007;
 	else if (g_asic_freq== 575 ) asic_freq = 0xa5a00007;
-	else if (g_asic_freq== 600 ) asic_freq = 0xa5e00007;
+	else if (g_asic_freq== 600 ) asic_freq = 0x12e00007;
 	else if (g_asic_freq== 625 ) asic_freq = 0xa6200007;
 	else if (g_asic_freq== 650 ) asic_freq = 0xa6600007;
 	else if (g_asic_freq== 675 ) asic_freq = 0xa6a00007;
