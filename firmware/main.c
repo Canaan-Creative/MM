@@ -350,13 +350,6 @@ int main(int argv, char **argc)
 	struct work work;
 	struct result result;
 
-	led(3);
-	delay(100);
-	led(1);
-	delay(100);
-	led(3);
-	delay(100);
-
 	adjust_fan(0);		/* Set the fan to 100% */
 	alink_flush_fifo();
 
@@ -370,7 +363,6 @@ int main(int argv, char **argc)
 
 	uart_init();
 	debug32("%d:MM-%s\n", g_module_id, MM_VERSION);
-	led(0);
 
 	timer_set(0, IDLE_TIME);
 	g_new_stratum = 0;
@@ -378,6 +370,13 @@ int main(int argv, char **argc)
 	alink_asic_idle();
 	adjust_fan(0x1ff);
 	set_voltage(0x9e00);
+
+	led(3);
+	delay(100);
+	led(1);
+	delay(100);
+	led(3);
+	delay(100);
 
 	while (1) {
 		get_pkg(&mm_work);
