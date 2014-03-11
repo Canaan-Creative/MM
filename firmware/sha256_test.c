@@ -16,6 +16,9 @@ hexdump(state, 32);
 /* ba 78 16 bf 8f 01 cf ea  41 41 40 de 5d ae 22 23 */
 /* b0 03 61 a3 96 17 7a 9c  b4 10 ff 61 f2 00 15 ad */
 
+/* echo -n ba7816bf8f01cfea414140de5dae2223b00361a396177a9cb410ff61f20015ad | xxd -r -p | sha256sum */
+
+
 /* Test sha256 core: 2 block data*/
 sha256(sha256_in2, ARRAY_SIZE(sha256_in2), state);
 hexdump(state, 32);
