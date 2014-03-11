@@ -227,17 +227,39 @@ void miner_gen_nonce2_work(struct mm_work *mw, uint32_t nonce2, struct work *wor
 
 	dsha256(mw->coinbase, mw->coinbase_len, merkle_root);
 	memcpy(merkle_sha, merkle_root, 32);
+
+#ifdef DEBUG_STRATUM
+	hexdump(merkle_root, 32);
+	hexdump(mw->coinbase, mw->coinbase_len);
+#endif
+
 	for (i = 0; i < mw->nmerkles; i++) {
 		memcpy(merkle_sha + 32, mw->merkles[i], 32);
 		dsha256(merkle_sha, 64, merkle_root);
 		memcpy(merkle_sha, merkle_root, 32);
+
+#ifdef DEBUG_STRATUM
+		debug32("DEBUG: M: \n");
+		hexdump(merkle_root, 32);
+#endif
+
 	}
 	data32 = (uint32_t *)merkle_sha;
 	swap32 = (uint32_t *)merkle_root;
 	flip32(swap32, data32);
 
+#ifdef DEBUG_STRATUM
+	debug32("Work: 3 hexdump\n");
+	hexdump(merkle_root, 32);
+#endif
+
 	memcpy(mw->header + mw->merkle_offset, merkle_root, 32);
 	memcpy(work->header, mw->header, 128);
+
+#ifdef DEBUG_STRATUM
+	hexdump(mw->header, 128);
+	hexdump(work->header, 128);
+#endif
 
 	debug32("Work: nonce2 %08x\n", work->nonce2);
 	calc_midstate(mw, work);

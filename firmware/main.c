@@ -350,7 +350,13 @@ int main(int argv, char **argc)
 	struct work work;
 	struct result result;
 
+	led(3);
+	delay(100);
 	led(1);
+	delay(100);
+	led(3);
+	delay(100);
+
 	adjust_fan(0);		/* Set the fan to 100% */
 	alink_flush_fifo();
 
@@ -371,18 +377,18 @@ int main(int argv, char **argc)
 
 	alink_asic_idle();
 	adjust_fan(0x1ff);
-	set_voltage(0x8f00);
+	set_voltage(0x9e00);
 
 	while (1) {
 		get_pkg(&mm_work);
 
 		wdg_feed((CPU_FREQUENCY / 1000) * 2);
-		if (!timer_read(0) && g_new_stratum) {
-			g_new_stratum = 0;
-			alink_asic_idle();
-			adjust_fan(0x1ff);
-			set_voltage(0x8f00);
-		}
+		/* if (!timer_read(0) && g_new_stratum) { */
+		/* 	g_new_stratum = 0; */
+		/* 	alink_asic_idle(); */
+		/* 	adjust_fan(0x1ff); */
+		/* 	set_voltage(0x8f00); */
+		/* } */
 
 		if (!g_new_stratum)
 			continue;

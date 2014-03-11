@@ -173,10 +173,10 @@ static void asic_test_work(int chip, int core, int gate)
 	msg_blk[7]  = 0x88517050;
 	msg_blk[6]  = 0x4ac1d001;
 
-	msg_blk[5]  = 0x00000174;	/* Clock at 1Ghs */
-	msg_blk[4]  = 0x82600000 | (gate ? 0xb : 0x7);
+	msg_blk[5]  = 0x00000174;	/* Clock at 400MHz */
+	msg_blk[4]  = 0xb3e00007 | (gate ? 0xb : 0x7);
 	msg_blk[3]  = (gate ? 0x2fffffff : 0x0000ffff);	/* The real timeout is 0x75d1 */
-	msg_blk[2]  = 0x24924925;	/* Step for 7 chips */
+	msg_blk[2]  = 0x33333334;	/* Step for 5 chips */
 	msg_blk[1]  = (0x010f1036 ^ core) - 5 * 128  ;	/* Nonce start, have to be N * 128 */
 	msg_blk[0]  = chip;	/* Chip index */
 
