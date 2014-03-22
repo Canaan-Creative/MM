@@ -400,8 +400,8 @@ module mm (
 output PWM ;
 input	ex_clk_i;
 output  ex_clk_o ;
-wire clk_i , reset_n ;
-clkgen clk (.clkin(ex_clk_i), .clkout(clk_i), .clk25m(ex_clk_o), .locked(reset_n));
+wire clk_i , reset_n, clk25m_on;
+clkgen clk (.clkin(ex_clk_i), .clk25m_on(clk25m_on), .clkout(clk_i), .clk25m(ex_clk_o), .locked(reset_n));
 
 wire WATCH_DOG ;
 wire [31:0] irom_q_rd, irom_q_wr;
@@ -1144,7 +1144,8 @@ twi u_twi(
 /*output        */ .TIME0_INT   (TIME0_INT                   ) ,
 /*output        */ .TIME1_INT   (TIME1_INT                   ) ,
 /*output        */ .GPIO_OUT    (gpioPIO_OUT                 ) ,
-/*input  [7:0]  */ .GPIO_IN     (gpioPIO_IN                  )
+/*input  [7:0]  */ .GPIO_IN     (gpioPIO_IN                  ) ,
+/*output        */ .clk25m_on   (clk25m_on                   )
 ) ;
 
 assign superkdf9interrupt_n[3] = !uartINTR ;

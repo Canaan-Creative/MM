@@ -37,7 +37,8 @@ module twi(
     output         TIME1_INT   ,
 
     output [3:0]   GPIO_OUT    ,
-    input  [7:0]   GPIO_IN
+    input  [7:0]   GPIO_IN     ,
+    output         clk25m_on
 );
 
 assign TWI_ERR_O = 1'b0 ;
@@ -62,6 +63,7 @@ wire wdg_wr_en   = TWI_STB_I & TWI_WE_I  & ( TWI_ADR_I == `WDG ) & ~TWI_ACK_O ;
 wire sft_wr_en   = TWI_STB_I & TWI_WE_I  & ( TWI_ADR_I == `SFT ) & ~TWI_ACK_O ;
 wire time_wr_en  = TWI_STB_I & TWI_WE_I  & ( TWI_ADR_I == `TIME) & ~TWI_ACK_O ;
 wire gpio_wr_en  = TWI_STB_I & TWI_WE_I  & ( TWI_ADR_I == `GPIO) & ~TWI_ACK_O ;
+wire clko_wr_en  = TWI_STB_I & TWI_WE_I  & ( TWI_ADR_I == `CLKO) & ~TWI_ACK_O ;
 
 wire i2cr_rd_en  = TWI_STB_I & ~TWI_WE_I  & ( TWI_ADR_I == `I2CR) & ~TWI_ACK_O ;
 wire i2rd_rd_en  = TWI_STB_I & ~TWI_WE_I  & ( TWI_ADR_I == `I2RD) & ~TWI_ACK_O ;
@@ -299,6 +301,18 @@ always @ ( posedge CLK_I ) begin
 	reg_gin <= GPIO_IN ;
 end
 
+
+//-----------------------------------------------------
+// CLK OUT 25M Enable
+//-----------------------------------------------------
+reg reg_clk25m_on;
+assign clk25m_on = reg_clk25m_on;
+always @ ( posedge CLK_I or posedge RST_I ) begin
+	if( RST_I )
+		reg_clk25m_on <= 1'b0;
+	else if(clko_wr_en)
+		reg_clk25m_on <= TWI_DAT_I[0];
+end
 
 //-----------------------------------------------------
 // read

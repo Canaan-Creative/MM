@@ -1,4 +1,4 @@
-module clkgen(input wire clkin, output wire clkout, clk25m, locked);
+module clkgen(input wire clkin, input wire clk25m_on, output wire clkout, clk25m, locked);
 //reg cnt ;
 
 wire clkout_div ;
@@ -10,7 +10,7 @@ ODDR2 ODDR2_inst (
    .Q (clk25m),   // 1-bit DDR output data
    .C0(clkout_div),   // 1-bit clock input
    .C1(~clkout_div),   // 1-bit clock input
-   .CE(1), // 1-bit clock enable input
+   .CE(clk25m_on),//(1), // 1-bit clock enable input
    .D0(0), // 1-bit data input (associated with C0)
    .D1(1), // 1-bit data input (associated with C1)
    .R (0),   // 1-bit reset input

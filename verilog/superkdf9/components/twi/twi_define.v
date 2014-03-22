@@ -8,4 +8,5 @@
 `define FAN1  6'h1c
 `define TIME  6'h20
 `define GPIO  6'h24
+`define CLKO  6'h28
 
