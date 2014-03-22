@@ -96,6 +96,7 @@ void miner_init_work(struct mm_work *mw, struct work *work)
 	memcpy(work->task_id + 4, (uint8_t *)(&work->nonce2), 4);
 
 	timeout = 4294967 / (g_asic_freq * (1024 / 65) * ASIC_COUNT); /* Time in ms */
+	timeout -= 4;			 /* Some manual fix for A3233 */
 	timeout *= CPU_FREQUENCY / 1000;     /* Time in cpu clock */
 	memcpy(work->timeout, &timeout, 4);
 
