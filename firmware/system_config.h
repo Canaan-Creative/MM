@@ -10,10 +10,10 @@
 #define _SYSTEM_CONFIG_H_
 
 #define AVA2_DEFAULT_MODULES	3
-#define AVA2_DEFAULT_MINERS	10
+#define AVA2_DEFAULT_MINERS	5
 
 #define ASIC_FREQUENCY	1500
-#define ASIC_COUNT	5
+#define ASIC_COUNT	10
 
 #define CPU_FREQUENCY		(100 * 1000 * 1000) /* 50Mhz */
 #define UART_BAUD_RATE          (115200)
