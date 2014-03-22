@@ -20,8 +20,8 @@ output reg [31:0] task_id_h    ,
 output reg [31:0] task_id_l    ,
 output reg [31:0] reg_tout     ,
 
-output     [31:0] TX_P         ,
-output     [31:0] TX_N          
+output     [`PHY_NUM-1:0] TX_P         ,
+output     [`PHY_NUM-1:0] TX_N          
 );
 /*
                        __
@@ -155,63 +155,12 @@ always @ ( posedge clk or posedge rst ) begin
 	end
 end
 
-assign {TX_P[0 ],TX_N[0 ]} = rx_phy_sel[0 ] ? {TX_Px,TX_Nx} : 2'b11 ;
-assign {TX_P[1 ],TX_N[1 ]} = rx_phy_sel[1 ] ? {TX_Px,TX_Nx} : 2'b11 ;
-assign {TX_P[2 ],TX_N[2 ]} = rx_phy_sel[2 ] ? {TX_Px,TX_Nx} : 2'b11 ;
-assign {TX_P[3 ],TX_N[3 ]} = rx_phy_sel[3 ] ? {TX_Px,TX_Nx} : 2'b11 ;
-assign {TX_P[4 ],TX_N[4 ]} = rx_phy_sel[4 ] ? {TX_Px,TX_Nx} : 2'b11 ;
-assign {TX_P[5 ],TX_N[5 ]} = rx_phy_sel[5 ] ? {TX_Px,TX_Nx} : 2'b11 ;
-assign {TX_P[6 ],TX_N[6 ]} = rx_phy_sel[6 ] ? {TX_Px,TX_Nx} : 2'b11 ;
-assign {TX_P[7 ],TX_N[7 ]} = rx_phy_sel[7 ] ? {TX_Px,TX_Nx} : 2'b11 ;
-assign {TX_P[8 ],TX_N[8 ]} = rx_phy_sel[8 ] ? {TX_Px,TX_Nx} : 2'b11 ;
-assign {TX_P[9 ],TX_N[9 ]} = rx_phy_sel[9 ] ? {TX_Px,TX_Nx} : 2'b11 ;
-`ifdef PHY_10
-assign {TX_P[10],TX_N[10]} = rx_phy_sel[10] ? {TX_Px,TX_Nx} : 2'b11 ;
-assign {TX_P[11],TX_N[11]} = rx_phy_sel[11] ? {TX_Px,TX_Nx} : 2'b11 ;
-assign {TX_P[12],TX_N[12]} = rx_phy_sel[12] ? {TX_Px,TX_Nx} : 2'b11 ;
-assign {TX_P[13],TX_N[13]} = rx_phy_sel[13] ? {TX_Px,TX_Nx} : 2'b11 ;
-assign {TX_P[14],TX_N[14]} = rx_phy_sel[14] ? {TX_Px,TX_Nx} : 2'b11 ;
-assign {TX_P[15],TX_N[15]} = rx_phy_sel[15] ? {TX_Px,TX_Nx} : 2'b11 ;
-assign {TX_P[16],TX_N[16]} = rx_phy_sel[16] ? {TX_Px,TX_Nx} : 2'b11 ;
-assign {TX_P[17],TX_N[17]} = rx_phy_sel[17] ? {TX_Px,TX_Nx} : 2'b11 ;
-assign {TX_P[18],TX_N[18]} = rx_phy_sel[18] ? {TX_Px,TX_Nx} : 2'b11 ;
-assign {TX_P[19],TX_N[19]} = rx_phy_sel[19] ? {TX_Px,TX_Nx} : 2'b11 ;
-assign {TX_P[20],TX_N[20]} = rx_phy_sel[20] ? {TX_Px,TX_Nx} : 2'b11 ;
-assign {TX_P[21],TX_N[21]} = rx_phy_sel[21] ? {TX_Px,TX_Nx} : 2'b11 ;
-assign {TX_P[22],TX_N[22]} = rx_phy_sel[22] ? {TX_Px,TX_Nx} : 2'b11 ;
-assign {TX_P[23],TX_N[23]} = rx_phy_sel[23] ? {TX_Px,TX_Nx} : 2'b11 ;
-assign {TX_P[24],TX_N[24]} = rx_phy_sel[24] ? {TX_Px,TX_Nx} : 2'b11 ;
-assign {TX_P[25],TX_N[25]} = rx_phy_sel[25] ? {TX_Px,TX_Nx} : 2'b11 ;
-assign {TX_P[26],TX_N[26]} = rx_phy_sel[26] ? {TX_Px,TX_Nx} : 2'b11 ;
-assign {TX_P[27],TX_N[27]} = rx_phy_sel[27] ? {TX_Px,TX_Nx} : 2'b11 ;
-assign {TX_P[28],TX_N[28]} = rx_phy_sel[28] ? {TX_Px,TX_Nx} : 2'b11 ;
-assign {TX_P[29],TX_N[29]} = rx_phy_sel[29] ? {TX_Px,TX_Nx} : 2'b11 ;
-assign {TX_P[30],TX_N[30]} = rx_phy_sel[30] ? {TX_Px,TX_Nx} : 2'b11 ;
-assign {TX_P[31],TX_N[31]} = rx_phy_sel[31] ? {TX_Px,TX_Nx} : 2'b11 ;
-`else
-assign {TX_P[10],TX_N[10]} = 2'b11 ;
-assign {TX_P[11],TX_N[11]} = 2'b11 ;
-assign {TX_P[12],TX_N[12]} = 2'b11 ;
-assign {TX_P[13],TX_N[13]} = 2'b11 ;
-assign {TX_P[14],TX_N[14]} = 2'b11 ;
-assign {TX_P[15],TX_N[15]} = 2'b11 ;
-assign {TX_P[16],TX_N[16]} = 2'b11 ;
-assign {TX_P[17],TX_N[17]} = 2'b11 ;
-assign {TX_P[18],TX_N[18]} = 2'b11 ;
-assign {TX_P[19],TX_N[19]} = 2'b11 ;
-assign {TX_P[20],TX_N[20]} = 2'b11 ;
-assign {TX_P[21],TX_N[21]} = 2'b11 ;
-assign {TX_P[22],TX_N[22]} = 2'b11 ;
-assign {TX_P[23],TX_N[23]} = 2'b11 ;
-assign {TX_P[24],TX_N[24]} = 2'b11 ;
-assign {TX_P[25],TX_N[25]} = 2'b11 ;
-assign {TX_P[26],TX_N[26]} = 2'b11 ;
-assign {TX_P[27],TX_N[27]} = 2'b11 ;
-assign {TX_P[28],TX_N[28]} = 2'b11 ;
-assign {TX_P[29],TX_N[29]} = 2'b11 ;
-assign {TX_P[30],TX_N[30]} = 2'b11 ;
-assign {TX_P[31],TX_N[31]} = 2'b11 ;
-`endif
+genvar i;
+generate
+for(i = 0; i < `PHY_NUM; i = i + 1) begin
+	assign {TX_P[i],TX_N[i]} = rx_phy_sel[i] ? {TX_Px,TX_Nx} : 2'b11 ;
+end
+
 reg [32:0] nonce_buf ;                        
 always @ ( posedge clk or posedge rst ) begin
 	if( rst ) begin

@@ -21,8 +21,8 @@ input  [`PHY_NUM*32-1:0] timer_cnt      ,
 output reg               rx_vld         ,
 output reg [31:0]        rx_dat         ,
 
-input  [31:0]            RX_P           ,
-input  [31:0]            RX_N            
+input  [`PHY_NUM-1:0]            RX_P           ,
+input  [`PHY_NUM-1:0]            RX_N            
 );
 /*
 >INPUT<
@@ -90,12 +90,12 @@ always @ ( posedge clk ) begin
 	else if( ~rx_almost_full && rx_start[2 ] ) rx_sel <= 32'b1<<2  ;
 	else if( ~rx_almost_full && rx_start[3 ] ) rx_sel <= 32'b1<<3  ;
 	else if( ~rx_almost_full && rx_start[4 ] ) rx_sel <= 32'b1<<4  ;
+`ifdef PHY_10
 	else if( ~rx_almost_full && rx_start[5 ] ) rx_sel <= 32'b1<<5  ;
 	else if( ~rx_almost_full && rx_start[6 ] ) rx_sel <= 32'b1<<6  ;
 	else if( ~rx_almost_full && rx_start[7 ] ) rx_sel <= 32'b1<<7  ;
 	else if( ~rx_almost_full && rx_start[8 ] ) rx_sel <= 32'b1<<8  ;
 	else if( ~rx_almost_full && rx_start[9 ] ) rx_sel <= 32'b1<<9  ;
-`ifdef PHY_10
 	else if( ~rx_almost_full && rx_start[10] ) rx_sel <= 32'b1<<10 ;
 	else if( ~rx_almost_full && rx_start[11] ) rx_sel <= 32'b1<<11 ;
 	else if( ~rx_almost_full && rx_start[12] ) rx_sel <= 32'b1<<12 ;
@@ -135,12 +135,12 @@ always @ ( posedge clk ) begin
                  | ({32{rx_sel[2 ]}} & rx_datx[32*3 -1:32*2 ]) 
                  | ({32{rx_sel[3 ]}} & rx_datx[32*4 -1:32*3 ]) 
                  | ({32{rx_sel[4 ]}} & rx_datx[32*5 -1:32*4 ]) 
+`ifdef PHY_10 
                  | ({32{rx_sel[5 ]}} & rx_datx[32*6 -1:32*5 ]) 
                  | ({32{rx_sel[6 ]}} & rx_datx[32*7 -1:32*6 ]) 
                  | ({32{rx_sel[7 ]}} & rx_datx[32*8 -1:32*7 ]) 
                  | ({32{rx_sel[8 ]}} & rx_datx[32*9 -1:32*8 ]) 
                  | ({32{rx_sel[9 ]}} & rx_datx[32*10-1:32*9 ]) 
-`ifdef PHY_10 
                  | ({32{rx_sel[10]}} & rx_datx[32*11-1:32*10]) 
                  | ({32{rx_sel[11]}} & rx_datx[32*12-1:32*11]) 
                  | ({32{rx_sel[12]}} & rx_datx[32*13-1:32*12]) 

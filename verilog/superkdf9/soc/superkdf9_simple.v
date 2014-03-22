@@ -384,7 +384,6 @@ module mm (
 , TX_N
 , RX_P
 , RX_N
-, POWER_ON
 , PWM
 , TWI_SCL
 , TWI_SDA
@@ -398,13 +397,11 @@ module mm (
 , FAN_IN0
 , FAN_IN1
 );
-output POWER_ON ;
 output PWM ;
 input	ex_clk_i;
 output  ex_clk_o ;
 wire clk_i , reset_n ;
 clkgen clk (.clkin(ex_clk_i), .clkout(clk_i), .clk25m(ex_clk_o), .locked(reset_n));
-assign POWER_ON = 1 ;
 
 wire WATCH_DOG ;
 wire [31:0] irom_q_rd, irom_q_wr;
@@ -512,7 +509,7 @@ wire   gpioGPIO_ERR_O;
 wire   gpioGPIO_RTY_O;
 wire gpioGPIO_en;
 wire gpioIRQ_O;
-input [6:0] gpioPIO_IN;
+input [7:0] gpioPIO_IN;
 output [3:0] gpioPIO_OUT;
 
 wire [7:0] uart_debugUART_DAT_O;
@@ -1147,7 +1144,7 @@ twi u_twi(
 /*output        */ .TIME0_INT   (TIME0_INT                   ) ,
 /*output        */ .TIME1_INT   (TIME1_INT                   ) ,
 /*output        */ .GPIO_OUT    (gpioPIO_OUT                 ) ,
-/*input  [6:0]  */ .GPIO_IN     (gpioPIO_IN                  )
+/*input  [7:0]  */ .GPIO_IN     (gpioPIO_IN                  )
 ) ;
 
 assign superkdf9interrupt_n[3] = !uartINTR ;

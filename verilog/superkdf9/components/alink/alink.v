@@ -22,11 +22,11 @@ module alink(
     output [31:0]  ALINK_DAT_O ,
 
     //TX.PHY
-    output [31:0]  TX_P        ,
-    output [31:0]  TX_N        ,
+    output [`PHY_NUM-1:0]  TX_P        ,
+    output [`PHY_NUM-1:0]  TX_N        ,
     //RX.PHY
-    input  [31:0]  RX_P        ,
-    input  [31:0]  RX_N        ,
+    input  [`PHY_NUM-1:0]  RX_P        ,
+    input  [`PHY_NUM-1:0]  RX_N        ,
 
     output [4:0]   ALINK_led 
 
@@ -53,11 +53,11 @@ wire [31:0]           reg_mask    ;
 wire                  reg_scan    ;
 wire [31:0]           busy        ;
 
-assign ALINK_led[0] = ~reg_mask[0] || ~reg_mask[1];
-assign ALINK_led[1] = ~reg_mask[2] || ~reg_mask[3];
-assign ALINK_led[2] = ~reg_mask[4] || ~reg_mask[5];
-assign ALINK_led[3] = ~reg_mask[6] || ~reg_mask[7];
-assign ALINK_led[4] = ~reg_mask[8] || ~reg_mask[9];
+assign ALINK_led[0] = ~reg_mask[0] ;
+assign ALINK_led[1] = ~reg_mask[1] ;
+assign ALINK_led[2] = ~reg_mask[2] ;
+assign ALINK_led[3] = ~reg_mask[3] ;
+assign ALINK_led[4] = ~reg_mask[4] ;
 
 wire                  rxfifo_pop  ;
 wire [31:0]           rxfifo_dout ; 
