@@ -160,6 +160,7 @@ generate
 for(i = 0; i < `PHY_NUM; i = i + 1) begin
 	assign {TX_P[i],TX_N[i]} = rx_phy_sel[i] ? {TX_Px,TX_Nx} : 2'b11 ;
 end
+endgenerate
 
 reg [32:0] nonce_buf ;                        
 always @ ( posedge clk or posedge rst ) begin
