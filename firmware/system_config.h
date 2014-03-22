@@ -35,6 +35,8 @@
 #define TWIPWM_BASE		(0x80000600)
 #define SHIFTER_BASE		(0x80000614)
 #define TIMER_BASE		(0x80000620)
+#define GPIO_BASE		(0x80000624)
+#define CLKO_BASE		(0x80000628)
 
 /* UART */
 #define LM32_UART_IER_RBRI	(1 << 0)
@@ -141,7 +143,14 @@ struct lm32_shifter {
 
 struct lm32_timer {
 	volatile unsigned int reg; /* Timer register */
-	volatile unsigned int gpio; /* GPIO register */
+};
+
+struct lm32_gpio {
+	volatile unsigned int reg; /* GPIO register */
+};
+
+struct lm32_clko {
+	volatile unsigned int reg; /* CLK output register */
 };
 
 #endif /* _SYSTEM_CONFIG_H_ */

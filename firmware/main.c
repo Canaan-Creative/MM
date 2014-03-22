@@ -369,8 +369,11 @@ int main(int argv, char **argc)
 
 	alink_asic_idle();
 	adjust_fan(0x1ff);
-	set_voltage(0x9e00);
 
+	set_voltage(0x9e00);
+	clko_init(1);
+
+	/* ASIC Reset */
 	led(3);
 	delay(100);
 	led(1);

@@ -12,6 +12,8 @@
 #include "intr.h"
 
 static struct lm32_timer *tim = (struct lm32_timer *)TIMER_BASE;
+static struct lm32_gpio *gpio = (struct lm32_gpio *)GPIO_BASE;
+static struct lm32_clko *clko = (struct lm32_clko *)CLKO_BASE;
 
 void timer_mask_set(unsigned char timer)
 {
@@ -87,17 +89,27 @@ void timer1_isr(void)
 	irq_ack(IRQ_TIMER0);
 }
 
+/* GPIO */
 void led(uint8_t value)
 {
-	writel(value, &tim->gpio);
+	writel(value, &gpio->reg);
 }
 
 int read_module_id()
 {
-	return (readl(&tim->gpio) >> 4) & 0x3;
+	return (readl(&gpio->reg) >> 4) & 0x3;
 }
 
 int read_power_good()
 {
-	return (readl(&tim->gpio) >> 6) & 0x1f;
+	return (readl(&gpio->reg) >> 6) & 0x1f;
+}
+
+/* CLKO:
+ * 1: enable
+ * 0: disable
+ * By default it is 0 */
+int clko_init(uint32_t value)
+{
+	return (writel(value, &clko->reg));
 }

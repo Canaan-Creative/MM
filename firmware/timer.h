@@ -22,4 +22,6 @@ void led(uint8_t value);
 int read_module_id();
 int read_power_good();
 
+int clko_init(uint32_t value);
+
 #endif	/* __TIMER_H__ */
