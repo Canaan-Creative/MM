@@ -174,10 +174,10 @@ void miner_init_work(struct mm_work *mw, struct work *work)
 	work->clock[6] = 0x01;
 	work->clock[7] = 0x74;
 
-	work->step[0] = 0x33;
-	work->step[1] = 0x33;
-	work->step[2] = 0x33;
-	work->step[3] = 0x34;	/* 2^32 / asic_count + 1:
+	work->step[0] = 0x19;
+	work->step[1] = 0x99;
+	work->step[2] = 0x99;
+	work->step[3] = 0x9a;	/* 2^32 / asic_count + 1:
 				 * 5: 0x33333334
 				 * 6: 0x2aaaaaab
 				 * 7: 0x24924925
