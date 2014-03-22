@@ -541,11 +541,11 @@ always @ (posedge clk_i)begin
 	NONCE_led_r[4] <= NONCE_led_w[4]&~NONCE_led_f[4] ? ~NONCE_led_r[4] : NONCE_led_r[4];
 end
 
-assign NONCE_led_w[0] = RX_P[0] & RX_N[0] & RX_P[1] & RX_N[1];
-assign NONCE_led_w[1] = RX_P[2] & RX_N[2] & RX_P[3] & RX_N[3];
-assign NONCE_led_w[2] = RX_P[4] & RX_N[4] & RX_P[5] & RX_N[5];
-assign NONCE_led_w[3] = RX_P[6] & RX_N[6] & RX_P[7] & RX_N[7];
-assign NONCE_led_w[4] = RX_P[8] & RX_N[8] & RX_P[9] & RX_N[9];
+assign NONCE_led_w[0] = RX_P[0] & RX_N[0];
+assign NONCE_led_w[1] = RX_P[1] & RX_N[1];
+assign NONCE_led_w[2] = RX_P[2] & RX_N[2];
+assign NONCE_led_w[3] = RX_P[3] & RX_N[3];
+assign NONCE_led_w[4] = RX_P[4] & RX_N[4];
 
 assign NONCE_led[0] = NONCE_led_r[0] || ALINK_led[0] ;
 assign NONCE_led[1] = NONCE_led_r[1] || ALINK_led[1] ;
