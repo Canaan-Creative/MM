@@ -36,6 +36,9 @@ static int g_new_stratum = 0;
 static int g_local_work = 0;
 static int g_hw_work = 0;
 
+uint32_t g_clock_conf_count = 0;
+
+
 static uint32_t g_nonce2_offset = 0;
 static uint32_t g_nonce2_range = 0xffffffff;
 
@@ -210,6 +213,7 @@ static int decode_pkg(uint8_t *p, struct mm_work *mw)
 			set_voltage(tmp);
 			memcpy(&tmp, data + 8, 4);
 			set_asic_freq(tmp);
+			g_clock_conf_count = 0;
 
 			alink_flush_fifo();
 		}
@@ -223,6 +227,7 @@ static int decode_pkg(uint8_t *p, struct mm_work *mw)
 		set_voltage(tmp);
 		memcpy(&tmp, data + 8, 4);
 		set_asic_freq(tmp);
+		g_clock_conf_count = 0;
 
 		memcpy(&g_nonce2_offset, data + 12, 4);
 		memcpy(&g_nonce2_range, data + 16, 4);
@@ -396,6 +401,9 @@ int main(int argv, char **argc)
 			continue;
 
 		if (alink_txbuf_count() < (24 * 5)) {
+			if (g_clock_conf_count < 100)
+				g_clock_conf_count++;
+
 			miner_gen_nonce2_work(&mm_work, mm_work.nonce2, &work);
 			get_pkg(&mm_work);
 			if (!g_new_stratum)

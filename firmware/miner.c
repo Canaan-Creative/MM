@@ -87,6 +87,8 @@ uint32_t get_asic_freq()
 	return g_asic_freq;
 }
 
+extern uint32_t g_clock_conf_count;
+
 void miner_init_work(struct mm_work *mw, struct work *work)
 {
 	uint32_t timeout;
@@ -116,10 +118,14 @@ void miner_init_work(struct mm_work *mw, struct work *work)
 	else if (g_asic_freq == 450 ) asic_freq = 0xa4600007;
 	else if (g_asic_freq == 475 ) asic_freq = 0xa4a00007;
 	else if (g_asic_freq == 500 ) asic_freq = 0xa4e00007;
-	else if (g_asic_freq == 525 ) asic_freq = 0xa5200007;
+	else if (g_asic_freq == 506 ) asic_freq = 0x14e10007;
+	else if (g_asic_freq == 518 ) asic_freq = 0x15010007;
+	else if (g_asic_freq == 525 ) asic_freq = 0x12800007;
 	else if (g_asic_freq == 550 ) asic_freq = 0x12a00007;
 	else if (g_asic_freq == 575 ) asic_freq = 0xa5a00007;
-	else if (g_asic_freq == 600 ) asic_freq = 0x12e00007;
+	else if (g_asic_freq == 593 ) asic_freq = 0x15c10007;
+	else if (g_asic_freq == 600 ) asic_freq = 0x15e10007;
+	else if (g_asic_freq == 606 ) asic_freq = 0x15e10007;
 	else if (g_asic_freq == 625 ) asic_freq = 0xa6200007;
 	else if (g_asic_freq == 650 ) asic_freq = 0xa6600007;
 	else if (g_asic_freq == 675 ) asic_freq = 0xa6a00007;
@@ -164,11 +170,10 @@ void miner_init_work(struct mm_work *mw, struct work *work)
 	else if (g_asic_freq == 1600) asic_freq = 0x83e00007;
 	else asic_freq = 0x00000001;
 
-	work->clock[0] = (asic_freq & 0xff000000) >> 24;
+	work->clock[0] = ((asic_freq & 0xff000000) >> 24) & 0x7f;
 	work->clock[1] = (asic_freq & 0x00ff0000) >> 16;
 	work->clock[2] = (asic_freq & 0x0000ff00) >> 8;
-	work->clock[3] = (asic_freq & 0xff);
-	/* 0x0b: idle, 0x07: enable */
+	work->clock[3] = (g_clock_conf_count >= 100) ? 0x1 : 0x7;
 
 	work->clock[4] = 0x00;
 	work->clock[5] = 0x00;
