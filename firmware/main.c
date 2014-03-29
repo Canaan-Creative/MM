@@ -256,14 +256,6 @@ static int decode_pkg(uint8_t *p, struct mm_work *mw)
 		memcpy(mw->target, data, AVA2_P_DATA_LEN);
 		break;
 	case AVA2_P_TEST:
-		memcpy(&tmp, data + 28, 4);
-		if (g_module_id == tmp) {
-			set_voltage(0x8a00);
-			led(1);
-			alink_asic_test();	/* Test ASIC */
-			led(0);
-			set_voltage(0x8f00);
-		}
 		break;
 	default:
 		break;
