@@ -225,6 +225,16 @@ static int decode_pkg(uint8_t *p, struct mm_work *mw)
 		adjust_fan(tmp);
 		memcpy(&tmp, data + 4, 4);
 		set_voltage(tmp);
+		clko_init(1);
+
+		/* ASIC Reset */
+		led(2);
+		delay(100);
+		led(0);
+		delay(100);
+		led(2);
+		delay(100);
+
 		memcpy(&tmp, data + 8, 4);
 		set_asic_freq(tmp);
 		g_clock_conf_count = 0;
@@ -374,28 +384,20 @@ int main(int argv, char **argc)
 
 	alink_asic_idle();
 	adjust_fan(0x1ff);
-
-	set_voltage(0x9e00);
-	clko_init(1);
-
-	/* ASIC Reset */
-	led(3);
-	delay(100);
-	led(1);
-	delay(100);
-	led(3);
-	delay(100);
+	set_voltage(0x8f00);
 
 	while (1) {
 		get_pkg(&mm_work);
 
 		wdg_feed((CPU_FREQUENCY / 1000) * 2);
-		/* if (!timer_read(0) && g_new_stratum) { */
-		/* 	g_new_stratum = 0; */
-		/* 	alink_asic_idle(); */
-		/* 	adjust_fan(0x1ff); */
-		/* 	set_voltage(0x8f00); */
-		/* } */
+		if (!timer_read(0) && g_new_stratum) {
+			g_new_stratum = 0;
+			alink_asic_idle();
+			adjust_fan(0x1ff);
+			set_voltage(0x8f00);
+		}
+
+
 
 		if (!g_new_stratum)
 			continue;
