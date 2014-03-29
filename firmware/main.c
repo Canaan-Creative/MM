@@ -29,6 +29,8 @@
 #include "hexdump.c"
 
 #define IDLE_TIME	5	/* Seconds */
+#define IDLE_TEMP	90	/* Degree (C) */
+
 static uint8_t g_pkg[AVA2_P_COUNT];
 static uint8_t g_act[AVA2_P_COUNT];
 static int g_module_id = 0;	/* Default ID is 0 */
@@ -221,6 +223,9 @@ static int decode_pkg(uint8_t *p, struct mm_work *mw)
 	case AVA2_P_REQUIRE:
 		break;
 	case AVA2_P_SET:
+		if (read_temp0() >= IDLE_TEMP || read_temp1() >= IDLE_TEMP)
+			break;
+
 		memcpy(&tmp, data, 4);
 		adjust_fan(tmp);
 		memcpy(&tmp, data + 4, 4);
@@ -390,7 +395,8 @@ int main(int argv, char **argc)
 		get_pkg(&mm_work);
 
 		wdg_feed((CPU_FREQUENCY / 1000) * 2);
-		if (!timer_read(0) && g_new_stratum) {
+		if ((!timer_read(0) && g_new_stratum) ||
+		    read_temp0() >= IDLE_TEMP || read_temp1() >= IDLE_TEMP) {
 			g_new_stratum = 0;
 			alink_asic_idle();
 			adjust_fan(0x1ff);
