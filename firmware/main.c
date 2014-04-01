@@ -268,6 +268,7 @@ static int read_result(struct mm_work *mw, struct result *ret)
 {
 	uint8_t *data;
 	int nonce;
+	uint32_t tmp;
 
 	if (alink_rxbuf_empty())
 		return 0;
@@ -288,6 +289,10 @@ static int read_result(struct mm_work *mw, struct result *ret)
 	if (nonce == NONCE_DIFF) {
 		data = ret_buf[ret_produce];
 		ret_produce = (ret_produce + 1) & RET_RINGBUFFER_MASK_RX;
+
+		memcpy(&tmp, ret->nonce, 4);
+		tmp = tmp - 0x1000 + 0x180;
+		memcpy(ret->nonce, &tmp, 4);
 
 		memcpy(data, (uint8_t *)ret, 20);
 		memcpy(data + 20, mw->job_id, 4); /* Attach the job_id */
