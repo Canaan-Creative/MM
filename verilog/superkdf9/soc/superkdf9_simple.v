@@ -357,6 +357,8 @@ endmodule
 `include "../components/uart_pro/uart_pro.v"
 `include "../components/uart_pro/uart_txc.v"
 `endif
+
+`define AVALON_CARD
 //module superkdf9_simple (
 module mm (
   ex_clk_i
@@ -396,12 +398,30 @@ module mm (
 
 , FAN_IN0
 , FAN_IN1
+`ifdef AVALON_CARD
+, RSTN_CHIP
+`endif
 );
 output PWM ;
 input	ex_clk_i;
+`ifdef AVALON_CARD
+output  [3:0] ex_clk_o ;
+`else
 output  ex_clk_o ;
+`endif
 wire clk_i , reset_n, clk25m_on;
+
+`ifdef AVALON_CARD
+wire [3:0] ex_clk_o_w;
 clkgen clk (.clkin(ex_clk_i), .clk25m_on(clk25m_on), .clkout(clk_i), .clk25m(ex_clk_o), .locked(reset_n));
+`else
+clkgen clk (.clkin(ex_clk_i), .clk25m_on(clk25m_on), .clkout(clk_i), .clk25m(ex_clk_o), .locked(reset_n));
+`endif
+
+`ifdef AVALON_CARD
+output [3:0] RSTN_CHIP;
+assign RSTN_CHIP = {gpioPIO_OUT[1],gpioPIO_OUT[1],gpioPIO_OUT[1],gpioPIO_OUT[1]};
+`endif
 
 wire WATCH_DOG ;
 wire [31:0] irom_q_rd, irom_q_wr;

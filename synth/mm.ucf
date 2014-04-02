@@ -1,7 +1,6 @@
 # Global controls
 NET "ex_clk_i" LOC = J16;
-NET "ex_clk_o" LOC = K3;
-
+NET "ex_clk_o[0]" LOC = K3;
 
 # UART
 NET "uartSIN"  LOC = A6;
@@ -73,7 +72,7 @@ NET "uartSOUT_led"   LOC = C15 | SLEW = QUIETIO;
 NET "gpioPIO_OUT[0]" LOC = C16 | SLEW = QUIETIO;
 
 #A3233 Reset_n
-NET "gpioPIO_OUT[1]" LOC = K1  | SLEW = QUIETIO;
+NET "RSTN_CHIP[0]" LOC = K1  | SLEW = QUIETIO;
 
 #GPIO read ID
 NET "gpioPIO_IN[0]" LOC = A8 | SLEW = QUIETIO;
