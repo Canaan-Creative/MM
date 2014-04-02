@@ -230,6 +230,7 @@ static int decode_pkg(uint8_t *p, struct mm_work *mw)
 		adjust_fan(tmp);
 		memcpy(&tmp, data + 4, 4);
 		set_voltage(tmp);
+#if defined(AVALON3_A3233_MACHINE) || defined(AVALON3_A3233_CARD)
 		clko_init(1);
 
 		/* ASIC Reset */
@@ -239,6 +240,7 @@ static int decode_pkg(uint8_t *p, struct mm_work *mw)
 		delay(100);
 		led(2);
 		delay(100);
+#endif
 
 		memcpy(&tmp, data + 8, 4);
 		set_asic_freq(tmp);
@@ -289,11 +291,11 @@ static int read_result(struct mm_work *mw, struct result *ret)
 	if (nonce == NONCE_DIFF) {
 		data = ret_buf[ret_produce];
 		ret_produce = (ret_produce + 1) & RET_RINGBUFFER_MASK_RX;
-
+#if defined(AVALON3_A3233_MACHINE) || defined(AVALON3_A3233_CARD)
 		memcpy(&tmp, ret->nonce, 4);
 		tmp = tmp - 0x1000 + 0x180;
 		memcpy(ret->nonce, &tmp, 4);
-
+#endif
 		memcpy(data, (uint8_t *)ret, 20);
 		memcpy(data + 20, mw->job_id, 4); /* Attach the job_id */
 	}
@@ -399,8 +401,6 @@ int main(int argv, char **argc)
 			adjust_fan(0x1ff);
 			set_voltage(0x8f00);
 		}
-
-
 
 		if (!g_new_stratum)
 			continue;
