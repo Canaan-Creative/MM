@@ -258,6 +258,16 @@ static int decode_pkg(uint8_t *p, struct mm_work *mw)
 		memcpy(mw->target, data, AVA2_P_DATA_LEN);
 		break;
 	case AVA2_P_TEST:
+#if defined(AVALON2_A3255_MACHINE)
+		memcpy(&tmp, data + 28, 4);
+		if (g_module_id == tmp) {
+			set_voltage(0x8a00);
+			led(1);
+			alink_asic_test();	/* Test ASIC */
+			led(0);
+			set_voltage(0x8f00);
+		}
+#endif
 		break;
 	default:
 		break;
@@ -270,7 +280,6 @@ static int read_result(struct mm_work *mw, struct result *ret)
 {
 	uint8_t *data;
 	int nonce;
-	uint32_t tmp;
 
 	if (alink_rxbuf_empty())
 		return 0;
@@ -292,6 +301,7 @@ static int read_result(struct mm_work *mw, struct result *ret)
 		data = ret_buf[ret_produce];
 		ret_produce = (ret_produce + 1) & RET_RINGBUFFER_MASK_RX;
 #if defined(AVALON3_A3233_MACHINE) || defined(AVALON3_A3233_CARD)
+		uint32_t tmp;
 		memcpy(&tmp, ret->nonce, 4);
 		tmp = tmp - 0x1000 + 0x180;
 		memcpy(ret->nonce, &tmp, 4);

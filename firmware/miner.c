@@ -91,19 +91,40 @@ extern uint32_t g_clock_conf_count;
 
 void miner_init_work(struct mm_work *mw, struct work *work)
 {
-	uint32_t timeout;
-	uint32_t asic_freq;
+	int timeout;
+	int asic_freq;
 
 	memcpy(work->task_id, (uint8_t *)(&mw->pool_no), 4);
 	memcpy(work->task_id + 4, (uint8_t *)(&work->nonce2), 4);
 
+	work->clock[4] = 0x00;
+	work->clock[5] = 0x00;
+	work->clock[6] = 0x01;
+	work->clock[7] = 0x74;
+
+#if defined(AVALON2_A3255_MACHINE)
+	timeout = 4294967 / (g_asic_freq * ASIC_COUNT); /* Time in ms */
+	timeout *= CPU_FREQUENCY / 1000; /* Time in cpu clock */
+	memcpy(work->timeout, &timeout, 4);
+
+	asic_freq = g_asic_freq * 32 / 50 + 0x7FE0;
+	work->clock[0] = (asic_freq & 0xff00) >> 8;
+	work->clock[1] = asic_freq & 0xff;
+	work->clock[2] = 0x00;
+	work->clock[3] = (g_clock_conf_count >= 100) ? 0x1 : 0x7;
+
+	work->step[0] = 0x24;
+	work->step[1] = 0x92;
+	work->step[2] = 0x49;
+	work->step[3] = 0x25;
+
+#elif defined(AVALON3_A3233_MACHINE) || defined(AVALON3_A3233_CARD)
 	timeout = 4294967 / (g_asic_freq * (1024 / 65) * ASIC_COUNT); /* Time in ms */
 	timeout -= 4;			 /* Some manual fix for A3233 */
 	timeout *= CPU_FREQUENCY / 1000;     /* Time in cpu clock */
 	memcpy(work->timeout, &timeout, 4);
 
 	/* 768 / 65 * FREQ = HASHRATE */
-
 	if (g_asic_freq == 200 ) asic_freq = 0xb3e00007;
 	else if (g_asic_freq == 225 ) asic_freq = 0xb4600007;
 	else if (g_asic_freq == 250 ) asic_freq = 0xb4e00007;
@@ -175,11 +196,6 @@ void miner_init_work(struct mm_work *mw, struct work *work)
 	work->clock[2] = (asic_freq & 0x0000ff00) >> 8;
 	work->clock[3] = (g_clock_conf_count >= 100) ? 0x1 : 0x7;
 
-	work->clock[4] = 0x00;
-	work->clock[5] = 0x00;
-	work->clock[6] = 0x01;
-	work->clock[7] = 0x74;
-
 	work->step[0] = 0x19;
 	work->step[1] = 0x99;
 	work->step[2] = 0x99;
@@ -189,6 +205,7 @@ void miner_init_work(struct mm_work *mw, struct work *work)
 				 * 7: 0x24924925
 				 *10: 0x1999999a
 				 */
+#endif
 }
 
 static void rev(unsigned char *s, size_t l)
@@ -313,7 +330,12 @@ int test_nonce(struct mm_work *mw, struct result *ret)
 	uint32_t nonce2, nonce;
 	memcpy((uint8_t *)(&nonce2), ret->task_id + 4, 4);
 	memcpy((uint8_t *)(&nonce), ret->nonce, 4);
+
+#ifdef AVALON2_A3255_MACHINE
+	nonce -= 0x180;
+#elif defined(AVALON3_A3233_MACHINE) || defined(AVALON3_A3233_CARD)
 	nonce -= 0x1000;
+#endif
 
 	/* Generate the work base on nonce2 */
 	struct work work;
