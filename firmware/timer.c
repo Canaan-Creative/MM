@@ -103,9 +103,9 @@ int read_module_id()
 int read_power_good()
 {
 #if defined(AVALON3_A3233_MACHINE)
-	return (readl(&gpio->reg) >> 6) & 0x1f;
+	return (readl(&gpio->reg) >> 7) & 0x1f;
 #elif defined(AVALON3_A3233_CARD)
-	return (readl(&gpio->reg) >> 6) & 0x3;
+	return (readl(&gpio->reg) >> 10) & 0x3;
 #endif
 }
 
