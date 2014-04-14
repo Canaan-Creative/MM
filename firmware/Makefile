@@ -82,7 +82,7 @@ load: $(HARDWARE_NAME).bit
 
 $(HARDWARE_NAME).mcs: $(HARDWARE_NAME).bit
 	cp $^ ../synth
-	make -C ../synth $@
+	ucf_file="mm_card.ucf" make -C ../synth $@
 	cp ../synth/$@ $@
 
 $(HARDWARE_NAME).bit: $(PRJ_NAME).elf ../synth/$(HARDWARE_NAME).bit ../synth/$(HARDWARE_NAME)_bd.bmm
@@ -91,7 +91,7 @@ $(HARDWARE_NAME).bit: $(PRJ_NAME).elf ../synth/$(HARDWARE_NAME).bit ../synth/$(H
 ../synth/$(HARDWARE)_bd.bmm: ../synth/$(HARDWARE_NAME).bit
 
 ../synth/$(HARDWARE_NAME).bit:
-	make -C ../synth
+	ucf_file="mm_card.ucf" make -C ../synth $(HARDWARE_NAME).bit
 
 
 # Clean rules
