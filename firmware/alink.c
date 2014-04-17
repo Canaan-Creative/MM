@@ -191,8 +191,8 @@ static void asic_test_work(int chip, int core, int gate)
 #elif defined(AVALON3_A3233_MACHINE)
 	msg_blk[4]  = 0x00000000 | (gate ? 0xb : 0x1);
 	msg_blk[2]  = 0x1999999a;	/* Step for 10 chips */
-	msg_blk[1]  = (0x010f1eb6 ^ core) - 5 * 128;
-	/* NONCE_GET - 0x100 = NONCE */
+	msg_blk[1]  = (0x010f1eb6 ^ core) - 5 * 1024;
+	/* NONCE_GET - 0x1000 = NONCE */
 #endif
 
 	for (i = 0; i < 23; i++) {
@@ -267,7 +267,6 @@ void alink_asic_test()
 #elif defined(AVALON3_A3233_MACHINE)
 					if (nonce != 0x010f1eb6) {
 #endif
-						debug32("%08x", nonce);
 						core++;
 					}
 				} else
