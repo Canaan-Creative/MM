@@ -179,17 +179,25 @@ static void asic_test_work(int chip, int core, int gate)
 	msg_blk[7]  = 0x88517050;
 	msg_blk[6]  = 0x4ac1d001;
 
-	msg_blk[5]  = 0x00000174;	/* Default Clock */
-	msg_blk[4]  = 0x82600000 | (gate ? 0xb : 0x7);
+	msg_blk[5]  = 0x00000000;	/* Default Clock */
 	msg_blk[3]  = (gate ? 0x2fffffff : 0x0000ffff);	/* The real timeout is 0x75d1 */
+	msg_blk[0]  = chip;		/* Chip index */
+
+#if defined(AVALON2_A3255_MACHINE)
+	msg_blk[4]  = 0x82600000 | (gate ? 0xb : 0x7);
 	msg_blk[2]  = 0x24924925;	/* Step for 7 chips */
-	msg_blk[1]  = (0x010f1036 ^ core) - 5 * 128  ;	/* Nonce start, have to be N * 128 */
-	msg_blk[0]  = chip;	/* Chip index */
+	msg_blk[1]  = (0x010f1036 ^ core) - 5 * 128;
+	/* NONCE_GET - 0x180 = NONCE */
+#elif defined(AVALON3_A3233_MACHINE)
+	msg_blk[4]  = 0x00000000 | (gate ? 0xb : 0x1);
+	msg_blk[2]  = 0x1999999a;	/* Step for 10 chips */
+	msg_blk[1]  = (0x010f1eb6 ^ core) - 5 * 128;
+	/* NONCE_GET - 0x100 = NONCE */
+#endif
 
 	for (i = 0; i < 23; i++) {
 		writel(msg_blk[i], &alink->tx);
 	}
-	/* Return nonce - 0x180 = Real: 010f0eb6 */
 }
 
 #ifdef DEBUG
@@ -242,7 +250,7 @@ void alink_asic_test()
 		alink_init(1 << i);	/* Enable i miners */
 		for (j = 0; j < ASIC_COUNT; j++) {
 			core = 0;
-			for (k = 0; k < 128; k++) {
+			for (k = 0; k < ASIC_CORE_COUNT; k++) {
 				asic_test_work(j, k, 0);		/* Test asic cores  */
 
 				while (!alink_txbuf_count())
@@ -254,12 +262,18 @@ void alink_asic_test()
 				if (!alink_rxbuf_empty()) {
 					alink_read_result(&result);
 					memcpy(&nonce, result.nonce, 4);
-					if (nonce != 0x010f1036)
+#if defined(AVALON2_A3255_MACHINE)
+					if (nonce != 0x010f1036) {
+#elif defined(AVALON3_A3233_MACHINE)
+					if (nonce != 0x010f1eb6) {
+#endif
+						debug32("%08x", nonce);
 						core++;
+					}
 				} else
 					core++;
 			}
-			core_test[j + 1] = core;
+			core_test[j + 1] = core >= 255 ? 255 : core;
 			debug32("%3d", core);
 		}
 		core_test[0] = i + 1;

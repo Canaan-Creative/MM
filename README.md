@@ -36,6 +36,12 @@ Discussion
 * Mailing list: http://lists.canaan-creative.com/
 * Documents/Downloads: https://en.bitcoin.it/wiki/Avalon2
 
+Support
+=======
+* Avalon2 machine (105GHs, 315GHs)
+* Avalon3 machine (300GHs, 800GHs)
+* Avalon3 card (? GHs)
+
 License
 =======
 
