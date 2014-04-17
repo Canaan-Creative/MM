@@ -15,17 +15,28 @@
   #define AVA2_DEFAULT_MINERS	10
   #define ASIC_COUNT		7
   #define ASIC_FREQUENCY	1500 /* GHs */
+  #define ASIC_CORE_COUNT	128
+
+  #define ASIC_CORETEST_VOLT	0x8a00 /* 1V */
 #elif defined(AVALON3_A3233_MACHINE)
   #define AVA2_DEFAULT_MINERS	5
   #define ASIC_COUNT		10
   #define ASIC_FREQUENCY	400 /* MHz */
+  #define ASIC_CORE_COUNT	768
+
+  #define ASIC_CORETEST_VOLT	0x8100 /* 0.7V */
 #elif defined(AVALON3_A3233_CARD)
   #define AVA2_DEFAULT_MINERS	4
   #define ASIC_COUNT		5
   #define ASIC_FREQUENCY	400 /* MHz */
+  #define ASIC_CORE_COUNT	768
+
+  #define ASIC_CORETEST_VOLT	0x8100 /* 0.7V */
 #else
   #error "Please configure the target"
 #endif
+
+#define ASIC_0V	0x8f00
 
 #define AVA2_DEFAULT_MODULES	3
 
