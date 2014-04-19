@@ -76,7 +76,9 @@ NET "RSTN_CHIP[0]" LOC = K1  | SLEW = QUIETIO;
 
 #GPIO read ID
 NET "gpioPIO_IN[0]" LOC = A8 | SLEW = QUIETIO;
+NET "gpioPIO_IN[0]" PULLUP;
 NET "gpioPIO_IN[1]" LOC = A9 | SLEW = QUIETIO;
+NET "gpioPIO_IN[1]" PULLUP;
 
 #GPIO read Power good
 NET "gpioPIO_IN[3]" LOC = R15 | SLEW = QUIETIO;
