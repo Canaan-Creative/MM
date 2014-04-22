@@ -13,6 +13,11 @@ NET "uart_debugSIN" LOC = F16;
 NET "uart_debugSOUT" LOC = E16;
 
 # aLink
+# The chip index on Avalon3
+# 1   2   3   4
+#   7   6   5
+#   8   9   10
+
 NET   "RX_P[0]" LOC = P2;
 NET   "RX_N[0]" LOC = P1;
 NET   "TX_N[0]" LOC = R2 | SLEW = QUIETIO;
