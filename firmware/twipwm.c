@@ -127,5 +127,5 @@ uint16_t read_temp0()
 
 uint16_t read_temp1()
 {
-	return (twi_read_2byte(LM32_TWI_REG_TEMP0) >> 4) / 16;
+	return (twi_read_2byte(LM32_TWI_REG_TEMP1) >> 4) / 16;
 }
