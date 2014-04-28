@@ -401,6 +401,7 @@ int main(int argv, char **argc)
 
 	uart_init();
 	debug32("%d:MM-%s\n", g_module_id, MM_VERSION);
+	debug32("T:%d, %d\n", read_temp0(), read_temp1());
 
 	timer_set(0, IDLE_TIME);
 	g_new_stratum = 0;
