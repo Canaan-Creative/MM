@@ -213,12 +213,26 @@ static int decode_pkg(uint8_t *p, struct mm_work *mw)
 			adjust_fan(tmp);
 			memcpy(&tmp, data + 4, 4);
 			set_voltage(tmp);
+#if defined(AVALON3_A3233_MACHINE) || defined(AVALON3_A3233_CARD)
+			clko_init(1);
+
+			/* ASIC Reset */
+			led(2);
+			delay(100);
+			led(0);
+			delay(100);
+			led(2);
+			delay(100);
+#endif
 			memcpy(&tmp, data + 8, 4);
 			set_asic_freq(tmp);
 			g_clock_conf_count = 0;
-
-			alink_flush_fifo();
 		}
+		memcpy(&tmp, data + 12, 4);
+#if defined(AVALON3_A3233_MACHINE) || defined(AVALON3_A3233_CARD)
+		tmp |= 1 << 1;
+#endif
+		led(tmp);
 		break;
 	case AVA2_P_REQUIRE:
 		break;
