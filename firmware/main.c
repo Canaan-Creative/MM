@@ -164,6 +164,7 @@ static int decode_pkg(uint8_t *p, struct mm_work *mw)
 	switch (p[2]) {
 	case AVA2_P_DETECT:
 		g_new_stratum = 0;
+		g_local_work = 0;
 		alink_flush_fifo();
 		break;
 	case AVA2_P_STATIC:
