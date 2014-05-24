@@ -432,6 +432,7 @@ int main(int argv, char **argc)
 		if ((!timer_read(0) && g_new_stratum) ||
 		    read_temp0() >= IDLE_TEMP || read_temp1() >= IDLE_TEMP) {
 			g_new_stratum = 0;
+			g_local_work = 0;
 			alink_asic_idle();
 			adjust_fan(0x1ff);
 			set_voltage(0x8f00);
