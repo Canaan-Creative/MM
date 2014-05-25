@@ -423,19 +423,19 @@ int main(int argv, char **argc)
 
 	alink_asic_idle();
 	adjust_fan(0x1ff);
-	set_voltage(0x8f00);
+	set_voltage(ASIC_0V);
 
 	while (1) {
 		get_pkg(&mm_work);
 
 		wdg_feed((CPU_FREQUENCY / 1000) * 2);
 		if ((!timer_read(0) && g_new_stratum) ||
-		    read_temp0() >= IDLE_TEMP || read_temp1() >= IDLE_TEMP) {
+		    (read_temp0() >= IDLE_TEMP && read_temp1() >= IDLE_TEMP)) {
 			g_new_stratum = 0;
 			g_local_work = 0;
 			alink_asic_idle();
 			adjust_fan(0x1ff);
-			set_voltage(0x8f00);
+			set_voltage(ASIC_0V);
 		}
 
 		if (!g_new_stratum)
