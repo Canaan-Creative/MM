@@ -411,7 +411,7 @@ void alink_asic_test(int core_start, int core_end, int full_test)
 		}
 	}
 
-	if (!full_test && (error < ASIC_COUNT * (core_end - core_start) / 10)) {
+	if (!full_test && (error < 2)) {
 #if defined(AVALON3_A3233_MACHINE) || defined(AVALON3_A3233_CARD)
 		led(2);
 #else
