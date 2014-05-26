@@ -14,6 +14,7 @@
 #include "io.h"
 #include "uart.h"
 #include "miner.h"
+#include "timer.h"
 
 #if defined(AVALON2_A3255_MACHINE)
   #define MODULE_ENABLE 0x3ff
@@ -352,12 +353,13 @@ void alink_asic_idle()
 	alink_init(MODULE_ENABLE);
 }
 
-void alink_asic_test()
+void alink_asic_test(int core_start, int core_end, int full_test)
 {
 	int i, j, k, core;
 	uint32_t nonce;
 	struct result result;
 	uint8_t core_test[ASIC_COUNT + 1];
+	int error = 0;
 
 	writel(LM32_ALINK_STATE_TEST, &alink->state); /* Enable alink scan mode */
 
@@ -366,7 +368,7 @@ void alink_asic_test()
 		alink_init(1 << i);	/* Enable i miners */
 		for (j = 0; j < ASIC_COUNT; j++) {
 			core = 0;
-			for (k = 0; k < ASIC_CORE_COUNT; k++) {
+			for (k = core_start; k < core_end; k++) {
 #if defined(AVALON2_A3255_MACHINE)
 				asic_test_work(j, k, 0);
 #elif defined(AVALON3_A3233_MACHINE)
@@ -397,8 +399,24 @@ void alink_asic_test()
 			debug32("%3d", core);
 		}
 		core_test[0] = i + 1;
-		/* Send out one pkg */
-		send_pkg(AVA2_P_TEST_RET, core_test, ASIC_COUNT + 1);
+
+		if (full_test) {
+			/* Send out one pkg */
+			send_pkg(AVA2_P_TEST_RET, core_test, ASIC_COUNT + 1);
+		} else {
+			for (j = 0; j < ASIC_COUNT; j++) {
+				if (core_test[j + 1] >= core_end - core_start)
+					error++;
+			}
+		}
+	}
+
+	if (!full_test && (error < ASIC_COUNT * (core_end - core_start) / 10)) {
+#if defined(AVALON3_A3233_MACHINE) || defined(AVALON3_A3233_CARD)
+		led(2);
+#else
+		led(0);
+#endif
 	}
 
 	writel(0, &alink->state); /* Enable alink hash mode */

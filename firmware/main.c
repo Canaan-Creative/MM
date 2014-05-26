@@ -165,7 +165,13 @@ static int decode_pkg(uint8_t *p, struct mm_work *mw)
 	case AVA2_P_DETECT:
 		g_new_stratum = 0;
 		g_local_work = 0;
+		g_hw_work = 0;
 		alink_flush_fifo();
+#if defined(AVALON3_A3233_MACHINE) || defined(AVALON3_A3233_CARD)
+		led(2);
+#else
+		led(0);
+#endif
 		break;
 	case AVA2_P_STATIC:
 		g_new_stratum = 0;
@@ -288,7 +294,7 @@ static int decode_pkg(uint8_t *p, struct mm_work *mw)
 			led(3);
 			delay(100);
 #endif
-			alink_asic_test();	/* Test ASIC */
+			alink_asic_test(0, ASIC_CORE_COUNT, 1);	/* Test all ASIC cores */
 			led(0);
 			set_voltage(ASIC_0V);
 		}
@@ -403,7 +409,7 @@ int main(int argv, char **argc)
 	struct work work;
 	struct result result;
 
-	adjust_fan(0);		/* Set the fan to 100% */
+	adjust_fan(0x1ff);		/* Set the fan to 50% */
 	alink_flush_fifo();
 
 	wdg_init(1);
@@ -421,8 +427,23 @@ int main(int argv, char **argc)
 	timer_set(0, IDLE_TIME);
 	g_new_stratum = 0;
 
+	/* Test part of ASIC cores */
+	set_voltage(ASIC_CORETEST_VOLT);
+	led(1);
+#if defined(AVALON3_A3233_MACHINE) || defined(AVALON3_A3233_CARD)
+	clko_init(1);
+
+	/* ASIC Reset */
+	led(3);
+	delay(100);
+	led(1);
+	delay(100);
+	led(3);
+	delay(100);
+#endif
+	alink_asic_test(0, 2, 0);
+
 	alink_asic_idle();
-	adjust_fan(0x1ff);
 	set_voltage(ASIC_0V);
 
 	while (1) {
@@ -433,6 +454,7 @@ int main(int argv, char **argc)
 		    (read_temp0() >= IDLE_TEMP && read_temp1() >= IDLE_TEMP)) {
 			g_new_stratum = 0;
 			g_local_work = 0;
+			g_hw_work = 0;
 			alink_asic_idle();
 			adjust_fan(0x1ff);
 			set_voltage(ASIC_0V);
