@@ -211,8 +211,10 @@ static int decode_pkg(uint8_t *p, struct mm_work *mw)
 	case AVA2_P_POLLING:
 		memcpy(&tmp, data + 28, 4);
 		debug32("ID: %d-%d\n", g_module_id, tmp);
-		if (g_module_id == tmp)
-			polling();
+		if (g_module_id != tmp)
+			break;
+
+		polling();
 
 		memcpy(&tmp, data + 24, 4);
 		if (tmp) {
@@ -235,6 +237,7 @@ static int decode_pkg(uint8_t *p, struct mm_work *mw)
 			set_asic_freq(tmp);
 			g_clock_conf_count = 0;
 		}
+
 		memcpy(&tmp, data + 12, 4);
 #if defined(AVALON3_A3233_MACHINE) || defined(AVALON3_A3233_CARD)
 		tmp |= 1 << 1;
