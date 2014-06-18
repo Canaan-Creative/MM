@@ -35,6 +35,9 @@ fi
 if [ ! -d $REPO/$DIRECTORY ]; then
         cd $REPO
         git clone $URL ./$DIRECTORY || { echo "Clone git failed: $URL"; exit 1; }
+        cd $DIRECTORY
+        git checkout -b avalon3 origin/avalon3 || { echo "Branch git failed: $URL"; exit 1; }
+        cd ..
 fi
 cd $REPO/$DIRECTORY
 REVISION=`git log | head -n 1 | cut -d " " -f2`
@@ -64,11 +67,12 @@ else
         cd $WORKDIR/$BUILD_DIR
         git clone $URL
         cd $DIRECTORY
+        git checkout -b avalon3 origin/avalon3
 
         # /home/Xilinx/14.6/ISE_DS/ --> $(HOME)/Xilinx/14.7/ISE_DS/
         # firmware/Makefile and synth/xilinx.mk
-        sed -i 's:/home/Xilinx/14.6/ISE_DS/:$(HOME)/Xilinx/14.7/ISE_DS/:g' firmware/Makefile
-        sed -i 's:/home/Xilinx/14.6/ISE_DS/:$(HOME)/Xilinx/14.7/ISE_DS/:g' synth/xilinx.mk
+        sed -i 's:/home/Xilinx/14.6/ISE_DS/:$(HOME)/opt/Xilinx/14.7/ISE_DS/:g' firmware/Makefile
+        sed -i 's:/home/Xilinx/14.6/ISE_DS/:$(HOME)/opt/Xilinx/14.7/ISE_DS/:g' synth/xilinx.mk
 
         # /opt/lm32 --> [$WORKDIR]/lm32
         # firmware/config.mk and firmware/toolchain/Makefile
