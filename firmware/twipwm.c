@@ -122,10 +122,12 @@ void adjust_fan(uint32_t pwm)
 
 uint16_t read_temp0()
 {
-	return (twi_read_2byte(LM32_TWI_REG_TEMP0) >> 4) / 16;
+	uint16_t t = (twi_read_2byte(LM32_TWI_REG_TEMP0) >> 4) / 16;
+	return (t >= 200 ? 0 : t);
 }
 
 uint16_t read_temp1()
 {
-	return (twi_read_2byte(LM32_TWI_REG_TEMP1) >> 4) / 16;
+	uint16_t t = (twi_read_2byte(LM32_TWI_REG_TEMP1) >> 4) / 16;
+	return (t >= 200 ? 0 : t);
 }
