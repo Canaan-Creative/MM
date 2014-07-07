@@ -15,6 +15,8 @@ static struct lm32_timer *tim = (struct lm32_timer *)TIMER_BASE;
 static struct lm32_gpio *gpio = (struct lm32_gpio *)GPIO_BASE;
 static struct lm32_clko *clko = (struct lm32_clko *)CLKO_BASE;
 
+static uint8_t led = 0;
+
 void timer_mask_set(unsigned char timer)
 {
 	unsigned int tmp;
@@ -90,9 +92,28 @@ void timer1_isr(void)
 }
 
 /* GPIO */
-void led(uint8_t value)
+void gpio_led(uint8_t value)
 {
+	led = value;
+	writel((value | 0x2), &gpio->reg);
+}
+
+extern void delay(unsigned int ms);
+void gpio_reset_asic()
+{
+	uint8_t value = 0x1 << 1;
+
+	clko_init(1);
+
+	value |= led;
 	writel(value, &gpio->reg);
+	delay(100);
+
+	writel(led, &gpio->reg);
+	delay(100);
+
+	writel(value, &gpio->reg);
+	delay(100);
 }
 
 int read_module_id()

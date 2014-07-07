@@ -411,13 +411,8 @@ void alink_asic_test(int core_start, int core_end, int full_test)
 		}
 	}
 
-	if (!full_test && (error < 2)) {
-#if defined(AVALON3_A3233_MACHINE) || defined(AVALON3_A3233_CARD)
-		led(2);
-#else
-		led(0);
-#endif
-	}
+	if (!full_test && (error < 2))
+		gpio_led(0);
 
 	writel(0, &alink->state); /* Enable alink hash mode */
 	alink_init(MODULE_ENABLE);

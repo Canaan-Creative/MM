@@ -167,11 +167,7 @@ static int decode_pkg(uint8_t *p, struct mm_work *mw)
 		g_local_work = 0;
 		g_hw_work = 0;
 		alink_flush_fifo();
-#if defined(AVALON3_A3233_MACHINE) || defined(AVALON3_A3233_CARD)
-		led(2);
-#else
-		led(0);
-#endif
+		gpio_led(0);
 		break;
 	case AVA2_P_STATIC:
 		g_new_stratum = 0;
@@ -222,27 +218,13 @@ static int decode_pkg(uint8_t *p, struct mm_work *mw)
 			adjust_fan(tmp);
 			memcpy(&tmp, data + 4, 4);
 			set_voltage(tmp);
-#if defined(AVALON3_A3233_MACHINE) || defined(AVALON3_A3233_CARD)
-			clko_init(1);
-
-			/* ASIC Reset */
-			led(2);
-			delay(100);
-			led(0);
-			delay(100);
-			led(2);
-			delay(100);
-#endif
 			memcpy(&tmp, data + 8, 4);
 			set_asic_freq(tmp);
 			g_clock_conf_count = 0;
 		}
 
 		memcpy(&tmp, data + 12, 4);
-#if defined(AVALON3_A3233_MACHINE) || defined(AVALON3_A3233_CARD)
-		tmp |= 1 << 1;
-#endif
-		led(tmp);
+		gpio_led(tmp);
 		break;
 	case AVA2_P_REQUIRE:
 		break;
@@ -254,18 +236,6 @@ static int decode_pkg(uint8_t *p, struct mm_work *mw)
 		adjust_fan(tmp);
 		memcpy(&tmp, data + 4, 4);
 		set_voltage(tmp);
-#if defined(AVALON3_A3233_MACHINE) || defined(AVALON3_A3233_CARD)
-		clko_init(1);
-
-		/* ASIC Reset */
-		led(2);
-		delay(100);
-		led(0);
-		delay(100);
-		led(2);
-		delay(100);
-#endif
-
 		memcpy(&tmp, data + 8, 4);
 		set_asic_freq(tmp);
 		g_clock_conf_count = 0;
@@ -283,24 +253,14 @@ static int decode_pkg(uint8_t *p, struct mm_work *mw)
 		break;
 	case AVA2_P_TEST:
 		memcpy(&tmp, data + 28, 4);
-		if (g_module_id == tmp) {
-			set_voltage(ASIC_CORETEST_VOLT);
-			led(1);
-#if defined(AVALON3_A3233_MACHINE) || defined(AVALON3_A3233_CARD)
-			clko_init(1);
+		if (g_module_id != tmp)
+			break;
 
-			/* ASIC Reset */
-			led(3);
-			delay(100);
-			led(1);
-			delay(100);
-			led(3);
-			delay(100);
-#endif
-			alink_asic_test(0, ASIC_CORE_COUNT, 1);	/* Test all ASIC cores */
-			led(0);
-			set_voltage(ASIC_0V);
-		}
+		gpio_led(1);
+		set_voltage(ASIC_CORETEST_VOLT);
+		alink_asic_test(0, ASIC_CORE_COUNT, 1);	/* Test all ASIC cores */
+		set_voltage(ASIC_0V);
+		gpio_led(0);
 		break;
 	default:
 		break;
@@ -432,18 +392,7 @@ int main(int argv, char **argc)
 
 	/* Test part of ASIC cores */
 	set_voltage(ASIC_CORETEST_VOLT);
-	led(1);
-#if defined(AVALON3_A3233_MACHINE) || defined(AVALON3_A3233_CARD)
-	clko_init(1);
-
-	/* ASIC Reset */
-	led(3);
-	delay(100);
-	led(1);
-	delay(100);
-	led(3);
-	delay(100);
-#endif
+	gpio_led(1);
 	alink_asic_test(0, 2, 0);
 
 	alink_asic_idle();
