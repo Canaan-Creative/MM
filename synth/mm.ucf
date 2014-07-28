@@ -12,6 +12,10 @@ NET "uartSOUT" PULLUP;
 NET "uart_debugSIN" LOC = F16;
 NET "uart_debugSOUT" LOC = E16;
 
+# I2C
+NET "I2C_SCL" LOC = E15 | PULLUP;
+NET "I2C_SDA" LOC = D16 | PULLUP;
+
 # aLink
 # The chip index on Avalon3
 # 1   2   3   4
