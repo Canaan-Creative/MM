@@ -406,13 +406,362 @@ static int get_pkg(struct mm_work *mw)
 	return 0;
 }
 
+void i2c_wr(){
+	int i;
+	for(i = 0; i < 10; i++){
+		writel(i,0x80000708);
+	}
+}
+
+void api_wr(unsigned int nonce2){
+	unsigned int buf[23];
+	unsigned int i;
+
+        buf[ 0] = 0x1bed3ba0;
+        buf[ 1] = 0xa2cb45c1;
+        buf[ 2] = 0xd8f8ef67;
+        buf[ 3] = 0x12146495;
+        buf[ 4] = 0xc44192c0;
+        buf[ 5] = 0x7145fd6d;
+        buf[ 6] = 0x974bf4bb;
+        buf[ 7] = 0x8f41371d;
+        buf[ 8] = 0x65c90d1e;
+        buf[ 9] = 0x9cb18a17;
+        buf[10] = 0xfa77fe7d;
+        buf[11] = 0x13cdfd7b;
+        buf[12] = 0x00639107;
+        buf[13] = 0x62a5f25c;
+        buf[14] = 0x06b168ae;
+        buf[15] = 0x087e051a;
+        buf[16] = 0x89517050;
+        buf[17] = 0x4ac1d001;
+        buf[18] = nonce2 + 1;
+        buf[19] = nonce2    ;
+        buf[20] = 0x00000001;
+        buf[21] = 0x00000001;
+        buf[22] = 0x00000001;
+
+	for(i = 0; i < 23; i++){
+		writel(buf[i], 0x80000500);
+	}
+}
+
+void api_rd(unsigned int * buf){
+	int i;
+	for(i = 0; i < 4; i++)
+		buf[i] = readl(0x80000504);
+}
+
+
+void gen_hash_work(unsigned int i, unsigned int j, unsigned int * data){
+	if(i%16 == 0 ){data[0]=0x1bed3ba0; data[1]=0xa2cb45c1; data[2]=0xd8f8ef67; data[3]=0x12146495; data[4]=0xc44192c0; data[5]=0x7145fd6d; data[6]=0x974bf4bb; data[7]=0x8f41371d; data[8]=0x65c90d1e; data[9]=0x9cb18a17; data[10]=0xfa77fe7d; data[11]=0x13cdfd7b; data[12]=0x00639107; data[13]=0x62a5f25c; data[14]=0x06b168ae; data[15]=0x087e051a; data[16]=0x89517050; data[17]=0x4ac1d001;}
+	if(i%16 == 1 ){data[0]=0xc1680161; data[1]=0x9d8d4242; data[2]=0xe06e5fab; data[3]=0x25a54bbe; data[4]=0x222e8b87; data[5]=0x7848c34b; data[6]=0xeea79cd6; data[7]=0x528caf7e; data[8]=0x33cde02a; data[9]=0x983dab15; data[10]=0x8119ce2a; data[11]=0x1c9fc4ed; data[12]=0xdac8ce29; data[13]=0x6d0fd9da; data[14]=0x6e18f645; data[15]=0x087e051a; data[16]=0x2d547050; data[17]=0xe8dc86b1;}
+	if(i%16 == 2 ){data[0]=0x84a9e522; data[1]=0xb6327d35; data[2]=0x2a54a40c; data[3]=0x879a9334; data[4]=0xd962d729; data[5]=0x5600f2af; data[6]=0xf81e2a4b; data[7]=0x80a27591; data[8]=0x4064bca0; data[9]=0x612fc425; data[10]=0xa1d03421; data[11]=0xf8941ad5; data[12]=0xc5e7acf1; data[13]=0xb0496c6a; data[14]=0xc35604f4; data[15]=0x087e051a; data[16]=0x3c537050; data[17]=0x826cce7a;}
+	if(i%16 == 3 ){data[0]=0x1c11ef93; data[1]=0xb3baed4e; data[2]=0x2a54a40c; data[3]=0x879a9334; data[4]=0xd962d729; data[5]=0x5600f2af; data[6]=0xf81e2a4b; data[7]=0x80a27591; data[8]=0x4064bca0; data[9]=0x612fc425; data[10]=0xa1d03421; data[11]=0xfa941ad5; data[12]=0xc3efecf2; data[13]=0xb0496c6a; data[14]=0xc55604f4; data[15]=0x087e051a; data[16]=0x3e537050; data[17]=0x826cce7a;}
+	if(i%16 == 4 ){data[0]=0xad258354; data[1]=0xcb517d22; data[2]=0x81c9ffff; data[3]=0xdd3da630; data[4]=0xea65fc9d; data[5]=0x857ccb58; data[6]=0x8a776518; data[7]=0x67eb9370; data[8]=0xed14a977; data[9]=0xf1d2de33; data[10]=0xa1235784; data[11]=0x65d344fe; data[12]=0xc6e2feca; data[13]=0x431284bc; data[14]=0x5e2e867c; data[15]=0x087e051a; data[16]=0x70527050; data[17]=0xc290e5a7;}
+	if(i%16 == 5 ){data[0]=0xdaa34ad5; data[1]=0xb171b59c; data[2]=0xd8f8ef67; data[3]=0x12146495; data[4]=0xc44192c0; data[5]=0x7145fd6d; data[6]=0x974bf4bb; data[7]=0x8f41371d; data[8]=0x65c90d1e; data[9]=0x9cb18a17; data[10]=0xfa77fe7d; data[11]=0x19cdfd7b; data[12]=0x068a510a; data[13]=0x62a5f25c; data[14]=0x0cb168ae; data[15]=0x087e051a; data[16]=0x8f517050; data[17]=0x4ac1d001;}
+	if(i%16 == 6 ){data[0]=0x010dceb6; data[1]=0x220f1dbd; data[2]=0xd8f8ef67; data[3]=0x12146495; data[4]=0xc44192c0; data[5]=0x7145fd6d; data[6]=0x974bf4bb; data[7]=0x8f41371d; data[8]=0x65c90d1e; data[9]=0x9cb18a17; data[10]=0xfa77fe7d; data[11]=0x12cdfd7b; data[12]=0x81677107; data[13]=0x62a5f25c; data[14]=0x05b168ae; data[15]=0x087e051a; data[16]=0x88517050; data[17]=0x4ac1d001;}
+	if(i%16 == 7 ){data[0]=0x2bc36997; data[1]=0xb1231d47; data[2]=0x2a54a40c; data[3]=0x879a9334; data[4]=0xd962d729; data[5]=0x5600f2af; data[6]=0xf81e2a4b; data[7]=0x80a27591; data[8]=0x4064bca0; data[9]=0x612fc425; data[10]=0xa1d03421; data[11]=0xfc941ad5; data[12]=0xc1d82cf3; data[13]=0xb0496c6a; data[14]=0xc75604f4; data[15]=0x087e051a; data[16]=0x40537050; data[17]=0x826cce7a;}
+	if(i%16 == 8 ){data[0]=0x62af5f08; data[1]=0x312bf034; data[2]=0x740d56be; data[3]=0xe2e8080f; data[4]=0x19fae6f7; data[5]=0xc35ad8db; data[6]=0x42727a8e; data[7]=0xff62389c; data[8]=0xc572d901; data[9]=0xcc39201c; data[10]=0x92f7791a; data[11]=0x24d6e2cd; data[12]=0x67d1e0c0; data[13]=0xf55f91a6; data[14]=0x39171075; data[15]=0x087e051a; data[16]=0x13557050; data[17]=0x9ed94986;}
+	if(i%16 == 9 ){data[0]=0x2068a649; data[1]=0xb0cc4d3c; data[2]=0x2a54a40c; data[3]=0x879a9334; data[4]=0xd962d729; data[5]=0x5600f2af; data[6]=0xf81e2a4b; data[7]=0x80a27591; data[8]=0x4064bca0; data[9]=0x612fc425; data[10]=0xa1d03421; data[11]=0xf6941ad5; data[12]=0xc0016cf0; data[13]=0xb0496c6a; data[14]=0xc15604f4; data[15]=0x087e051a; data[16]=0x3a537050; data[17]=0x826cce7a;}
+	if(i%16 == 10){data[0]=0xc95c48ca; data[1]=0x26fe7d8b; data[2]=0xd8f8ef67; data[3]=0x12146495; data[4]=0xc44192c0; data[5]=0x7145fd6d; data[6]=0x974bf4bb; data[7]=0x8f41371d; data[8]=0x65c90d1e; data[9]=0x9cb18a17; data[10]=0xfa77fe7d; data[11]=0x16cdfd7b; data[12]=0x8156f105; data[13]=0x62a5f25c; data[14]=0x09b168ae; data[15]=0x087e051a; data[16]=0x8c517050; data[17]=0x4ac1d001;}
+	if(i%16 == 11){data[0]=0x1033995b; data[1]=0x9a7ce254; data[2]=0xe06e5fab; data[3]=0x25a54bbe; data[4]=0x222e8b87; data[5]=0x7848c34b; data[6]=0xeea79cd6; data[7]=0x528caf7e; data[8]=0x33cde02a; data[9]=0x983dab15; data[10]=0x8119ce2a; data[11]=0x189fc4ed; data[12]=0xdab84e2b; data[13]=0x6d0fd9da; data[14]=0x6a18f645; data[15]=0x087e051a; data[16]=0x29547050; data[17]=0xe8dc86b1;}
+	if(i%16 == 12){data[0]=0x93753bfc; data[1]=0x2a6249eb; data[2]=0xe06e5fab; data[3]=0x25a54bbe; data[4]=0x222e8b87; data[5]=0x7848c34b; data[6]=0xeea79cd6; data[7]=0x528caf7e; data[8]=0x33cde02a; data[9]=0x983dab15; data[10]=0x8119ce2a; data[11]=0x239fc4ed; data[12]=0x545dae3e; data[13]=0x6d0fd9da; data[14]=0x7518f645; data[15]=0x087e051a; data[16]=0x34547050; data[17]=0xe8dc86b1;}
+	if(i%16 == 13){data[0]=0x9ea1e81d; data[1]=0xa82e81f6; data[2]=0xe06e5fab; data[3]=0x25a54bbe; data[4]=0x222e8b87; data[5]=0x7848c34b; data[6]=0xeea79cd6; data[7]=0x528caf7e; data[8]=0x33cde02a; data[9]=0x983dab15; data[10]=0x8119ce2a; data[11]=0x249fc4ed; data[12]=0xd369ce3d; data[13]=0x6d0fd9da; data[14]=0x7618f645; data[15]=0x087e051a; data[16]=0x35547050; data[17]=0xe8dc86b1;}
+	if(i%16 == 14){data[0]=0x873c2a5e; data[1]=0x2d1a8543; data[2]=0x81c9ffff; data[3]=0xdd3da630; data[4]=0xea65fc9d; data[5]=0x857ccb58; data[6]=0x8a776518; data[7]=0x67eb9370; data[8]=0xed14a977; data[9]=0xf1d2de33; data[10]=0xa1235784; data[11]=0x5ad344fe; data[12]=0x29ebded7; data[13]=0x431284bc; data[14]=0x532e867c; data[15]=0x087e051a; data[16]=0x65527050; data[17]=0xc290e5a7;}
+	if(i%16 == 15){data[0]=0xa2bef63f; data[1]=0x30101538; data[2]=0x2a54a40c; data[3]=0x879a9334; data[4]=0xd962d729; data[5]=0x5600f2af; data[6]=0xf81e2a4b; data[7]=0x80a27591; data[8]=0x4064bca0; data[9]=0x612fc425; data[10]=0xa1d03421; data[11]=0xf7941ad5; data[12]=0x41054cf0; data[13]=0xb0496c6a; data[14]=0xc25604f4; data[15]=0x087e051a; data[16]=0x3b537050; data[17]=0x826cce7a;}
+
+	data[0] = data[0] ^ (i & 0xfffffff0);
+
+	data[2] = data[2] - 0x1;
+
+	data[18] = 0x0;
+	data[19] = j;
+
+	data[20] = 0x1;
+	data[21] = 0x1;
+	data[22] = 0x1;
+}
+
+void api_cfg(){
+	writel(0x5000, 0x8000050c);//timeout
+	writel(0x02010008, 0x80000510);// 2 chip & 1 channle
+}
+
+void api_write(unsigned int * data){
+	unsigned int i;
+	for(i = 0; i < 23; i++){
+		writel(data[i], 0x80000500);
+	}
+}
+
+void api_read(unsigned int * buf){
+	buf[0] = readl(0x80000504);
+	buf[1] = readl(0x80000504);
+	buf[2] = readl(0x80000504);
+	buf[3] = readl(0x80000504);
+}
+
+void api_wait_rx(){
+	unsigned int tmp = 0;
+	while(tmp < 4){
+		tmp = readl(0x80000508);
+		tmp = (tmp >> 20) & 0x1ff;
+	}
+}
+
+void chip_rst(){
+	led(8); delay(1000); led(0); delay(1000); led(8);
+}
+
+unsigned int iic_tx_cnt(){
+	unsigned int tmp;
+	tmp = readl(0x80000700);
+	tmp = (tmp >> 9) & 0x1ff;
+	return tmp;
+}
+
+unsigned int iic_rx_cnt(){
+	unsigned int tmp;
+	tmp = readl(0x80000700);
+	tmp = tmp & 0x1ff;
+	return tmp;
+}
+
+void iic_rst_logic(){
+	unsigned int tmp = 0x1 << 23;
+	writel(tmp, 0x80000700);
+}
+
+void iic_rst_rx(){
+	unsigned int tmp = 0x1 << 21;
+	writel(tmp, 0x80000700);
+}
+
+void iic_rst_tx(){
+	unsigned int tmp = 0x1 << 22;
+	writel(tmp, 0x80000700);
+}
+
+void iic_addr_set(unsigned int addr){
+	writel(addr, 0x80000704);
+}
+
+unsigned int iic_addr_get(){
+	return readl(0x80000704);
+}
+
+void iic_wait_wr_done(){
+	unsigned int tmp;
+	while(1){
+		tmp = readl(0x80000700);
+		tmp = tmp & (1<<18);
+		if(tmp)
+			break;
+	}
+	writel(tmp, 0x80000700);
+}
+
+unsigned int iic_wait_rd_done(){
+	unsigned int tmp;
+	while(1){
+		tmp = readl(0x80000700);
+		tmp = tmp & (3<<19);
+		if(tmp)
+			break;
+	}
+	
+	writel(tmp, 0x80000700);
+	tmp = tmp >> 19;
+	return tmp;//>=2 means error
+}
+
+void iic_wr(unsigned int *data, unsigned int len){
+	unsigned int i;
+	for(i = 0; i < len; i++)
+		writel(data[i], 0x80000708);
+}
+
+void iic_rd(unsigned int *data, unsigned int len){
+	unsigned int i;
+	for(i = 0; i < len; i++)
+		data[i] = readl(0x8000070c);
+}
+
+void iic_loop(){
+	unsigned int tmp = 0;
+	while(1){
+		tmp = iic_rx_cnt();
+		if(tmp){
+			tmp = readl(0x8000070c);
+			writel(tmp, 0x80000708);
+		}
+	}
+}
+
+/*
+DNA_PORT dna_port(
+.DOUT  (dna_dout  ),
+.CLK   (reg_dna[0]),
+.DIN   (reg_dna[1]),
+.READ  (reg_dna[2]),
+.SHIFT (reg_dna[3])
+*/
+
+void dna_rd(unsigned int *data){
+	unsigned int i, tmp;
+	data[0] = 0;
+	data[1] = 0;
+
+	writel(0, 0x80000710); //idle
+
+	writel(0|4, 0x80000710);
+	writel(1|4, 0x80000710);
+	tmp = readl(0x80000710);
+	data[1] = (data[1]<<1) | ((tmp >> 4)&1);
+	writel(0|4, 0x80000710);//shift
+
+	writel(0, 0x80000710); //idle
+	for(i = 1; i < 32; i++){
+		writel(0|8, 0x80000710);
+        	writel(1|8, 0x80000710);
+		tmp = readl(0x80000710);
+		data[1] = (data[1]<<1) | ((tmp >> 4)&1);
+        	writel(0|8, 0x80000710); 
+	}
+	writel(0, 0x80000710); //idle
+
+	for(; i < 57; i++){
+		writel(0|8, 0x80000710);
+        	writel(1|8, 0x80000710);
+		data[0] = (data[1]>>31) | (data[0] << 1);
+		data[1] = (data[1]<< 1) | ((readl(0x80000710) >> 4)&1);
+        	writel(0|8, 0x80000710);
+	}
+}
+
+#define IIC_ADDR 0
+#define IIC_LOOP 1
+
 int main(int argv, char **argc)
 {
 	struct mm_work mm_work;
 	struct work work;
 	struct result result;
+	unsigned int data[23];
+	unsigned int buf0[4];
+	unsigned int buf1[4];
+	int i, k;
 
-	adjust_fan(0x1ff);		/* Set the fan to 50% */
+	int TEST_4CORE = 1;//ONLY Test 4*cal_core
+	int DESPLAY_ON = 0;//print detial data
+	int TEST_I2C = 1;
+	uart_init();
+	while(TEST_I2C){
+		unsigned int dna[10];
+		unsigned int data[100];
+		unsigned int tmp;
+		unsigned int slv_addr = 0;
+		for(i = 0; i < 10; i++)
+			dna[i] = 0xffffffff;
+		dna_rd(dna);
+		debug32("IIC TEST: DNA:%08x %08x\n", dna[0], dna[1]);
+		//iic_loop();
+		while(1){
+			iic_wait_wr_done();
+			tmp = iic_rx_cnt();
+			iic_rd(data, tmp);
+
+			for(i = 0; i < tmp; i++)
+				debug32("RX Data%d: %x\n", i, data[i]);
+
+			if(data[0] == IIC_ADDR){
+				if(slv_addr){
+					debug32("This is a Named slave, %x\n", iic_addr_get());
+					continue;
+				}
+				iic_rst_tx();
+				iic_wr(dna, 10);
+				for(i = 0; i < 10; i++) debug32("TX Data (DNA)%d: %x\n", i, dna[i]);
+			}else if(data[0] == IIC_LOOP){
+				iic_wr(data, 10);
+				for(i = 0; i < 10; i++) debug32("TX Data %d: %x\n", i, data[i]);
+			}
+
+			tmp = iic_wait_rd_done();
+			//debug32("tx cnt = %x", iic_tx_cnt());
+			if(tmp != 1){
+				iic_rst_tx(); //reset tx fifo
+				iic_rst_logic();
+				debug32("Read Error! tmp = %x\n", tmp);
+			}else if(tmp == 1){
+				if(data[0] == IIC_ADDR){ iic_addr_set(data[1]); slv_addr = 1;}
+				debug32("Read Done!\n");
+			}
+		}
+	}
+
+	chip_rst();
+
+	api_cfg();
+
+	for(i = 0; i < 248*16 + 2; i++){
+		if(TEST_4CORE)
+			gen_hash_work(i%4, i, data);
+		else
+			gen_hash_work(i, i, data);
+		api_write(data);
+
+		api_wait_rx();
+		api_read(buf0);
+
+		api_wait_rx();
+		api_read(buf1);
+
+		if(i >= 2){
+			if(DESPLAY_ON) debug32("i = %08x\n", i);
+
+			if(TEST_4CORE)
+				gen_hash_work((i-1)%4, i-1, data);
+			else
+				gen_hash_work(i-1, i-1, data);
+
+			for(k = 0; k < 4; k++){
+				if(DESPLAY_ON) debug32("buf_per[%d] = %08x %08x\n", k, buf1[k], data[k]);
+			}
+
+			if(buf1[0] != data[0]    ){led(1|0x8); while(1);}
+			if(buf1[1] != data[1]    ){led(2|0x8); while(1);}
+			if(buf1[2] != (data[2]+1)){led(3|0x8); while(1);}
+			if(buf1[3] != data[3]    ){led(4|0x8); while(1);}
+
+			if(TEST_4CORE)
+				gen_hash_work((i-2)%4, i-2, data);
+			else
+				gen_hash_work((i-2)%16, i-2, data);
+
+			data[0] = data[0] + 0x18000;
+
+			if(DESPLAY_ON) {
+				debug32("receive ID0   %08x %08x\n", buf0[0], 0);
+				debug32("receive ID1   %08x %08x\n", buf0[1], i-2);
+				debug32("receive NONCE %08x %08x\n", buf0[2], data[0]);
+			}
+
+			if(buf0[0] != 0      ) {led(5|0x8); while(1);}
+			if(buf0[1] != i - 2  ) {led(6|0x8); while(1);}
+			if(buf0[2] != data[0]) {led(7|0x8); while(1);}
+		}
+	}
+	debug32("A3222 Test Done! Core number = %d\n", i-2);
+	while(1){
+		led(7);
+		delay(150);
+		led(0);
+		delay(150);
+	}
+
+	adjust_fan(0x1ff);/* Set the fan to 50% */
 	alink_flush_fifo();
 
 	wdg_init(1);

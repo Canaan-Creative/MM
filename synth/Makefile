@@ -38,6 +38,9 @@ xilinx_cores := $(addprefix ../ipcores_dir/,\
 	fifo_uart.xco\
 	tx_fifo.xco\
 	rx_fifo.xco\
+	i2c_fifo.xco\
+	fifo32.xco\
+	fifo512.xco\
 	icon.xco\
 	ila.xco\
 	)
