@@ -18,7 +18,9 @@ output                I2C_RTY_O ,//const 0
 output reg [31:0]     I2C_DAT_O ,
 
 input                 scl_pin   ,
-inout                 sda_pin
+inout                 sda_pin   ,
+
+output                int_i2c
 );
 
 assign I2C_RTY_O = 1'b0;
@@ -132,6 +134,19 @@ always @ (posedge CLK_I) begin
 		reg_rerr_r <= 1'b1;
 end
 
+reg reg_rx_mask;
+
+always @ (posedge CLK_I) begin
+	if(rst)
+		reg_rx_mask <= 1'b1;
+	else if(i2c_ctrl_wr_en &&  I2C_DAT_I[24])
+		reg_rx_mask <= 1'b1;
+	else if(i2c_ctrl_wr_en &&  I2C_DAT_I[25])
+		reg_rx_mask <= 1'b0;
+end
+
+assign int_i2c = |rx_data_count && ~reg_rx_mask;
+
 always @ (posedge CLK_I) begin
 	if(RST_I)
 		reg_addr <= 7'b0;
@@ -159,7 +174,7 @@ end
 
 always @ (posedge CLK_I) begin
         case( 1'b1 )
-                i2c_ctrl_rd_en  : I2C_DAT_O <= {1'b0, reg_addr[6:0], reg_rst, reg_txrst, reg_rxrst, 
+                i2c_ctrl_rd_en  : I2C_DAT_O <= {7'b0, reg_rx_mask, reg_rst, reg_txrst, reg_rxrst, 
                                                 reg_rerr_r, reg_rstop_r, reg_wstop_r,
                                                 tx_data_count[8:0], rx_data_count[8:0]};
 		i2c_addr_rd_en  : I2C_DAT_O <= {25'b0, reg_addr};

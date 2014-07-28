@@ -1212,7 +1212,9 @@ i2c i2c(
 /*output reg [31:0]*/ .I2C_DAT_O (i2cI2C_DAT_O               ),
 
 /*input            */ .scl_pin   (I2C_SCL                    ),
-/*inout            */ .sda_pin   (I2C_SDA                    )
+/*inout            */ .sda_pin   (I2C_SDA                    ),
+
+/*output           */ .int_i2c   (int_i2c                    )
 );
 
 
@@ -1220,7 +1222,7 @@ assign superkdf9interrupt_n[3] = !uartINTR ;
 assign superkdf9interrupt_n[1] = !spiSPI_INT_O ;
 assign superkdf9interrupt_n[0] = !gpioIRQ_O ;
 assign superkdf9interrupt_n[4] = !uart_debugINTR ;
-assign superkdf9interrupt_n[2] = 1;
+assign superkdf9interrupt_n[2] = !int_i2c;
 assign superkdf9interrupt_n[5] = !TIME0_INT;
 assign superkdf9interrupt_n[6] = !TIME1_INT;
 assign superkdf9interrupt_n[7] = 1;
