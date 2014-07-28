@@ -350,6 +350,8 @@ endmodule
 `include "../components/twi/shift.v"
 `include "../components/twi/twi_core.v"
 
+`include "../components/i2c/i2c.v"
+`include "../components/i2c/i2c_phy.v"
 `ifdef UART_PRO_EN
 `include "../components/uart_pro/async_receiver.v"
 `include "../components/uart_pro/async_transmitter.v"
@@ -389,6 +391,8 @@ module mm (
 , PWM
 , TWI_SCL
 , TWI_SDA
+, I2C_SCL
+, I2C_SDA
 
 , SFT_SHCP
 , SFT_DS
@@ -603,6 +607,16 @@ wire        twiTWI_en;
 wire        TWI_SCL_O ;
 wire        TWI_SDA_OEN ;
 
+//i2c
+wire [31:0] i2cI2C_DAT_O;
+wire        i2cI2C_ACK_O;
+wire        i2cI2C_ERR_O;
+wire        i2cI2C_RTY_O;
+wire        i2cI2C_en;
+input       I2C_SCL;
+inout       I2C_SDA;
+
+
 output      SFT_SHCP ;
 output      SFT_DS   ;
 output      SFT_STCP ;
@@ -689,6 +703,7 @@ uart_debugUART_en ? {4{uart_debugUART_DAT_O[7:0]}} :
 shaSHA_en ? shaSHA_DAT_O :
 alinkALINK_en ? alinkALINK_DAT_O :
 twiTWI_en ? twiTWI_DAT_O :
+i2cI2C_en ? i2cI2C_DAT_O :
 0;
 assign SHAREDBUS_ERR_O = SHAREDBUS_CYC_I & !(
 (!uartUART_ERR_O & uartUART_en) |
@@ -698,6 +713,7 @@ assign SHAREDBUS_ERR_O = SHAREDBUS_CYC_I & !(
 (!shaSHA_ERR_O & shaSHA_en ) |
 (!alinkALINK_ERR_O & alinkALINK_en ) |
 (!twiTWI_ERR_O & twiTWI_en ) |
+(!i2cI2C_ERR_O & i2cI2C_en ) |
 0);
 assign SHAREDBUS_ACK_O =
 uartUART_en ? uartUART_ACK_O :
@@ -707,6 +723,7 @@ uart_debugUART_en ? uart_debugUART_ACK_O :
 shaSHA_en ? shaSHA_ACK_O :
 alinkALINK_en ? alinkALINK_ACK_O :
 twiTWI_en ? twiTWI_ACK_O :
+i2cI2C_en ? i2cI2C_ACK_O :
 0;
 assign SHAREDBUS_RTY_O =
 uartUART_en ? uartUART_RTY_O :
@@ -716,6 +733,7 @@ uart_debugUART_en ? uart_debugUART_RTY_O :
 shaSHA_en ? shaSHA_RTY_O :
 alinkALINK_en ? alinkALINK_RTY_O :
 twiTWI_en ? twiTWI_RTY_O :
+i2cI2C_en ? i2cI2C_RTY_O :
 0;
 wire [31:0] superkdf9DEBUG_DAT_I;
 assign superkdf9DEBUG_DAT_I = 0;
@@ -797,16 +815,16 @@ lm32_top
 .dram_write_wr(dram_write_wr)
 );
 // VIO/ILA and ICON {{{
-wire [35:0] icon_ctrl_0, icon_ctrl_1;
-wire [255:0] trig0 = {
-	8'ha                 ,//[15:8]
-	irom_addr_rd[29:0]   ,
-	irom_q_rd[31:0]      ,
-	superkdf9interrupt_n[7:0]
-} ;
-icon icon_test(.CONTROL0(icon_ctrl_0));
-ila ila_test(.CONTROL(icon_ctrl_0), .CLK(clk_i), .TRIG0(trig0)
-);
+//wire [35:0] icon_ctrl_0, icon_ctrl_1;
+//wire [255:0] trig0 = {
+//	8'ha                 ,//[15:8]
+//	irom_addr_rd[29:0]   ,
+//	irom_q_rd[31:0]      ,
+//	superkdf9interrupt_n[7:0]
+//} ;
+//icon icon_test(.CONTROL0(icon_ctrl_0));
+//ila ila_test(.CONTROL(icon_ctrl_0), .CLK(clk_i), .TRIG0(trig0)
+//);
 //vio vio_test(.CONTROL(icon_ctrl_1), .ASYNC_OUT(intr_i));
 // }}}
 
@@ -1172,6 +1190,31 @@ twi u_twi(
 /*input  [7:0]  */ .GPIO_IN     (gpioPIO_IN                  ) ,
 /*output        */ .clk25m_on   (clk25m_on                   )
 ) ;
+
+assign i2cI2C_en = (SHAREDBUS_ADR_I[31:6] == 26'b10000000000000000000011100);
+
+i2c i2c(
+/*input            */ .CLK_I     (clk_i                      ),
+/*input            */ .RST_I     (sys_reset                  ),
+
+/*input            */ .I2C_CYC_I (SHAREDBUS_CYC_I & i2cI2C_en),//NC
+/*input            */ .I2C_STB_I (SHAREDBUS_STB_I & i2cI2C_en),
+/*input            */ .I2C_WE_I  (SHAREDBUS_WE_I             ),
+/*input            */ .I2C_LOCK_I(SHAREDBUS_LOCK_I           ),//NC
+/*input  [2:0]     */ .I2C_CTI_I (SHAREDBUS_CTI_I            ),//NC
+/*input  [1:0]     */ .I2C_BTE_I (SHAREDBUS_BTE_I            ),//NC
+/*input  [5:0]     */ .I2C_ADR_I (SHAREDBUS_ADR_I[5:0]       ),
+/*input  [31:0]    */ .I2C_DAT_I (SHAREDBUS_DAT_I[31:0]      ),
+/*input  [3:0]     */ .I2C_SEL_I (SHAREDBUS_SEL_I            ),
+/*output reg       */ .I2C_ACK_O (i2cI2C_ACK_O               ),
+/*output           */ .I2C_ERR_O (i2cI2C_ERR_O               ),//const 0
+/*output           */ .I2C_RTY_O (i2cI2C_RTY_O               ),//const 0
+/*output reg [31:0]*/ .I2C_DAT_O (i2cI2C_DAT_O               ),
+
+/*input            */ .scl_pin   (I2C_SCL                    ),
+/*inout            */ .sda_pin   (I2C_SDA                    )
+);
+
 
 assign superkdf9interrupt_n[3] = !uartINTR ;
 assign superkdf9interrupt_n[1] = !spiSPI_INT_O ;
