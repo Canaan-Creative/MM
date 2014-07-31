@@ -131,13 +131,13 @@ void alink_read_result(struct result *r)
 	memcpy(r->miner_id, (uint8_t *)(&tmp), 4);
 
 	tmp = readl(&alink->rx);
-	memcpy(r->task_id, (uint8_t *)(&tmp), 4);
+	memcpy(r->task_id, (uint8_t *)(&tmp), 4); /* Pool No. */
 
 	tmp = readl(&alink->rx);
-	memcpy(r->task_id + 4, (uint8_t *)(&tmp), 4);
+	memcpy(r->task_id + 4, (uint8_t *)(&tmp), 4); /* Nonce2 */
 
 	tmp = readl(&alink->rx);
-	memcpy(r->timeout, (uint8_t *)(&tmp), 4);
+	memcpy(r->ntime, (uint8_t *)(&tmp), 4);
 
 	tmp = readl(&alink->rx);
 	memcpy(r->nonce, (uint8_t *)(&tmp), 4);
