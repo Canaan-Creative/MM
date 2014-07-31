@@ -640,6 +640,11 @@ void dna_rd(unsigned int *data){
 	}
 }
 
+void iic_reboot(){
+        unsigned int tmp = 0x1 << 26;
+        writel(tmp, 0x80000700);
+}
+
 #define IIC_ADDR 0
 #define IIC_LOOP 1
 
@@ -657,6 +662,8 @@ int main(int argv, char **argc)
 	int DESPLAY_ON = 0;//print detial data
 	int TEST_I2C = 1;
 	uart_init();
+	led(5);
+	//iic_reboot();
 	while(TEST_I2C){
 		unsigned int dna[10];
 		unsigned int data[100];

@@ -350,6 +350,7 @@ endmodule
 
 `include "../components/i2c/i2c.v"
 `include "../components/i2c/i2c_phy.v"
+`include "../components/i2c/reboot.v"
 
 `include "../components/api/api_define.v"
 `include "../components/api/api.v"
@@ -438,6 +439,13 @@ clkgen clk (.clkin(ex_clk_i), .clk25m_on(clk25m_on), .clkout(clk_i), .clk25m(ex_
 output [3:0] RSTN_CHIP;
 assign RSTN_CHIP = {gpioPIO_OUT[1],gpioPIO_OUT[1],gpioPIO_OUT[1],gpioPIO_OUT[1]};
 `endif
+
+wire                rbt_enable;
+wire                ram_sel   ;//0: iram, 1: dram
+wire                ram_wr    ;
+wire [15:0]         ram_addr  ;
+wire [31:0]         ram_dat_wr;
+wire [31:0]         ram_dat_rd;
 
 wire WATCH_DOG ;
 wire [31:0] irom_q_rd, irom_q_wr;
@@ -698,7 +706,7 @@ arbiter (
 .WBS_CYC_I(SHAREDBUS_CYC_I),
 .WBS_STB_I(SHAREDBUS_STB_I),
 .clk (clk_i),
-.reset (sys_reset));
+.reset (sys_reset | rbt_enable));
 assign SHAREDBUS_DAT_O =
 uartUART_en ? {4{uartUART_DAT_O[7:0]}} :
 spiSPI_en ? spiSPI_DAT_O :
@@ -787,7 +795,7 @@ lm32_top
 .DEBUG_CYC_I(SHAREDBUS_CYC_I & superkdf9DEBUG_en),
 .DEBUG_STB_I(SHAREDBUS_STB_I & superkdf9DEBUG_en),
 .interrupt_n(superkdf9interrupt_n),
-.clk_i (clk_i), .rst_i (sys_reset),
+.clk_i (clk_i), .rst_i (sys_reset | rbt_enable),
 // the exposed IROM
 .irom_clk_rd(irom_clk_rd),
 .irom_clk_wr(irom_clk_wr),
@@ -819,26 +827,28 @@ lm32_top
 .dram_write_rd(dram_write_rd),
 .dram_write_wr(dram_write_wr)
 );
-// VIO/ILA and ICON {{{
-// IROM {{{
+
+
+assign ram_dat_rd = ram_sel ? dram_q_rd : irom_q_rd;
+
 bram #(
 	.size(1+`CFG_IROM_LIMIT - `CFG_IROM_BASE_ADDRESS),
 	.name("irom")
 ) irom (
-	.ClockA(irom_clk_rd),
-	.ClockB(irom_clk_wr),
-	.ResetA(irom_rst_rd),
-	.ResetB(irom_rst_wr),
-	.AddressA(irom_addr_rd),
-	.AddressB(irom_addr_wr),
-	.DataInA(irom_d_rd), /* unused */
-	.DataInB(irom_d_wr),
-	.DataOutA(irom_q_rd),
-	.DataOutB(irom_q_wr), /* unused */
-	.ClockEnA(irom_en_rd),
-	.ClockEnB(irom_en_wr),
-	.WriteA(irom_write_rd),
-	.WriteB(irom_write_wr)
+	.ClockA  (irom_clk_rd  ),
+	.ClockB  (irom_clk_wr  ),
+	.ResetA  (rbt_enable ? 1'b0 : irom_rst_rd),
+	.ResetB  (rbt_enable ? 1'b0 : irom_rst_wr),
+	.AddressA(rbt_enable ? {16'b0, ram_addr} : irom_addr_rd ),
+	.AddressB(irom_addr_wr ),
+	.DataInA (rbt_enable ? ram_dat_wr : irom_d_rd    ), /* unused */
+	.DataInB (irom_d_wr    ),
+	.DataOutA(irom_q_rd    ),
+	.DataOutB(irom_q_wr    ), /* unused */
+	.ClockEnA(rbt_enable ? 1'b1 : irom_en_rd   ),
+	.ClockEnB(irom_en_wr   ),
+	.WriteA  (rbt_enable ? (~ram_sel&ram_wr) : irom_write_rd),
+	.WriteB  (rbt_enable ? 1'b0 : irom_write_wr)
 );
 // }}}
 // DRAM {{{
@@ -846,21 +856,22 @@ bram #(
 	.size(1+`CFG_DRAM_LIMIT - `CFG_DRAM_BASE_ADDRESS),
 	.name("irom")
 ) dram (
-	.ClockA(dram_clk_rd),
-	.ClockB(dram_clk_wr),
-	.ResetA(dram_rst_rd),
-	.ResetB(dram_rst_wr),
-	.AddressA(dram_addr_rd),
-	.AddressB(dram_addr_wr),
-	.DataInA(dram_d_rd), /* unused */
-	.DataInB(dram_d_wr),
-	.DataOutA(dram_q_rd),
-	.DataOutB(dram_q_wr),
-	.ClockEnA(dram_en_rd),
-	.ClockEnB(dram_en_wr),
-	.WriteA(dram_write_rd),
-	.WriteB(dram_write_wr)
+	.ClockA  (dram_clk_rd  ),
+	.ClockB  (dram_clk_wr  ),
+	.ResetA  (rbt_enable ? 1'b0 : dram_rst_rd  ),
+	.ResetB  (rbt_enable ? 1'b0 : dram_rst_wr  ),
+	.AddressA(rbt_enable ? {16'b0, ram_addr} : dram_addr_rd ),
+	.AddressB(dram_addr_wr ),
+	.DataInA (rbt_enable ? ram_dat_wr : dram_d_rd    ), /* unused */
+	.DataInB (dram_d_wr    ),
+	.DataOutA(dram_q_rd    ),
+	.DataOutB(dram_q_wr    ),
+	.ClockEnA(rbt_enable ? 1'b1 : dram_en_rd   ),
+	.ClockEnB(dram_en_wr   ),
+	.WriteA  (rbt_enable ? (ram_sel&ram_wr) : dram_write_rd),
+	.WriteB  (rbt_enable ? 1'b0 : dram_write_wr)
 );
+
 
 wire [7:0] uartUART_DAT_I;
 assign uartUART_DAT_I = ((
@@ -876,7 +887,7 @@ assign uartUART_en = (SHAREDBUS_ADR_I[31:4] == 28'b1000000000000000000000010000)
 wire uartSOUT_w ;
 assign uartSOUT     = uartSOUT_w ? 1'bz : 1'b0;
 
-
+`ifdef UART_EN
 uart_core
 #(
 .UART_WB_DAT_WIDTH(8),
@@ -912,7 +923,24 @@ uart_core
 .TXRDY_N(uartTXRDY_N),
 .INTR(uartINTR),
 .CLK(clk_i), .RESET(sys_reset));
+`else
+reg uartUART_ACK_O_r;
+assign uartSOUT_w = 1'b1;
+assign uartUART_ACK_O = uartUART_ACK_O_r;
+assign uartUART_DAT_O = 0;
+assign uartUART_ERR_O = 0;
+assign uartUART_RTY_O = 0;
+assign uartINTR = 0;
 
+always @ ( posedge clk_i or posedge sys_reset ) begin
+	if( sys_reset )
+		uartUART_ACK_O_r <= 1'b0 ;
+	else if( (SHAREDBUS_STB_I & uartUART_en) && (~uartUART_ACK_O_r) )
+		uartUART_ACK_O_r <= 1'b1 ;
+	else
+		uartUART_ACK_O_r <= 1'b0 ;
+end
+`endif
 
 assign i2cI2C_en = (SHAREDBUS_ADR_I[31:5] == 27'b100000000000000000000111000);
 
@@ -935,7 +963,18 @@ i2c i2c_slv(
 /*output reg [31:0]*/ .I2C_DAT_O (i2cI2C_DAT_O),
 
 /*input            */ .scl_pin   (I2C_SCL),
-/*inout            */ .sda_pin   (I2C_SDA)
+/*inout            */ .sda_pin   (I2C_SDA),
+
+/*output           */ .int_i2c   (int_i2c                    ),
+
+/*output           */ .rbt_enable(rbt_enable                 ),
+/*output           */ .ram_sel   (ram_sel                    ),//0: iram, 1: dram
+/*output           */ .ram_wr    (ram_wr                     ),
+/*output [15:0]    */ .ram_addr  (ram_addr                   ),
+/*output [31:0]    */ .ram_dat_wr(ram_dat_wr                 ),
+/*input  [31:0]    */ .ram_dat_rd(ram_dat_rd                 )
+
+
 );
 
 wire [31:0] spiSPI_DAT_I;
@@ -1180,7 +1219,7 @@ assign superkdf9interrupt_n[3] = !uartINTR ;
 assign superkdf9interrupt_n[1] = !spiSPI_INT_O ;
 assign superkdf9interrupt_n[0] = !gpioIRQ_O ;
 assign superkdf9interrupt_n[4] = !uart_debugINTR ;
-assign superkdf9interrupt_n[2] = 1;
+assign superkdf9interrupt_n[2] = !int_i2c;
 assign superkdf9interrupt_n[5] = !TIME0_INT;
 assign superkdf9interrupt_n[6] = !TIME1_INT;
 assign superkdf9interrupt_n[7] = 1;

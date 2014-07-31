@@ -18,13 +18,21 @@ output                I2C_RTY_O ,//const 0
 output reg [31:0]     I2C_DAT_O ,
 
 input                 scl_pin   ,
-inout                 sda_pin
+inout                 sda_pin   ,
+
+output                int_i2c   ,
+
+output                rbt_enable,
+output                ram_sel   ,//0: iram, 1: dram
+output                ram_wr    ,
+output [15:0]         ram_addr  ,
+output [31:0]         ram_dat_wr,
+input  [31:0]         ram_dat_rd 
 );
 
 assign I2C_RTY_O = 1'b0;
 assign I2C_ERR_O = 1'b0;
 parameter PKG_LEN = 10;
-
 
 reg  [6:0] reg_addr ;
 wire       reg_wstop;//a write success
@@ -55,12 +63,10 @@ wire          rx_rd_en     = i2c_rx_rd_en;
 wire [31 : 0] rx_dout      ;
 wire [8 : 0]  rx_data_count;
 
-wire          full         = rx_data_count + PKG_LEN >= 256;
-wire          empty        = tx_data_count < PKG_LEN;
+wire          full         = rbt_enable ? 1'b0 : (rx_data_count + PKG_LEN >= 256);
+wire          empty        = rbt_enable ? 1'b0 : (tx_data_count < PKG_LEN);
 
-wire dna_done;
-wire [56:0] dna;
-
+wire [31:0] tx_dat;
 parameter I2C_CTRL = 6'h00;
 parameter I2C_ADDR = 6'h04;
 parameter I2C_TX   = 6'h08;
@@ -132,10 +138,21 @@ always @ (posedge CLK_I) begin
 		reg_rerr_r <= 1'b1;
 end
 
+reg reg_rx_mask;
+
 always @ (posedge CLK_I) begin
-	if(RST_I)
-		reg_addr <= 7'b0;
-        else if(i2c_addr_wr_en)
+	if(rst)
+		reg_rx_mask <= 1'b1;
+	else if(i2c_ctrl_wr_en &&  I2C_DAT_I[24])
+		reg_rx_mask <= 1'b1;
+	else if(i2c_ctrl_wr_en &&  I2C_DAT_I[25])
+		reg_rx_mask <= 1'b0;
+end
+
+assign int_i2c = |rx_data_count && ~reg_rx_mask;
+
+always @ (posedge CLK_I) begin
+        if(i2c_addr_wr_en)
                 reg_addr  <= I2C_DAT_I[6:0];
 end
 
@@ -146,6 +163,17 @@ always @ (posedge CLK_I) begin
 	end else
 		tx_wr_en <= 1'b0;
 end
+
+reg reg_rbt_start;
+always @ (posedge CLK_I) begin
+	if(rst)
+		reg_rbt_start <= 1'b0;
+	else if(i2c_ctrl_wr_en && I2C_DAT_I[26])
+		reg_rbt_start <= 1'b1;
+	else
+		reg_rbt_start <= 1'b0;
+end
+
 
 reg [3:0] reg_dna;
 wire dna_dout;
@@ -159,7 +187,7 @@ end
 
 always @ (posedge CLK_I) begin
         case( 1'b1 )
-                i2c_ctrl_rd_en  : I2C_DAT_O <= {1'b0, reg_addr[6:0], reg_rst, reg_txrst, reg_rxrst, 
+                i2c_ctrl_rd_en  : I2C_DAT_O <= {7'b0, reg_rx_mask, reg_rst, reg_txrst, reg_rxrst, 
                                                 reg_rerr_r, reg_rstop_r, reg_wstop_r,
                                                 tx_data_count[8:0], rx_data_count[8:0]};
 		i2c_addr_rd_en  : I2C_DAT_O <= {25'b0, reg_addr};
@@ -186,7 +214,7 @@ i2c_phy i2c_phy(
 
 /*input          */ .empty     (empty        ),
 /*output reg     */ .pop       (tx_rd_en     ),
-/*input  [31:0]  */ .din       (tx_dout      )
+/*input  [31:0]  */ .din       (rbt_enable ? tx_dat : tx_dout      )
 );
 
 i2c_fifo tx_fifo(
@@ -220,5 +248,30 @@ DNA_PORT dna_port(
 .READ  (reg_dna[2]),
 .SHIFT (reg_dna[3]) 
 );
-
+`define REBOOT_EN
+`ifdef REBOOT_EN
+reboot reboot(
+/*input        */ .clk          (CLK_I                ),
+/*input        */ .reg_rbt_start(reg_rbt_start        ),//only one pose
+/*input        */ .i2c_wr_stop  (reg_wstop            ),
+/*input        */ .i2c_rd_stop  (reg_rstop || reg_rerr),
+/*input        */ .rx_vld       (rx_wr_en             ),
+/*input  [31:0]*/ .rx_dat       (rx_din               ),
+/*input        */ .tx_vld       (tx_rd_en             ),
+/*output [31:0]*/ .tx_dat       (tx_dat               ),
+/*output reg   */ .rbt_enable   (rbt_enable           ),
+/*output reg   */ .ram_sel      (ram_sel              ),//0: iram, 1: dram
+/*output       */ .ram_wr       (ram_wr               ),
+/*output [15:0]*/ .ram_addr     (ram_addr             ),
+/*output [31:0]*/ .ram_dat_wr   (ram_dat_wr           ),
+/*input  [31:0]*/ .ram_dat_rd   (ram_dat_rd           ) 
+);
+`else
+assign tx_dat     = 0;
+assign rbt_enable = 0;
+assign ram_sel    = 0;//0: iram, 1: dram
+assign ram_wr     = 0;
+assign ram_addr   = 0;
+assign ram_dat_wr = 0;
+`endif
 endmodule
