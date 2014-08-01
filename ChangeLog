@@ -1,4 +1,33 @@
-Version 20140122
-* First working stable release
-* Direct using stratum message. generate works inside FPGA
-* Documents: http://downloads.canaan-creative.com/software/mm/MM_SOC_Specification.pdf
+2014-06-06
+* MM version: 331406-35fef7040
+* Turn on the red led when the module id was match.
+
+2014-05-27
+* MM version: 331406-fe02da80
+* Add code for turn on red LED
+* When all those two temperature sensors bigger then 90C. power off ASIC.
+* Clean old local works when get detect message
+* Add one quick poweroff self test, indicator by red LED.
+* Known Iusse: All modules(connect to one usb-serial port) red led will blinking when turn on any one of them
+
+2014-05-04
+* MM Version: 331404-dbb0c7c0
+* Support newest ADP board
+* Fixed a typo on read temperature
+* Change default modules count from 3 to 4
+
+2014-04-17
+* MM Version: 331404-b191ace0
+* Add ASIC core test code, host application is avalon3-a3233-modular-test.py
+* Fix the power good shifter, it is binary format. 0x1F mean all 5 power module are good.
+
+2014-04-01
+* MM Version: 331404-ed2bbc80
+* When temp > 90C. MM will power off all ASICs
+* Make the Avalon3 MM 100% compatible with Cgminer Avalon2 code
+* Please use the Avalon2 703n/RPi firmware after 2014-03-20. the firmware will support both Avalon2(A3255) and Avalon3(A3233). PLEASE NOTICE
+**  The voltage range is different
+**  Voltage: 0.6v ~ 0.8v
+**  The frequency is Mhz not MHs under Avalon3. so the range is
+**  Frequency: 400MHz ~ 650Mhz (MHz * 11.81 = MHs)
+**  For example: if you config the Frequency to 400 under Avalon3 that mean 400 * 11.81 = ~4.7GHs
