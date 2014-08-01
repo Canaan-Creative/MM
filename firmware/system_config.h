@@ -64,6 +64,8 @@
 #if defined(AVALON3_A3233_MACHINE) || defined(AVALON3_A3233_CARD)
   #define CLKO_BASE		(0x80000628)
 #endif
+#define IIC_BASE		(0x80000700)
+#define DNA_BASE		(0x80000710)
 
 /* UART */
 #define LM32_UART_IER_RBRI	(1 << 0)
@@ -181,5 +183,34 @@ struct lm32_clko {
 	volatile unsigned int reg; /* CLK output register */
 };
 #endif
+
+/* IIC */
+#define LM32_IIC_CR_WSTOP		(1 << 18)
+#define LM32_IIC_CR_RSTOP		(1 << 19)
+#define LM32_IIC_CR_RERR		(1 << 20)
+#define LM32_IIC_CR_RXFIFORESET		(1 << 21)
+#define LM32_IIC_CR_TXFIFORESET		(1 << 22)
+#define LM32_IIC_CR_LOGICRESET		(1 << 23)
+#define LM32_IIC_CR_RXFIFOOFFSET	(0)
+#define LM32_IIC_CR_TXFIFOOFFSET	(9)
+
+struct lm32_iic {
+	volatile unsigned int ctrl; /*ATWI ctrl*/
+	volatile unsigned int addr; /*ATWI addr*/
+	volatile unsigned int tx; /*ATWI tx*/
+	volatile unsigned int rx; /*ATWI rx*/
+};
+
+/*DNA*/
+#define LM32_DNA_CLK		(1 << 0)
+#define LM32_DNA_DIN		(1 << 1)
+#define LM32_DNA_READ		(1 << 2)
+#define LM32_DNA_SHIFT		(1 << 3)
+#define LM32_DNA_DOUT		(1 << 4)
+#define LM32_DNA_MASK		(0x1f)
+
+struct lm32_dna {
+	volatile unsigned dna;	/*DNA*/
+};
 
 #endif /* _SYSTEM_CONFIG_H_ */

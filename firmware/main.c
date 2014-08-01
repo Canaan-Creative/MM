@@ -366,190 +366,11 @@ static int get_pkg(struct mm_work *mw)
 	return 0;
 }
 
-unsigned int iic_tx_cnt(){
-	unsigned int tmp;
-	tmp = readl(0x80000700);
-	tmp = (tmp >> 9) & 0x1ff;
-	return tmp;
-}
-
-unsigned int iic_rx_cnt(){
-	unsigned int tmp;
-	tmp = readl(0x80000700);
-	tmp = tmp & 0x1ff;
-	return tmp;
-}
-
-void iic_rst_logic(){
-	unsigned int tmp = 0x1 << 23;
-	writel(tmp, 0x80000700);
-}
-
-void iic_rst_rx(){
-	unsigned int tmp = 0x1 << 21;
-	writel(tmp, 0x80000700);
-}
-
-void iic_rst_tx(){
-	unsigned int tmp = 0x1 << 22;
-	writel(tmp, 0x80000700);
-}
-
-void iic_addr_set(unsigned int addr){
-	writel(addr, 0x80000704);
-}
-
-unsigned int iic_addr_get(){
-	return readl(0x80000704);
-}
-
-void iic_wait_wr_done(){
-	unsigned int tmp;
-	while(1){
-		tmp = readl(0x80000700);
-		tmp = tmp & (1<<18);
-		if(tmp)
-			break;
-	}
-	writel(tmp, 0x80000700);
-}
-
-unsigned int iic_wait_rd_done(){
-	unsigned int tmp;
-	while(1){
-		tmp = readl(0x80000700);
-		tmp = tmp & (3<<19);
-		if(tmp)
-			break;
-	}
-	
-	writel(tmp, 0x80000700);
-	tmp = tmp >> 19;
-	return tmp;//>=2 means error
-}
-
-void iic_wr(unsigned int *data, unsigned int len){
-	unsigned int i;
-	for(i = 0; i < len; i++)
-		writel(data[i], 0x80000708);
-}
-
-void iic_rd(unsigned int *data, unsigned int len){
-	unsigned int i;
-	for(i = 0; i < len; i++)
-		data[i] = readl(0x8000070c);
-}
-
-void iic_loop(){
-	unsigned int tmp = 0;
-	while(1){
-		tmp = iic_rx_cnt();
-		if(tmp){
-			tmp = readl(0x8000070c);
-			writel(tmp, 0x80000708);
-		}
-	}
-}
-
-/*
-DNA_PORT dna_port(
-.DOUT  (dna_dout  ),
-.CLK   (reg_dna[0]),
-.DIN   (reg_dna[1]),
-.READ  (reg_dna[2]),
-.SHIFT (reg_dna[3])
-*/
-
-void dna_rd(unsigned int *data){
-	unsigned int i, tmp;
-	data[0] = 0;
-	data[1] = 0;
-
-	writel(0, 0x80000710); //idle
-
-	writel(0|4, 0x80000710);
-	writel(1|4, 0x80000710);
-	tmp = readl(0x80000710);
-	data[1] = (data[1]<<1) | ((tmp >> 4)&1);
-	writel(0|4, 0x80000710);//shift
-
-	writel(0, 0x80000710); //idle
-	for(i = 1; i < 32; i++){
-		writel(0|8, 0x80000710);
-        	writel(1|8, 0x80000710);
-		tmp = readl(0x80000710);
-		data[1] = (data[1]<<1) | ((tmp >> 4)&1);
-        	writel(0|8, 0x80000710); 
-	}
-	writel(0, 0x80000710); //idle
-
-	for(; i < 57; i++){
-		writel(0|8, 0x80000710);
-        	writel(1|8, 0x80000710);
-		data[0] = (data[1]>>31) | (data[0] << 1);
-		data[1] = (data[1]<< 1) | ((readl(0x80000710) >> 4)&1);
-        	writel(0|8, 0x80000710);
-	}
-}
-
-#define IIC_ADDR 0
-#define IIC_LOOP 1
-
-
 int main(int argv, char **argc)
 {
 	struct mm_work mm_work;
 	struct work work;
 	struct result result;
-
-	int TEST_I2C = 1;
-	int i;
-
-	uart_init();
-	while(TEST_I2C){
-		unsigned int dna[10];
-		unsigned int data[100];
-		unsigned int tmp;
-		unsigned int slv_addr = 0;
-		for(i = 0; i < 10; i++)
-			dna[i] = 0xffffffff;
-		dna_rd(dna);
-		debug32("IIC TEST: DNA:%08x %08x\n", dna[0], dna[1]);
-		//iic_loop();
-		while(1){
-			iic_wait_wr_done();
-			tmp = iic_rx_cnt();
-			iic_rd(data, tmp);
-
-			for(i = 0; i < tmp; i++)
-				debug32("RX Data%d: %x\n", i, data[i]);
-
-			if(data[0] == IIC_ADDR){
-				if(slv_addr){
-					debug32("This is a Named slave, %x\n", iic_addr_get());
-					continue;
-				}
-				iic_rst_tx();
-				iic_wr(dna, 10);
-				for(i = 0; i < 10; i++) debug32("TX Data (DNA)%d: %x\n", i, dna[i]);
-			}else if(data[0] == IIC_LOOP){
-				iic_wr(data, 10);
-				for(i = 0; i < 10; i++) debug32("TX Data %d: %x\n", i, data[i]);
-			}
-
-			tmp = iic_wait_rd_done();
-			//debug32("tx cnt = %x", iic_tx_cnt());
-			if(tmp != 1){
-				iic_rst_tx(); //reset tx fifo
-				iic_rst_logic();
-				debug32("Read Error! tmp = %x\n", tmp);
-			}else if(tmp == 1){
-				if(data[0] == IIC_ADDR){ iic_addr_set(data[1]); slv_addr = 1;}
-				debug32("Read Done!\n");
-			}
-		}
-	}
-
 
 	adjust_fan(0x1ff);		/* Set the fan to 50% */
 	alink_flush_fifo();
@@ -565,6 +386,8 @@ int main(int argv, char **argc)
 	uart_init();
 	debug32("%d:MM-%s\n", g_module_id, MM_VERSION);
 	debug32("T:%d, %d\n", read_temp0(), read_temp1());
+	extern void iic_test(void);
+	iic_test();
 
 	timer_set(0, IDLE_TIME);
 	g_new_stratum = 0;
