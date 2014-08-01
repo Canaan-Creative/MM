@@ -177,6 +177,7 @@ void iic_tx_reset(void)
 	writel(LM32_IIC_CR_TXFIFORESET, &iic->ctrl);
 }
 
+#ifdef DEBUG_IIC_TEST
 #define IIC_ADDR 	0
 #define IIC_LOOP 	1
 void iic_test(void)
@@ -220,3 +221,4 @@ void iic_test(void)
 		}
 	}
 }
+#endif
