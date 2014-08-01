@@ -152,14 +152,10 @@ unsigned char iic_addr_get(void)
 
 void iic_init(void)
 {
-	uint16_t i;
-
 	memset(dnadat, 0xff, sizeof(dnadat));
 	iic_dna_read(dnadat);
-	debug32("DEBUG: DNA:");
-	for (i = 0; i < 8; i++)
-		debug32("%02x", dnadat[i]);
-	debug32("\n");
+	debug32("D: DNA:\n");
+	hexdump(dnadat, 8);
 }
 
 void iic_logic_reset(void)
@@ -186,7 +182,7 @@ void iic_test(void)
 	uint16_t rxlen, i;
 	unsigned int slv_addr = 0;
 
-	debug32("Debug: iic_test\n");
+	debug32("D: IIC Test\n");
 	iic_init();
 
 	while (1) {
