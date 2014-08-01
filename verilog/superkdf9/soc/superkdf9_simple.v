@@ -886,7 +886,7 @@ assign uartUART_en = (SHAREDBUS_ADR_I[31:4] == 28'b1000000000000000000000010000)
 wire uartSOUT_w ;
 assign uartSOUT     = uartSOUT_w ? 1'bz : 1'b0;
 
-`ifndef UART_PRO_EN
+`ifdef UART_EN
 uart_core
 #(
 .UART_WB_DAT_WIDTH(8),
@@ -922,34 +922,25 @@ uart_core
 .TXRDY_N(uartTXRDY_N),
 .INTR(uartINTR),
 .CLK(clk_i), .RESET(sys_reset));
+
 `else
-uart_pro U_uart_pro(
-	// system clock and reset
-/*input         */.CLK_I      (clk_i                        ) ,
-/*input         */.RST_I      (sys_reset                    ) ,
+    reg uartUART_ACK_O_r;
+    assign uartSOUT_w = 1'b1;
+    assign uartUART_ACK_O = uartUART_ACK_O_r;
+    assign uartUART_DAT_O = 0;
+    assign uartUART_ERR_O = 0;
+    assign uartUART_RTY_O = 0;
+    assign uartINTR = 0;
 
-// wishbone interface signals
-/*input         */.PRO_CYC_I  (SHAREDBUS_CYC_I & uartUART_en) ,//NC
-/*input         */.PRO_STB_I  (SHAREDBUS_STB_I & uartUART_en) ,
-/*input         */.PRO_WE_I   (SHAREDBUS_WE_I               ) ,
-/*input         */.PRO_LOCK_I (SHAREDBUS_LOCK_I             ) ,//NC
-/*input  [2:0]  */.PRO_CTI_I  (SHAREDBUS_CTI_I              ) ,//NC
-/*input  [1:0]  */.PRO_BTE_I  (SHAREDBUS_BTE_I              ) ,//NC
-/*input  [5:0]  */.PRO_ADR_I  (SHAREDBUS_ADR_I[3:0]         ) ,
-/*input  [31:0] */.PRO_DAT_I  (uartUART_DAT_I[7:0]          ) ,
-/*input  [3:0]  */.PRO_SEL_I  (uartUART_SEL_I               ) ,
-/*output reg    */.PRO_ACK_O  (uartUART_ACK_O               ) ,
-/*output        */.PRO_ERR_O  (uartUART_ERR_O               ) ,//const 0
-/*output        */.PRO_RTY_O  (uartUART_RTY_O               ) ,//const 0
-/*output [31:0] */.PRO_DAT_O  (uartUART_DAT_O[7:0]          ) ,
-
-//Uart Pro interface
-/*input         */.PRO_RX     (uartSIN                      ) ,
-/*output        */.PRO_TX     (uartSOUT_w                   ) ,
-/*output        */.PRO_INT    (uartINTR                     )
-);
+    always @ ( posedge clk_i or posedge sys_reset ) begin
+       if( sys_reset )
+	 uartUART_ACK_O_r <= 1'b0 ;
+       else if( (SHAREDBUS_STB_I & uartUART_en) && (~uartUART_ACK_O_r) )
+	 uartUART_ACK_O_r <= 1'b1 ;
+       else
+	 uartUART_ACK_O_r <= 1'b0 ;
+    end
 `endif
-
 
 wire [31:0] spiSPI_DAT_I;
 assign spiSPI_DAT_I = SHAREDBUS_DAT_I[31:0];
