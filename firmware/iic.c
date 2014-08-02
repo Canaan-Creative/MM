@@ -179,7 +179,7 @@ void iic_tx_reset(void)
 void iic_test(void)
 {
 	unsigned char data[IIC_PACKSIZE];
-	uint16_t rxlen, i;
+	uint16_t rxlen;
 	unsigned int slv_addr = 0;
 
 	debug32("D: IIC Test\n");
@@ -188,10 +188,8 @@ void iic_test(void)
 	while (1) {
 		rxlen = iic_read_cnt();
 		if (rxlen && !iic_read(data, rxlen)) {
-			debug32("RX Data(%d):", rxlen);
-			for (i = 0; i < rxlen; i++)
-				debug32("%02x", i, data[i]);
-			debug32("\n");
+			debug32("D: RX Data(%d):\n", rxlen);
+			hexdump(data, rxlen);
 
 			if (data[3] == IIC_ADDR) {
 				if (slv_addr) {
@@ -203,16 +201,12 @@ void iic_test(void)
 					debug32("Set slave addr, %x\n", data[7]);
 				}
 				iic_write((unsigned char*)dnadat, IIC_PACKSIZE);
-				debug32("TX Data (DNA):");
-				for (i = 0; i < IIC_PACKSIZE; i++)
-					debug32("%02x", dnadat[i]);
-				debug32("\n");
+				debug32("D: TX Data (DNA):\n");
+				hexdump(dnadat, IIC_PACKSIZE);
 			} else if (data[3] == IIC_LOOP) {
 				iic_write(data, IIC_PACKSIZE);
-				debug32("TX Data:");
-				for (i = 0; i < IIC_PACKSIZE; i++)
-					debug32("%02x", i, data[i]);
-				debug32("\n");
+				debug32("D: TX Data:\n");
+				hexdump(data, IIC_PACKSIZE);
 			}
 		}
 	}
