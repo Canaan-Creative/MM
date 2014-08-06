@@ -17,6 +17,7 @@
 #include "io.h"
 #include "intr.h"
 #include "uart.h"
+#include "iic.h"
 #include "miner.h"
 #include "sha256.h"
 #include "alink.h"
@@ -31,8 +32,8 @@
 #define IDLE_TIME	5	/* Seconds */
 #define IDLE_TEMP	90	/* Degree (C) */
 
-static uint8_t g_pkg[AVA2_P_COUNT];
-static uint8_t g_act[AVA2_P_COUNT];
+static uint8_t g_pkg[AVA2_P_COUNT+1];
+static uint8_t g_act[AVA2_P_COUNT+1];
 static int g_module_id = 0;	/* Default ID is 0 */
 static int g_new_stratum = 0;
 static int g_local_work = 0;
@@ -115,7 +116,7 @@ void send_pkg(int type, uint8_t *buf, unsigned int len)
 {
 	debug32("Send: %d\n", type);
 	encode_pkg(g_act, type, buf, len);
-	uart_nwrite((char *)g_act, AVA2_P_COUNT);
+	iic_write(g_act, AVA2_P_COUNT+1);
 }
 
 static void polling()
@@ -308,26 +309,12 @@ static int read_result(struct mm_work *mw, struct result *ret)
 
 static int get_pkg(struct mm_work *mw)
 {
-	static char pre_last, last;
-	static int start = 0, count = 2;
-	int tmp;
+	int tmp, count;
 
 	while (1) {
-		if (!uart_read_nonblock() && !start)
-			break;
-
-		pre_last = last;
-		last = uart_read();
-
-		if (start)
-			g_pkg[count++] = last;
-
-		if (count == AVA2_P_COUNT) {
-			pre_last = last = 0;
-
-			start = 0;
-			count = 2;
-
+		count = iic_read_cnt();
+		if (count >= AVA2_P_COUNT) {
+			iic_read(g_pkg, AVA2_P_COUNT+1);
 			if (decode_pkg(g_pkg, mw)) {
 #ifdef CFG_ENABLE_ACK
 				send_pkg(AVA2_P_NAK, NULL, 0);
@@ -354,13 +341,6 @@ static int get_pkg(struct mm_work *mw)
 				}
 			}
 		}
-
-		if (pre_last == AVA2_H1 && last == AVA2_H2 && !start) {
-			g_pkg[0] = pre_last;
-			g_pkg[1] = last;
-			start = 1;
-			count = 2;
-		}
 	}
 
 	return 0;
@@ -383,7 +363,7 @@ int main(int argv, char **argc)
 
 	g_module_id = read_module_id();
 
-	uart_init();
+	iic_init();
 	debug32("%d:MM-%s\n", g_module_id, MM_VERSION);
 	debug32("T:%d, %d\n", read_temp0(), read_temp1());
 
