@@ -1,3 +1,10 @@
+2014-08-08
+* MM Version: 331408-a15cac80
+* Add long coinbase1 support.
+* Support p2pool (Avalon project have a server for p2pool in HK, Domain name: p2pool.ehash.com)
+* Disable DEBUG when release. Cleanup the gpio LED and reset code, etc.
+* Update protocol.md
+
 2014-06-06
 * MM version: 331406-35fef7040
 * Turn on the red led when the module id was match.
