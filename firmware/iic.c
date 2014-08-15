@@ -14,14 +14,14 @@
 
 #define IIC_PACKSIZE	40
 
-static unsigned char dnadat[IIC_PACKSIZE];
+static uint8_t dnadat[IIC_PACKSIZE];
 static struct lm32_iic *iic = (struct lm32_iic *)IIC_BASE;
 static struct lm32_dna *dna = (struct lm32_dna *)DNA_BASE;
 
-static void iic_dna_read(unsigned char *dnadat)
+static void iic_dna_read(uint8_t *dnadat)
 {
-	unsigned int i, tmp, val;
-	unsigned int *pdnadat = (unsigned int *)dnadat;
+	uint32_t i, tmp, val;
+	uint32_t *pdnadat = (uint32_t *)dnadat;
 
 	pdnadat[0] = 0;
 	pdnadat[1] = 0;
@@ -78,29 +78,27 @@ static void iic_dna_read(unsigned char *dnadat)
 	}
 }
 
-uint16_t iic_write(uint8_t *data, uint16_t len)
+uint32_t iic_write(uint8_t *data, uint16_t len)
 {
-	unsigned int tmp;
-	uint16_t i, txlen;
-	unsigned int *pdat = (unsigned int *)data;
+	uint32_t tmp;
+	uint32_t i, txlen;
+	uint32_t *pdat = (uint32_t *)data;
 
 	len = len >> 2;
 	for (i = 0; i < len; i++)
 		writel(pdat[i], &iic->tx);
 
-	while (1) {
-		tmp = readl(&iic->ctrl);
-		tmp = tmp & (LM32_IIC_CR_RSTOP | LM32_IIC_CR_RERR);
-		if(tmp)
+	i = 10000;
+	while (i--) {
+		tmp = readl(&iic->ctrl) & (LM32_IIC_CR_RSTOP | LM32_IIC_CR_RERR);
+		if (tmp)
 			break;
 	}
 
 	writel(tmp, &iic->ctrl);
-	tmp = tmp >> 19;
 
 	if ((tmp & LM32_IIC_CR_RERR) == LM32_IIC_CR_RERR) {
 		writel(LM32_IIC_CR_TXFIFORESET, &iic->ctrl);
-		writel(LM32_IIC_CR_LOGICRESET, &iic->ctrl);
 		return 0;
 	}
 
@@ -109,17 +107,9 @@ uint16_t iic_write(uint8_t *data, uint16_t len)
 	return txlen;
 }
 
-uint16_t iic_read_cnt(void)
+uint32_t iic_read_cnt(void)
 {
-	uint16_t 	rxlen;
-	int		tmp;
-
-	tmp = readl(&iic->ctrl);
-	tmp = tmp & LM32_IIC_CR_WSTOP;
-	if (!tmp)
-		return 0;
-
-	writel(tmp, &iic->ctrl);
+	uint32_t rxlen;
 
 	rxlen = readl(&iic->ctrl);
 	rxlen = rxlen & 0x1ff;
@@ -128,8 +118,8 @@ uint16_t iic_read_cnt(void)
 
 int iic_read(uint8_t *data, uint16_t len)
 {
-	unsigned int i;
-	unsigned int *pdat = (unsigned int *)data;
+	uint32_t i;
+	uint32_t *pdat = (uint32_t *)data;
 
 	len = len >> 2;
 	for (i = 0; i < len; i++)
@@ -138,14 +128,13 @@ int iic_read(uint8_t *data, uint16_t len)
 	return 0;
 }
 
-void iic_addr_set(unsigned char addr)
+void iic_addr_set(uint8_t addr)
 {
-	unsigned int tmp;
-	tmp = addr & 0x7f;
-	writel(addr, &iic->addr);
+	uint32_t tmp = addr & 0x7f;
+	writel(tmp, &iic->addr);
 }
 
-unsigned char iic_addr_get(void)
+uint8_t iic_addr_get(void)
 {
 	return readl(&iic->addr) & 0x7f;
 }
@@ -160,7 +149,7 @@ void iic_init(void)
 
 void iic_logic_reset(void)
 {
-	writel(LM32_IIC_CR_TXFIFORESET, &iic->ctrl);
+	writel(LM32_IIC_CR_LOGICRESET, &iic->ctrl);
 }
 
 void iic_rx_reset(void)
@@ -178,9 +167,9 @@ void iic_tx_reset(void)
 #define IIC_LOOP 	1
 void iic_test(void)
 {
-	unsigned char data[IIC_PACKSIZE];
-	uint16_t rxlen;
-	unsigned int slv_addr = 0;
+	uint8_t data[IIC_PACKSIZE];
+	uint32_t rxlen;
+	uint32_t slv_addr = 0;
 
 	debug32("D: IIC Test\n");
 	iic_init();
@@ -200,7 +189,7 @@ void iic_test(void)
 					iic_addr_set(data[7]);
 					debug32("Set slave addr, %x\n", data[7]);
 				}
-				iic_write((unsigned char*)dnadat, IIC_PACKSIZE);
+				iic_write((uint8_t *)dnadat, IIC_PACKSIZE);
 				debug32("D: TX Data (DNA):\n");
 				hexdump(dnadat, IIC_PACKSIZE);
 			} else if (data[3] == IIC_LOOP) {

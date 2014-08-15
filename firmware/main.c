@@ -67,7 +67,7 @@ static void encode_pkg(uint8_t *p, int type, uint8_t *buf, unsigned int len)
 	uint16_t crc;
 	uint8_t *data;
 
-	memset(p, 0, AVA2_P_COUNT);
+	memset(p, 0, AVA2_P_COUNT + 1);
 
 	p[0] = AVA2_H1;
 	p[1] = AVA2_H2;
@@ -116,7 +116,7 @@ void send_pkg(int type, uint8_t *buf, unsigned int len)
 {
 	debug32("Send: %d\n", type);
 	encode_pkg(g_act, type, buf, len);
-	iic_write(g_act, AVA2_P_COUNT+1);
+	iic_write(g_act, AVA2_P_COUNT + 1);
 }
 
 static void polling()
@@ -311,35 +311,34 @@ static int get_pkg(struct mm_work *mw)
 {
 	int tmp, count;
 
-	while (1) {
-		count = iic_read_cnt();
-		if (count >= AVA2_P_COUNT) {
-			iic_read(g_pkg, AVA2_P_COUNT+1);
-			if (decode_pkg(g_pkg, mw)) {
+	count = iic_read_cnt();
+	if (count < AVA2_P_COUNT + 1)
+		return 1;
+
+	iic_read(g_pkg, AVA2_P_COUNT + 1);
+	if (decode_pkg(g_pkg, mw)) {
 #ifdef CFG_ENABLE_ACK
-				send_pkg(AVA2_P_NAK, NULL, 0);
+		send_pkg(AVA2_P_NAK, NULL, 0);
 #endif
-				return 1;
-			} else {
-				/* Here we send back PKG if necessary */
+		return 1;
+	} else {
+		/* Here we send back PKG if necessary */
 #ifdef CFG_ENABLE_ACK
-				send_pkg(AVA2_P_ACK, NULL, 0);
+		send_pkg(AVA2_P_ACK, NULL, 0);
 #endif
-				switch (g_pkg[2]) {
-				case AVA2_P_DETECT:
-					memcpy(&tmp, g_pkg + 5 + 28, 4);
-					if (g_module_id == tmp)
-						send_pkg(AVA2_P_ACKDETECT, (uint8_t *)MM_VERSION, MM_VERSION_LEN);
-					break;
-				case AVA2_P_REQUIRE:
-					memcpy(&tmp, g_pkg + 5 + 28, 4);
-					if (g_module_id == tmp)
-						send_pkg(AVA2_P_STATUS, NULL, 0);
-					break;
-				default:
-					break;
-				}
-			}
+		switch (g_pkg[2]) {
+		case AVA2_P_DETECT:
+			memcpy(&tmp, g_pkg + 5 + 28, 4);
+			if (g_module_id == tmp)
+				send_pkg(AVA2_P_ACKDETECT, (uint8_t *)MM_VERSION, MM_VERSION_LEN);
+			break;
+		case AVA2_P_REQUIRE:
+			memcpy(&tmp, g_pkg + 5 + 28, 4);
+			if (g_module_id == tmp)
+				send_pkg(AVA2_P_STATUS, NULL, 0);
+			break;
+		default:
+			break;
 		}
 	}
 
