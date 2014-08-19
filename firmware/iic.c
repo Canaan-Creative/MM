@@ -101,30 +101,22 @@ static void iic_dna_read(uint8_t *dnadat)
 
 uint32_t iic_write(uint8_t *data, uint16_t len)
 {
-	uint32_t tmp;
-	uint32_t i, txlen;
+	uint32_t tmp, i;
 	uint32_t *pdat = (uint32_t *)data;
 
 	len = len >> 2;
 	for (i = 0; i < len; i++)
 		writel(pdat[i], &iic->tx);
 
-	i = 10000;
-	while (i--) {
-		tmp = readl(&iic->ctrl) & (LM32_IIC_CR_RSTOP | LM32_IIC_CR_RERR);
-		if (tmp)
-			break;
+	while (!(readl(&iic->ctrl) & LM32_IIC_CR_RSTOP)) {
+		tmp = readl(&iic->ctrl);
+		if (tmp & LM32_IIC_CR_RERR) {
+			writel(LM32_IIC_CR_TXFIFORESET, &iic->ctrl);
+			return 0;
+		}
 	}
 
-	writel(tmp, &iic->ctrl);
-
-	if ((tmp & LM32_IIC_CR_RERR) == LM32_IIC_CR_RERR) {
-		writel(LM32_IIC_CR_TXFIFORESET, &iic->ctrl);
-		return 0;
-	}
-
-	txlen = readl(&iic->ctrl) & LM32_IIC_CR_TX_CNT;
-	return txlen;
+	return len;
 }
 
 int iic_read_nonblock(void)
