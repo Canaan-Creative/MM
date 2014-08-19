@@ -46,9 +46,9 @@
 /* Interrupt
  * Define at last few lines of verilog/superkdf9/soc/superkdf9_simple.v
  */
+#define IRQ_IIC			(0x00000004) /* 2 */
 #define IRQ_UART		(0x00000008) /* 3 */
 #define IRQ_UARTDEBUG		(0x00000010) /* 4 */
-
 #define IRQ_TIMER0		(0x00000020) /* 5 */
 #define IRQ_TIMER1		(0x00000040) /* 6 */
 
@@ -185,14 +185,17 @@ struct lm32_clko {
 #endif
 
 /* IIC */
+#define LM32_IIC_CR_RX_CNT		(0x1FF)
+#define LM32_IIC_CR_TX_CNT		(0x1FF << 9)
 #define LM32_IIC_CR_WSTOP		(1 << 18)
 #define LM32_IIC_CR_RSTOP		(1 << 19)
 #define LM32_IIC_CR_RERR		(1 << 20)
 #define LM32_IIC_CR_RXFIFORESET		(1 << 21)
 #define LM32_IIC_CR_TXFIFORESET		(1 << 22)
 #define LM32_IIC_CR_LOGICRESET		(1 << 23)
-#define LM32_IIC_CR_RXFIFOOFFSET	(0)
-#define LM32_IIC_CR_TXFIFOOFFSET	(9)
+#define LM32_IIC_CR_RX_INTR_MASK_SET	(1 << 24)
+#define LM32_IIC_CR_RX_INTR_MASK_CLEAR	(1 << 25)
+
 
 struct lm32_iic {
 	volatile unsigned int ctrl; /*ATWI ctrl*/

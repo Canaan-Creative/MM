@@ -1,4 +1,5 @@
 /*
+ * Author: Xiangfu <xiangfu@openmobilefree.net>
  * Author: Mikeqin <Fengling.Qin@gmail.com>
  *
  * This is free and unencumbered software released into the public domain.
@@ -10,13 +11,33 @@
 #include "minilibc.h"
 #include "system_config.h"
 #include "defines.h"
+#include "intr.h"
 #include "io.h"
 
-#define IIC_PACKSIZE	40
+#define IIC_RINGBUFFER_SIZE_RX 20
+#define IIC_RINGBUFFER_MASK_RX (IIC_RINGBUFFER_SIZE_RX-1)
+static unsigned int rx_buf[IIC_RINGBUFFER_SIZE_RX];
+static volatile unsigned int rx_produce;
+static volatile unsigned int rx_consume;
 
+#define IIC_PACKSIZE	40
 static uint8_t dnadat[IIC_PACKSIZE];
 static struct lm32_iic *iic = (struct lm32_iic *)IIC_BASE;
 static struct lm32_dna *dna = (struct lm32_dna *)DNA_BASE;
+
+void iic_isr(void)
+{
+	writel(LM32_IIC_CR_RX_INTR_MASK_SET, &iic->ctrl);
+
+	while (readl(&iic->ctrl) & (LM32_IIC_CR_RX_CNT)) {
+		rx_buf[rx_produce] = readl(&iic->rx);
+		rx_produce = (rx_produce + 1) & IIC_RINGBUFFER_MASK_RX;
+	}
+
+	writel(LM32_IIC_CR_RX_INTR_MASK_CLEAR, &iic->ctrl);
+
+	irq_ack(IRQ_IIC);
+}
 
 static void iic_dna_read(uint8_t *dnadat)
 {
@@ -102,30 +123,24 @@ uint32_t iic_write(uint8_t *data, uint16_t len)
 		return 0;
 	}
 
-	txlen = readl(&iic->ctrl);
-	txlen = (txlen >> LM32_IIC_CR_TXFIFOOFFSET) & 0x1ff;
+	txlen = readl(&iic->ctrl) & LM32_IIC_CR_TX_CNT;
 	return txlen;
 }
 
-uint32_t iic_read_cnt(void)
+int iic_read_nonblock(void)
 {
-	uint32_t rxlen;
-
-	rxlen = readl(&iic->ctrl);
-	rxlen = rxlen & 0x1ff;
-	return rxlen << 2;
+	return (rx_consume != rx_produce);
 }
 
-int iic_read(uint8_t *data, uint16_t len)
+uint32_t iic_read()
 {
-	uint32_t i;
-	uint32_t *pdat = (uint32_t *)data;
+	uint32_t d;
 
-	len = len >> 2;
-	for (i = 0; i < len; i++)
-		pdat[i] = readl(&iic->rx);
+	while (rx_consume == rx_produce);
+	d = rx_buf[rx_consume];
+	rx_consume = (rx_consume + 1) & IIC_RINGBUFFER_MASK_RX;
 
-	return 0;
+	return d;
 }
 
 void iic_addr_set(uint8_t addr)
@@ -141,9 +156,23 @@ uint8_t iic_addr_get(void)
 
 void iic_init(void)
 {
+	uint32_t mask;
+
+	rx_produce = 0;
+	rx_consume = 0;
+
+	irq_ack(IRQ_IIC);
+
+	/* Enable IIC interrupts */
+	writel(LM32_IIC_CR_RX_INTR_MASK_CLEAR, &iic->ctrl);
+	mask = irq_getmask();
+	mask |= IRQ_IIC;
+	irq_setmask(mask);
+
+	/* Dump the FPGA DNA */
 	memset(dnadat, 0xff, sizeof(dnadat));
 	iic_dna_read(dnadat);
-	debug32("D: DNA:\n");
+	debug32("\nD: DNA:\n");
 	hexdump(dnadat, 8);
 }
 

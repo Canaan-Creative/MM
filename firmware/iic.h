@@ -9,9 +9,10 @@
 #define __IIC_H__
 
 void iic_init(void);
+void iic_isr(void);
 
-uint32_t iic_read_cnt(void);
-uint32_t iic_read(uint8_t *data, uint16_t len);
+int iic_read_nonblock(void);
+uint32_t iic_read();
 uint32_t iic_write(uint8_t *data, uint16_t len);
 
 uint8_t iic_addr_get(void);

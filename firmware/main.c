@@ -51,6 +51,14 @@ static uint8_t ret_buf[RET_RINGBUFFER_SIZE_RX][AVA2_P_DATA_LEN];
 static volatile unsigned int ret_produce = 0;
 static volatile unsigned int ret_consume = 0;
 
+#define UNPACK32(x, str)			\
+{						\
+	*((str) + 3) = (uint8_t) ((x)      );	\
+	*((str) + 2) = (uint8_t) ((x) >>  8);	\
+	*((str) + 1) = (uint8_t) ((x) >> 16);	\
+	*((str) + 0) = (uint8_t) ((x) >> 24);	\
+}
+
 void delay(unsigned int ms)
 {
 	unsigned int i;
@@ -309,36 +317,53 @@ static int read_result(struct mm_work *mw, struct result *ret)
 
 static int get_pkg(struct mm_work *mw)
 {
-	int tmp, count;
+	static int start = 0, count = 0;
 
-	count = iic_read_cnt();
-	if (count < AVA2_P_COUNT + 1)
-		return 1;
+	uint32_t d, tmp;
 
-	iic_read(g_pkg, AVA2_P_COUNT + 1);
-	if (decode_pkg(g_pkg, mw)) {
+	while (1) {
+		if (!iic_read_nonblock() && !start)
+			break;
+
+		d = iic_read();
+		UNPACK32(d, g_pkg + count * 4);
+		if ((uint8_t) ((d) >> 24) == AVA2_H1 &&
+		    (uint8_t) ((d) >> 16) == AVA2_H2 && !start) {
+			start = 1;
+			count = 0;
+		}
+
+		count++;
+
+		if (count == (AVA2_P_COUNT + 1) / 4 ) {
+			start = 0;
+			count = 0;
+
+			if (decode_pkg(g_pkg, mw)) {
 #ifdef CFG_ENABLE_ACK
-		send_pkg(AVA2_P_NAK, NULL, 0);
+				send_pkg(AVA2_P_NAK, NULL, 0);
 #endif
-		return 1;
-	} else {
-		/* Here we send back PKG if necessary */
+				return 1;
+			} else {
+				/* Here we send back PKG if necessary */
 #ifdef CFG_ENABLE_ACK
-		send_pkg(AVA2_P_ACK, NULL, 0);
+				send_pkg(AVA2_P_ACK, NULL, 0);
 #endif
-		switch (g_pkg[2]) {
-		case AVA2_P_DETECT:
-			memcpy(&tmp, g_pkg + 5 + 28, 4);
-			if (g_module_id == tmp)
-				send_pkg(AVA2_P_ACKDETECT, (uint8_t *)MM_VERSION, MM_VERSION_LEN);
-			break;
-		case AVA2_P_REQUIRE:
-			memcpy(&tmp, g_pkg + 5 + 28, 4);
-			if (g_module_id == tmp)
-				send_pkg(AVA2_P_STATUS, NULL, 0);
-			break;
-		default:
-			break;
+				switch (g_pkg[2]) {
+				case AVA2_P_DETECT:
+					memcpy(&tmp, g_pkg + 5 + 28, 4);
+					if (g_module_id == tmp)
+						send_pkg(AVA2_P_ACKDETECT, (uint8_t *)MM_VERSION, MM_VERSION_LEN);
+					break;
+				case AVA2_P_REQUIRE:
+					memcpy(&tmp, g_pkg + 5 + 28, 4);
+					if (g_module_id == tmp)
+						send_pkg(AVA2_P_STATUS, NULL, 0);
+					break;
+				default:
+					break;
+				}
+			}
 		}
 	}
 
