@@ -14,7 +14,7 @@
 #include "intr.h"
 #include "io.h"
 
-#define IIC_RINGBUFFER_SIZE_RX 20
+#define IIC_RINGBUFFER_SIZE_RX 128
 #define IIC_RINGBUFFER_MASK_RX (IIC_RINGBUFFER_SIZE_RX-1)
 static unsigned int rx_buf[IIC_RINGBUFFER_SIZE_RX];
 static volatile unsigned int rx_produce;
