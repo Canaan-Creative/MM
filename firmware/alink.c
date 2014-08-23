@@ -398,6 +398,7 @@ void alink_asic_test(int core_start, int core_end, int full_test)
 			core_test[j + 1] = core >= 255 ? 255 : core;
 			debug32("%3d", core);
 		}
+		debug32("\n");
 		core_test[0] = i + 1;
 
 		if (full_test) {
