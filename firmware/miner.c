@@ -236,7 +236,7 @@ static void calc_prepare(struct work *work, uint8_t *buf)
 	memcpy(work->e2, precalc + 5, 4);
 }
 
-void miner_gen_nonce2_work(struct mm_work *mw, uint32_t nonce2, struct work *work)
+void miner_gen_nonce2_work(struct mm_work *mw, uint32_t nonce2, struct work *work, uint8_t longcoinbase)
 {
 	uint8_t merkle_root[32], merkle_sha[64];
 	uint8_t work_t[44];
@@ -248,7 +248,7 @@ void miner_gen_nonce2_work(struct mm_work *mw, uint32_t nonce2, struct work *wor
 	tmp32 = bswap_32(nonce2);
 	work->nonce2 = nonce2;
 
-	if(mw->coinbase_len > AVA2_P_COINBASE_SIZE) {
+	if(longcoinbase == 1) {
 		nonce2_offset_posthash = (mw->nonce2_offset % SHA256_BLOCK_SIZE) + 32;
 		coinbase_len_posthash = mw->coinbase_len - mw->nonce2_offset + (mw->nonce2_offset % SHA256_BLOCK_SIZE);
 		memcpy(mw->coinbase + nonce2_offset_posthash, (uint8_t *)(&tmp32), mw->nonce2_size);
@@ -334,7 +334,7 @@ int fulltest(const unsigned char *hash, const unsigned char *target)
 	return rc;
 }
 
-int test_nonce(struct mm_work *mw, struct result *ret)
+int test_nonce(struct mm_work *mw, struct result *ret, uint8_t longcoinbase)
 {
 	/* Decode nonce2 and nonce */
 	uint32_t nonce2, nonce;
@@ -350,7 +350,7 @@ int test_nonce(struct mm_work *mw, struct result *ret)
 	/* Generate the work base on nonce2 */
 	struct work work;
 	debug32("Test: %08x %08x\n", nonce2, nonce);
-	miner_gen_nonce2_work(mw, nonce2, &work);
+	miner_gen_nonce2_work(mw, nonce2, &work, longcoinbase);
 
 	/* Write the nonce to block header */
 	uint32_t *work_nonce = (uint32_t *)(work.header + 64 + 12);
