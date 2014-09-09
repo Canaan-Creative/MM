@@ -248,7 +248,7 @@ void miner_gen_nonce2_work(struct mm_work *mw, uint32_t nonce2, struct work *wor
 	tmp32 = bswap_32(nonce2);
 	work->nonce2 = nonce2;
 
-	if(mw->coinbase_len > AVA2_P_COINBASE_SIZE) {
+	if (mw->coinbase_len > AVA2_P_COINBASE_SIZE) {
 		nonce2_offset_posthash = (mw->nonce2_offset % SHA256_BLOCK_SIZE) + 32;
 		coinbase_len_posthash = mw->coinbase_len - mw->nonce2_offset + (mw->nonce2_offset % SHA256_BLOCK_SIZE);
 		memcpy(mw->coinbase + nonce2_offset_posthash, (uint8_t *)(&tmp32), mw->nonce2_size);
