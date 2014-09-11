@@ -3,9 +3,9 @@ NET "ex_clk_i" LOC = J16;
 NET "ex_clk_o[0]" LOC = K3;
 
 # UART
-NET "uartSIN"  LOC = A6;
-NET "uartSOUT" LOC = A7;
-NET "uartSOUT" PULLUP;
+#NET "uartSIN"  LOC = E15;
+#NET "uartSOUT" LOC = E16;
+#NET "uartSOUT" PULLUP;
 
 #GND F16 E16 E15 D16 GND
 # UART debug
@@ -13,8 +13,8 @@ NET "uart_debugSIN" LOC = F16;
 NET "uart_debugSOUT" LOC = E16;
 
 # I2C
-NET "I2C_SCL" LOC = E15 | PULLUP;
-NET "I2C_SDA" LOC = D16 | PULLUP;
+NET "I2C_SCL" LOC = A7 | PULLUP;
+NET "I2C_SDA" LOC = A6 | PULLUP;
 
 # aLink
 # The chip index on Avalon3
