@@ -416,9 +416,13 @@ int main(int argv, char **argc)
 			g_new_stratum = 0;
 			g_local_work = 0;
 			g_hw_work = 0;
+
 			alink_asic_idle();
 			adjust_fan(0x1ff);
 			set_voltage(ASIC_0V);
+
+			iic_rx_reset();
+			iic_tx_reset();
 		}
 
 		if (!g_new_stratum)
