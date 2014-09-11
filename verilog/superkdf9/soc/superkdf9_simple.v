@@ -415,8 +415,8 @@ module mm (
 );
 
 output [`API_NUM-1:0] API_LOAD ;
-output                API_SCK  ;
-output                API_MOSI ;
+output [`API_NUM-1:0] API_SCK  ;
+output [`API_NUM-1:0] API_MOSI ;
 input  [`API_NUM-1:0] API_MISO ;
 
 output PWM ;
@@ -1144,6 +1144,11 @@ sha sha256(
 
 assign alinkALINK_en = (SHAREDBUS_ADR_I[31:6] == 26'b10000000000000000000010100);
 
+wire api_sck_w;
+wire api_mosi_w;
+assign API_SCK = {`API_NUM{api_sck_w}};
+assign API_MOSI = {`API_NUM{api_mosi_w}};
+
 api api(
 // system clock and reset
 /*input         */ .CLK_I       (clk_i) ,
@@ -1164,10 +1169,10 @@ api api(
 /*output        */ .API_RTY_O (alinkALINK_RTY_O                ) ,//const 0
 /*output [31:0] */ .API_DAT_O (alinkALINK_DAT_O                ) ,
 
-/*output [`API_NUM-1:0]*/ .load (API_LOAD ),
-/*output               */ .sck  (API_SCK  ),
-/*output               */ .mosi (API_MOSI ),
-/*input  [`API_NUM-1:0]*/ .miso (API_MISO ) 
+/*output [`API_NUM-1:0]*/ .load (API_LOAD   ),
+/*output               */ .sck  (api_sck_w  ),
+/*output               */ .mosi (api_mosi_w ),
+/*input  [`API_NUM-1:0]*/ .miso (API_MISO   ) 
 );
 
 
