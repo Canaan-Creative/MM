@@ -330,9 +330,11 @@ endmodule
 `include "../components/spi/wb_spi.v"
 `include "../components/gpio/gpio.v"
 `include "../components/gpio/tpio.v"
+
 `include "../components/sha/sha.v"
 `include "../components/sha/dbl_sha.v"
 `include "../components/sha/sha_core.v"
+`include "../components/sha/sha_bulk.v"
 
 `include "../components/alink/tx_timer.v"
 `include "../components/alink/txc.v"
@@ -351,6 +353,7 @@ endmodule
 `include "../components/i2c/i2c.v"
 `include "../components/i2c/i2c_phy.v"
 `include "../components/i2c/reboot.v"
+`include "../components/i2c/i2c_sha.v"
 
 `include "../components/api/api_define.v"
 `include "../components/api/api.v"
@@ -412,12 +415,24 @@ module mm (
 , API_SCK
 , API_MOSI
 , API_MISO
+
+, API_LOADOUT
+, API_SCKOUT
+, API_MOSIOUT
+, API_RSTOUT
+, API_XCLKOUT
 );
 
 output [`API_NUM-1:0] API_LOAD ;
 output                API_SCK  ;
 output                API_MOSI ;
 input  [`API_NUM-1:0] API_MISO ;
+
+input API_LOADOUT;
+input API_SCKOUT;
+input API_MOSIOUT;
+input API_RSTOUT;
+input API_XCLKOUT;
 
 output PWM ;
 input	ex_clk_i;
@@ -943,27 +958,29 @@ end
 `endif
 
 assign i2cI2C_en = (SHAREDBUS_ADR_I[31:5] == 27'b100000000000000000000111000);
+wire pool_push;
+wire [31:0] pool_din;
 
 i2c i2c_slv(
-/*input            */ .CLK_I     (clk_i),
-/*input            */ .RST_I     (sys_reset),
+/*input            */ .CLK_I     (clk_i                      ),
+/*input            */ .RST_I     (sys_reset                  ),
 
 /*input            */ .I2C_CYC_I (SHAREDBUS_CYC_I & i2cI2C_en),//NC
 /*input            */ .I2C_STB_I (SHAREDBUS_STB_I & i2cI2C_en),
-/*input            */ .I2C_WE_I  (SHAREDBUS_WE_I),
-/*input            */ .I2C_LOCK_I(SHAREDBUS_LOCK_I),//NC
-/*input  [2:0]     */ .I2C_CTI_I (SHAREDBUS_CTI_I),//NC
-/*input  [1:0]     */ .I2C_BTE_I (SHAREDBUS_BTE_I),//NC
-/*input  [5:0]     */ .I2C_ADR_I (SHAREDBUS_ADR_I[5:0]),
-/*input  [31:0]    */ .I2C_DAT_I (SHAREDBUS_DAT_I[31:0]),
-/*input  [3:0]     */ .I2C_SEL_I (SHAREDBUS_SEL_I),
-/*output reg       */ .I2C_ACK_O (i2cI2C_ACK_O),
-/*output           */ .I2C_ERR_O (i2cI2C_ERR_O),//const 0
-/*output           */ .I2C_RTY_O (i2cI2C_RTY_O),//const 0
-/*output reg [31:0]*/ .I2C_DAT_O (i2cI2C_DAT_O),
+/*input            */ .I2C_WE_I  (SHAREDBUS_WE_I             ),
+/*input            */ .I2C_LOCK_I(SHAREDBUS_LOCK_I           ),//NC
+/*input  [2:0]     */ .I2C_CTI_I (SHAREDBUS_CTI_I            ),//NC
+/*input  [1:0]     */ .I2C_BTE_I (SHAREDBUS_BTE_I            ),//NC
+/*input  [5:0]     */ .I2C_ADR_I (SHAREDBUS_ADR_I[5:0]       ),
+/*input  [31:0]    */ .I2C_DAT_I (SHAREDBUS_DAT_I[31:0]      ),
+/*input  [3:0]     */ .I2C_SEL_I (SHAREDBUS_SEL_I            ),
+/*output reg       */ .I2C_ACK_O (i2cI2C_ACK_O               ),
+/*output           */ .I2C_ERR_O (i2cI2C_ERR_O               ),//const 0
+/*output           */ .I2C_RTY_O (i2cI2C_RTY_O               ),//const 0
+/*output reg [31:0]*/ .I2C_DAT_O (i2cI2C_DAT_O               ),
 
-/*input            */ .scl_pin   (I2C_SCL),
-/*inout            */ .sda_pin   (I2C_SDA),
+/*input            */ .scl_pin   (I2C_SCL                    ),
+/*inout            */ .sda_pin   (I2C_SDA                    ),
 
 /*output           */ .int_i2c   (int_i2c                    ),
 
@@ -972,9 +989,10 @@ i2c i2c_slv(
 /*output           */ .ram_wr    (ram_wr                     ),
 /*output [15:0]    */ .ram_addr  (ram_addr                   ),
 /*output [31:0]    */ .ram_dat_wr(ram_dat_wr                 ),
-/*input  [31:0]    */ .ram_dat_rd(ram_dat_rd                 )
+/*input  [31:0]    */ .ram_dat_rd(ram_dat_rd                 ),
 
-
+/*output           */ .pool_push (pool_push                  ),                                                                                     
+/*output [31:0]    */ .pool_din  (pool_din                   )
 );
 
 wire [31:0] spiSPI_DAT_I;
@@ -1139,7 +1157,10 @@ sha sha256(
 /*output reg   */ .SHA_ACK_O (shaSHA_ACK_O                ) ,
 /*output       */ .SHA_ERR_O (shaSHA_ERR_O                ) ,//const 0
 /*output       */ .SHA_RTY_O (shaSHA_RTY_O                ) ,//const 0
-/*output [31:0]*/ .SHA_DAT_O (shaSHA_DAT_O                )
+/*output [31:0]*/ .SHA_DAT_O (shaSHA_DAT_O                ) ,
+
+/*input        */ .pool_push (pool_push                   ) ,
+/*input [31:0] */ .pool_din  (pool_din                    )
 );
 
 assign alinkALINK_en = (SHAREDBUS_ADR_I[31:6] == 26'b10000000000000000000010100);
@@ -1248,4 +1269,15 @@ assign superkdf9interrupt_n[29] = 1;
 assign superkdf9interrupt_n[30] = 1;
 assign superkdf9interrupt_n[31] = 1;
 assign INT = ~(&superkdf9interrupt_n) ;
+
+wire [35:0] icon_ctrl_0;
+wire [4:0] trig0 = {
+  API_LOADOUT
+, API_SCKOUT
+, API_MOSIOUT
+, API_RSTOUT
+, API_XCLKOUT
+} ;
+icon icon_test(.CONTROL0(icon_ctrl_0));
+ila ila_test(.CONTROL(icon_ctrl_0), .CLK(clk_i), .TRIG0(trig0));
 endmodule

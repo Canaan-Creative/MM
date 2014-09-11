@@ -27,7 +27,10 @@ output                ram_sel   ,//0: iram, 1: dram
 output                ram_wr    ,
 output [15:0]         ram_addr  ,
 output [31:0]         ram_dat_wr,
-input  [31:0]         ram_dat_rd 
+input  [31:0]         ram_dat_rd,
+
+output                pool_push ,
+output [31:0]         pool_din   
 );
 
 assign I2C_RTY_O = 1'b0;
@@ -174,6 +177,14 @@ always @ (posedge CLK_I) begin
 		reg_rbt_start <= 1'b0;
 end
 
+reg reg_sha_en;
+always @ (posedge CLK_I) begin
+	if(rst)
+		reg_sha_en <= 1'b0;
+	else if(i2c_ctrl_wr_en)
+		reg_sha_en <= I2C_DAT_I[27];
+end
+
 
 reg [3:0] reg_dna;
 wire dna_dout;
@@ -187,7 +198,7 @@ end
 
 always @ (posedge CLK_I) begin
         case( 1'b1 )
-                i2c_ctrl_rd_en  : I2C_DAT_O <= {7'b0, reg_rx_mask, reg_rst, reg_txrst, reg_rxrst, 
+                i2c_ctrl_rd_en  : I2C_DAT_O <= {4'b0, reg_sha_en, 2'b0, reg_rx_mask, reg_rst, reg_txrst, reg_rxrst, 
                                                 reg_rerr_r, reg_rstop_r, reg_wstop_r,
                                                 tx_data_count[8:0], rx_data_count[8:0]};
 		i2c_addr_rd_en  : I2C_DAT_O <= {25'b0, reg_addr};
@@ -217,6 +228,8 @@ i2c_phy i2c_phy(
 /*input  [31:0]  */ .din       (rbt_enable ? tx_dat : tx_dout      )
 );
 
+wire        fifo_push;
+
 i2c_fifo tx_fifo(
 /*input          */ .clk       (CLK_I        ),
 /*input          */ .srst      (tx_rst       ),
@@ -232,8 +245,8 @@ i2c_fifo tx_fifo(
 i2c_fifo rx_fifo(
 /*input          */ .clk       (CLK_I        ),
 /*input          */ .srst      (rx_rst       ),
-/*input  [31 : 0]*/ .din       (rx_din       ),
-/*input          */ .wr_en     (rx_wr_en     ),
+/*input  [31 : 0]*/ .din       (pool_din     ),
+/*input          */ .wr_en     (fifo_push    ),
 /*input          */ .rd_en     (rx_rd_en     ),
 /*output [31 : 0]*/ .dout      (rx_dout      ),
 /*output         */ .full      (             ),
@@ -248,6 +261,7 @@ DNA_PORT dna_port(
 .READ  (reg_dna[2]),
 .SHIFT (reg_dna[3]) 
 );
+
 `define REBOOT_EN
 `ifdef REBOOT_EN
 reboot reboot(
@@ -274,4 +288,20 @@ assign ram_wr     = 0;
 assign ram_addr   = 0;
 assign ram_dat_wr = 0;
 `endif
+
+i2c_sha i2c_sha(
+/*input            */ .clk       (CLK_I     ),
+/*input            */ .rst       (RST_I     ),
+                                            
+/*input            */ .reg_sha_en(reg_sha_en),
+/*input            */ .reg_wstop (reg_wstop ),
+                                            
+/*input            */ .phy_push  (rx_wr_en  ),
+/*input      [31:0]*/ .phy_din   (rx_din    ),
+                                            
+/*output reg       */ .fifo_push (fifo_push ),
+/*output reg       */ .pool_push (pool_push ),
+/*output reg [31:0]*/ .din       (pool_din  ) 
+);
+
 endmodule

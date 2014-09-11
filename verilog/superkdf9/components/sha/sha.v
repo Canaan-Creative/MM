@@ -9,23 +9,26 @@
 
 module sha(
     // system clock and reset
-    input CLK_I,
-    input RST_I,
+    input         CLK_I     ,
+    input         RST_I     ,
     
     // wishbone interface signals
-    input SHA_CYC_I,//NC
-    input SHA_STB_I,
-    input SHA_WE_I,
-    input SHA_LOCK_I,//NC
-    input [2:0] SHA_CTI_I,//NC
-    input [1:0] SHA_BTE_I,//NC
-    input [4:0] SHA_ADR_I,
-    input [31:0]  SHA_DAT_I,
-    input [3:0]   SHA_SEL_I,
-    output reg    SHA_ACK_O,
-    output        SHA_ERR_O,//const 0
-    output        SHA_RTY_O,//const 0
-    output [31:0] SHA_DAT_O 
+    input         SHA_CYC_I ,//NC
+    input         SHA_STB_I ,
+    input         SHA_WE_I  ,
+    input         SHA_LOCK_I,//NC
+    input [2:0]   SHA_CTI_I ,//NC
+    input [1:0]   SHA_BTE_I ,//NC
+    input [4:0]   SHA_ADR_I ,
+    input [31:0]  SHA_DAT_I ,
+    input [3:0]   SHA_SEL_I ,
+    output reg    SHA_ACK_O ,
+    output        SHA_ERR_O ,//const 0
+    output        SHA_RTY_O ,//const 0
+    output [31:0] SHA_DAT_O ,
+
+    input         pool_push ,
+    input [31:0]  pool_din  
 );
 assign SHA_ERR_O = 1'b0 ;
 assign SHA_RTY_O = 1'b0 ;
@@ -49,6 +52,17 @@ wire sha_hi_wr_en  = SHA_STB_I & SHA_WE_I & ( SHA_ADR_I == 5'hc) & ~SHA_ACK_O ;
 wire sha_cmd_rd_en  = SHA_STB_I & ~SHA_WE_I & ( SHA_ADR_I == 5'h0 ) & ~SHA_ACK_O ;
 wire sha_hash_rd_en = SHA_STB_I & ~SHA_WE_I & ( SHA_ADR_I == 5'h8 ) & ~SHA_ACK_O ;
 wire sha_pre_rd_en  = SHA_STB_I & ~SHA_WE_I & ( SHA_ADR_I == 5'h10) & ~SHA_ACK_O ;
+
+wire        pool_pop       ;
+wire        pool_empty     ;
+wire        reg_bulk_done_w;
+wire        bulk_init_def  ;
+wire        bulk_dbl       ;
+wire        sha_vld        ;
+wire [31:0] sha_din        ;
+
+wire [31:0] pool_dout;
+wire [8:0] pool_cnt;
 //-----------------------------------------------------
 // REG SHA_CMD
 //-----------------------------------------------------
@@ -56,7 +70,14 @@ reg reg_init ;
 reg reg_done ;
 reg reg_rst ;
 reg reg_dbl ;
+reg reg_init_def;
+reg reg_bulk_start;
+reg reg_pool_rst;
+reg reg_bulk_done;
+
+wire init_def = reg_init_def | bulk_init_def;
 wire done ;
+
 always @ ( posedge CLK_I or posedge RST_I ) begin
 	if( RST_I )
 		reg_init <= 1'b0 ;
@@ -65,6 +86,43 @@ always @ ( posedge CLK_I or posedge RST_I ) begin
 	else
 		reg_init <= 1'b0 ;
 end
+
+always @ ( posedge CLK_I or posedge RST_I ) begin
+	if( RST_I )
+		reg_init_def <= 1'b0 ;
+	else if( sha_cmd_wr_en )
+		reg_init_def <= SHA_DAT_I[4] ;
+	else
+		reg_init_def <= 1'b0 ;
+end
+
+always @ ( posedge CLK_I or posedge RST_I ) begin
+	if( RST_I )
+		reg_bulk_start <= 1'b0 ;
+	else if( sha_cmd_wr_en )
+		reg_bulk_start <= SHA_DAT_I[5] ;
+	else
+		reg_bulk_start <= 1'b0 ;
+end
+
+always @ ( posedge CLK_I or posedge RST_I ) begin
+	if( RST_I )
+		reg_pool_rst <= 1'b0 ;
+	else if( sha_cmd_wr_en )
+		reg_pool_rst <= SHA_DAT_I[15] ;
+	else
+		reg_pool_rst <= 1'b0 ;
+end
+
+always @ ( posedge CLK_I or posedge RST_I ) begin
+	if( RST_I )
+		reg_bulk_done <= 1'b0 ;
+	else if( sha_cmd_wr_en )
+		reg_bulk_done <= SHA_DAT_I[16] ? 1'b0 : reg_bulk_done;
+	else if(reg_bulk_done_w)
+		reg_bulk_done <= 1'b1 ;
+end
+
 
 always @ ( posedge CLK_I or posedge RST_I ) begin
 	if( RST_I )
@@ -135,7 +193,7 @@ always @ ( * ) begin
 end
 
 always @ ( posedge CLK_I or posedge RST_I ) begin
-	if( RST_I | reg_init )
+	if( RST_I | reg_init | init_def)
 		hash_cnt <= 3'b0 ;
 	else if( sha_hash_rd_en_r )
 		hash_cnt <= hash_cnt + 3'b1 ;
@@ -182,7 +240,7 @@ always @ ( * ) begin
 end
 
 always @ ( posedge CLK_I or posedge RST_I ) begin
-	if( RST_I | reg_init )
+	if( RST_I | reg_init | init_def)
 		pre_cnt <= 3'b0 ;
 	else if( sha_pre_rd_en_r )
 		pre_cnt <= pre_cnt + 3'b1 ;
@@ -203,7 +261,7 @@ always @ ( posedge CLK_I or posedge RST_I ) begin
 	end
 end
 
-assign SHA_DAT_O = sha_cmd_rd_en_f  ? {30'h0,reg_done,1'b0} : 
+assign SHA_DAT_O = sha_cmd_rd_en_f  ? {15'h0,reg_bulk_done, 1'b0, pool_cnt, 6'b0, reg_done,1'b0} : 
                    sha_hash_rd_en_f ? reg_hash : reg_pre ; 
 
 //-----------------------------------------------------
@@ -215,7 +273,7 @@ dbl_sha U_dbl_sha(
 /*input        */ .clk     (CLK_I  ) ,
 /*input        */ .rst     (RST_I  ) ,
 
-/*input        */ .reg_dbl (reg_dbl) ,
+/*input        */ .reg_dbl (reg_dbl|bulk_dbl) ,
 /*input        */ .done    (done   ) ,
 /*input [255:0]*/ .hash    (hash   ) ,
 
@@ -223,31 +281,68 @@ dbl_sha U_dbl_sha(
 /*output[31:0] */ .dbl_din (dbl_din)  
 );
 
-
+wire core_vld = vld | dbl_vld | pool_pop | sha_vld;
+wire [31:0] core_din =  dbl_vld  ? dbl_din   : 
+			pool_pop ? pool_dout : 
+			sha_vld  ? sha_din   : reg_din;
 sha_core U_sha_core(
-/*input         */ .clk       (CLK_I                 ) , 
-/*input         */ .rst       (RST_I                 ) ,
-/*input  [31:0] */ .SHA256_H0 (SHA256_Hx[32*8-1:32*7]) ,
-/*input  [31:0] */ .SHA256_H1 (SHA256_Hx[32*7-1:32*6]) ,
-/*input  [31:0] */ .SHA256_H2 (SHA256_Hx[32*6-1:32*5]) ,
-/*input  [31:0] */ .SHA256_H3 (SHA256_Hx[32*5-1:32*4]) ,
-/*input  [31:0] */ .SHA256_H4 (SHA256_Hx[32*4-1:32*3]) ,
-/*input  [31:0] */ .SHA256_H5 (SHA256_Hx[32*3-1:32*2]) ,
-/*input  [31:0] */ .SHA256_H6 (SHA256_Hx[32*2-1:32*1]) ,
-/*input  [31:0] */ .SHA256_H7 (SHA256_Hx[32*1-1:32*0]) ,
+/*input         */ .clk       (CLK_I                                             ), 
+/*input         */ .rst       (RST_I                                             ),
+/*input  [31:0] */ .SHA256_H0 (init_def ? `DEF_SHA256_H0 : SHA256_Hx[32*8-1:32*7]),
+/*input  [31:0] */ .SHA256_H1 (init_def ? `DEF_SHA256_H1 : SHA256_Hx[32*7-1:32*6]),
+/*input  [31:0] */ .SHA256_H2 (init_def ? `DEF_SHA256_H2 : SHA256_Hx[32*6-1:32*5]),
+/*input  [31:0] */ .SHA256_H3 (init_def ? `DEF_SHA256_H3 : SHA256_Hx[32*5-1:32*4]),
+/*input  [31:0] */ .SHA256_H4 (init_def ? `DEF_SHA256_H4 : SHA256_Hx[32*4-1:32*3]),
+/*input  [31:0] */ .SHA256_H5 (init_def ? `DEF_SHA256_H5 : SHA256_Hx[32*3-1:32*2]),
+/*input  [31:0] */ .SHA256_H6 (init_def ? `DEF_SHA256_H6 : SHA256_Hx[32*2-1:32*1]),
+/*input  [31:0] */ .SHA256_H7 (init_def ? `DEF_SHA256_H7 : SHA256_Hx[32*1-1:32*0]),
 
-/*output [31:0] */ .A0        (PRE[32*1-1:32*0]      ) ,
-/*output [31:0] */ .A1        (PRE[32*2-1:32*1]      ) ,
-/*output [31:0] */ .A2        (PRE[32*3-1:32*2]      ) ,
-/*output [31:0] */ .E0        (PRE[32*4-1:32*3]      ) ,
-/*output [31:0] */ .E1        (PRE[32*5-1:32*4]      ) ,
-/*output [31:0] */ .E2        (PRE[32*6-1:32*5]      ) ,
+/*output [31:0] */ .A0        (PRE[32*1-1:32*0]                                  ),
+/*output [31:0] */ .A1        (PRE[32*2-1:32*1]                                  ),
+/*output [31:0] */ .A2        (PRE[32*3-1:32*2]                                  ),
+/*output [31:0] */ .E0        (PRE[32*4-1:32*3]                                  ),
+/*output [31:0] */ .E1        (PRE[32*5-1:32*4]                                  ),
+/*output [31:0] */ .E2        (PRE[32*6-1:32*5]                                  ),
       
-/*input         */ .init      (reg_init              ) ,//sha core initial
-/*input         */ .vld       (vld|dbl_vld           ) ,//data input valid
-/*input  [31:0] */ .din       (dbl_vld?dbl_din: reg_din    ) ,
+/*input         */ .init      (reg_init|init_def                                 ),//sha core initial
+/*input         */ .vld       (core_vld                                          ),//data input valid
+/*input  [31:0] */ .din       (core_din                                          ),
 
-/*output        */ .done      (done                  ) ,
-/*output [255:0]*/ .hash      (hash                  ) 
+/*output        */ .done      (done                                              ),
+/*output [255:0]*/ .hash      (hash                                              )
 ) ;
+
+//------------------------------------------------
+// POOL
+//------------------------------------------------
+fifo_d256w32 pool(
+/*input          */ .clk       (CLK_I             ),
+/*input          */ .srst      (RST_I|reg_pool_rst),
+/*input  [31 : 0]*/ .din       (pool_din          ),
+/*input          */ .wr_en     (pool_push         ),
+/*input          */ .rd_en     (pool_pop          ),
+/*output [31 : 0]*/ .dout      (pool_dout         ),
+/*output         */ .full      (                  ),
+/*output         */ .empty     (pool_empty        ),
+/*output [8 : 0] */ .data_count(pool_cnt          ) 
+);
+
+sha_bulk sha_bulk(
+/*input        */ .clk           (CLK_I           ),
+/*input        */ .rst           (RST_I           ),
+                                                  
+/*output reg   */ .pool_pop      (pool_pop        ),
+/*input        */ .pool_empty    (pool_empty      ),
+                                                
+/*input        */ .reg_bulk_start(reg_bulk_start  ),
+/*output       */ .reg_bulk_done (reg_bulk_done_w ),
+/*output       */ .bulk_init_def (bulk_init_def   ),
+/*output reg   */ .bulk_dbl      (bulk_dbl        ),
+                                                  
+/*output       */ .sha_vld       (sha_vld         ),
+/*output [31:0]*/ .sha_din       (sha_din         ),
+/*input        */ .sha_done      (done            ),
+/*input [255:0]*/ .sha_hash      (hash            ) 
+);
+
 endmodule 

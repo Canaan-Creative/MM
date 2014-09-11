@@ -470,22 +470,67 @@ void gen_hash_work(unsigned int i, unsigned int j, unsigned int * data){
 	if(i%16 == 13){data[0]=0x9ea1e81d; data[1]=0xa82e81f6; data[2]=0xe06e5fab; data[3]=0x25a54bbe; data[4]=0x222e8b87; data[5]=0x7848c34b; data[6]=0xeea79cd6; data[7]=0x528caf7e; data[8]=0x33cde02a; data[9]=0x983dab15; data[10]=0x8119ce2a; data[11]=0x249fc4ed; data[12]=0xd369ce3d; data[13]=0x6d0fd9da; data[14]=0x7618f645; data[15]=0x087e051a; data[16]=0x35547050; data[17]=0xe8dc86b1;}
 	if(i%16 == 14){data[0]=0x873c2a5e; data[1]=0x2d1a8543; data[2]=0x81c9ffff; data[3]=0xdd3da630; data[4]=0xea65fc9d; data[5]=0x857ccb58; data[6]=0x8a776518; data[7]=0x67eb9370; data[8]=0xed14a977; data[9]=0xf1d2de33; data[10]=0xa1235784; data[11]=0x5ad344fe; data[12]=0x29ebded7; data[13]=0x431284bc; data[14]=0x532e867c; data[15]=0x087e051a; data[16]=0x65527050; data[17]=0xc290e5a7;}
 	if(i%16 == 15){data[0]=0xa2bef63f; data[1]=0x30101538; data[2]=0x2a54a40c; data[3]=0x879a9334; data[4]=0xd962d729; data[5]=0x5600f2af; data[6]=0xf81e2a4b; data[7]=0x80a27591; data[8]=0x4064bca0; data[9]=0x612fc425; data[10]=0xa1d03421; data[11]=0xf7941ad5; data[12]=0x41054cf0; data[13]=0xb0496c6a; data[14]=0xc25604f4; data[15]=0x087e051a; data[16]=0x3b537050; data[17]=0x826cce7a;}
+/*
+if((i%16 == 7) && 0){
+data[0]  = 0x3dafee27;
+data[1]  = 0x4995b52e;
+data[2]  = 0x81c9ffff;
+data[3]  = 0xdd3da630;
+data[4]  = 0xea65fc9d;
+data[5]  = 0x857ccb58;
+data[6]  = 0x8a776518;
+data[7]  = 0x67eb9370;
+data[8]  = 0xed14a977;
+data[9]  = 0xf1d2de33;
+data[10] = 0xa1235784;
+data[11] = 0x64d344fe;
+data[12] = 0x46e71eca;
+data[13] = 0x431284bc;
+data[14] = 0x5d2e867c;
+data[15] = 0x087e051a;
+data[16] = 0x6f527050;
+data[17] = 0xc290e5a7;
+}
 
-	data[0] = data[0] ^ (i & 0xfffffff0);
+if((i%16 == 7) && 0){
+ data[0]  = 0x09d07547;
+ data[1]  = 0xad15d1e9;
+ data[2]  = 0xe06e5fab;
+ data[3]  = 0x25a54bbe;
+ data[4]  = 0x222e8b87;
+ data[5]  = 0x7848c34b;
+ data[6]  = 0xeea79cd6;
+ data[7]  = 0x528caf7e;
+ data[8]  = 0x33cde02a;
+ data[9]  = 0x983dab15;
+ data[10] = 0x8119ce2a;
+ data[11] = 0x1e9fc4ed;
+ data[12] = 0xdad10e28;
+ data[13] = 0x6d0fd9da;
+ data[14] = 0x7018f645;
+ data[15] = 0x087e051a;
+ data[16] = 0x2f547050;
+ data[17] = 0xe8dc86b1;
+}
+*/
+	data[0] = data[0] ^ (i & 0xfffffff0);//nonce
 
-	data[2] = data[2] - 0x1;
+	data[2] = data[2] - 0x1;//role time
 
-	data[18] = 0x0;
-	data[19] = j;
+	data[18] = 0x0;//nonce2
+	data[19] = j;//nonce2
 
-	data[20] = 0x1;
-	data[21] = 0x1;
-	data[22] = 0x1;
+	data[20] = 0x1;//cpm2
+	data[21] = 0x1;//cpm1
+	data[22] = 0x1;//cpm0
 }
 
 void api_cfg(){
-	writel(0x5000, 0x8000050c);//timeout
-	writel(0x02010008, 0x80000510);// 2 chip & 1 channle
+	writel(0x02010004, 0x80000510);// 2 chip & 1 channle
+}
+
+void api_set_timeout(unsigned int timeout){
+	writel(timeout, 0x8000050c);//timeout
 }
 
 void api_write(unsigned int * data){
@@ -511,7 +556,7 @@ void api_wait_rx(){
 }
 
 void chip_rst(){
-	led(8); delay(1000); led(0); delay(1000); led(8);
+	led(8); delay(20); led(0); delay(20); led(8);
 }
 
 unsigned int iic_tx_cnt(){
@@ -645,6 +690,41 @@ void iic_reboot(){
         writel(tmp, 0x80000700);
 }
 
+
+unsigned int cpm_cfg(
+unsigned int NR,
+unsigned int NF,
+unsigned int OD,
+unsigned int NB,
+unsigned int div
+){
+
+unsigned int cpm = 0;
+unsigned int div_loc = 0;
+unsigned int NR_sub; 
+unsigned int NF_sub; 
+unsigned int OD_sub; 
+unsigned int NB_sub; 
+NR_sub = NR - 1;
+NF_sub = NF - 1;
+OD_sub = OD - 1;
+NB_sub = NB - 1;
+
+if(div == 1  ) div_loc = 0;
+if(div == 2  ) div_loc = 1;
+if(div == 4  ) div_loc = 2;
+if(div == 8  ) div_loc = 3;
+if(div == 16 ) div_loc = 4;
+if(div == 32 ) div_loc = 5;
+if(div == 64 ) div_loc = 6;
+if(div == 128) div_loc = 7;
+
+cpm = 0x7 | (div_loc << 7) | (1<<10) | (NR_sub << 11) | (NF_sub << 15) | (OD_sub << 21) | (NB_sub << 25);
+
+return cpm;
+}
+
+
 #define IIC_ADDR 0
 #define IIC_LOOP 1
 
@@ -658,11 +738,22 @@ int main(int argv, char **argc)
 	unsigned int buf1[4];
 	int i, k;
 
-	int TEST_4CORE = 1;//ONLY Test 4*cal_core
+	int TEST_4CORE = 0;//ONLY Test 4*cal_core
 	int DESPLAY_ON = 0;//print detial data
-	int TEST_I2C = 1;
+	int TEST_CHIP1 = 1;//Master->chip0->chip1
+
+	int TEST_I2C = 0;
+
+	unsigned int NR = 0;
+	unsigned int NF = 0;
+	unsigned int OD = 0;
+	unsigned int NB = 0;
+	unsigned int div= 0;
+	unsigned int err = 0;
+	unsigned int i_start = 0;
+	unsigned int i_stop = 0;
+	unsigned int err_chip1 = 0;
 	uart_init();
-	led(5);
 	//iic_reboot();
 	while(TEST_I2C){
 		unsigned int dna[10];
@@ -708,13 +799,71 @@ int main(int argv, char **argc)
 		}
 	}
 
-	chip_rst();
+	debug32("A New Test Begin\n");
+while(1){
+	//chip_rst();
+	NR = 0;
+	NF = 0;
+	OD = 0;
+	NB = 0;
+	div= 0;
+	err = 0;
+	i_start = 0;
+	i_stop = 0;
+	err_chip1 = 0;
 
+	api_set_timeout(0x8000);
 	api_cfg();
 
-	for(i = 0; i < 248*16 + 2; i++){
+	//PLL cfg start
+	gen_hash_work(0, 0, data);
+
+	////cpm0
+	//NR = 1; NF = 18; OD = 1; NB = 18; div = 1;//450MHz
+	//NR = 1; NF = 14; OD = 1; NB = 14; div = 1;//360MHz
+	//NR = 1; NF = 15; OD = 1; NB = 15; div = 1;//380MHz
+	NR = 1; NF = 24; OD = 1; NB = 24; div = 2;//300MHz
+	NR = 1; NF = 16; OD = 1; NB = 16; div = 1;//400MHz
+	NR = 1; NF = 20; OD = 1; NB = 20; div = 1;//500MHz
+	NR = 1; NF = 16; OD = 1; NB = 16; div = 2;//200MHz
+	data[22] = cpm_cfg(NR, NF, OD, NB, div);
+	debug32("cpm0 = 0x%x\n", data[22]);
+
+	//cpm1
+	//NR = 1; NF = 16; OD = 1; NB = 16; div = 8;//50MHz
+	//NR = 1; NF = 14; OD = 1; NB = 14; div = 1;//360MHz
+	//NR = 1; NF = 16; OD = 1; NB = 16; div = 4;//100MHz
+	NR = 1; NF = 16; OD = 1; NB = 16; div = 2;//200MHz
+	NR = 1; NF = 24; OD = 1; NB = 24; div = 2;//300MHz
+	NR = 1; NF = 16; OD = 1; NB = 16; div = 2;//200MHz
+	data[21] = cpm_cfg(NR, NF, OD, NB, div);
+	debug32("cpm1 = 0x%x\n", data[21]);
+
+	//cpm2
+	//NR = 1; NF = 16; OD = 1; NB = 16; div = 8;//50MHz
+	//NR = 1; NF = 14; OD = 1; NB = 14; div = 1;//360MHz
+	//NR = 1; NF = 16; OD = 1; NB = 16; div = 4;//100MHz
+	NR = 1; NF = 16; OD = 1; NB = 16; div = 2;//200MHz
+	NR = 1; NF = 24; OD = 1; NB = 24; div = 2;//300MHz
+	NR = 1; NF = 16; OD = 1; NB = 16; div = 2;//200MHz
+	data[20] = cpm_cfg(NR, NF, OD, NB, div);
+	debug32("cpm2 = 0x%x\n", data[20]);
+
+	api_write(data);
+	api_wait_rx();
+	api_read(buf0);
+	api_wait_rx();
+	api_read(buf1);
+	//PLL cfg done
+
+	api_set_timeout(0x10);
+	//for(i = 0; i < 248*16 + 2; i++){
+	i_start = 0;//(28*4-4+28*4) * 16;
+	//i_stop  = (28*4-4) * 16;//(28*4-4+28*4+28) * 16;
+	i_stop  = (28*4-4+28*4+28) * 16;
+	for(i = i_start; i < i_stop; i++){
 		if(TEST_4CORE)
-			gen_hash_work(i%4, i, data);
+			gen_hash_work(i%16, i, data);
 		else
 			gen_hash_work(i, i, data);
 		api_write(data);
@@ -725,49 +874,61 @@ int main(int argv, char **argc)
 		api_wait_rx();
 		api_read(buf1);
 
-		if(i >= 2){
-			if(DESPLAY_ON) debug32("i = %08x\n", i);
+		if(i >= i_start + 2){
+			//debug32("i = %08d\n", i);
 
 			if(TEST_4CORE)
-				gen_hash_work((i-1)%4, i-1, data);
+				gen_hash_work((i-1)%16, i-1, data);
 			else
 				gen_hash_work(i-1, i-1, data);
 
-			for(k = 0; k < 4; k++){
-				if(DESPLAY_ON) debug32("buf_per[%d] = %08x %08x\n", k, buf1[k], data[k]);
+			if(TEST_CHIP1){
+				for(k = 0; k < 4; k++) {
+					if(DESPLAY_ON && k!=2) debug32("[Chip1] buf%d = %08x %08x\n", k, buf1[k], data[k]);
+					else if(DESPLAY_ON) debug32("[Chip1] buf%d = %08x %08x\n", k, buf1[k], data[k]+1);
+				}
+				if((buf1[0] != data[0]    ) ||
+				   (buf1[1] != data[1]    ) ||
+				   (buf1[2] != (data[2]+1)) ||
+				   (buf1[3] != data[3]    ))
+					err_chip1++;
 			}
 
-			if(buf1[0] != data[0]    ){led(1|0x8); while(1);}
-			if(buf1[1] != data[1]    ){led(2|0x8); while(1);}
-			if(buf1[2] != (data[2]+1)){led(3|0x8); while(1);}
-			if(buf1[3] != data[3]    ){led(4|0x8); while(1);}
-
 			if(TEST_4CORE)
-				gen_hash_work((i-2)%4, i-2, data);
+				gen_hash_work((i-2)%16, i-2, data);
 			else
 				gen_hash_work((i-2)%16, i-2, data);
 
 			data[0] = data[0] + 0x18000;
 
-			if(DESPLAY_ON) {
-				debug32("receive ID0   %08x %08x\n", buf0[0], 0);
-				debug32("receive ID1   %08x %08x\n", buf0[1], i-2);
-				debug32("receive NONCE %08x %08x\n", buf0[2], data[0]);
+			if((buf0[0] != 0) || (buf0[1] != i - 2) || (buf0[2] != data[0])) {
+				err++;
+				//debug32("[Chip0] error i = %d\n", i);
+				//debug32("[Chip0] receive ID0   %08x %08x\n", buf0[0], 0);
+                                //debug32("error ID1   %08x %08x\n", buf0[1], i-2);
+                                //debug32("[Chip0] receive NONCE %08x %08x\n", buf0[2], data[0]);
+                                //debug32("[Chip0] receive NONCE %08x %08x\n", buf0[3], data[0]);
 			}
-
-			if(buf0[0] != 0      ) {led(5|0x8); while(1);}
-			if(buf0[1] != i - 2  ) {led(6|0x8); while(1);}
-			if(buf0[2] != data[0]) {led(7|0x8); while(1);}
 		}
 	}
-	debug32("A3222 Test Done! Core number = %d\n", i-2);
-	while(1){
-		led(7);
-		delay(150);
-		led(0);
-		delay(150);
-	}
 
+	//gate
+	data[22] = 0xf;
+	data[21] = 0xf;
+	data[20] = 0xf;
+	api_write(data);
+	api_wait_rx();
+	api_read(buf0);
+	api_wait_rx();
+	api_read(buf1);
+
+	debug32("A3222 Test Done! error number = %d, core number = %d, err_chip1 = %d\n", err, (i_stop - i_start + 1), err_chip1);
+	if(err <= 5 && err_chip1 <= 5){
+		led(5|8);
+	} else {
+		led(0|8);
+	}
+}
 	adjust_fan(0x1ff);/* Set the fan to 50% */
 	alink_flush_fifo();
 

@@ -22,6 +22,12 @@ NET "API_SCK"  LOC = A5 | SLEW = QUIETIO;
 NET "API_MOSI" LOC = A6 | SLEW = QUIETIO;
 NET "API_MISO[0]" LOC = C7;
 
+NET "API_LOADOUT" LOC = C8;                                                                                                          
+NET "API_SCKOUT"  LOC = B10;
+NET "API_MOSIOUT" LOC = C11;                                                                                             
+NET "API_RSTOUT"  LOC = B12;
+NET "API_XCLKOUT" LOC = A14;
+
 #NET   "RX_P[0]" LOC = M15;
 #NET   "RX_N[0]" LOC = L14;
 #NET   "TX_N[0]" LOC = K16 | SLEW = QUIETIO;

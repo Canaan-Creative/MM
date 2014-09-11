@@ -1,7 +1,7 @@
 ##############################################################
 #
 # Xilinx Core Generator version 14.6
-# Date: Fri Oct  4 11:57:27 2013
+# Date: Wed Sep  3 10:52:28 2014
 #
 ##############################################################
 #
@@ -19,19 +19,19 @@
 # BEGIN Project Options
 SET addpads = false
 SET asysymbol = true
-SET busformat = BusFormatAngleBracketNotRipped
+SET busformat = BusFormatSquareBracketNotRipped
 SET createndf = false
 SET designentry = Verilog
-SET device = __DEVICE__
-SET devicefamily = __FAMILY__
-SET flowvendor = Other
+SET device = xc6slx16
+SET devicefamily = spartan6
+SET flowvendor = Synopsys
 SET formalverification = false
 SET foundationsym = false
 SET implementationfiletype = Ngc
-SET package = __PACKAGE__
+SET package = ftg256
 SET removerpms = false
-SET simulationfiles = Structural
-SET speedgrade = __SPEED__
+SET simulationfiles = Behavioral
+SET speedgrade = -2
 SET verilogsim = true
 SET vhdlsim = false
 # END Project Options
@@ -114,9 +114,9 @@ CSET match_units_8=1
 CSET match_units_9=1
 CSET max_sequence_levels=1
 CSET number_of_trigger_ports=1
-CSET sample_data_depth=1024
+CSET sample_data_depth=4096
 CSET sample_on=Rising
-CSET trigger_port_width_1=80
+CSET trigger_port_width_1=5
 CSET trigger_port_width_10=8
 CSET trigger_port_width_11=8
 CSET trigger_port_width_12=8
@@ -138,4 +138,4 @@ CSET use_rpms=false
 MISC pkg_timestamp=2013-06-08T17:29:07Z
 # END Extra information
 GENERATE
-# CRC: 819c6823
+# CRC: abb4068a
