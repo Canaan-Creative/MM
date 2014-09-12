@@ -34,7 +34,8 @@
 
 static uint8_t g_pkg[AVA2_P_COUNT+1];
 static uint8_t g_act[AVA2_P_COUNT+1];
-static int g_module_id = 0;	/* Default ID is 0 */
+static uint8_t g_dna[8];
+static int g_module_id = AVA2_MODULE_BROADCAST;
 static int g_new_stratum = 0;
 static int g_local_work = 0;
 static int g_hw_work = 0;
@@ -89,6 +90,9 @@ static void encode_pkg(uint8_t *p, int type, uint8_t *buf, unsigned int len)
 
 	switch(type) {
 	case AVA2_P_ACKDETECT:
+		memcpy(data, buf, len);
+		memcpy(data + len, g_dna, 8);
+		break;
 	case AVA2_P_NONCE:
 	case AVA2_P_TEST_RET:
 		memcpy(data, buf, len);
@@ -111,6 +115,11 @@ static void encode_pkg(uint8_t *p, int type, uint8_t *buf, unsigned int len)
 		tmp = read_power_good();
 		memcpy(data + 24, &tmp, 4);
 		break;
+	case AVA2_P_ACKDISCOVER:
+	case AVA2_P_ACKSETDEVID:
+		memcpy(data, buf, len); /* MM_VERSION */
+		memcpy(data + len, g_dna, 8); /* MM_DNA */
+		break;
 	default:
 		break;
 	}
@@ -122,9 +131,10 @@ static void encode_pkg(uint8_t *p, int type, uint8_t *buf, unsigned int len)
 
 void send_pkg(int type, uint8_t *buf, unsigned int len)
 {
-	debug32("Send: %d\n", type);
+	debug32("%d-Send: %d\n", g_module_id, type);
 	encode_pkg(g_act, type, buf, len);
-	iic_write(g_act, AVA2_P_COUNT + 1);
+	if (!iic_write(g_act, AVA2_P_COUNT + 1))
+		iic_tx_reset();
 }
 
 static void polling()
@@ -157,7 +167,7 @@ static int decode_pkg(uint8_t *p, struct mm_work *mw)
 	idx = p[3];
 	cnt = p[4];
 
-	debug32("Decode: %d %d/%d\n", p[2], idx, cnt);
+	debug32("%d-Decode: %d %d/%d\n", g_module_id, p[2], idx, cnt);
 
 	expected_crc = (p[AVA2_P_COUNT - 1] & 0xff) |
 		((p[AVA2_P_COUNT - 2] & 0xff) << 8);
@@ -360,6 +370,18 @@ static int get_pkg(struct mm_work *mw)
 					if (g_module_id == tmp)
 						send_pkg(AVA2_P_STATUS, NULL, 0);
 					break;
+				case AVA2_P_DISCOVER:
+					if (g_module_id == AVA2_MODULE_BROADCAST)
+						send_pkg(AVA2_P_ACKDISCOVER, (uint8_t *)MM_VERSION, MM_VERSION_LEN);
+					break;
+				case AVA2_P_SETDEVID:
+					if (!strncmp((char *)(g_pkg + 5 + MM_VERSION_LEN), (char *)g_dna, 8)) {
+						memcpy(&g_module_id, g_pkg + 5 + 28, 4);
+						debug32("ID: %d\n", g_module_id);
+						iic_addr_set(g_module_id);
+						send_pkg(AVA2_P_ACKSETDEVID, (uint8_t *)MM_VERSION, MM_VERSION_LEN);
+					}
+					break;
 				default:
 					break;
 				}
@@ -385,9 +407,14 @@ int main(int argv, char **argc)
 	irq_setmask(0);
 	irq_enable(1);
 
-	g_module_id = read_module_id();
-
 	iic_init();
+
+	/* Dump the FPGA DNA */
+	iic_dna_read(g_dna);
+	hexdump(g_dna, 8);
+
+	iic_addr_set(g_module_id);
+
 	debug32("%d:MM-%s\n", g_module_id, MM_VERSION);
 	debug32("T:%d, %d\n", read_temp0(), read_temp1());
 

@@ -20,7 +20,6 @@ uint32_t timer_read(unsigned char timer);
 
 void gpio_led(uint8_t value);
 void gpio_reset_asic();
-int read_module_id();
 int read_power_good();
 
 int clko_init(uint32_t value);

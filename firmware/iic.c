@@ -21,7 +21,6 @@ static volatile unsigned int rx_produce;
 static volatile unsigned int rx_consume;
 
 #define IIC_PACKSIZE	40
-static uint8_t dnadat[IIC_PACKSIZE];
 static struct lm32_iic *iic = (struct lm32_iic *)IIC_BASE;
 static struct lm32_dna *dna = (struct lm32_dna *)DNA_BASE;
 
@@ -39,10 +38,12 @@ void iic_isr(void)
 	irq_ack(IRQ_IIC);
 }
 
-static void iic_dna_read(uint8_t *dnadat)
+void iic_dna_read(uint8_t *dnadat)
 {
 	uint32_t i, tmp, val;
 	uint32_t *pdnadat = (uint32_t *)dnadat;
+
+	memset(dnadat, 0xff, 8);
 
 	pdnadat[0] = 0;
 	pdnadat[1] = 0;
@@ -101,22 +102,32 @@ static void iic_dna_read(uint8_t *dnadat)
 
 uint32_t iic_write(uint8_t *data, uint16_t len)
 {
-	uint32_t tmp, i;
+	uint32_t tmp, i, ret = 0;
 	uint32_t *pdat = (uint32_t *)data;
 
 	len = len >> 2;
 	for (i = 0; i < len; i++)
 		writel(pdat[i], &iic->tx);
 
-	while (!(readl(&iic->ctrl) & LM32_IIC_CR_RSTOP)) {
-		tmp = readl(&iic->ctrl);
+	tmp = readl(&iic->ctrl);
+	while (!(tmp & (LM32_IIC_CR_RSTOP | LM32_IIC_CR_RERR))) {
 		if (tmp & LM32_IIC_CR_RERR) {
-			writel(LM32_IIC_CR_TXFIFORESET, &iic->ctrl);
-			return 0;
+			debug32("D: IIC_CR_RERR");
+			ret = 0;
+			break;
 		}
+
+		if (tmp & LM32_IIC_CR_RSTOP) {
+			ret = len << 2;
+			break;
+		}
+
+		tmp = readl(&iic->ctrl);
 	}
 
-	return len;
+	writel((tmp & (LM32_IIC_CR_RSTOP | LM32_IIC_CR_RERR)), &iic->ctrl);
+
+	return ret;
 }
 
 int iic_read_nonblock(void)
@@ -160,12 +171,6 @@ void iic_init(void)
 	mask = irq_getmask();
 	mask |= IRQ_IIC;
 	irq_setmask(mask);
-
-	/* Dump the FPGA DNA */
-	memset(dnadat, 0xff, sizeof(dnadat));
-	iic_dna_read(dnadat);
-	debug32("\nD: DNA:\n");
-	hexdump(dnadat, 8);
 }
 
 void iic_logic_reset(void)
@@ -192,30 +197,31 @@ void iic_test(void)
 	uint32_t rxlen;
 	uint32_t slv_addr = 0;
 
-	debug32("D: IIC Test\n");
+	debug32("D: IIC test\n");
 	iic_init();
 
 	while (1) {
 		rxlen = iic_read_cnt();
 		if (rxlen && !iic_read(data, rxlen)) {
-			debug32("D: RX Data(%d):\n", rxlen);
+			debug32("D: RX data(%d):\n", rxlen);
 			hexdump(data, rxlen);
 
 			if (data[3] == IIC_ADDR) {
 				if (slv_addr) {
-					debug32("This is a Named slave, %x\n", iic_addr_get());
+					debug32("Slave, %x\n", iic_addr_get());
 					continue;
 				} else {
 					slv_addr = 1;
 					iic_addr_set(data[7]);
-					debug32("Set slave addr, %x\n", data[7]);
+					debug32("Set slave addr: %x\n", data[7]);
 				}
-				iic_write((uint8_t *)dnadat, IIC_PACKSIZE);
-				debug32("D: TX Data (DNA):\n");
-				hexdump(dnadat, IIC_PACKSIZE);
+				iic_dna_read(data);
+				iic_write(data, IIC_PACKSIZE);
+				debug32("D: TX data (DNA):\n");
+				hexdump(data, IIC_PACKSIZE);
 			} else if (data[3] == IIC_LOOP) {
 				iic_write(data, IIC_PACKSIZE);
-				debug32("D: TX Data:\n");
+				debug32("D: TX data:\n");
 				hexdump(data, IIC_PACKSIZE);
 			}
 		}

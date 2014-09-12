@@ -116,11 +116,6 @@ void gpio_reset_asic()
 	delay(100);
 }
 
-int read_module_id()
-{
-	return (readl(&gpio->reg) >> 4) & 0x3;
-}
-
 int read_power_good()
 {
 #if defined(AVALON3_A3233_MACHINE)
