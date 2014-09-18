@@ -83,6 +83,7 @@ static void encode_pkg(uint8_t *p, int type, uint8_t *buf, unsigned int len)
 	case AVA2_P_ACKDETECT:
 	case AVA2_P_NONCE:
 	case AVA2_P_TEST_RET:
+	case AVA2_P_INFO_RET:
 		memcpy(data, buf, len);
 		break;
 	case AVA2_P_STATUS:
@@ -262,6 +263,13 @@ static int decode_pkg(uint8_t *p, struct mm_work *mw)
 		alink_asic_test(0, ASIC_CORE_COUNT, 1);	/* Test all ASIC cores */
 		set_voltage(ASIC_0V);
 		gpio_led(0);
+		break;
+	case AVA2_P_INFO:
+		memcpy(&tmp, data + 28, 4);
+		if (g_module_id != tmp)
+			break;
+
+		send_pkg(AVA2_P_INFO_RET, hardware_info, sizeof(hardware_info));
 		break;
 	default:
 		break;

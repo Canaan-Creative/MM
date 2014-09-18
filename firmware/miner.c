@@ -19,6 +19,28 @@
 #include "alink.h"
 #include "twipwm.h"
 
+uint8_t hardware_info[0x1c] = {
+#if defined(AVALON2_A3255_MACHINE)
+	0,0,0x8a,0,  /* minimum voltage: 1V */
+	0,0,0x8a,0,  /* default voltage: 1V */
+	0,0,0x8a,0,  /* maximum voltage: 1V */
+	0,0,5,0xdc,  /* minimum clock: 1500 MHz */
+	0,0,5,0xdc,  /* default clock: 1500 MHz */
+	0,0,5,0xdc,  /* maximum clock: 1500 MHz */
+#elif defined(AVALON3_A3233_MACHINE) || defined(AVALON3_A3233_CARD)
+	0,0,0xe1,0,  /* minimum voltage: 0.6625V */
+	0,0,0xe1,0,  /* default voltage: 0.6625V */
+	0,0,0xe1,0,  /* maximum voltage: 0.6625V */
+	0,0,1,0xc2,  /* minimum clock: 450 MHz */
+	0,0,1,0xc2,  /* default clock: 450 MHz */
+	0,0,1,0xc2,  /* maximum clock: 450 MHz */
+#else
+#	error "Please define hardware_info for this platform"
+#endif
+	20,  /* max merkle links */
+	(AVA2_P_COINBASE_SIZE >> 0x10) & 0xff, (AVA2_P_COINBASE_SIZE >> 8) & 0xff, AVA2_P_COINBASE_SIZE & 0xff,
+};
+
 static uint32_t g_asic_freq = ASIC_FREQUENCY;
 
 static inline void flip32(void *dest_p, const void *src_p)
