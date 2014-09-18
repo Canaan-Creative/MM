@@ -189,6 +189,10 @@ static int decode_pkg(uint8_t *p, struct mm_work *mw)
 			mw->nmerkles,
 			mw->diff,
 			mw->pool_no);
+
+		/* Initialise default flags for software that doesn't support JOB_FLAGS command */
+		mw->flags = AVA2_P_FULLCOINBASE;
+
 		break;
 	case AVA2_P_JOB_ID:
 		memcpy(mw->job_id, data, 4);
@@ -198,6 +202,10 @@ static int decode_pkg(uint8_t *p, struct mm_work *mw)
 		if (idx == 1)
 			memset(mw->coinbase, 0, sizeof(mw->coinbase));
 		memcpy(mw->coinbase + (idx - 1) * AVA2_P_DATA_LEN, data, AVA2_P_DATA_LEN);
+		break;
+	case AVA2_P_JOB_FLAGS:
+		memcpy(mw->flags, data, 4);
+		debug32("Job flags: %08x\n", mw->flags);
 		break;
 	case AVA2_P_MERKLES:
 		memcpy(mw->merkles[idx - 1], data, AVA2_P_DATA_LEN);
