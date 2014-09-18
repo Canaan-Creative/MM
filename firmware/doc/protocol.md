@@ -28,7 +28,8 @@ Format: |2B:HEAD|1B:TYPE|1B:IDX|1B:CNT|32B:DATA|2B:CRC|
 4. P_COINBASE: Send out the whole coinbase, split by 32Bytes, we using IDX/CNT here. max length: **6KB**
 5. P_MERKLES: Send out the merkels one by one , we using IDX/CNT here. max count: **20**
 6. P_HEADER: Send out the block header of the stratum message.
-7. P_SET: Send the MM configurations: fan pwm, chip voltage, chip frequency, nonce2 start, nonce2 range, each variable using 32bits. the P_SET will trigger MM to start generate works.
+7. P_JOB_FLAGS: Send out the flags for the job. This bitmask has one bit defined, P_FULLCOINBASE; set if you are not sending a midstate.
+8. P_SET: Send the MM configurations: fan pwm, chip voltage, chip frequency, nonce2 start, nonce2 range, each variable using 32bits. the P_SET will trigger MM to start generate works.
 
 ## Software will polling the MM controllers
 The MM controller selects its own partition of extranonce in coinbase, base on own modular id and nonce2 start and nonce range. there are 2 type of packages send back 
