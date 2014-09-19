@@ -381,8 +381,6 @@ module mm (
 
 , uartRXRDY_N
 , uartTXRDY_N
-, uartRESET_N
-, hubRESET_N
 , spiMISO_MASTER
 , spiMOSI_MASTER
 , spiSS_N_MASTER
@@ -397,12 +395,6 @@ module mm (
 , I2C_SCL
 , I2C_SDA
 
-, SFT_SHCP
-, SFT_DS
-, SFT_STCP
-, SFT_MR_N
-, SFT_OE_N
-
 , FAN_IN0
 , FAN_IN1
 `ifdef AVALON_CARD
@@ -412,6 +404,20 @@ module mm (
 , API_SCK
 , API_MOSI
 , API_MISO
+
+, SFTA_SHCP
+, SFTA_DS  
+, SFTA_STCP
+, SFTA_MR_N
+, SFTA_OE_N
+ 
+, SFTB_SHCP
+, SFTB_DS  
+, SFTB_STCP
+, SFTB_MR_N
+, SFTB_OE_N
+
+
 );
 
 output [`API_NUM-1:0] API_LOAD ;
@@ -419,12 +425,24 @@ output [`API_NUM-1:0] API_SCK  ;
 output [`API_NUM-1:0] API_MOSI ;
 input  [`API_NUM-1:0] API_MISO ;
 
+output SFTA_SHCP;
+output SFTA_DS  ;
+output SFTA_STCP;
+output SFTA_MR_N;
+output SFTA_OE_N;
+
+output SFTB_SHCP;
+output SFTB_DS  ;
+output SFTB_STCP;
+output SFTB_MR_N;
+output SFTB_OE_N;
+
 output PWM ;
 input	ex_clk_i;
 `ifdef AVALON_CARD
 output  [3:0] ex_clk_o ;
 `else
-output  ex_clk_o ;
+output  [1:0] ex_clk_o ;
 `endif
 wire clk_i , reset_n, clk25m_on;
 
@@ -432,7 +450,9 @@ wire clk_i , reset_n, clk25m_on;
 wire [3:0] ex_clk_o_w;
 clkgen clk (.clkin(ex_clk_i), .clk25m_on(clk25m_on), .clkout(clk_i), .clk25m(ex_clk_o), .locked(reset_n));
 `else
-clkgen clk (.clkin(ex_clk_i), .clk25m_on(clk25m_on), .clkout(clk_i), .clk25m(ex_clk_o), .locked(reset_n));
+clkgen clk (.clkin(ex_clk_i), .clk25m_on(clk25m_on), .clkout(clk_i), .clk25m(ex_clk_o_w), .locked(reset_n));
+assign ex_clk_o[0] = ex_clk_o_w;
+assign ex_clk_o[1] = ex_clk_o_w;
 `endif
 
 `ifdef AVALON_CARD
@@ -527,8 +547,6 @@ output  INT;
 wire i2cI2C_ACK_O, i2cI2C_ERR_O, i2cI2C_RTY_O;
 wire [31:0] i2cI2C_DAT_O; 
 
-output  uartRESET_N;
-output  hubRESET_N;
 output  uartRXRDY_N;
 output  uartTXRDY_N;
 
@@ -556,8 +574,8 @@ wire   gpioGPIO_ERR_O;
 wire   gpioGPIO_RTY_O;
 wire gpioGPIO_en;
 wire gpioIRQ_O;
-input [7:0] gpioPIO_IN;
-output [3:0] gpioPIO_OUT;
+input [15:0] gpioPIO_IN;
+output [15:0] gpioPIO_OUT;
 
 wire [7:0] uart_debugUART_DAT_O;
 wire   uart_debugUART_ACK_O;
@@ -629,17 +647,9 @@ wire        twiTWI_en;
 wire        TWI_SCL_O ;
 wire        TWI_SDA_OEN ;
 
-output      SFT_SHCP ;
-output      SFT_DS   ;
-output      SFT_STCP ;
-output      SFT_MR_N ;
-output      SFT_OE_N ;
-
 input       FAN_IN0 ;
 input       FAN_IN1 ;
 // Enable the FT232 and HUB
-assign uartRESET_N = 1'b1;
-assign hubRESET_N  = 1'b1;
 wire TIME0_INT ;
 wire TIME1_INT ;
 reg [2:0] counter;
@@ -1205,11 +1215,17 @@ twi u_twi(
 /*output        */ .PWM         (PWM                         ) ,
 /*output        */ .WATCH_DOG   (WATCH_DOG                   ) ,
 
-/*output        */ .SFT_SHCP    (SFT_SHCP                    ) ,
-/*output        */ .SFT_DS      (SFT_DS                      ) ,
-/*output        */ .SFT_STCP    (SFT_STCP                    ) ,
-/*output        */ .SFT_MR_N    (SFT_MR_N                    ) ,
-/*output        */ .SFT_OE_N    (SFT_OE_N                    ) ,
+/*output        */ .SFT_SHCP    (SFTA_SHCP                   ) ,
+/*output        */ .SFT_DS      (SFTA_DS                     ) ,
+/*output        */ .SFT_STCP    (SFTA_STCP                   ) ,
+/*output        */ .SFT_MR_N    (SFTA_MR_N                   ) ,
+/*output        */ .SFT_OE_N    (SFTA_OE_N                   ) ,
+
+/*output        */ .SFTB_SHCP   (SFTB_SHCP                   ) ,
+/*output        */ .SFTB_DS     (SFTB_DS                     ) ,
+/*output        */ .SFTB_STCP   (SFTB_STCP                   ) ,
+/*output        */ .SFTB_MR_N   (SFTB_MR_N                   ) ,
+/*output        */ .SFTB_OE_N   (SFTB_OE_N                   ) ,
 
 /*input         */ .FAN_IN0     (FAN_IN0                     ) ,
 /*input         */ .FAN_IN1     (FAN_IN1                     ) ,

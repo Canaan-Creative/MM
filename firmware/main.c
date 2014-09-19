@@ -453,7 +453,7 @@ void api_rd(unsigned int * buf){
 }
 
 
-void gen_hash_work(unsigned int i, unsigned int j, unsigned int * data){
+void api_gen_hash_work(unsigned int i, unsigned int nonce2_h, unsigned int nonce2_l, unsigned int chip_num, unsigned int target_num, unsigned int * data){
 	if(i%16 == 0 ){data[0]=0x1bed3ba0; data[1]=0xa2cb45c1; data[2]=0xd8f8ef67; data[3]=0x12146495; data[4]=0xc44192c0; data[5]=0x7145fd6d; data[6]=0x974bf4bb; data[7]=0x8f41371d; data[8]=0x65c90d1e; data[9]=0x9cb18a17; data[10]=0xfa77fe7d; data[11]=0x13cdfd7b; data[12]=0x00639107; data[13]=0x62a5f25c; data[14]=0x06b168ae; data[15]=0x087e051a; data[16]=0x89517050; data[17]=0x4ac1d001;}
 	if(i%16 == 1 ){data[0]=0xc1680161; data[1]=0x9d8d4242; data[2]=0xe06e5fab; data[3]=0x25a54bbe; data[4]=0x222e8b87; data[5]=0x7848c34b; data[6]=0xeea79cd6; data[7]=0x528caf7e; data[8]=0x33cde02a; data[9]=0x983dab15; data[10]=0x8119ce2a; data[11]=0x1c9fc4ed; data[12]=0xdac8ce29; data[13]=0x6d0fd9da; data[14]=0x6e18f645; data[15]=0x087e051a; data[16]=0x2d547050; data[17]=0xe8dc86b1;}
 	if(i%16 == 2 ){data[0]=0x84a9e522; data[1]=0xb6327d35; data[2]=0x2a54a40c; data[3]=0x879a9334; data[4]=0xd962d729; data[5]=0x5600f2af; data[6]=0xf81e2a4b; data[7]=0x80a27591; data[8]=0x4064bca0; data[9]=0x612fc425; data[10]=0xa1d03421; data[11]=0xf8941ad5; data[12]=0xc5e7acf1; data[13]=0xb0496c6a; data[14]=0xc35604f4; data[15]=0x087e051a; data[16]=0x3c537050; data[17]=0x826cce7a;}
@@ -473,19 +473,31 @@ void gen_hash_work(unsigned int i, unsigned int j, unsigned int * data){
 
 	data[0] = data[0] ^ (i & 0xfffffff0);
 
-	data[2] = data[2] - 0x1;
+	data[2] = data[2] - (chip_num - target_num - 1);
 
-	data[18] = 0x0;
-	data[19] = j;
+	data[18] = nonce2_h;
+	data[19] = nonce2_l;
 
 	data[20] = 0x1;
 	data[21] = 0x1;
 	data[22] = 0x1;
 }
 
-void api_cfg(){
-	writel(0x5000, 0x8000050c);//timeout
-	writel(0x02010008, 0x80000510);// 2 chip & 1 channle
+void api_timeout(unsigned int timeout){
+	writel(timeout, 0x8000050c);//timeout
+}
+
+void api_structure(unsigned int ch_num, unsigned int chip_num){
+	unsigned int tmp;
+	tmp = readl(0x80000510) & 0xff;//for sck timing reg
+	tmp = tmp | (ch_num<<16) | (chip_num<<24);
+	writel(tmp, 0x80000510);
+}
+
+void api_sck(unsigned int sck_div2){
+	unsigned int tmp;
+	tmp = (readl(0x80000510) & 0xffff0000) | sck_div2;
+	writel(tmp, 0x80000510);
 }
 
 void api_write(unsigned int * data){
@@ -495,16 +507,15 @@ void api_write(unsigned int * data){
 	}
 }
 
-void api_read(unsigned int * buf){
-	buf[0] = readl(0x80000504);
-	buf[1] = readl(0x80000504);
-	buf[2] = readl(0x80000504);
-	buf[3] = readl(0x80000504);
+void api_read(unsigned int * buf, unsigned int total_word){
+	unsigned int i;
+	for(i = 0; i < total_word; i++)
+		buf[i] = readl(0x80000504);
 }
 
-void api_wait_rx(){
+void api_wait_rx(unsigned int total_word){
 	unsigned int tmp = 0;
-	while(tmp < 4){
+	while(tmp < total_word){
 		tmp = readl(0x80000508);
 		tmp = (tmp >> 20) & 0x1ff;
 	}
@@ -645,126 +656,91 @@ void iic_reboot(){
         writel(tmp, 0x80000700);
 }
 
-#define IIC_ADDR 0
-#define IIC_LOOP 1
+/* func: chip_test
+ ______    
+|      |-----ch0------> (chip_num-1) +...+ chip1 + chip0
+|  MM  |-----ch1------> (chip_num-1) +...+ chip1 + chip0
+|______|-----ch_num-1-> (chip_num-1) +...+ chip1 + chip0
+*/
+unsigned char chip_test(
+	unsigned int ch_num      ,//per MM, [10:1]
+	unsigned int chip_num    ,//per channel, [5:1]
+	unsigned int cal_core_num,//per chip, [248*16:1]
+	unsigned int rx_word_num  //[5:4]
+){
+	unsigned int timeout  = 0x5000;
+	unsigned int target_num = 0;//chip_num -1 .. 0
+	unsigned int sck_div2 = 8;
+	unsigned int total_word = (ch_num * chip_num) * rx_word_num;
+	unsigned int data[23], i, j, k;
+	unsigned int rxbuf[256];
+	unsigned int nonce_respect, pass_cal_core_num = 0;
+
+	//API CFG
+	chip_rst();
+	api_timeout(timeout);
+	api_structure(ch_num, chip_num);
+	api_sck(sck_div2);
+	
+	//test chip
+	for(i = 0; i < chip_num; i++){
+		target_num = i;
+		for(j = 0; j < cal_core_num + 2; j++){
+			//sent work
+			api_gen_hash_work(j, j, j, chip_num, target_num, data);
+			api_write(data);
+			api_wait_rx(total_word);
+			api_read(rxbuf, total_word);
+			
+			//verify nonce & nonce2
+			if(j >= 2){
+				api_gen_hash_work(j-2, j-2, j-2, chip_num, chip_num-1, data);
+				nonce_respect = data[0] + 0x18000;
+				for(k = 0; k < ch_num; k++){
+					if(nonce_respect == rxbuf[k*rx_word_num + 2])
+						pass_cal_core_num++;
+				}
+			}
+		}
+	}
+	return pass_cal_core_num;
+}
+
+void led_set(unsigned int led){
+	unsigned int tmp;
+	tmp = (led<<4) | (readl(0x80000624) & 0xffffff0f);
+	writel(tmp, 0x80000624);
+}
+
+void led_shifter(unsigned int led){
+	unsigned int i, tmp;
+	tmp = readl(0x80000624);
+	for(i = 0; i < 8 ; i++){
+		writel((tmp & 0xfffffffc) | (led & 1)    , 0x80000624);
+		writel((tmp & 0xfffffffc) | (led & 1) | 2, 0x80000624);
+		writel((tmp & 0xfffffffc) | (led & 1)    , 0x80000624);
+		led = led >> 1;
+	}
+}
 
 int main(int argv, char **argc)
 {
 	struct mm_work mm_work;
 	struct work work;
 	struct result result;
-	unsigned int data[23];
-	unsigned int buf0[4];
-	unsigned int buf1[4];
-	int i, k;
 
-	int TEST_4CORE = 1;//ONLY Test 4*cal_core
-	int DESPLAY_ON = 0;//print detial data
-	int TEST_I2C = 1;
-	uart_init();
-	led(5);
+	//uart_init();
 	//iic_reboot();
-	while(TEST_I2C){
-		unsigned int dna[10];
-		unsigned int data[100];
-		unsigned int tmp;
-		unsigned int slv_addr = 0;
-		for(i = 0; i < 10; i++)
-			dna[i] = 0xffffffff;
-		dna_rd(dna);
-		debug32("IIC TEST: DNA:%08x %08x\n", dna[0], dna[1]);
-		//iic_loop();
-		while(1){
-			iic_wait_wr_done();
-			tmp = iic_rx_cnt();
-			iic_rd(data, tmp);
 
-			for(i = 0; i < tmp; i++)
-				debug32("RX Data%d: %x\n", i, data[i]);
+	//chip_test(10, 5, 248*16, 4);
 
-			if(data[0] == IIC_ADDR){
-				if(slv_addr){
-					debug32("This is a Named slave, %x\n", iic_addr_get());
-					continue;
-				}
-				iic_rst_tx();
-				iic_wr(dna, 10);
-				for(i = 0; i < 10; i++) debug32("TX Data (DNA)%d: %x\n", i, dna[i]);
-			}else if(data[0] == IIC_LOOP){
-				iic_wr(data, 10);
-				for(i = 0; i < 10; i++) debug32("TX Data %d: %x\n", i, data[i]);
-			}
-
-			tmp = iic_wait_rd_done();
-			//debug32("tx cnt = %x", iic_tx_cnt());
-			if(tmp != 1){
-				iic_rst_tx(); //reset tx fifo
-				iic_rst_logic();
-				debug32("Read Error! tmp = %x\n", tmp);
-			}else if(tmp == 1){
-				if(data[0] == IIC_ADDR){ iic_addr_set(data[1]); slv_addr = 1;}
-				debug32("Read Done!\n");
-			}
-		}
-	}
-
-	chip_rst();
-
-	api_cfg();
-
-	for(i = 0; i < 248*16 + 2; i++){
-		if(TEST_4CORE)
-			gen_hash_work(i%4, i, data);
-		else
-			gen_hash_work(i, i, data);
-		api_write(data);
-
-		api_wait_rx();
-		api_read(buf0);
-
-		api_wait_rx();
-		api_read(buf1);
-
-		if(i >= 2){
-			if(DESPLAY_ON) debug32("i = %08x\n", i);
-
-			if(TEST_4CORE)
-				gen_hash_work((i-1)%4, i-1, data);
-			else
-				gen_hash_work(i-1, i-1, data);
-
-			for(k = 0; k < 4; k++){
-				if(DESPLAY_ON) debug32("buf_per[%d] = %08x %08x\n", k, buf1[k], data[k]);
-			}
-
-			if(buf1[0] != data[0]    ){led(1|0x8); while(1);}
-			if(buf1[1] != data[1]    ){led(2|0x8); while(1);}
-			if(buf1[2] != (data[2]+1)){led(3|0x8); while(1);}
-			if(buf1[3] != data[3]    ){led(4|0x8); while(1);}
-
-			if(TEST_4CORE)
-				gen_hash_work((i-2)%4, i-2, data);
-			else
-				gen_hash_work((i-2)%16, i-2, data);
-
-			data[0] = data[0] + 0x18000;
-
-			if(DESPLAY_ON) {
-				debug32("receive ID0   %08x %08x\n", buf0[0], 0);
-				debug32("receive ID1   %08x %08x\n", buf0[1], i-2);
-				debug32("receive NONCE %08x %08x\n", buf0[2], data[0]);
-			}
-
-			if(buf0[0] != 0      ) {led(5|0x8); while(1);}
-			if(buf0[1] != i - 2  ) {led(6|0x8); while(1);}
-			if(buf0[2] != data[0]) {led(7|0x8); while(1);}
-		}
-	}
-	debug32("A3222 Test Done! Core number = %d\n", i-2);
+	unsigned int i = 0;
 	while(1){
-		led(7);
+		led_shifter(i);
+		i++;
+		led_set(0x5);
 		delay(150);
-		led(0);
+		led_set(0xa);
 		delay(150);
 	}
 
