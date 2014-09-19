@@ -101,7 +101,7 @@ always @ ( posedge CLK_I or posedge RST_I ) begin
 		pwm_cnt <= pwm_cnt + 10'b1 ;
 end
 
-assign PWM = pwm_cnt < reg_pwm ;
+assign PWM = pwm_cnt <= reg_pwm ;
 
 //-----------------------------------------------------
 // WDG
