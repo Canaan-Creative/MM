@@ -9,6 +9,7 @@
 #include "system_config.h"
 #include "io.h"
 #include "shifter.h"
+#include "timer.h"
 
 static struct lm32_shifter *sft = (struct lm32_shifter *)SHIFTER_BASE;
 static uint32_t g_voltage = 0x8f00; /* 0V */
@@ -31,19 +32,19 @@ uint32_t get_voltage()
 extern void delay(unsigned int ms);
 
 #define VOLTAGE_DELAY	100
-void set_voltage(uint32_t value)
+int set_voltage(uint32_t value)
 {
 	int i;
 
 	if (g_voltage == value)
-		return;
+		return 0;
 
 	g_voltage = value;
 
 	if (value == 0x8f00) {
 		writel(0x7, &sft->reg);
 		delay(VOLTAGE_DELAY);
-		return;
+		return 0;
 	}
 
 	/* Reset */
@@ -68,4 +69,10 @@ void set_voltage(uint32_t value)
 	/* Output enable, low active  */
 	writel(0x3, &sft->reg);
 	delay(VOLTAGE_DELAY);
+
+#if defined(AVALON3_A3233_MACHINE) || defined(AVALON3_A3233_CARD)
+	gpio_reset_asic();
+#endif
+
+	return 1;
 }

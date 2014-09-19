@@ -11,7 +11,7 @@
 
 #include <stdint.h>
 
-void set_voltage(uint32_t value);
+int set_voltage(uint32_t value);
 uint32_t get_voltage();
 
 #endif	/* __SHIFTER_H__ */

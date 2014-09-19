@@ -242,12 +242,22 @@ void miner_gen_nonce2_work(struct mm_work *mw, uint32_t nonce2, struct work *wor
 	uint8_t work_t[44];
 	uint32_t *data32, *swap32, tmp32;
 	int i;
+	int nonce2_offset_posthash;
+	int coinbase_len_posthash;
 
 	tmp32 = bswap_32(nonce2);
-	memcpy(mw->coinbase + mw->nonce2_offset, (uint8_t *)(&tmp32), sizeof(uint32_t));
 	work->nonce2 = nonce2;
 
-	dsha256(mw->coinbase, mw->coinbase_len, merkle_root);
+	if (mw->coinbase_len > AVA2_P_COINBASE_SIZE) {
+		nonce2_offset_posthash = (mw->nonce2_offset % SHA256_BLOCK_SIZE) + 32;
+		coinbase_len_posthash = mw->coinbase_len - mw->nonce2_offset + (mw->nonce2_offset % SHA256_BLOCK_SIZE);
+		memcpy(mw->coinbase + nonce2_offset_posthash, (uint8_t *)(&tmp32), mw->nonce2_size);
+		dsha256_posthash(mw->coinbase, mw->coinbase_len, coinbase_len_posthash, merkle_root);
+	} else {
+		memcpy(mw->coinbase + mw->nonce2_offset, (uint8_t *)(&tmp32), mw->nonce2_size);
+		dsha256(mw->coinbase, mw->coinbase_len, merkle_root);
+	}
+
 	memcpy(merkle_sha, merkle_root, 32);
 
 #ifdef DEBUG_STRATUM

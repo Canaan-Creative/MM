@@ -6,10 +6,13 @@
  * For details see the UNLICENSE file at the root of the source tree.
  */
 
+#include <stdint.h>
+
 #include "intr.h"
 #include "system_config.h"
 
 #include "uart.h"
+#include "iic.h"
 #include "timer.h"
 
 void isr(void)
@@ -17,6 +20,9 @@ void isr(void)
 	unsigned int irqs;
 
 	irqs = irq_pending() & irq_getmask();
+
+	if (irqs & IRQ_IIC)
+		iic_isr();
 
 	if (irqs & IRQ_UART)
 		uart_isr();

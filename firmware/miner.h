@@ -36,9 +36,9 @@ struct work {
 };
 
 struct result {
-	uint8_t miner_id[4];      /* The miner ID */
-	uint8_t	task_id[8];	 /* Same with work task_id */
-	uint8_t	timeout[4];
+	uint8_t miner_id[4];     /* The miner ID */
+	uint8_t	task_id[8];	 /* Pool No. + Nonce2 */
+	uint8_t	ntime[4];	 /* Ntime */
 	uint8_t nonce[4];
 };
 

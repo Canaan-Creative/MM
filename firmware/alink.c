@@ -131,13 +131,13 @@ void alink_read_result(struct result *r)
 	memcpy(r->miner_id, (uint8_t *)(&tmp), 4);
 
 	tmp = readl(&alink->rx);
-	memcpy(r->task_id, (uint8_t *)(&tmp), 4);
+	memcpy(r->task_id, (uint8_t *)(&tmp), 4); /* Pool No. */
 
 	tmp = readl(&alink->rx);
-	memcpy(r->task_id + 4, (uint8_t *)(&tmp), 4);
+	memcpy(r->task_id + 4, (uint8_t *)(&tmp), 4); /* Nonce2 */
 
 	tmp = readl(&alink->rx);
-	memcpy(r->timeout, (uint8_t *)(&tmp), 4);
+	memcpy(r->ntime, (uint8_t *)(&tmp), 4);
 
 	tmp = readl(&alink->rx);
 	memcpy(r->nonce, (uint8_t *)(&tmp), 4);
@@ -398,6 +398,7 @@ void alink_asic_test(int core_start, int core_end, int full_test)
 			core_test[j + 1] = core >= 255 ? 255 : core;
 			debug32("%3d", core);
 		}
+		debug32("\n");
 		core_test[0] = i + 1;
 
 		if (full_test) {
@@ -411,13 +412,8 @@ void alink_asic_test(int core_start, int core_end, int full_test)
 		}
 	}
 
-	if (!full_test && (error < 2)) {
-#if defined(AVALON3_A3233_MACHINE) || defined(AVALON3_A3233_CARD)
-		led(2);
-#else
-		led(0);
-#endif
-	}
+	if (!full_test && (error < 2))
+		gpio_led(0);
 
 	writel(0, &alink->state); /* Enable alink hash mode */
 	alink_init(MODULE_ENABLE);

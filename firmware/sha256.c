@@ -122,10 +122,28 @@ static void sha256_double()
 
 void dsha256(const uint8_t *input, unsigned int count, uint8_t *state)
 {
-
 	sha256_init();
 	sha256_update(input, count);
 	sha256_padding(input + (count / SHA256_BLOCK_SIZE) * SHA256_BLOCK_SIZE, count);
+	sha256_double();
+	sha256_final(state);
+}
+
+void dsha256_posthash(const uint8_t *input, unsigned int count, unsigned int count_posthash, uint8_t *state)
+{
+	int i;
+	uint32_t tmp;
+
+	writel(LM32_SHA256_CMD_RST, &lm_sha256->cmd);
+	for (i = 0; i < 32; i += 4) {
+		memcpy((uint8_t *)(&tmp), input + i, 4);
+		writel(tmp, &lm_sha256->hi);
+	}
+	writel(LM32_SHA256_CMD_INIT, &lm_sha256->cmd);
+
+	sha256_update(input + 32, count_posthash);
+	sha256_padding(input + 32 + (count_posthash/ SHA256_BLOCK_SIZE) * SHA256_BLOCK_SIZE, count);
+	sha256_init();
 	sha256_double();
 	sha256_final(state);
 }
@@ -142,7 +160,6 @@ void sha256_precalc(const uint8_t *h, const uint8_t *input, unsigned int count, 
 		writel(tmp, &lm_sha256->hi);
 	}
 	writel(LM32_SHA256_CMD_INIT, &lm_sha256->cmd);
-
 
 	memcpy(digest + 0, input + 8, 4);
 	memcpy(digest + 4, input + 4, 4);
