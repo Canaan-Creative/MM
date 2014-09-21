@@ -90,6 +90,11 @@ void timer1_isr(void)
 }
 
 /* GPIO */
+void gpio_frond_led(uint8_t)
+{
+
+}
+
 void gpio_led(uint8_t led)
 {
 	uint32_t value;
@@ -124,6 +129,8 @@ int read_power_good()
 	return (readl(&gpio->reg) >> 7) & 0x1f;
 #elif defined(AVALON3_A3233_CARD)
 	return (readl(&gpio->reg) >> 10) & 0x3;
+#elif defined(AVALON4_A3222)
+	return (readl(&gpio->reg)) >> 16 & 0x3ff;
 #endif
 }
 
