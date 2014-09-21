@@ -41,7 +41,6 @@ static int g_local_work = 0;
 static int g_hw_work = 0;
 
 uint32_t g_clock_conf_count = 0;
-uint16_t temperature0[10] = {0};
 uint16_t temperature1[10] = {0};
 
 static uint32_t g_nonce2_offset = 0;
@@ -99,7 +98,7 @@ static void encode_pkg(uint8_t *p, int type, uint8_t *buf, unsigned int len)
 		memcpy(data, buf, len);
 		break;
 	case AVA2_P_STATUS:
-		tmp = read_temp0(temperature0) << 16 | read_temp1(temperature1);
+		tmp = read_temp1(temperature1);
 		memcpy(data + 0, &tmp, 4);
 
 		tmp = read_fan0() << 16 | read_fan1();
@@ -249,7 +248,7 @@ static int decode_pkg(uint8_t *p, struct mm_work *mw)
 	case AVA2_P_REQUIRE:
 		break;
 	case AVA2_P_SET:
-		if (read_temp0(temperature0) >= IDLE_TEMP || read_temp1(temperature1) >= IDLE_TEMP)
+		if (read_temp1(temperature1) >= IDLE_TEMP)
 			break;
 
 		memcpy(&tmp, data, 4);
@@ -398,6 +397,7 @@ int main(int argv, char **argc)
 	struct mm_work mm_work;
 	struct work work;
 	struct result result;
+	int i;
 
 	adjust_fan(0x1ff);		/* Set the fan to 50% */
 	alink_flush_fifo();
@@ -416,8 +416,11 @@ int main(int argv, char **argc)
 
 	iic_addr_set(g_module_id);
 
+	for (i = 0; i < 10; i++)
+		read_temp1(temperature1);
+
 	debug32("%d:MM-%s\n", g_module_id, MM_VERSION);
-	debug32("T:%d, %d\n", read_temp0(temperature0), read_temp1(temperature1));
+	debug32("T:%d\n", read_temp1(temperature1));
 
 #ifdef DEBUG_IIC_TEST
 	extern void iic_test(void);
@@ -426,7 +429,7 @@ int main(int argv, char **argc)
 
 	timer_set(0, IDLE_TIME);
 	g_new_stratum = 0;
-
+#if 0
 	/* Test part of ASIC cores */
 	set_voltage(ASIC_CORETEST_VOLT);
 	gpio_led(1);
@@ -434,21 +437,21 @@ int main(int argv, char **argc)
 
 	alink_asic_idle();
 	set_voltage(ASIC_0V);
-
+#endif
 	while (1) {
 		get_pkg(&mm_work);
 
 		wdg_feed((CPU_FREQUENCY / 1000) * 2);
 		if ((!timer_read(0) && g_new_stratum) ||
-		    (read_temp0(temperature0) >= IDLE_TEMP && read_temp1(temperature1) >= IDLE_TEMP)) {
+		    read_temp1(temperature1) >= IDLE_TEMP) {
 			g_new_stratum = 0;
 			g_local_work = 0;
 			g_hw_work = 0;
-
+#if 0
 			alink_asic_idle();
 			adjust_fan(0x1ff);
 			set_voltage(ASIC_0V);
-
+#endif
 			iic_rx_reset();
 			iic_tx_reset();
 		}
