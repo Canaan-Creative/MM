@@ -112,7 +112,7 @@ unsigned int api_get_rx_cnt()
 void api_set_tx_fifo(unsigned int * data)
 {
 	int i;
-	for (i = 0; i < 23; i++){
+	for (i = 0; i < 23; i++) {
 		writel(data[i], &api->tx);
 	}
 }
@@ -120,14 +120,14 @@ void api_set_tx_fifo(unsigned int * data)
 void api_get_rx_fifo(unsigned int * data)
 {
 	int i;
-	for(i = 0; i < 4; i++){
+	for (i = 0; i < 4; i++) {
 		data[i] = readl(&api->rx);
 	}
 }
 
 void api_wait_done(unsigned int ch_num, unsigned int chip_num)
 {
-	while(api_get_rx_cnt() != (ch_num * chip_num * 4))
+	while (api_get_rx_cnt() != (ch_num * chip_num * 4))
 		;
 }
 
@@ -136,8 +136,8 @@ unsigned int api_verify_nonce(unsigned int ch_num, unsigned int chip_num, unsign
 	unsigned int i, j, need_verify;
 	unsigned int rx_data[4];
 	unsigned int pass_cal_num = 0;
-	for(i = 0; i < ch_num; i++){
-		for(j = 0; j < chip_num; j++){
+	for (i = 0; i < ch_num; i++) {
+		for (j = 0; j < chip_num; j++) {
 			api_get_rx_fifo(rx_data);
 			need_verify = ((chip_num - chip_under_test_num - 1) == j) ? 1 : 0;
 			if(verify_on && (rx_data[2] == target_nonce) && need_verify)

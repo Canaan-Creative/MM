@@ -93,6 +93,7 @@ void miner_init_work(struct mm_work *mw, struct work *work)
 	memcpy(work->task_id, (uint8_t *)(&mw->pool_no), 4);
 	memcpy(work->task_id + 4, (uint8_t *)(&work->nonce2), 4);
 
+	/* TODO: config g_asic_freq */
 	work->clock[0] = 0x01;
 	work->clock[1] = 0x00;
 	work->clock[2] = 0x00;

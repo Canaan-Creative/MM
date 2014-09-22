@@ -296,6 +296,7 @@ static int read_result(struct mm_work *mw, struct result *ret)
 		return 0;
 
 	api_get_rx_fifo((unsigned int *)ret);
+	hexdump((unsigned char *)ret, 16);
 	g_local_work++;
 
 	nonce = test_nonce(mw, ret);
@@ -391,7 +392,7 @@ int main(int argv, char **argc)
 	struct work work;
 	struct result result;
 
-	adjust_fan(0x1ff);		/* Set the fan to 50% */
+	adjust_fan(0x2ff);		/* Set the fan to 50% */
 	/* TODO: Flash api fifo */
 
 	wdg_init(1);
@@ -418,18 +419,16 @@ int main(int argv, char **argc)
 	g_new_stratum = 0;
 
 	/* Test part of ASIC cores */
-	set_voltage(0x8100);
+	set_voltage(ASIC_CORETEST_VOLT);
 	gpio_led(0xf);
 	sft_led(0xff);
 
 #if 1
 	int ret;
-	int m = 3;
+	int m = 2;
 	int all = m*4*248*16;
-	while (1) {
-		ret = api_asic_test(m, 4, 248*16);
-		debug32("A.T: %d / %d = %d%%\n", all-ret, all, ((all-ret)*100/all));
-	}
+	ret = api_asic_test(m, 4, 248*16);
+	debug32("A.T: %d / %d = %d%%\n", all-ret, all, ((all-ret)*100/all));
 #endif
 
 	set_voltage(ASIC_0V);
