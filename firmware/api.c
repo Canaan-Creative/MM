@@ -426,8 +426,8 @@ unsigned int cal_core_num
 	unsigned int target_nonce;
 	unsigned int pass_cal_num = 0;
 	unsigned int verify_on = 0;
-	unsigned int spi_speed = 0x10;
-	unsigned int timeout = 0x5000;
+	unsigned int spi_speed = 0x1;
+	unsigned int timeout = 0x10;
 	api_initial(ch_num, chip_num, spi_speed, timeout);
 
 	for(i = 0; i < chip_num; i++){
