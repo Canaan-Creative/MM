@@ -428,8 +428,8 @@ int main(int argv, char **argc)
 #if 1
 	int ret;
 	int m = 2;
-	int all = m*4*248*16;
-	ret = api_asic_test(m, 4, 248*16);
+	int all = m*4*248 * 1;
+	ret = api_asic_test(m, 4, all/m/4);
 	debug32("A.T: %d / %d = %d%%\n", all-ret, all, ((all-ret)*100/all));
 #endif
 

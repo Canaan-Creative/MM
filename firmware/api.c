@@ -18,7 +18,7 @@
 
 static struct lm32_api *api = (struct lm32_api *)API_BASE;
 
-unsigned int api_set_cpm(unsigned int NR, unsigned int NF, unsigned int OD, unsigned int NB, unsigned int div)
+static inline unsigned int api_set_cpm(unsigned int NR, unsigned int NF, unsigned int OD, unsigned int NB, unsigned int div)
 {
 	unsigned int div_loc = 0;
 	unsigned int NR_sub;
@@ -40,11 +40,11 @@ unsigned int api_set_cpm(unsigned int NR, unsigned int NF, unsigned int OD, unsi
 	if(div == 64 ) div_loc = 6;
 	if(div == 128) div_loc = 7;
 	
-	return 0x7 | (div_loc << 7) | (1<<10) |
+	return 0x7 | (div_loc << 7) | (1 << 10) |
 		(NR_sub << 11) | (NF_sub << 15) | (OD_sub << 21) | (NB_sub << 25);
 }
 
-unsigned int api_gen_test_work(unsigned int i, unsigned int chip_under_test_num, unsigned int * data)
+static inline unsigned int api_gen_test_work(unsigned int i, unsigned int chip_under_test_num, unsigned int * data)
 {
 	unsigned int tmp = 0;
 	int j;
@@ -66,7 +66,7 @@ unsigned int api_gen_test_work(unsigned int i, unsigned int chip_under_test_num,
 	return tmp + 0x18000;
 }
 
-void api_set_num(unsigned int ch_num, unsigned int chip_num)
+static inline void api_set_num(unsigned int ch_num, unsigned int chip_num)
 {
 	unsigned int tmp;
 	tmp = readl(&api->sck) & 0xff;
@@ -74,11 +74,17 @@ void api_set_num(unsigned int ch_num, unsigned int chip_num)
 	writel(tmp, &api->sck);
 }
 
-void api_set_sck(unsigned int spi_speed)
+static inline void api_set_sck(unsigned int spi_speed)
 {
 	unsigned int tmp;
 	tmp = (readl(&api->sck) & 0xffff0000) | spi_speed;
 	writel(tmp, &api->sck);
+}
+
+void api_initial(unsigned int ch_num, unsigned int chip_num, unsigned int spi_speed, unsigned int timeout)
+{
+	api_set_num(ch_num, chip_num);
+	api_set_sck(spi_speed);
 }
 
 void api_set_timeout(unsigned int timeout)
@@ -89,12 +95,6 @@ void api_set_timeout(unsigned int timeout)
 void api_set_flush()
 {
 	writel(0x2, &api->state);
-}
-
-void api_initial(unsigned int ch_num, unsigned int chip_num, unsigned int spi_speed, unsigned int timeout)
-{
-	api_set_num(ch_num, chip_num);
-	api_set_sck(spi_speed);
 }
 
 unsigned int api_get_tx_cnt()
@@ -131,7 +131,7 @@ void api_wait_done(unsigned int ch_num, unsigned int chip_num)
 		;
 }
 
-unsigned int api_verify_nonce(unsigned int ch_num, unsigned int chip_num, unsigned int chip_under_test_num, unsigned int verify_on, unsigned int target_nonce)
+static inline unsigned int api_verify_nonce(unsigned int ch_num, unsigned int chip_num, unsigned int chip_under_test_num, unsigned int verify_on, unsigned int target_nonce)
 {
 	unsigned int i, j, need_verify;
 	unsigned int rx_data[4];
@@ -177,19 +177,6 @@ unsigned int api_asic_test(unsigned int ch_num, unsigned int chip_num, unsigned 
 		}
 	}
 	return pass_cal_num;
-}
-
-void sft_led(unsigned char data)
-{
-	int i;
-	unsigned int tmp = 0;
-	tmp = readl(0x80000624) & 0xfffffffc;
-	for (i = 0; i < 8; i++) {
-		writel((tmp & 0xfffffffc) | (data & 1)    , 0x80000624);//clk low
-		writel((tmp & 0xfffffffc) | (data & 1) | 2, 0x80000624);//clk high
-		writel((tmp & 0xfffffffc) | (data & 1)    , 0x80000624);//clk low
-		data = data >> 1;
-	}
 }
 
 int api_send_work(struct work *w)

@@ -118,6 +118,19 @@ void gpio_reset_asic()
 	delay(100);
 }
 
+void sft_led(uint8_t data)
+{
+	int i;
+	unsigned int tmp = 0;
+	tmp = readl(&gpio->reg) & 0xfffffffc;
+	for (i = 0; i < 8; i++) {
+		writel((tmp & 0xfffffffc) | (data & 1)    , &gpio->reg); /* clk low */
+		writel((tmp & 0xfffffffc) | (data & 1) | 2, &gpio->reg); /* clk high */
+		writel((tmp & 0xfffffffc) | (data & 1)    , &gpio->reg); /* clk low */
+		data = data >> 1;
+	}
+}
+
 int read_power_good()
 {
 	return (readl(&gpio->reg)) >> 16 & 0x3ff;

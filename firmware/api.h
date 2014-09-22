@@ -16,12 +16,5 @@ void api_get_rx_fifo(unsigned int *data);
 
 int api_send_work(struct work *w);
 
-unsigned int api_asic_test(
-unsigned int ch_num, 
-unsigned int chip_num,
-unsigned int cal_core_num
-	);
-
-void sft_led(unsigned char data);
-
+unsigned int api_asic_test(unsigned int ch_num, unsigned int chip_num, unsigned int cal_core_num);
 #endif	/* _API_H_ */

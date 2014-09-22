@@ -10,6 +10,8 @@
 #define _DEFINES_H_
 
 #define DEBUG
+#define DEBUG_STRATUM
+
 
 #ifdef DEBUG
 void hexdump(const uint8_t *p, unsigned int len);

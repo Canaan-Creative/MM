@@ -163,7 +163,9 @@ void miner_gen_nonce2_work(struct mm_work *mw, uint32_t nonce2, struct work *wor
 	memcpy(merkle_sha, merkle_root, 32);
 
 #ifdef DEBUG_STRATUM
+	debug32("MR:\n");
 	hexdump(merkle_root, 32);
+	debug32("CB:\n");
 	hexdump(mw->coinbase, mw->coinbase_len);
 #endif
 
@@ -173,7 +175,7 @@ void miner_gen_nonce2_work(struct mm_work *mw, uint32_t nonce2, struct work *wor
 		memcpy(merkle_sha, merkle_root, 32);
 
 #ifdef DEBUG_STRATUM
-		debug32("DEBUG: M: \n");
+		debug32("MR[%d]: \n", i);
 		hexdump(merkle_root, 32);
 #endif
 
@@ -183,7 +185,7 @@ void miner_gen_nonce2_work(struct mm_work *mw, uint32_t nonce2, struct work *wor
 	flip32(swap32, data32);
 
 #ifdef DEBUG_STRATUM
-	debug32("Work: 3 hexdump\n");
+	debug32("MR:\n");
 	hexdump(merkle_root, 32);
 #endif
 
@@ -195,7 +197,7 @@ void miner_gen_nonce2_work(struct mm_work *mw, uint32_t nonce2, struct work *wor
 	hexdump(work->header, 128);
 #endif
 
-	debug32("Work: nonce2 %08x\n", work->nonce2);
+	debug32("W: N2 %08x\n", work->nonce2);
 	calc_midstate(mw, work);
 
 	memcpy(work_t, work->data, 44);
