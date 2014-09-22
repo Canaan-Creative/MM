@@ -98,9 +98,11 @@ static void encode_pkg(uint8_t *p, int type, uint8_t *buf, unsigned int len)
 		break;
 	case AVA2_P_STATUS:
 		tmp = read_temp();
+		tmp |= tmp << 16;
 		memcpy(data + 0, &tmp, 4);
 
 		tmp = read_fan();
+		tmp |= tmp << 16;
 		memcpy(data + 4, &tmp, 4);
 
 		tmp = get_asic_freq();
@@ -443,7 +445,7 @@ int main(int argv, char **argc)
 			g_local_work = 0;
 			g_hw_work = 0;
 
-			adjust_fan(0x1ff);
+			adjust_fan(0x2ff);
 			set_voltage(ASIC_0V);
 
 			iic_rx_reset();

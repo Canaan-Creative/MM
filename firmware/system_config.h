@@ -9,11 +9,7 @@
 #ifndef _SYSTEM_CONFIG_H_
 #define _SYSTEM_CONFIG_H_
 
-#define AVA2_DEFAULT_MINERS	5
-#define ASIC_COUNT		10
-#define ASIC_FREQUENCY	400 /* MHz */
-#define ASIC_CORE_COUNT	768
-
+#define ASIC_FREQUENCY	200 /* MHz */
 #define ASIC_CORETEST_VOLT	0x8100 /* 0.7V */
 
 #define ASIC_0V	0x8f00
