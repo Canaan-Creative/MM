@@ -149,3 +149,44 @@ void sft_led(unsigned char data){
 		data = data >> 1;
 	}
 }
+
+unsigned int api_set_cpm(
+unsigned int NR,
+unsigned int NF,
+unsigned int OD,
+unsigned int NB,
+unsigned int div
+){
+/*
+	Example:
+
+        NR = 1; NF = 24; OD = 1; NB = 24; div = 2;//300MHz
+        NR = 1; NF = 16; OD = 1; NB = 16; div = 1;//400MHz
+        NR = 1; NF = 20; OD = 1; NB = 20; div = 1;//500MHz
+        NR = 1; NF = 16; OD = 1; NB = 16; div = 2;//200MHz
+        data[22] = cpm_cfg(NR, NF, OD, NB, div);
+*/
+	unsigned int cpm = 0;
+	unsigned int div_loc = 0;
+	unsigned int NR_sub;
+	unsigned int NF_sub;
+	unsigned int OD_sub;
+	unsigned int NB_sub;
+	NR_sub = NR - 1;
+	NF_sub = NF - 1;
+	OD_sub = OD - 1;
+	NB_sub = NB - 1;
+	
+	if(div == 1  ) div_loc = 0;
+	if(div == 2  ) div_loc = 1;
+	if(div == 4  ) div_loc = 2;
+	if(div == 8  ) div_loc = 3;
+	if(div == 16 ) div_loc = 4;
+	if(div == 32 ) div_loc = 5;
+	if(div == 64 ) div_loc = 6;
+	if(div == 128) div_loc = 7;
+	
+	cpm = 0x7 | (div_loc << 7) | (1<<10) | (NR_sub << 11) | (NF_sub << 15) | (OD_sub << 21) | (NB_sub << 25);
+	
+	return cpm;
+}
