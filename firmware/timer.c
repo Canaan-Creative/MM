@@ -130,7 +130,6 @@ int read_power_good()
 	return (readl(&gpio->reg)) >> 16 & 0x3ff;
 }
 
-#if defined(AVALON3_A3233_MACHINE) || defined(AVALON3_A3233_CARD)
 /* CLKO:
  * 1: enable
  * 0: disable
@@ -139,4 +138,3 @@ int clko_init(uint32_t value)
 {
 	return (writel(value, &clko->reg));
 }
-#endif

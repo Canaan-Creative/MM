@@ -9,32 +9,12 @@
 #ifndef _SYSTEM_CONFIG_H_
 #define _SYSTEM_CONFIG_H_
 
-#define AVALON3_A3233_MACHINE
+#define AVA2_DEFAULT_MINERS	5
+#define ASIC_COUNT		10
+#define ASIC_FREQUENCY	400 /* MHz */
+#define ASIC_CORE_COUNT	768
 
-#ifdef AVALON2_A3255_MACHINE
-  #define AVA2_DEFAULT_MINERS	10
-  #define ASIC_COUNT		7
-  #define ASIC_FREQUENCY	1500 /* GHs */
-  #define ASIC_CORE_COUNT	128
-
-  #define ASIC_CORETEST_VOLT	0x8a00 /* 1V */
-#elif defined(AVALON3_A3233_MACHINE)
-  #define AVA2_DEFAULT_MINERS	5
-  #define ASIC_COUNT		10
-  #define ASIC_FREQUENCY	400 /* MHz */
-  #define ASIC_CORE_COUNT	768
-
-  #define ASIC_CORETEST_VOLT	0x8100 /* 0.7V */
-#elif defined(AVALON3_A3233_CARD)
-  #define AVA2_DEFAULT_MINERS	4
-  #define ASIC_COUNT		5
-  #define ASIC_FREQUENCY	400 /* MHz */
-  #define ASIC_CORE_COUNT	768
-
-  #define ASIC_CORETEST_VOLT	0x8100 /* 0.7V */
-#else
-  #error "Please configure the target"
-#endif
+#define ASIC_CORETEST_VOLT	0x8100 /* 0.7V */
 
 #define ASIC_0V	0x8f00
 
@@ -61,9 +41,7 @@
 #define SHIFTER_BASE		(0x80000614)
 #define TIMER_BASE		(0x80000620)
 #define GPIO_BASE		(0x80000624)
-#if defined(AVALON3_A3233_MACHINE) || defined(AVALON3_A3233_CARD)
-  #define CLKO_BASE		(0x80000628)
-#endif
+#define CLKO_BASE		(0x80000628)
 #define IIC_BASE		(0x80000700)
 #define DNA_BASE		(0x80000710)
 
@@ -178,11 +156,9 @@ struct lm32_gpio {
 	volatile unsigned int reg; /* GPIO register */
 };
 
-#if defined(AVALON3_A3233_MACHINE) || defined(AVALON3_A3233_CARD)
 struct lm32_clko {
 	volatile unsigned int reg; /* CLK output register */
 };
-#endif
 
 /* IIC */
 #define LM32_IIC_CR_RX_CNT		(0x1FF)

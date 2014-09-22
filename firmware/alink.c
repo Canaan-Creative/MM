@@ -16,13 +16,7 @@
 #include "miner.h"
 #include "timer.h"
 
-#if defined(AVALON2_A3255_MACHINE)
-  #define MODULE_ENABLE 0x3ff
-#elif defined(AVALON3_A3233_MACHINE)
-  #define MODULE_ENABLE 0x1f
-#elif defined(AVALON3_A3233_CARD)
-  #define MODULE_ENABLE 0xf
-#endif
+#define MODULE_ENABLE 0x1f
 
 static struct lm32_alink *alink = (struct lm32_alink *)ALINK_BASE;
 
@@ -154,46 +148,6 @@ void alink_flush_fifo()
 	delay(1);
 }
 
-#if defined(AVALON2_A3255_MACHINE)
-static void asic_test_work(int chip, int core, int gate)
-{
-	uint32_t msg_blk[23];
-	int i;
-
-	msg_blk[22] = 0x220f1dbd;	/* a2 */
-
-	msg_blk[21] = 0xd8f8ef67;	/* Midstat */
-	msg_blk[20] = 0x12146495;
-	msg_blk[19] = 0xc44192c0;
-	msg_blk[18] = 0x7145fd6d;
-	msg_blk[17] = 0x974bf4bb;
-	msg_blk[16] = 0x8f41371d;
-	msg_blk[15] = 0x65c90d1e;
-	msg_blk[14] = 0x9cb18a17;
-
-	msg_blk[13] = 0xfa77fe7d;	/* e0 */
-	msg_blk[12] = 0x12cdfd7b;	/* e1 */
-	msg_blk[11] = 0x81677107;	/* e2 */
-	msg_blk[10] = 0x62a5f25c;	/* a0 */
-	msg_blk[9]  = 0x05b168ae;	/* a1 */
-
-	msg_blk[8]  = 0x087e051a;	/* Data */
-	msg_blk[7]  = 0x88517050;
-	msg_blk[6]  = 0x4ac1d001;
-
-	msg_blk[5]  = 0x00000000;	/* Default Clock */
-
-	msg_blk[4]  = 0x82600000 | (gate ? 0xb : 0x7);
-	msg_blk[3]  = (gate ? 0x2fffffff : 0x0000ffff);	/* The real timeout is 0x75d1 */
-	msg_blk[2]  = 0x24924925;	/* Step for 7 chips */
-	msg_blk[1]  = (0x010f1036 ^ core) - 5 * 128;
-	msg_blk[0]  = chip;		/* Chip index */
-
-	for (i = 0; i < 23; i++) {
-		writel(msg_blk[i], &alink->tx);
-	}
-}
-#elif defined(AVALON3_A3233_MACHINE)
 const uint32_t test_data[16][18] = {
 	{0x4ac1d001, 0x89517050, 0x087e051a, 0x06b168ae,
 	 0x62a5f25c, 0x00639107, 0x13cdfd7b, 0xfa77fe7d,
@@ -315,7 +269,6 @@ static uint32_t asic_test_work(int chip, int core, int gate)
 
 	return send_nonce + 0x6000;
 }
-#endif
 
 #ifdef DEBUG
 void alink_buf_status()
@@ -369,12 +322,8 @@ void alink_asic_test(int core_start, int core_end, int full_test)
 		for (j = 0; j < ASIC_COUNT; j++) {
 			core = 0;
 			for (k = core_start; k < core_end; k++) {
-#if defined(AVALON2_A3255_MACHINE)
-				asic_test_work(j, k, 0);
-#elif defined(AVALON3_A3233_MACHINE)
 				uint32_t exp_nonce;
 				exp_nonce = asic_test_work(j, k, 0);
-#endif
 
 				while (!alink_txbuf_count())
 					;
@@ -385,11 +334,7 @@ void alink_asic_test(int core_start, int core_end, int full_test)
 				if (!alink_rxbuf_empty()) {
 					alink_read_result(&result);
 					memcpy(&nonce, result.nonce, 4);
-#if defined(AVALON2_A3255_MACHINE)
-					if (nonce != 0x010f1036) {
-#elif defined(AVALON3_A3233_MACHINE)
 					if (nonce != exp_nonce) {
-#endif
 						core++;
 					}
 				} else

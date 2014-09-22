@@ -311,12 +311,10 @@ static int read_result(struct mm_work *mw, struct result *ret)
 	if (nonce == NONCE_DIFF) {
 		data = ret_buf[ret_produce];
 		ret_produce = (ret_produce + 1) & RET_RINGBUFFER_MASK_RX;
-#if defined(AVALON3_A3233_MACHINE) || defined(AVALON3_A3233_CARD)
 		uint32_t tmp;
 		memcpy(&tmp, ret->nonce, 4);
 		tmp = tmp - 0x1000 + 0x180;
 		memcpy(ret->nonce, &tmp, 4);
-#endif
 		memcpy(data, (uint8_t *)ret, 20);
 		memcpy(data + 20, mw->job_id, 4); /* Attach the job_id */
 	}
@@ -407,12 +405,11 @@ int main(int argv, char **argc)
 	irq_enable(1);
 
 	iic_init();
+	iic_addr_set(g_module_id);
 
 	/* Dump the FPGA DNA */
 	iic_dna_read(g_dna);
 	hexdump(g_dna, 8);
-
-	iic_addr_set(g_module_id);
 
 	debug32("%d:MM-%s,%dC\n", g_module_id, MM_VERSION, read_temp());
 

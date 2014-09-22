@@ -70,9 +70,7 @@ int set_voltage(uint32_t value)
 	writel(0x3, &sft->reg);
 	delay(VOLTAGE_DELAY);
 
-#if defined(AVALON3_A3233_MACHINE) || defined(AVALON3_A3233_CARD)
 	gpio_reset_asic();
-#endif
 
 	return 1;
 }
