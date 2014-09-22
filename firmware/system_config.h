@@ -36,7 +36,7 @@
 #define UART0_BASE		(0x80000100)
 #define UART1_BASE		(0x80000300)
 #define SHA256_BASE		(0x80000400)
-#define ALINK_BASE		(0x80000500)
+#define API_BASE		(0x80000500)
 #define TWIPWM_BASE		(0x80000600)
 #define SHIFTER_BASE		(0x80000614)
 #define TIMER_BASE		(0x80000620)
@@ -101,20 +101,13 @@ struct lm32_sha256 {
 };
 
 
-/* ALINK */
-#define LM32_ALINK_STATE_TXFULL	(1 << 0)
-#define LM32_ALINK_STATE_FLUSH	(1 << 1)
-#define LM32_ALINK_STATE_TXCOUNT	(0x00007FF0)
-#define LM32_ALINK_STATE_RXEMPTY	(1 << 16)
-#define LM32_ALINK_STATE_RXCOUNT	(0x3FF00000)
-#define LM32_ALINK_STATE_TEST	(1 << 31)
-
-struct lm32_alink {
+/* API */
+struct lm32_api {
 	volatile unsigned int tx;
-	volatile unsigned int state;	/* Read only */
-	volatile unsigned int en;
-	volatile unsigned int busy;	/* Read only */
 	volatile unsigned int rx;
+	volatile unsigned int state;
+	volatile unsigned int timeout;
+	volatile unsigned int sck;
 };
 
 /* TWI PWM */

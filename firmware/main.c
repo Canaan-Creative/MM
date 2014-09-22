@@ -418,14 +418,19 @@ int main(int argv, char **argc)
 	g_new_stratum = 0;
 
 	/* Test part of ASIC cores */
-	set_voltage(ASIC_CORETEST_VOLT);
+	set_voltage(0x8100);
 	gpio_led(0xf);
-	sft_led(0x01);
-
-	int ret;
-	ret = api_asic_test(1, 5, 200);
-	debug32("A.T: %d\n", ret);
 	sft_led(0xff);
+
+#if 1
+	int ret;
+	int m = 3;
+	int all = m*4*248*16;
+	while (1) {
+		ret = api_asic_test(m, 4, 248*16);
+		debug32("A.T: %d / %d = %d%%\n", all-ret, all, ((all-ret)*100/all));
+	}
+#endif
 
 	set_voltage(ASIC_0V);
 
@@ -449,7 +454,7 @@ int main(int argv, char **argc)
 		if (!g_new_stratum)
 			continue;
 
-		if (api_get_tx_cnt() < (24 * 5)) {
+		if (api_get_tx_cnt() < (23 * 5)) {
 			if (g_clock_conf_count < 100)
 				g_clock_conf_count++;
 
