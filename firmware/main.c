@@ -41,7 +41,6 @@ static int g_local_work = 0;
 static int g_hw_work = 0;
 
 uint32_t g_clock_conf_count = 0;
-uint16_t temperature1[10] = {0};
 
 static uint32_t g_nonce2_offset = 0;
 static uint32_t g_nonce2_range = 0xffffffff;
@@ -98,10 +97,10 @@ static void encode_pkg(uint8_t *p, int type, uint8_t *buf, unsigned int len)
 		memcpy(data, buf, len);
 		break;
 	case AVA2_P_STATUS:
-		tmp = read_temp1(temperature1);
+		tmp = read_temp();
 		memcpy(data + 0, &tmp, 4);
 
-		tmp = read_fan0() << 16 | read_fan1();
+		tmp = read_fan();
 		memcpy(data + 4, &tmp, 4);
 
 		tmp = get_asic_freq();
@@ -248,7 +247,7 @@ static int decode_pkg(uint8_t *p, struct mm_work *mw)
 	case AVA2_P_REQUIRE:
 		break;
 	case AVA2_P_SET:
-		if (read_temp1(temperature1) >= IDLE_TEMP)
+		if (read_temp() >= IDLE_TEMP)
 			break;
 
 		memcpy(&tmp, data, 4);
@@ -397,7 +396,6 @@ int main(int argv, char **argc)
 	struct mm_work mm_work;
 	struct work work;
 	struct result result;
-	int i;
 
 	adjust_fan(0x1ff);		/* Set the fan to 50% */
 	alink_flush_fifo();
@@ -416,11 +414,7 @@ int main(int argv, char **argc)
 
 	iic_addr_set(g_module_id);
 
-	for (i = 0; i < 10; i++)
-		read_temp1(temperature1);
-
-	debug32("%d:MM-%s\n", g_module_id, MM_VERSION);
-	debug32("T:%d\n", read_temp1(temperature1));
+	debug32("%d:MM-%s,%dC\n", g_module_id, MM_VERSION, read_temp());
 
 #ifdef DEBUG_IIC_TEST
 	extern void iic_test(void);
@@ -443,7 +437,7 @@ int main(int argv, char **argc)
 
 		wdg_feed((CPU_FREQUENCY / 1000) * 2);
 		if ((!timer_read(0) && g_new_stratum) ||
-		    read_temp1(temperature1) >= IDLE_TEMP) {
+		    read_temp() >= IDLE_TEMP) {
 			g_new_stratum = 0;
 			g_local_work = 0;
 			g_hw_work = 0;

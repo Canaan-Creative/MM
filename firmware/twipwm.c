@@ -93,14 +93,9 @@ void reset()
 	wdg_feed(8);
 }
 
-uint32_t read_fan0()
+uint32_t read_fan()
 {
 	return readl(&tp->fan0) * 30;
-}
-
-uint32_t read_fan1()
-{
-	return readl(&tp->fan1) * 30;
 }
 
 void adjust_fan(uint32_t pwm)
@@ -119,24 +114,7 @@ void adjust_fan(uint32_t pwm)
 	write_pwm(value);
 }
 
-uint16_t read_temp1(uint16_t *temperature)
+uint16_t read_temp()
 {
-	int i;
-	uint32_t sum = 0;
-	uint16_t min = temperature[0];
-	uint16_t max = temperature[0];
-	uint16_t temp[10] = {0};
-
-	memcpy(temp, temperature + 1, 9 * sizeof(uint16_t));
-	temp[9] = (twi_read_2byte(LM32_TWI_REG_TEMP1) >> 4) / 16;
-	memcpy(temperature, temp, 10 * sizeof(uint16_t));
-	for(i = 0; i < 10; i++)
-	{
-		if(max < temperature[i])
-			max = temperature[i];
-		if(min > temp[i])
-			min = temperature[i];
-		sum = sum + temperature[i];
-	}
-	return (uint16_t)((sum - max - min) / 8);
+	return (twi_read_2byte(LM32_TWI_REG_TEMP1) >> 4) / 16;
 }

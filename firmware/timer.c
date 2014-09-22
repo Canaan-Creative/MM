@@ -90,10 +90,12 @@ void timer1_isr(void)
 }
 
 /* GPIO */
+#if 0
 void gpio_frond_led(uint8_t)
 {
 
 }
+#endif
 
 void gpio_led(uint8_t led)
 {
@@ -125,13 +127,7 @@ void gpio_reset_asic()
 
 int read_power_good()
 {
-#if defined(AVALON3_A3233_MACHINE)
-	return (readl(&gpio->reg) >> 7) & 0x1f;
-#elif defined(AVALON3_A3233_CARD)
-	return (readl(&gpio->reg) >> 10) & 0x3;
-#elif defined(AVALON4_A3222)
 	return (readl(&gpio->reg)) >> 16 & 0x3ff;
-#endif
 }
 
 #if defined(AVALON3_A3233_MACHINE) || defined(AVALON3_A3233_CARD)
