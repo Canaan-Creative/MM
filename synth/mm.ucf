@@ -6,9 +6,9 @@ NET "uart_debugSIN"  LOC = R9; # DATA1_3
 NET "uart_debugSOUT" LOC = T9; # DATA1_4
 
 # I2C for Work
-NET "I2C_SCL" LOC = T8; # DATA1_5
+NET "I2C_SCL" LOC = C9; # FP1_5
 NET "I2C_SCL" PULLUP;
-NET "I2C_SDA" LOC = T7; # DATA1_6
+NET "I2C_SDA" LOC = D8; # FP1_6
 NET "I2C_SDA" PULLUP;
 
 # TWI for TMP
