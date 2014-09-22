@@ -1,0 +1,20 @@
+/*
+ * Author: Xiangfu Liu <xiangfu@openmobilefree.net>
+ * Bitcoin:	1CanaaniJzgps8EV6Sfmpb7T8RutpaeyFn
+ *
+ * This is free and unencumbered software released into the public domain.
+ * For details see the UNLICENSE file at the root of the source tree.
+ */
+
+#ifndef _API_H_
+#define _API_H_
+
+unsigned int api_asic_test(
+unsigned int ch_num, 
+unsigned int chip_num,
+unsigned int cal_core_num
+	);
+
+void sft_led(unsigned char data);
+
+#endif	/* _API_H_ */
