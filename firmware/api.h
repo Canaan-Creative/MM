@@ -9,6 +9,13 @@
 #ifndef _API_H_
 #define _API_H_
 
+unsigned int api_get_tx_cnt();
+unsigned int api_get_rx_cnt();
+
+void api_get_rx_fifo(unsigned int *data);
+
+int api_send_work(struct work *w);
+
 unsigned int api_asic_test(
 unsigned int ch_num, 
 unsigned int chip_num,

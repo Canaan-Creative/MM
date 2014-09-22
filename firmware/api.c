@@ -11,6 +11,7 @@
 #include "minilibc.h"
 #include "system_config.h"
 #include "defines.h"
+#include "miner.h"
 #include "io.h"
 
 static int test_data[16][18] = {
@@ -366,12 +367,14 @@ void api_initial(unsigned int ch_num, unsigned int chip_num, unsigned int spi_sp
 	api_set_sck(spi_speed);
 }
 
-unsigned int api_get_tx_cnt(){
+unsigned int api_get_tx_cnt()
+{
 	unsigned int tmp = (readl(0x80000508) >> 2) && 0x3ff;
 	return tmp;
 }
 
-unsigned int api_get_rx_cnt(){
+unsigned int api_get_rx_cnt()
+{
 	unsigned int tmp = (readl(0x80000508) >> 20) & 0x1ff;
 	return tmp;
 }
@@ -383,7 +386,8 @@ void api_set_tx_fifo(unsigned int * data){
 	}
 }
 
-void api_get_rx_fifo(unsigned int * data){
+void api_get_rx_fifo(unsigned int * data)
+{
 	int i;
 	for(i = 0; i < 4; i++){
 		data[i] = readl(0x80000504);
@@ -499,4 +503,56 @@ unsigned int div
 	cpm = 0x7 | (div_loc << 7) | (1<<10) | (NR_sub << 11) | (NF_sub << 15) | (OD_sub << 21) | (NB_sub << 25);
 	
 	return cpm;
+}
+
+
+int api_send_work(struct work *w)
+{
+	uint32_t tmp;
+	int i;
+
+	writel(0, 0x80000500);
+
+	memcpy((uint8_t *)(&tmp), w->a2, 4);
+	writel(tmp, 0x80000500);
+
+	for (i = 0; i <= 28; i += 4) {
+		memcpy((uint8_t *)(&tmp), w->data + i, 4);
+		writel(tmp, 0x80000500);
+	}
+
+	memcpy((uint8_t *)(&tmp), w->e0, 4);
+	writel(tmp, 0x80000500);
+	memcpy((uint8_t *)(&tmp), w->e1, 4);
+	writel(tmp, 0x80000500);
+	memcpy((uint8_t *)(&tmp), w->e2, 4);
+	writel(tmp, 0x80000500);
+	memcpy((uint8_t *)(&tmp), w->a0, 4);
+	writel(tmp, 0x80000500);
+	memcpy((uint8_t *)(&tmp), w->a1, 4);
+	writel(tmp, 0x80000500);
+
+	/* Task data */
+	for (i = 0; i <= 8; i += 4) {
+		memcpy((uint8_t *)(&tmp), w->data + 32 + i, 4);
+		writel(tmp, 0x80000500);
+	}
+
+	/* The chip configure information */
+	memcpy((uint8_t *)(&tmp), w->task_id + 4, 4);
+	writel(tmp, 0x80000500);
+
+	memcpy((uint8_t *)(&tmp), w->task_id, 4);
+	writel(tmp, 0x80000500);
+
+	memcpy((uint8_t *)(&tmp), w->clock + 8, 4);
+	writel(tmp, 0x80000500);
+
+	memcpy((uint8_t *)(&tmp), w->clock + 4, 4);
+	writel(tmp, 0x80000500);
+
+	memcpy((uint8_t *)(&tmp), w->clock, 4);
+	writel(tmp, 0x80000500);
+
+	return 0;
 }

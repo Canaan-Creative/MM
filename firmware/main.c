@@ -20,7 +20,6 @@
 #include "iic.h"
 #include "miner.h"
 #include "sha256.h"
-#include "alink.h"
 #include "twipwm.h"
 #include "shifter.h"
 #include "timer.h"
@@ -185,12 +184,12 @@ static int decode_pkg(uint8_t *p, struct mm_work *mw)
 		g_new_stratum = 0;
 		g_local_work = 0;
 		g_hw_work = 0;
-		alink_flush_fifo();
+		/* TODO: Flash api fifo */
 		gpio_led(0);
 		break;
 	case AVA2_P_STATIC:
 		g_new_stratum = 0;
-		alink_flush_fifo();
+		/* TODO: Flash api fifo */
 		memcpy(&mw->coinbase_len, data, 4);
 		memcpy(&mw->nonce2_offset, data + 4, 4);
 		memcpy(&mw->nonce2_size, data + 8, 4);
@@ -263,7 +262,7 @@ static int decode_pkg(uint8_t *p, struct mm_work *mw)
 		memcpy(&g_nonce2_range, data + 16, 4);
 
 		mw->nonce2 = g_nonce2_offset + (g_nonce2_range / AVA2_DEFAULT_MODULES) * g_module_id;
-		alink_flush_fifo();
+		/* TODO: Flash api fifo */
 
 		g_new_stratum = 1;
 		break;
@@ -293,14 +292,10 @@ static int read_result(struct mm_work *mw, struct result *ret)
 	uint8_t *data;
 	int nonce;
 
-	if (alink_rxbuf_empty())
+	if (!api_get_rx_cnt())
 		return 0;
 
-#ifdef DEBUG
-	alink_buf_status();
-#endif
-
-	alink_read_result(ret);
+	api_get_rx_fifo((unsigned int *)ret);
 	g_local_work++;
 
 	nonce = test_nonce(mw, ret);
@@ -313,9 +308,9 @@ static int read_result(struct mm_work *mw, struct result *ret)
 		data = ret_buf[ret_produce];
 		ret_produce = (ret_produce + 1) & RET_RINGBUFFER_MASK_RX;
 		uint32_t tmp;
-		memcpy(&tmp, ret->nonce, 4);
+		memcpy(&tmp, ret->nonce0, 4);
 		tmp = tmp - 0x1000 + 0x180;
-		memcpy(ret->nonce, &tmp, 4);
+		memcpy(ret->nonce0, &tmp, 4);
 		memcpy(data, (uint8_t *)ret, 20);
 		memcpy(data + 20, mw->job_id, 4); /* Attach the job_id */
 	}
@@ -397,7 +392,7 @@ int main(int argv, char **argc)
 	struct result result;
 
 	adjust_fan(0x1ff);		/* Set the fan to 50% */
-	alink_flush_fifo();
+	/* TODO: Flash api fifo */
 
 	wdg_init(1);
 	wdg_feed((CPU_FREQUENCY / 1000) * 2); /* Configure the wdg to ~2 second, or it will reset FPGA */
@@ -429,12 +424,10 @@ int main(int argv, char **argc)
 
 	int ret;
 	ret = api_asic_test(1, 5, 200);
-	debug32("RET: %d\n", ret);
+	debug32("A.T: %d\n", ret);
 	sft_led(0xff);
 
-//	alink_asic_test(0, 2, 0);
-//	alink_asic_idle();
-//	set_voltage(ASIC_0V);
+	set_voltage(ASIC_0V);
 
 	while (1) {
 		get_pkg(&mm_work);
@@ -445,11 +438,10 @@ int main(int argv, char **argc)
 			g_new_stratum = 0;
 			g_local_work = 0;
 			g_hw_work = 0;
-#if 0
-			alink_asic_idle();
+
 			adjust_fan(0x1ff);
 			set_voltage(ASIC_0V);
-#endif
+
 			iic_rx_reset();
 			iic_tx_reset();
 		}
@@ -457,7 +449,7 @@ int main(int argv, char **argc)
 		if (!g_new_stratum)
 			continue;
 
-		if (alink_txbuf_count() < (24 * 5)) {
+		if (api_get_tx_cnt() < (24 * 5)) {
 			if (g_clock_conf_count < 100)
 				g_clock_conf_count++;
 
@@ -468,7 +460,7 @@ int main(int argv, char **argc)
 
 			mm_work.nonce2++;
 			miner_init_work(&mm_work, &work);
-			alink_send_work(&work);
+			api_send_work(&work);
 		}
 
 		while (read_result(&mm_work, &result)) {

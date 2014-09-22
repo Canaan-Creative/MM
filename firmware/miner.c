@@ -16,7 +16,6 @@
 #include "uart.h"
 #include "miner.h"
 #include "sha256.h"
-#include "alink.h"
 #include "twipwm.h"
 
 static uint32_t g_asic_freq = ASIC_FREQUENCY;
@@ -91,103 +90,23 @@ extern uint32_t g_clock_conf_count;
 
 void miner_init_work(struct mm_work *mw, struct work *work)
 {
-	int timeout;
-	int asic_freq;
-
 	memcpy(work->task_id, (uint8_t *)(&mw->pool_no), 4);
 	memcpy(work->task_id + 4, (uint8_t *)(&work->nonce2), 4);
 
-	work->clock[4] = 0x00;
+	work->clock[0] = 0x01;
+	work->clock[1] = 0x00;
+	work->clock[2] = 0x00;
+	work->clock[3] = 0x00; 
+
+	work->clock[4] = 0x01;
 	work->clock[5] = 0x00;
-	work->clock[6] = 0x01;
-	work->clock[7] = 0x74;
+	work->clock[6] = 0x00;
+	work->clock[7] = 0x00;
 
-	timeout = 4294967 / (g_asic_freq * (1024 / 65) * ASIC_COUNT); /* Time in ms */
-	timeout -= 4;			 /* Some manual fix for ASIC */
-	timeout *= CPU_FREQUENCY / 1000;     /* Time in cpu clock */
-	memcpy(work->timeout, &timeout, 4);
-
-	/* 768 / 65 * FREQ = HASHRATE */
-	if (g_asic_freq == 200 ) asic_freq = 0xb3e00007;
-	else if (g_asic_freq == 225 ) asic_freq = 0xb4600007;
-	else if (g_asic_freq == 250 ) asic_freq = 0xb4e00007;
-	else if (g_asic_freq == 275 ) asic_freq = 0xb5600007;
-	else if (g_asic_freq == 300 ) asic_freq = 0xb5e00007;
-	else if (g_asic_freq == 325 ) asic_freq = 0xb6600007;
-	else if (g_asic_freq == 350 ) asic_freq = 0xb6e00007;
-	else if (g_asic_freq == 375 ) asic_freq = 0xa3a00007;
-	else if (g_asic_freq == 375 ) asic_freq = 0xb7600007;
-	else if (g_asic_freq == 400 ) asic_freq = 0xa3e00007;
-	else if (g_asic_freq == 425 ) asic_freq = 0xa4200007;
-	else if (g_asic_freq == 450 ) asic_freq = 0xa4600007;
-	else if (g_asic_freq == 475 ) asic_freq = 0xa4a00007;
-	else if (g_asic_freq == 500 ) asic_freq = 0xa4e00007;
-	else if (g_asic_freq == 506 ) asic_freq = 0x14e10007;
-	else if (g_asic_freq == 518 ) asic_freq = 0x15010007;
-	else if (g_asic_freq == 525 ) asic_freq = 0x12800007;
-	else if (g_asic_freq == 550 ) asic_freq = 0x12a00007;
-	else if (g_asic_freq == 575 ) asic_freq = 0xa5a00007;
-	else if (g_asic_freq == 593 ) asic_freq = 0x15c10007;
-	else if (g_asic_freq == 600 ) asic_freq = 0x15e10007;
-	else if (g_asic_freq == 606 ) asic_freq = 0x15e10007;
-	else if (g_asic_freq == 625 ) asic_freq = 0xa6200007;
-	else if (g_asic_freq == 650 ) asic_freq = 0xa6600007;
-	else if (g_asic_freq == 675 ) asic_freq = 0xa6a00007;
-	else if (g_asic_freq == 700 ) asic_freq = 0xa6e00007;
-	else if (g_asic_freq == 725 ) asic_freq = 0xa7200007;
-	else if (g_asic_freq == 750 ) asic_freq = 0x93a00007;
-	else if (g_asic_freq == 750 ) asic_freq = 0xa7600007;
-	else if (g_asic_freq == 775 ) asic_freq = 0x93c00007;
-	else if (g_asic_freq == 800 ) asic_freq = 0x93e00007;
-	else if (g_asic_freq == 825 ) asic_freq = 0x94000007;
-	else if (g_asic_freq == 850 ) asic_freq = 0x94200007;
-	else if (g_asic_freq == 875 ) asic_freq = 0x94400007;
-	else if (g_asic_freq == 900 ) asic_freq = 0x94600007;
-	else if (g_asic_freq == 925 ) asic_freq = 0x94800007;
-	else if (g_asic_freq == 950 ) asic_freq = 0x94a00007;
-	else if (g_asic_freq == 975 ) asic_freq = 0x94c00007;
-	else if (g_asic_freq == 1000) asic_freq = 0x94e00007;
-	else if (g_asic_freq == 1025) asic_freq = 0x95000007;
-	else if (g_asic_freq == 1050) asic_freq = 0x95200007;
-	else if (g_asic_freq == 1075) asic_freq = 0x95400007;
-	else if (g_asic_freq == 1100) asic_freq = 0x95600007;
-	else if (g_asic_freq == 1125) asic_freq = 0x95800007;
-	else if (g_asic_freq == 1150) asic_freq = 0x95a00007;
-	else if (g_asic_freq == 1175) asic_freq = 0x95c00007;
-	else if (g_asic_freq == 1200) asic_freq = 0x95e00007;
-	else if (g_asic_freq == 1225) asic_freq = 0x96000007;
-	else if (g_asic_freq == 1250) asic_freq = 0x96200007;
-	else if (g_asic_freq == 1275) asic_freq = 0x96400007;
-	else if (g_asic_freq == 1300) asic_freq = 0x96600007;
-	else if (g_asic_freq == 1325) asic_freq = 0x96800007;
-	else if (g_asic_freq == 1350) asic_freq = 0x96a00007;
-	else if (g_asic_freq == 1375) asic_freq = 0x96c00007;
-	else if (g_asic_freq == 1400) asic_freq = 0x96e00007;
-	else if (g_asic_freq == 1425) asic_freq = 0x97000007;
-	else if (g_asic_freq == 1450) asic_freq = 0x97200007;
-	else if (g_asic_freq == 1475) asic_freq = 0x97400007;
-	else if (g_asic_freq == 1500) asic_freq = 0x83a00007;
-	else if (g_asic_freq == 1500) asic_freq = 0x97600007;
-	else if (g_asic_freq == 1525) asic_freq = 0x83a00007;
-	else if (g_asic_freq == 1550) asic_freq = 0x83c00007;
-	else if (g_asic_freq == 1575) asic_freq = 0x83c00007;
-	else if (g_asic_freq == 1600) asic_freq = 0x83e00007;
-	else asic_freq = 0x00000001;
-
-	work->clock[0] = ((asic_freq & 0xff000000) >> 24) & 0x7f;
-	work->clock[1] = (asic_freq & 0x00ff0000) >> 16;
-	work->clock[2] = (asic_freq & 0x0000ff00) >> 8;
-	work->clock[3] = (g_clock_conf_count >= 100) ? 0x1 : 0x7;
-
-	work->step[0] = 0x19;
-	work->step[1] = 0x99;
-	work->step[2] = 0x99;
-	work->step[3] = 0x9a;	/* 2^32 / asic_count + 1:
-				 * 5: 0x33333334
-				 * 6: 0x2aaaaaab
-				 * 7: 0x24924925
-				 *10: 0x1999999a
-				 */
+	work->clock[8] = 0x01;
+	work->clock[9] = 0x00;
+	work->clock[10] = 0x00;
+	work->clock[11] = 0x00;
 }
 
 static void rev(unsigned char *s, size_t l)
@@ -321,7 +240,7 @@ int test_nonce(struct mm_work *mw, struct result *ret)
 	/* Decode nonce2 and nonce */
 	uint32_t nonce2, nonce;
 	memcpy((uint8_t *)(&nonce2), ret->task_id + 4, 4);
-	memcpy((uint8_t *)(&nonce), ret->nonce, 4);
+	memcpy((uint8_t *)(&nonce), ret->nonce0, 4);
 
 	nonce -= 0x1000;
 
