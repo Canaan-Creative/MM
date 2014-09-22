@@ -6,6 +6,11 @@
  * For details see the UNLICENSE file at the root of the source tree.
  */
 
+#include <stdint.h>
+
+#include "minilibc.h"
+#include "system_config.h"
+#include "defines.h"
 #include "io.h"
 
 static int test_data[16][18] = {
@@ -359,7 +364,6 @@ void api_set_flush(){
 void api_initial(unsigned int ch_num, unsigned int chip_num, unsigned int spi_speed, unsigned int timeout){
 	api_set_num(ch_num, chip_num);
 	api_set_sck(spi_speed);
-	api_set_flush();
 }
 
 unsigned int api_get_tx_cnt(){
@@ -368,7 +372,7 @@ unsigned int api_get_tx_cnt(){
 }
 
 unsigned int api_get_rx_cnt(){
-	unsigned int tmp = (readl(0x80000508) >> 20) && 0x1ff;
+	unsigned int tmp = (readl(0x80000508) >> 20) & 0x1ff;
 	return tmp;
 }
 
@@ -387,7 +391,8 @@ void api_get_rx_fifo(unsigned int * data){
 }
 
 void api_wait_done(unsigned int ch_num, unsigned int chip_num){
-	while(api_get_rx_cnt() != (ch_num * chip_num * 4));
+	while(api_get_rx_cnt() != (ch_num * chip_num * 4))
+		;
 }
 
 unsigned int api_verify_nonce(

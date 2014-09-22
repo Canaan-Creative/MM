@@ -425,11 +425,12 @@ int main(int argv, char **argc)
 	/* Test part of ASIC cores */
 	set_voltage(ASIC_CORETEST_VOLT);
 	gpio_led(0xf);
-	sft_led(0xff);
+	sft_led(0x01);
 
 	int ret;
-	ret = api_asic_test(1, 5, 100);
+	ret = api_asic_test(1, 5, 200);
 	debug32("RET: %d\n", ret);
+	sft_led(0xff);
 
 //	alink_asic_test(0, 2, 0);
 //	alink_asic_idle();
