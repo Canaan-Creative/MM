@@ -26,6 +26,7 @@
 #include "timer.h"
 #include "protocol.h"
 #include "crc.h"
+#include "api.h"
 
 #include "hexdump.c"
 
@@ -276,7 +277,7 @@ static int decode_pkg(uint8_t *p, struct mm_work *mw)
 
 		gpio_led(1);
 		set_voltage(ASIC_CORETEST_VOLT);
-		alink_asic_test(0, ASIC_CORE_COUNT, 1);	/* Test all ASIC cores */
+		/* TODO: test asic */
 		set_voltage(ASIC_0V);
 		gpio_led(0);
 		break;
@@ -420,15 +421,20 @@ int main(int argv, char **argc)
 
 	timer_set(0, IDLE_TIME);
 	g_new_stratum = 0;
-#if 0
+
 	/* Test part of ASIC cores */
 	set_voltage(ASIC_CORETEST_VOLT);
-	gpio_led(1);
-	alink_asic_test(0, 2, 0);
+	gpio_led(0xf);
+	sft_led(0xff);
 
-	alink_asic_idle();
-	set_voltage(ASIC_0V);
-#endif
+	int ret;
+	ret = api_asic_test(1, 5, 100);
+	debug32("RET: %d\n", ret);
+
+//	alink_asic_test(0, 2, 0);
+//	alink_asic_idle();
+//	set_voltage(ASIC_0V);
+
 	while (1) {
 		get_pkg(&mm_work);
 

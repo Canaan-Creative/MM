@@ -90,13 +90,6 @@ void timer1_isr(void)
 }
 
 /* GPIO */
-#if 0
-void gpio_frond_led(uint8_t)
-{
-
-}
-#endif
-
 void gpio_led(uint8_t led)
 {
 	uint32_t value;
