@@ -5,7 +5,7 @@ input                 clk               ,
 input                 rst               ,
 
 output [2:0]          reg_state         ,
-input  [24:0]         reg_timeout       ,
+input  [27:0]         reg_timeout       ,
 input  [7:0]          reg_sck           ,
 input  [5:0]          reg_ch_num        ,
 input  [5:0]          reg_chip_num      ,
@@ -228,7 +228,7 @@ api_timer api_timer(
 /*input          */ .clk         (clk         ),
 /*input          */ .rst         (rst         ),
 
-/*input  [24:0]  */ .reg_timeout (reg_timeout ),
+/*input  [27:0]  */ .reg_timeout (reg_timeout ),
 /*input          */ .start       (timer_start ),
 /*output         */ .timeout_busy(timeout_busy)
 );

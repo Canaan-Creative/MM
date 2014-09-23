@@ -29,7 +29,7 @@ output            reg_flush   ,
 input             txfull      ,
 
 input  [2:0]      reg_state   ,
-output reg [24:0] reg_timeout ,
+output reg [27:0] reg_timeout ,
 output reg [7:0]  reg_sck     ,
 output reg [5:0]  reg_ch_num  ,
 output reg [5:0]  reg_chip_num,
@@ -107,7 +107,7 @@ assign reg_flush = |reg_flush_r ;
 wire [31:0] rd_rxfifo = rxfifo_dout[31:0] ;
 
 always @ ( posedge clk ) begin
-	if( api_timeout_wr_en ) reg_timeout[24:0] <= API_DAT_I[24:0];
+	if( api_timeout_wr_en ) reg_timeout[27:0] <= API_DAT_I[27:0];
 	if( api_sck_wr_en     ) reg_sck[7:0]      <= API_DAT_I[7:0];
 	if( api_sck_wr_en     ) reg_ch_num[5:0]   <= API_DAT_I[21:16];
 	if( api_sck_wr_en     ) reg_chip_num[5:0] <= API_DAT_I[29:24];
@@ -123,7 +123,7 @@ always @ ( posedge clk ) begin
 	case( 1'b1 )
 		api_state_rd_en  : API_DAT_O <= rd_state  ;
 		api_rxfifo_rd_en : API_DAT_O <= rd_rxfifo ;
-		api_timeout_rd_en: API_DAT_O <= {7'b0, reg_timeout[24:0]};
+		api_timeout_rd_en: API_DAT_O <= {4'b0, reg_timeout[27:0]};
 		api_sck_rd_en    : API_DAT_O <= {2'h0, reg_chip_num[5:0], 2'b0,reg_ch_num[5:0], 8'h0, reg_sck[7:0]};
 		default: API_DAT_O <= 32'hdeaddead ; 
 	endcase

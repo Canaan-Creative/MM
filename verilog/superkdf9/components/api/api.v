@@ -26,7 +26,7 @@ parameter WORK_LEN = 736/32;
 parameter RX_FIFO_DEPTH = 256;
 
 wire [2:0]          reg_state         ;
-wire [24:0]         reg_timeout       ;
+wire [27:0]         reg_timeout       ;
 wire [7:0]          reg_sck           ;
 wire [5:0]          reg_ch_num        ;
 wire [5:0]          reg_chip_num      ;
@@ -81,7 +81,7 @@ api_slave(
 /*input            */ .txfull      (tx_fifo_full      ),
 
 /*input  [2:0]     */ .reg_state   (reg_state         ),
-/*output reg [24:0]*/ .reg_timeout (reg_timeout       ),
+/*output reg [27:0]*/ .reg_timeout (reg_timeout       ),
 /*output reg [7:0] */ .reg_sck     (reg_sck           ),
 /*output reg [5:0] */ .reg_ch_num  (reg_ch_num        ),
 /*output reg [5:0] */ .reg_chip_num(reg_chip_num      ),
@@ -99,7 +99,7 @@ api_ctrl #(.WORK_LEN(WORK_LEN), .RX_FIFO_DEPTH(RX_FIFO_DEPTH)) api_ctrl(
 /*input                */ .rst               (rst               ),
 
 /*output [2:0]         */ .reg_state         (reg_state         ),
-/*input  [24:0]        */ .reg_timeout       (reg_timeout       ),
+/*input  [27:0]        */ .reg_timeout       (reg_timeout       ),
 /*input  [7:0]         */ .reg_sck           (reg_sck           ),
 /*input  reg [5:0]     */ .reg_ch_num        (reg_ch_num        ),
 /*input  reg [5:0]     */ .reg_chip_num      (reg_chip_num      ),
