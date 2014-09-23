@@ -322,7 +322,7 @@ static int read_result(struct mm_work *mw, struct result *ret)
 			ret_produce = (ret_produce + 1) & RET_RINGBUFFER_MASK_RX;
 			uint32_t tmp;
 			memcpy(&tmp, (uint8_t *)&nonce0, 4);
-			tmp = tmp - 0x1000 + 0x180;
+			tmp = tmp - 0x4000 + 0x180;
 			memcpy((uint8_t *)&nonce0, &tmp, 4);
 			memcpy(data, (uint8_t *)ret, 20);
 			memcpy(data + 20, mw->job_id, 4); /* Attach the job_id */

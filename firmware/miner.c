@@ -234,7 +234,7 @@ int fulltest(const unsigned char *hash, const unsigned char *target)
 
 int test_nonce(struct mm_work *mw, uint32_t nonce2, uint32_t nonce)
 {
-	nonce -= 0x1000;
+	nonce -= 0x4000;
 
 	/* Generate the work base on nonce2 */
 	struct work work;
