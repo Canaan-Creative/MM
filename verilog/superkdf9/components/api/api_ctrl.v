@@ -138,8 +138,9 @@ always @ (posedge clk) begin
 		mosi_vld_f <= 1'b0;
 end
 
+wire [31:0] mosi_dat_tmp = {mosi_dat[7:0], mosi_dat[15:8], mosi_dat[23:16], mosi_dat[31:24]} + 32'b1;
 always @ (posedge clk) begin
-	mosi_dat_f <= word_cnt == 'd2 ? mosi_dat + 1 : mosi_dat;
+	mosi_dat_f <= word_cnt == 'd16 ? {mosi_dat_tmp[7:0], mosi_dat_tmp[15:8], mosi_dat_tmp[23:16], mosi_dat_tmp[31:24]} : mosi_dat;
 end
 
 assign wr_en =  tx_fifo_rd_en | mosi_vld_f;
