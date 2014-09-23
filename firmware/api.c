@@ -178,42 +178,33 @@ unsigned int api_asic_test(unsigned int ch_num, unsigned int chip_num, unsigned 
 int api_send_work(struct work *w)
 {
 	uint32_t tmp;
-	int i, j, k;
-	uint32_t data[18];
+	int i;
 
-	/* ----------------------------------- */
-	j = 0;
+	writel(0, &api->tx);
 
-	/* Task data */
-	for (i = 8; i >= 0; i -= 4) {
-		memcpy((uint8_t *)(&tmp), w->data + 32 + i, 4);
-		data[j++] = tmp;
+	memcpy((uint8_t *)(&tmp), w->a2, 4);
+	writel(tmp, &api->tx);
+
+	for (i = 0; i <= 28; i += 4) {
+		memcpy((uint8_t *)(&tmp), w->data + i, 4);
+		writel(tmp, &api->tx);
 	}
 
 	memcpy((uint8_t *)(&tmp), w->a1, 4);
-	data[j++] = tmp;
+	writel(tmp, &api->tx);
 	memcpy((uint8_t *)(&tmp), w->a0, 4);
-	data[j++] = tmp;
+	writel(tmp, &api->tx);
 	memcpy((uint8_t *)(&tmp), w->e2, 4);
-	data[j++] = tmp;
+	writel(tmp, &api->tx);
 	memcpy((uint8_t *)(&tmp), w->e1, 4);
-	data[j++] = tmp;
+	writel(tmp, &api->tx);
 	memcpy((uint8_t *)(&tmp), w->e0, 4);
-	data[j++] = tmp;
+	writel(tmp, &api->tx);
 
-	for (i = 28; i >= 0; i -= 4) {
-		memcpy((uint8_t *)(&tmp), w->data + i, 4);
-		data[j++] = tmp;
+	for (i = 0; i <= 8; i += 4) {
+		memcpy((uint8_t *)(&tmp), w->data + 32 + i, 4);
+		writel(tmp, &api->tx);
 	}
-
-	memcpy((uint8_t *)(&tmp), w->a2, 4);
-	data[j++] = tmp;
-	/* ----------------------------------- */
-
-
-	writel(0, &api->tx);
-	for (k = j - 1; k >= 0; k--)
-		writel(data[k], &api->tx);
 
 	memcpy((uint8_t *)(&tmp), w->task_id, 4);
 	writel(tmp, &api->tx);

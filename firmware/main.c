@@ -294,11 +294,11 @@ static int read_result(struct mm_work *mw, struct result *ret)
 	uint8_t *data, api_ret[16];
 	int n, i;
 	uint32_t nonce2, nonce0;
+	static uint32_t valid = 0, hw = 0, diff = 0, lw = 0;
 
-	if (!api_get_rx_cnt())
+	if (api_get_rx_cnt() < 4)
 		return 0;
 
-	debug32("AR:");
 	api_get_rx_fifo((unsigned int *)api_ret);
 	hexdump(api_ret, 16);
 	g_local_work++;
@@ -313,11 +313,12 @@ static int read_result(struct mm_work *mw, struct result *ret)
 
 		n = test_nonce(mw, nonce2, nonce0);
 		if (n == NONCE_HW) {
-			debug32("NONCE_HW\n");
+			hw++;
 			g_hw_work++;
 		}
 
 		if (n == NONCE_DIFF) {
+			diff++;
 			data = ret_buf[ret_produce];
 			ret_produce = (ret_produce + 1) & RET_RINGBUFFER_MASK_RX;
 			uint32_t tmp;
@@ -329,7 +330,9 @@ static int read_result(struct mm_work *mw, struct result *ret)
 		}
 
 		if (n == NONCE_VALID)
-			debug32("NONCE_VALID\n");
+			debug32("NONCE_VALID: %d\n", valid++);
+
+		debug32("N2N: %08x, %08x[%d, %d, %d, %d]\n", nonce2, nonce0, ++lw, hw, diff, valid);
 	}
 
 	return 1;
@@ -439,11 +442,13 @@ int main(int argv, char **argc)
 	gpio_led(0xf);
 	sft_led(0xff);
 #if 1
+	if (1) {
 	int ret;
 	int m = 1;
 	int all = m*4*248 * 1;
 	ret = api_asic_test(m, 4, all/m/4);
 	debug32("A.T: %d / %d = %d%%\n", all-ret, all, ((all-ret)*100/all));
+	}
 #endif
 	set_voltage(ASIC_0V);
 	while (1) {
