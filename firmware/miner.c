@@ -80,6 +80,8 @@ void set_asic_freq(uint32_t value)
 		return;
 
 	g_asic_freq = value;
+	/* TODO: update timeout base on freq */
+	api_set_timeout(ASIC_TIMEOUT_100M / g_asic_freq * 100); /* Default timeout */
 }
 
 uint32_t get_asic_freq()
@@ -235,10 +237,10 @@ int fulltest(const unsigned char *hash, const unsigned char *target)
 int test_nonce(struct mm_work *mw, uint32_t nonce2, uint32_t nonce)
 {
 	nonce -= 0x4000;
+	debug32("Test: %08x %08x\n", nonce2, nonce);
 
 	/* Generate the work base on nonce2 */
 	struct work work;
-	debug32("Test: %08x %08x\n", nonce2, nonce);
 	miner_gen_nonce2_work(mw, nonce2, &work);
 
 	/* Write the nonce to block header */
@@ -257,7 +259,7 @@ int test_nonce(struct mm_work *mw, uint32_t nonce2, uint32_t nonce)
 
 	if (*hash_32 != 0)
 		return NONCE_HW;
-	/* Compare hash with target */
 
+	/* Compare hash with target */
 	return fulltest(hash1, mw->target);
 }

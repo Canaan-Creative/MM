@@ -30,7 +30,7 @@ unsigned int api_set_cpm(unsigned int NR, unsigned int NF, unsigned int OD, unsi
 	NF_sub = NF - 1;
 	OD_sub = OD - 1;
 	NB_sub = NB - 1;
-	
+
 	if(div == 1  ) div_loc = 0;
 	if(div == 2  ) div_loc = 1;
 	if(div == 4  ) div_loc = 2;
@@ -39,7 +39,7 @@ unsigned int api_set_cpm(unsigned int NR, unsigned int NF, unsigned int OD, unsi
 	if(div == 32 ) div_loc = 5;
 	if(div == 64 ) div_loc = 6;
 	if(div == 128) div_loc = 7;
-	
+
 	return 0x7 | (div_loc << 7) | (1 << 10) |
 		(NR_sub << 11) | (NF_sub << 15) | (OD_sub << 21) | (NB_sub << 25);
 }
@@ -54,14 +54,14 @@ static inline unsigned int api_gen_test_work(unsigned int i, unsigned int chip_u
 	}
 
 	tmp = data[0];
-        data[0] = data[0] ^ (i & 0xfffffff0);//nonce
-        data[2] = data[2] - chip_under_test_num;//role time
+	data[0] = data[0] ^ (i & 0xfffffff0);//nonce
+	data[2] = data[2] - chip_under_test_num;//role time
 
-        data[18] = 0x0;//nonce2
-        data[19] = i;//nonce2
-        data[20] = 0x1;//cpm2
-        data[21] = 0x1;//cpm1
-        data[22] = 0x1;//cpm0
+	data[18] = 0x0;//nonce2
+	data[19] = i;//nonce2
+	data[20] = 0x1;//cpm2
+	data[21] = 0x1;//cpm1
+	data[22] = 0x1;//cpm0
 
 	return tmp + 0x18000;
 }
@@ -99,7 +99,7 @@ void api_set_flush()
 
 unsigned int api_get_tx_cnt()
 {
-	return (readl(&api->state) >> 2) && 0x3ff;
+	return (readl(&api->state) >> 2) & 0x3ff;
 }
 
 unsigned int api_get_rx_cnt()
@@ -150,8 +150,8 @@ unsigned int api_asic_test(unsigned int ch_num, unsigned int chip_num, unsigned 
 	unsigned int target_nonce;
 	unsigned int pass_cal_num = 0;
 	unsigned int verify_on = 0;
-	unsigned int spi_speed = 0x1;
-	unsigned int timeout = 0x4318c63/2;
+	unsigned int spi_speed = 0x8;
+	unsigned int timeout = 0x4318c63;
 
 	api_initial(ch_num, chip_num, spi_speed, timeout);
 
@@ -175,11 +175,62 @@ unsigned int api_asic_test(unsigned int ch_num, unsigned int chip_num, unsigned 
 	return pass_cal_num;
 }
 
+extern void delay(unsigned int ms);
 int api_send_work(struct work *w)
 {
 	uint32_t tmp;
 	int i;
 
+#if 0
+	static int n2 = 0;
+	uint32_t msg_blk[23];
+
+	msg_blk[0] = 0x010f0e00;		 /* Nonce */
+
+	msg_blk[1] = 0x220f1dbd;	/* a2 */
+
+	msg_blk[2] = 0xd8f8ef67;	/* Midstat */
+	msg_blk[3] = 0x12146495;
+	msg_blk[4] = 0xc44192c0;
+	msg_blk[5] = 0x7145fd6d;
+	msg_blk[6] = 0x974bf4bb;
+	msg_blk[7] = 0x8f41371d;
+	msg_blk[8] = 0x65c90d1e;
+	msg_blk[9] = 0x9cb18a17;
+
+	msg_blk[10] = 0xfa77fe7d;	/* e0 */
+	msg_blk[11] = 0x12cdfd7b;	/* e1 */
+	msg_blk[12] = 0x81677107;	/* e2 */
+	msg_blk[13] = 0x62a5f25c;	/* a0 */
+	msg_blk[14]  = 0x05b168ae;	/* a1 */
+
+	msg_blk[15]  = 0x087e051a;	/* Data */
+	msg_blk[16]  = 0x88517050;
+	msg_blk[17]  = 0x4ac1d001;
+
+	msg_blk[18]  = n2;
+	msg_blk[19]  = n2++;
+
+	msg_blk[20]  = 1;
+	msg_blk[21]  = 1;
+	msg_blk[22]  = 1;
+
+	/* for (i = 0; i < 23; i++) { */
+	/* 	writel(msg_blk[i], &api->tx); */
+	/* } */
+
+	writel(0, &api->tx);
+	for (i = 1; i < 18; i++) {
+		writel(test_data[0][i], &api->tx);
+	}
+
+	for (i = 18; i < 23; i++) {
+		writel(msg_blk[i], &api->tx);
+	}
+
+	return 1;
+#endif
+	/* ============================================= */
 	writel(0, &api->tx);
 
 	memcpy((uint8_t *)(&tmp), w->a2, 4);
@@ -190,15 +241,15 @@ int api_send_work(struct work *w)
 		writel(tmp, &api->tx);
 	}
 
-	memcpy((uint8_t *)(&tmp), w->a1, 4);
-	writel(tmp, &api->tx);
-	memcpy((uint8_t *)(&tmp), w->a0, 4);
-	writel(tmp, &api->tx);
-	memcpy((uint8_t *)(&tmp), w->e2, 4);
+	memcpy((uint8_t *)(&tmp), w->e0, 4);
 	writel(tmp, &api->tx);
 	memcpy((uint8_t *)(&tmp), w->e1, 4);
 	writel(tmp, &api->tx);
-	memcpy((uint8_t *)(&tmp), w->e0, 4);
+	memcpy((uint8_t *)(&tmp), w->e2, 4);
+	writel(tmp, &api->tx);
+	memcpy((uint8_t *)(&tmp), w->a0, 4);
+	writel(tmp, &api->tx);
+	memcpy((uint8_t *)(&tmp), w->a1, 4);
 	writel(tmp, &api->tx);
 
 	for (i = 0; i <= 8; i += 4) {
@@ -222,8 +273,5 @@ int api_send_work(struct work *w)
 	memcpy((uint8_t *)(&tmp), w->clock, 4);
 	writel(1, &api->tx);
 
-	debug32("TX:");
-	hexdump(w->task_id, 8);
-	hexdump(w->clock, 12);
 	return 0;
 }

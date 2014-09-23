@@ -332,7 +332,7 @@ static int read_result(struct mm_work *mw, struct result *ret)
 		if (n == NONCE_VALID)
 			debug32("NONCE_VALID: %d\n", valid++);
 
-		debug32("N2N: %08x, %08x[%d, %d, %d, %d]\n", nonce2, nonce0, ++lw, hw, diff, valid);
+		debug32("N2N: %08x, %08x[%d, %d, %d, %d][%08x]\n", nonce2, nonce0, ++lw, hw, diff, valid, *((uint32_t *)0x80000510));
 	}
 
 	return 1;
@@ -441,15 +441,22 @@ int main(int argv, char **argc)
 	set_voltage(ASIC_CORETEST_VOLT);
 	gpio_led(0xf);
 	sft_led(0xff);
+
+	/* The timeout value: 2^32÷(0.1GHz×1000000000×3968÷65)×100000000 = 0x4318c63*/
+	debug32("TIMEOUT: %08x\n", ASIC_TIMEOUT_100M / ASIC_FREQUENCY * 100);
+	api_set_timeout(ASIC_TIMEOUT_100M / ASIC_FREQUENCY * 100); /* Default timeout */
+
 #if 1
 	if (1) {
 	int ret;
 	int m = 1;
-	int all = m*4*248 * 1;
-	ret = api_asic_test(m, 4, all/m/4);
+	int c = 1;
+	int all = m*c*5 * 1;
+	ret = api_asic_test(m, 1, all/m/c);
 	debug32("A.T: %d / %d = %d%%\n", all-ret, all, ((all-ret)*100/all));
 	}
 #endif
+
 	set_voltage(ASIC_0V);
 	while (1) {
 		get_pkg(&mm_work);
