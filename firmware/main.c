@@ -291,31 +291,45 @@ static int decode_pkg(uint8_t *p, struct mm_work *mw)
 
 static int read_result(struct mm_work *mw, struct result *ret)
 {
-	uint8_t *data;
-	int nonce;
+	uint8_t *data, api_ret[16];
+	int n, i;
+	uint32_t nonce2, nonce0;
 
 	if (!api_get_rx_cnt())
 		return 0;
 
-	api_get_rx_fifo((unsigned int *)ret);
-	hexdump((unsigned char *)ret, 16);
+	debug32("AR:");
+	api_get_rx_fifo((unsigned int *)api_ret);
+	hexdump(api_ret, 16);
 	g_local_work++;
 
-	nonce = test_nonce(mw, ret);
-	if (nonce == NONCE_HW) {
-		g_hw_work++;
-		return 1;
-	}
+	memcpy(ret->task_id, api_ret, 8);
+	memcpy((uint8_t *)(&nonce2), ret->task_id + 4, 4);
+	for (i = 0; i < 2; i++) {
+		memcpy(ret->nonce, api_ret + 8 + i * 4, 4);
+		memcpy((uint8_t *)(&nonce0), ret->nonce, 4);
+		if (nonce0 == 0xbeafbeaf)
+			continue;
 
-	if (nonce == NONCE_DIFF) {
-		data = ret_buf[ret_produce];
-		ret_produce = (ret_produce + 1) & RET_RINGBUFFER_MASK_RX;
-		uint32_t tmp;
-		memcpy(&tmp, ret->nonce0, 4);
-		tmp = tmp - 0x1000 + 0x180;
-		memcpy(ret->nonce0, &tmp, 4);
-		memcpy(data, (uint8_t *)ret, 20);
-		memcpy(data + 20, mw->job_id, 4); /* Attach the job_id */
+		n = test_nonce(mw, nonce2, nonce0);
+		if (n == NONCE_HW) {
+			debug32("NONCE_HW\n");
+			g_hw_work++;
+		}
+
+		if (n == NONCE_DIFF) {
+			data = ret_buf[ret_produce];
+			ret_produce = (ret_produce + 1) & RET_RINGBUFFER_MASK_RX;
+			uint32_t tmp;
+			memcpy(&tmp, (uint8_t *)&nonce0, 4);
+			tmp = tmp - 0x1000 + 0x180;
+			memcpy((uint8_t *)&nonce0, &tmp, 4);
+			memcpy(data, (uint8_t *)ret, 20);
+			memcpy(data + 20, mw->job_id, 4); /* Attach the job_id */
+		}
+
+		if (n == NONCE_VALID)
+			debug32("NONCE_VALID\n");
 	}
 
 	return 1;
@@ -424,17 +438,14 @@ int main(int argv, char **argc)
 	set_voltage(ASIC_CORETEST_VOLT);
 	gpio_led(0xf);
 	sft_led(0xff);
-
 #if 1
 	int ret;
-	int m = 2;
+	int m = 1;
 	int all = m*4*248 * 1;
 	ret = api_asic_test(m, 4, all/m/4);
 	debug32("A.T: %d / %d = %d%%\n", all-ret, all, ((all-ret)*100/all));
 #endif
-
 	set_voltage(ASIC_0V);
-
 	while (1) {
 		get_pkg(&mm_work);
 

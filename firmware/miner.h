@@ -35,9 +35,10 @@ struct work {
 };
 
 struct result {
-	uint8_t	task_id[8];
-	uint8_t nonce0[4];
-	uint8_t nonce1[4];
+	uint8_t miner_id[4];     /* The miner ID */
+	uint8_t	task_id[8];	 /* Pool No. + Nonce2 */
+	uint8_t	ntime[4];	 /* Ntime */
+	uint8_t nonce[4];
 };
 
 struct mm_work {
@@ -64,7 +65,7 @@ struct mm_work {
 
 void miner_init_work(struct mm_work *mw, struct work *work);
 void miner_gen_nonce2_work(struct mm_work *mw, uint32_t nonce2, struct work *work);
-int test_nonce(struct mm_work *mw, struct result *ret);
+int test_nonce(struct mm_work *mw, uint32_t nonce2, uint32_t nonce);
 
 void set_asic_freq(uint32_t value);
 uint32_t get_asic_freq();
