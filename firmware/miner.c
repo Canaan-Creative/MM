@@ -17,6 +17,7 @@
 #include "miner.h"
 #include "sha256.h"
 #include "twipwm.h"
+#include "api.h"
 
 static uint32_t g_asic_freq = ASIC_FREQUENCY;
 
@@ -90,24 +91,17 @@ extern uint32_t g_clock_conf_count;
 
 void miner_init_work(struct mm_work *mw, struct work *work)
 {
+	unsigned int tmp;
+
 	memcpy(work->task_id, (uint8_t *)(&mw->pool_no), 4);
 	memcpy(work->task_id + 4, (uint8_t *)(&work->nonce2), 4);
 
-	/* TODO: config g_asic_freq */
-	work->clock[0] = 0x01;
-	work->clock[1] = 0x00;
-	work->clock[2] = 0x00;
-	work->clock[3] = 0x00; 
+	if (g_asic_freq == 200)
+		tmp = api_set_cpm(1, 16, 1, 16, 2);
 
-	work->clock[4] = 0x01;
-	work->clock[5] = 0x00;
-	work->clock[6] = 0x00;
-	work->clock[7] = 0x00;
-
-	work->clock[8] = 0x01;
-	work->clock[9] = 0x00;
-	work->clock[10] = 0x00;
-	work->clock[11] = 0x00;
+	memcpy(work->clock, (uint8_t *)&tmp, 4);
+	memcpy(work->clock + 4, (uint8_t *)&tmp, 4);
+	memcpy(work->clock + 8, (uint8_t *)&tmp, 4);
 }
 
 static void rev(unsigned char *s, size_t l)
@@ -238,14 +232,9 @@ int fulltest(const unsigned char *hash, const unsigned char *target)
 	return rc;
 }
 
-int test_nonce(struct mm_work *mw, struct result *ret)
+int test_nonce(struct mm_work *mw, uint32_t nonce2, uint32_t nonce)
 {
-	/* Decode nonce2 and nonce */
-	uint32_t nonce2, nonce;
-	memcpy((uint8_t *)(&nonce2), ret->task_id + 4, 4);
-	memcpy((uint8_t *)(&nonce), ret->nonce0, 4);
-
-	nonce -= 0x1000;
+	nonce -= 0x4000;
 
 	/* Generate the work base on nonce2 */
 	struct work work;

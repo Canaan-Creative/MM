@@ -18,7 +18,7 @@
 
 static struct lm32_api *api = (struct lm32_api *)API_BASE;
 
-static inline unsigned int api_set_cpm(unsigned int NR, unsigned int NF, unsigned int OD, unsigned int NB, unsigned int div)
+unsigned int api_set_cpm(unsigned int NR, unsigned int NF, unsigned int OD, unsigned int NB, unsigned int div)
 {
 	unsigned int div_loc = 0;
 	unsigned int NR_sub;
@@ -99,30 +99,26 @@ void api_set_flush()
 
 unsigned int api_get_tx_cnt()
 {
-	unsigned int tmp = (readl(&api->state) >> 2) && 0x3ff;
-	return tmp;
+	return (readl(&api->state) >> 2) && 0x3ff;
 }
 
 unsigned int api_get_rx_cnt()
 {
-	unsigned int tmp = (readl(&api->state) >> 20) & 0x1ff;
-	return tmp;
+	return (readl(&api->state) >> 20) & 0x1ff;
 }
 
 void api_set_tx_fifo(unsigned int * data)
 {
 	int i;
-	for (i = 0; i < 23; i++) {
+	for (i = 0; i < 23; i++)
 		writel(data[i], &api->tx);
-	}
 }
 
 void api_get_rx_fifo(unsigned int * data)
 {
 	int i;
-	for (i = 0; i < 4; i++) {
+	for (i = 0; i < 4; i++)
 		data[i] = readl(&api->rx);
-	}
 }
 
 void api_wait_done(unsigned int ch_num, unsigned int chip_num)
@@ -155,7 +151,7 @@ unsigned int api_asic_test(unsigned int ch_num, unsigned int chip_num, unsigned 
 	unsigned int pass_cal_num = 0;
 	unsigned int verify_on = 0;
 	unsigned int spi_speed = 0x1;
-	unsigned int timeout = 0x10;
+	unsigned int timeout = 0xffffffff;
 
 	api_initial(ch_num, chip_num, spi_speed, timeout);
 
@@ -182,50 +178,61 @@ unsigned int api_asic_test(unsigned int ch_num, unsigned int chip_num, unsigned 
 int api_send_work(struct work *w)
 {
 	uint32_t tmp;
-	int i;
+	int i, j, k;
+	uint32_t data[18];
 
-	writel(0, &api->tx);
-
-	memcpy((uint8_t *)(&tmp), w->a2, 4);
-	writel(tmp, &api->tx);
-
-	for (i = 0; i <= 28; i += 4) {
-		memcpy((uint8_t *)(&tmp), w->data + i, 4);
-		writel(tmp, &api->tx);
-	}
-
-	memcpy((uint8_t *)(&tmp), w->e0, 4);
-	writel(tmp, &api->tx);
-	memcpy((uint8_t *)(&tmp), w->e1, 4);
-	writel(tmp, &api->tx);
-	memcpy((uint8_t *)(&tmp), w->e2, 4);
-	writel(tmp, &api->tx);
-	memcpy((uint8_t *)(&tmp), w->a0, 4);
-	writel(tmp, &api->tx);
-	memcpy((uint8_t *)(&tmp), w->a1, 4);
-	writel(tmp, &api->tx);
+	/* ----------------------------------- */
+	j = 0;
 
 	/* Task data */
-	for (i = 0; i <= 8; i += 4) {
+	for (i = 8; i >= 0; i -= 4) {
 		memcpy((uint8_t *)(&tmp), w->data + 32 + i, 4);
-		writel(tmp, &api->tx);
+		data[j++] = tmp;
 	}
 
-	/* The chip configure information */
-	memcpy((uint8_t *)(&tmp), w->task_id + 4, 4);
-	writel(tmp, &api->tx);
+	memcpy((uint8_t *)(&tmp), w->a1, 4);
+	data[j++] = tmp;
+	memcpy((uint8_t *)(&tmp), w->a0, 4);
+	data[j++] = tmp;
+	memcpy((uint8_t *)(&tmp), w->e2, 4);
+	data[j++] = tmp;
+	memcpy((uint8_t *)(&tmp), w->e1, 4);
+	data[j++] = tmp;
+	memcpy((uint8_t *)(&tmp), w->e0, 4);
+	data[j++] = tmp;
+
+	for (i = 28; i >= 0; i -= 4) {
+		memcpy((uint8_t *)(&tmp), w->data + i, 4);
+		data[j++] = tmp;
+	}
+
+	memcpy((uint8_t *)(&tmp), w->a2, 4);
+	data[j++] = tmp;
+	/* ----------------------------------- */
+
+
+	writel(0, &api->tx);
+	for (k = j - 1; k >= 0; k--)
+		writel(data[k], &api->tx);
 
 	memcpy((uint8_t *)(&tmp), w->task_id, 4);
 	writel(tmp, &api->tx);
 
-	memcpy((uint8_t *)(&tmp), w->clock + 8, 4);
+	memcpy((uint8_t *)(&tmp), w->task_id + 4, 4);
 	writel(tmp, &api->tx);
+
+	/* The chip configure information */
+	memcpy((uint8_t *)(&tmp), w->clock + 8, 4);
+	writel(1, &api->tx);
 
 	memcpy((uint8_t *)(&tmp), w->clock + 4, 4);
-	writel(tmp, &api->tx);
+	writel(1, &api->tx);
 
 	memcpy((uint8_t *)(&tmp), w->clock, 4);
-	writel(tmp, &api->tx);
+	writel(1, &api->tx);
 
+	debug32("TX:");
+	hexdump(w->task_id, 8);
+	hexdump(w->clock, 12);
 	return 0;
 }
