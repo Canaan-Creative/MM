@@ -121,7 +121,7 @@ void api_get_rx_fifo(unsigned int * data)
 		data[i] = readl(&api->rx);
 }
 
-void api_wait_done(unsigned int ch_num, unsigned int chip_num)
+static inline void api_wait_done(unsigned int ch_num, unsigned int chip_num)
 {
 	while (api_get_rx_cnt() != (ch_num * chip_num * 4))
 		;
@@ -151,7 +151,7 @@ unsigned int api_asic_test(unsigned int ch_num, unsigned int chip_num, unsigned 
 	unsigned int pass_cal_num = 0;
 	unsigned int verify_on = 0;
 	unsigned int spi_speed = 0x1;
-	unsigned int timeout = 0xffffffff;
+	unsigned int timeout = 0x4318c63/2;
 
 	api_initial(ch_num, chip_num, spi_speed, timeout);
 
