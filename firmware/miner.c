@@ -234,14 +234,23 @@ int fulltest(const unsigned char *hash, const unsigned char *target)
 	return rc;
 }
 
-int test_nonce(struct mm_work *mw, uint32_t nonce2, uint32_t nonce)
+int test_nonce(struct mm_work *mw, uint32_t nonce2, uint32_t nonce, int ntime_offset)
 {
 	nonce -= 0x4000;
-	debug32("Test: %08x %08x\n", nonce2, nonce);
+	debug32("Test: %08x %08x %d\n", nonce2, nonce, ntime_offset);
 
 	/* Generate the work base on nonce2 */
 	struct work work;
 	miner_gen_nonce2_work(mw, nonce2, &work);
+
+	/* Roll work */
+	if (ntime_offset) {
+		uint32_t ntime;
+		uint32_t *work_ntime = (uint32_t *)(work.header + 68);
+		memcpy(&ntime, (uint8_t *)work_ntime, 4);
+		ntime += ntime_offset;
+		memcpy((uint8_t *)work_ntime, &ntime, 4);
+	}
 
 	/* Write the nonce to block header */
 	uint32_t *work_nonce = (uint32_t *)(work.header + 64 + 12);

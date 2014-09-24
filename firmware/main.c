@@ -263,7 +263,7 @@ static int decode_pkg(uint8_t *p, struct mm_work *mw)
 		memcpy(&g_nonce2_offset, data + 12, 4);
 		memcpy(&g_nonce2_range, data + 16, 4);
 
-		mw->nonce2 = g_nonce2_offset + (g_nonce2_range / AVA2_DEFAULT_MODULES) * g_module_id;
+		mw->nonce2 = g_nonce2_offset + (g_nonce2_range / AVA4_DEFAULT_MODULES) * g_module_id;
 		/* TODO: Flash api fifo */
 
 		g_new_stratum = 1;
@@ -295,22 +295,38 @@ static int read_result(struct mm_work *mw, struct result *ret)
 	int n, i;
 	uint32_t nonce2, nonce0;
 	static uint32_t valid = 0, hw = 0, diff = 0, lw = 0;
+	static uint32_t last_nonce2 = 0, ntime = ASIC_COUNT - 1;
 
 	if (api_get_rx_cnt() < 4)
 		return 0;
 
+	/* Read result out */
 	api_get_rx_fifo((unsigned int *)api_ret);
-	hexdump(api_ret, 16);
 	g_local_work++;
 
+	/* Debug: */
+	hexdump(api_ret, 16);
+
+	/* Copy the task_id to ret pkg */
 	memcpy(ret->task_id, api_ret, 8);
-	memcpy((uint8_t *)(&nonce2), ret->task_id + 4, 4);
+	memcpy(&nonce2, ret->task_id + 4, 4);
+
+	/* Handle the ntime */
+	if (nonce2 != last_nonce2) {
+		ntime = ASIC_COUNT - 1;
+	}
+	if (nonce2 == last_nonce2 && ntime < 0) /* FIXME: Should never happen */
+		ntime = 0;
+
+	memcpy(ret->ntime, &ntime, 4);
+
+	/* Handle the real nonce */
 	for (i = 0; i < 2; i++) {
-		memcpy((uint8_t *)(&nonce0), api_ret + 8 + i * 4, 4);
+		memcpy(&nonce0, api_ret + 8 + i * 4, 4);
 		if (nonce0 == 0xbeafbeaf)
 			continue;
 
-		n = test_nonce(mw, nonce2, nonce0);
+		n = test_nonce(mw, nonce2, nonce0, ntime);
 		if (n == NONCE_HW) {
 			hw++;
 			g_hw_work++;
@@ -329,9 +345,11 @@ static int read_result(struct mm_work *mw, struct result *ret)
 		if (n == NONCE_VALID)
 			debug32("NONCE_VALID: %d\n", valid++);
 
-		debug32("N2N: %08x, %08x[%d, %d, %d, %d][%08x]\n", nonce2, nonce0, ++lw, hw, diff, valid, *((uint32_t *)0x80000510));
+		debug32("N2N: %d, %08x, %08x[%d, %d, %d, %d][%08x]\n", ntime, nonce2, nonce0, ++lw, hw, diff, valid, *((uint32_t *)0x80000510));
 	}
 
+	ntime--;		/* Reduce the ntime offset */
+	last_nonce2 = nonce2;	/* Remember the last nonce2 */
 	return 1;
 }
 
@@ -437,19 +455,18 @@ int main(int argv, char **argc)
 	/* Test part of ASIC cores */
 	set_voltage(ASIC_CORETEST_VOLT);
 	gpio_led(0xf);
-	sft_led(0xff);
+	sft_led(0x1);
 
 	/* The timeout value: 2^32÷(0.1GHz×1000000000×3968÷65)×100000000 = 0x4318c63*/
-	debug32("TIMEOUT: %08x\n", ASIC_TIMEOUT_100M / ASIC_FREQUENCY * 100);
 	api_set_timeout(ASIC_TIMEOUT_100M / ASIC_FREQUENCY * 100); /* Default timeout */
 
 #if 1
 	if (1) {
 	int ret;
 	int m = 1;
-	int c = 1;
-	int all = m*c*5 * 1;
-	ret = api_asic_test(m, 1, all/m/c);
+	int c = ASIC_COUNT;
+	int all = m*c*10;
+	ret = api_asic_test(m, c, all/m/c);
 	debug32("A.T: %d / %d = %d%%\n", all-ret, all, ((all-ret)*100/all));
 	}
 #endif
@@ -470,6 +487,7 @@ int main(int argv, char **argc)
 
 			iic_rx_reset();
 			iic_tx_reset();
+			sft_led(0xff);
 		}
 
 		if (!g_new_stratum)

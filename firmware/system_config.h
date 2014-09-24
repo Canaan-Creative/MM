@@ -15,7 +15,8 @@
 
 #define ASIC_0V	0x8f00
 
-#define AVA2_DEFAULT_MODULES	4
+#define AVA4_DEFAULT_MODULES	4
+#define ASIC_COUNT	1
 
 #define CPU_FREQUENCY		(100 * 1000 * 1000) /* 50Mhz */
 #define UART_BAUD_RATE          (115200)
