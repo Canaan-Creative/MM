@@ -306,8 +306,7 @@ static int read_result(struct mm_work *mw, struct result *ret)
 	memcpy(ret->task_id, api_ret, 8);
 	memcpy((uint8_t *)(&nonce2), ret->task_id + 4, 4);
 	for (i = 0; i < 2; i++) {
-		memcpy(ret->nonce, api_ret + 8 + i * 4, 4);
-		memcpy((uint8_t *)(&nonce0), ret->nonce, 4);
+		memcpy((uint8_t *)(&nonce0), api_ret + 8 + i * 4, 4);
 		if (nonce0 == 0xbeafbeaf)
 			continue;
 
@@ -321,10 +320,8 @@ static int read_result(struct mm_work *mw, struct result *ret)
 			diff++;
 			data = ret_buf[ret_produce];
 			ret_produce = (ret_produce + 1) & RET_RINGBUFFER_MASK_RX;
-			uint32_t tmp;
-			memcpy(&tmp, ret->nonce, 4);
-			tmp = tmp - 0x4000 + 0x180;
-			memcpy(ret->nonce, &tmp, 4);
+			nonce0 = nonce0 - 0x4000 + 0x180;
+			memcpy(ret->nonce, &nonce0, 4);
 			memcpy(data, (uint8_t *)ret, 20);
 			memcpy(data + 20, mw->job_id, 4); /* Attach the job_id */
 		}
