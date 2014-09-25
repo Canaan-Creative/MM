@@ -29,7 +29,7 @@ wire [2:0]          reg_state         ;
 wire [27:0]         reg_timeout       ;
 wire [7:0]          reg_sck           ;
 wire [5:0]          reg_ch_num        ;
-wire [5:0]          reg_chip_num      ;
+wire [7:0]          reg_word_num      ;
 wire                reg_rst           ;
 
 wire [31 : 0]       tx_fifo_din       ;
@@ -38,7 +38,7 @@ wire                tx_fifo_rd_en     ;
 wire [31 : 0]       tx_fifo_dout      ;
 wire                tx_fifo_full      ;
 wire [9  : 0]       tx_fifo_data_count;
-wire                tx_fifo_empty     = tx_fifo_data_count < WORK_LEN;
+wire                tx_fifo_empty = tx_fifo_data_count < reg_word_num;
 
 wire [31 : 0]       rx_fifo_din       ;
 wire                rx_fifo_wr_en     ;
@@ -84,7 +84,7 @@ api_slave(
 /*output reg [27:0]*/ .reg_timeout (reg_timeout       ),
 /*output reg [7:0] */ .reg_sck     (reg_sck           ),
 /*output reg [5:0] */ .reg_ch_num  (reg_ch_num        ),
-/*output reg [5:0] */ .reg_chip_num(reg_chip_num      ),
+/*output reg [7:0] */ .reg_word_num(reg_word_num      ),
 
 /*output           */ .rxfifo_pop  (rx_fifo_rd_en     ),
 /*input  [31:0]    */ .rxfifo_dout (rx_fifo_dout      )  
@@ -102,7 +102,7 @@ api_ctrl #(.WORK_LEN(WORK_LEN), .RX_FIFO_DEPTH(RX_FIFO_DEPTH)) api_ctrl(
 /*input  [27:0]        */ .reg_timeout       (reg_timeout       ),
 /*input  [7:0]         */ .reg_sck           (reg_sck           ),
 /*input  reg [5:0]     */ .reg_ch_num        (reg_ch_num        ),
-/*input  reg [5:0]     */ .reg_chip_num      (reg_chip_num      ),
+/*input  reg [7:0]     */ .reg_word_num      (reg_word_num      ),
 
 /*input                */ .tx_fifo_empty     (tx_fifo_empty     ),
 /*output               */ .tx_fifo_rd_en     (tx_fifo_rd_en     ),
