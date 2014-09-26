@@ -134,6 +134,28 @@ static void calc_prepare(struct work *work, uint8_t *buf)
 	memcpy(work->e2, precalc + 5, 4);
 }
 
+void roll_work(struct work *work, int ntime_offset)
+{
+	uint32_t *work_ntime;
+	uint32_t ntime;
+
+	if (!ntime_offset)
+		return;
+
+	/* The block header: for test nonce  */
+	work_ntime = (uint32_t *)(work->header + 68);
+	memcpy(&ntime, (uint8_t *)work_ntime, 4);
+	ntime += ntime_offset;
+	memcpy((uint8_t *)work_ntime, &ntime, 4);
+
+	/* The data: for ASIC api */
+	work_ntime = (uint32_t *)(work->data + 36);
+	ntime = bswap_32(*work_ntime);
+	ntime += ntime_offset;
+	*work_ntime = bswap_32(ntime);
+	calc_prepare(work, work->data);
+}
+
 void miner_gen_nonce2_work(struct mm_work *mw, uint32_t nonce2, struct work *work)
 {
 	uint8_t merkle_root[32], merkle_sha[64];
@@ -244,13 +266,7 @@ int test_nonce(struct mm_work *mw, uint32_t nonce2, uint32_t nonce, int ntime_of
 	miner_gen_nonce2_work(mw, nonce2, &work);
 
 	/* Roll work */
-	if (ntime_offset) {
-		uint32_t ntime;
-		uint32_t *work_ntime = (uint32_t *)(work.header + 68);
-		memcpy(&ntime, (uint8_t *)work_ntime, 4);
-		ntime += ntime_offset;
-		memcpy((uint8_t *)work_ntime, &ntime, 4);
-	}
+	roll_work(&work, ntime_offset);
 
 	/* Write the nonce to block header */
 	uint32_t *work_nonce = (uint32_t *)(work.header + 64 + 12);
