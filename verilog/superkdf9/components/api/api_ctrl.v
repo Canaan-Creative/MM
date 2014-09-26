@@ -113,7 +113,20 @@ always @ (posedge clk) begin
 		load_nop_cnt <= 4'b0;
 end
 
-assign rx_fifo_wr_en = miso_vld && (word_cnt < RX_BLOCK_LEN) && (cur_state == WORK);
+reg [4:0] work_cnt;
+always @ (posedge clk) begin
+	if(rst)
+		work_cnt <= 5'b0;
+	else if(cur_state != WORK && nxt_state == WORK)
+		work_cnt <= 5'b0;
+	else if(cur_state == WORK && word_cnt != reg_word_num && miso_vld && work_cnt != 22)
+		work_cnt <= work_cnt + 8'b1;
+	else if(cur_state == WORK && word_cnt != reg_word_num && miso_vld && work_cnt == 22)
+		work_cnt <= 5'b0;
+end
+
+
+assign rx_fifo_wr_en = miso_vld && (work_cnt < RX_BLOCK_LEN) && (cur_state == WORK);
 assign rx_fifo_din = miso_dat;
 
 always @ (posedge clk) begin
@@ -130,7 +143,7 @@ end
 always @ (posedge clk) begin
 	if(rst)
 		ch_cnt <= 6'b0;
-	else if(nxt_state == IDLE)
+	else if(cur_state == IDLE)
 		ch_cnt <= 6'b0;
 	else if(cur_state != WORK && nxt_state == WORK)
 		ch_cnt <= 6'b1 + ch_cnt;
