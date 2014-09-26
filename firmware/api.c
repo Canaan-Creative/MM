@@ -80,7 +80,7 @@ static inline void api_set_sck(unsigned int spi_speed)
 	writel(tmp, &api->sck);
 }
 
-void api_initial(unsigned int ch_num, unsigned int chip_num, unsigned int spi_speed, unsigned int timeout)
+void api_initial(unsigned int ch_num, unsigned int chip_num, unsigned int spi_speed)
 {
 	api_set_num(ch_num, chip_num);
 	api_set_sck(spi_speed);
@@ -134,8 +134,11 @@ static inline unsigned int api_verify_nonce(unsigned int ch_num, unsigned int ch
 	for (i = 0; i < ch_num; i++) {
 		for (j = 0; j < chip_num; j++) {
 			api_get_rx_fifo(rx_data);
-			if(verify_on && (rx_data[2] == target_nonce))
+			if(verify_on && ((rx_data[2] == target_nonce) || (rx_data[3] == target_nonce)))
 				pass_cal_num++;
+			else
+				if (verify_on)
+					debug32("TN:%08x, RX[2]:%08x, RX[3]:%08x\n", target_nonce, rx_data[2], rx_data[3]);
 		}
 	}
 	return pass_cal_num;
@@ -148,10 +151,10 @@ unsigned int api_asic_test(unsigned int ch_num, unsigned int chip_num, unsigned 
 	unsigned int target_nonce;
 	unsigned int pass_cal_num = 0;
 	unsigned int verify_on = 0;
-	unsigned int spi_speed = 0x8;
-	unsigned int timeout = 0x4318c63;
+	unsigned int spi_speed = 0x1;
 
-	api_initial(ch_num, chip_num, spi_speed, timeout);
+	api_initial(ch_num, chip_num, spi_speed);
+	api_set_timeout(0x10000);
 
 	for (j = 0; j < cal_core_num + 2; j++){
 		api_gen_test_work(j, tx_data);

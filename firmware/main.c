@@ -457,21 +457,21 @@ int main(int argv, char **argc)
 	gpio_led(0xf);
 	sft_led(0x1);
 
-	/* The timeout value: 2^32÷(0.1GHz×1000000000×3968÷65)×100000000 = 0x4318c63*/
-	api_set_timeout(ASIC_TIMEOUT_100M / ASIC_FREQUENCY * 100); /* Default timeout */
-
 #if 1
 	if (1) {
 	int ret;
 	int m = 1;
 	int c = ASIC_COUNT;
-	int all = m*c*10;
+	int all = m * c * 248 * 16;
 	ret = api_asic_test(m, c, all/m/c);
 	debug32("A.T: %d / %d = %d%%\n", all-ret, all, ((all-ret)*100/all));
 	}
 #endif
 
+	/* The timeout value: 2^32÷(0.1GHz×1000000000×3968÷65)×100000000 = 0x4318c63*/
+	api_set_timeout(ASIC_TIMEOUT_100M / ASIC_FREQUENCY * 100); /* Default timeout */
 	set_voltage(ASIC_0V);
+
 	while (1) {
 		get_pkg(&mm_work);
 
