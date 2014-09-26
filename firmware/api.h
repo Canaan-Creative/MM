@@ -19,5 +19,7 @@ int api_send_work(struct work *w);
 unsigned int api_asic_test(unsigned int ch_num, unsigned int chip_num, unsigned int cal_core_num);
 
 unsigned int api_set_cpm(unsigned int NR, unsigned int NF, unsigned int OD, unsigned int NB, unsigned int div);
+void api_set_timeout(unsigned int timeout);
+
 
 #endif	/* _API_H_ */
