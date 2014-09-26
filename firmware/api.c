@@ -44,7 +44,7 @@ unsigned int api_set_cpm(unsigned int NR, unsigned int NF, unsigned int OD, unsi
 		(NR_sub << 11) | (NF_sub << 15) | (OD_sub << 21) | (NB_sub << 25);
 }
 
-static inline unsigned int api_gen_test_work(unsigned int i, unsigned int chip_under_test_num, unsigned int * data)
+static inline unsigned int api_gen_test_work(unsigned int i, unsigned int * data)
 {
 	unsigned int tmp = 0;
 	int j;
@@ -55,7 +55,6 @@ static inline unsigned int api_gen_test_work(unsigned int i, unsigned int chip_u
 
 	tmp = data[0];
         data[0] = data[0] ^ (i & 0xfffffff0);//nonce
-        data[2] = data[2] - chip_under_test_num;//role time
 
         data[18] = 0x0;//nonce2
         data[19] = i;//nonce2
@@ -70,7 +69,7 @@ static inline void api_set_num(unsigned int ch_num, unsigned int chip_num)
 {
 	unsigned int tmp;
 	tmp = readl(&api->sck) & 0xff;
-	tmp = (ch_num << 16) | (chip_num << 24) | tmp;
+	tmp = (ch_num << 16) | ((chip_num*23) << 24) | tmp;
 	writel(tmp, &api->sck);
 }
 
@@ -127,16 +126,15 @@ void api_wait_done(unsigned int ch_num, unsigned int chip_num)
 		;
 }
 
-static inline unsigned int api_verify_nonce(unsigned int ch_num, unsigned int chip_num, unsigned int chip_under_test_num, unsigned int verify_on, unsigned int target_nonce)
+static inline unsigned int api_verify_nonce(unsigned int ch_num, unsigned int chip_num, unsigned int verify_on, unsigned int target_nonce)
 {
-	unsigned int i, j, need_verify;
+	unsigned int i, j;
 	unsigned int rx_data[4];
 	unsigned int pass_cal_num = 0;
 	for (i = 0; i < ch_num; i++) {
 		for (j = 0; j < chip_num; j++) {
 			api_get_rx_fifo(rx_data);
-			need_verify = ((chip_num - chip_under_test_num - 1) == j) ? 1 : 0;
-			if(verify_on && (rx_data[2] == target_nonce) && need_verify)
+			if(verify_on && (rx_data[2] == target_nonce))
 				pass_cal_num++;
 		}
 	}
@@ -155,22 +153,25 @@ unsigned int api_asic_test(unsigned int ch_num, unsigned int chip_num, unsigned 
 
 	api_initial(ch_num, chip_num, spi_speed, timeout);
 
-	for (i = 0; i < chip_num; i++){
-		for (j = 0; j < cal_core_num + 2; j++){
-			api_gen_test_work(j, i, tx_data);
-			if (!i && !j) {
-				tx_data[20] = api_set_cpm(1, 16, 1, 16, 2);
-				tx_data[21] = api_set_cpm(1, 16, 1, 16, 2);
-				tx_data[22] = api_set_cpm(1, 16, 1, 16, 2);
-			}
-			for (k = 0; k < ch_num; k++)
-				api_set_tx_fifo(tx_data);
-
-			api_wait_done(ch_num, chip_num);
-			target_nonce = api_gen_test_work((j-2)%16, 0, tx_data);
-			verify_on = j >= 2 ? 1 : 0;
-			pass_cal_num += api_verify_nonce(ch_num, chip_num, i, verify_on, target_nonce);
+	for (j = 0; j < cal_core_num + 2; j++){
+		api_gen_test_work(j, tx_data);
+		if (!j) {
+			tx_data[20] = api_set_cpm(1, 16, 1, 16, 2);
+			tx_data[21] = api_set_cpm(1, 16, 1, 16, 2);
+			tx_data[22] = api_set_cpm(1, 16, 1, 16, 2);
 		}
+		for (k = 0; k < ch_num; k++){
+			while((512 - api_get_tx_cnt()) < (chip_num * 23))
+				;
+			for(i = 0; i < chip_num; i++)
+				api_set_tx_fifo(tx_data);
+		}
+
+		api_wait_done(ch_num, chip_num);
+
+		target_nonce = api_gen_test_work((j-2)%16, tx_data);
+		verify_on = j >= 2 ? 1 : 0;
+		pass_cal_num += api_verify_nonce(ch_num, chip_num, verify_on, target_nonce);
 	}
 	return pass_cal_num;
 }

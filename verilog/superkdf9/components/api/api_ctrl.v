@@ -64,7 +64,7 @@ always @ (*) begin
 			nxt_state = NOP;
 	NOP:	if(ch_cnt == reg_ch_num && &load_nop_cnt)
 			nxt_state = DONE;
-		else if(~tx_fifo_empty && ~rx_fifo_full && &load_nop_cnt)
+		else if(~tx_fifo_empty && ~rx_fifo_full && ch_cnt < reg_ch_num && &load_nop_cnt)
 			nxt_state = WORK;
 	DONE:	if(~timeout_busy && miso_vld_r)
 			nxt_state = IDLE;
