@@ -295,7 +295,7 @@ static int read_result(struct mm_work *mw, struct result *ret)
 	int n, i;
 	uint32_t nonce2, nonce0;
 	static uint32_t valid = 0, hw = 0, diff = 0, lw = 0;
-	static uint32_t last_nonce2 = 0, ntime = ASIC_COUNT - 1;
+	static uint32_t last_nonce2 = 0, ntime = 0;
 
 	if (api_get_rx_cnt() < 4)
 		return 0;
@@ -312,12 +312,6 @@ static int read_result(struct mm_work *mw, struct result *ret)
 	memcpy(&nonce2, ret->task_id + 4, 4);
 
 	/* Handle the ntime */
-	if (nonce2 != last_nonce2) {
-		ntime = ASIC_COUNT - 1;
-	}
-	if (nonce2 == last_nonce2 && ntime < 0) /* FIXME: Should never happen */
-		ntime = 0;
-
 	memcpy(ret->ntime, &ntime, 4);
 
 	/* Handle the real nonce */
@@ -348,7 +342,6 @@ static int read_result(struct mm_work *mw, struct result *ret)
 		debug32("N2N: %d, %08x, %08x[%d, %d, %d, %d][%08x]\n", ntime, nonce2, nonce0, ++lw, hw, diff, valid, *((uint32_t *)0x80000510));
 	}
 
-	ntime--;		/* Reduce the ntime offset */
 	last_nonce2 = nonce2;	/* Remember the last nonce2 */
 	return 1;
 }
@@ -460,7 +453,7 @@ int main(int argv, char **argc)
 #if 1
 	if (1) {
 	int ret;
-	int m = 1;
+	int m = 5;
 	int c = ASIC_COUNT;
 	int all = m * c * 248 * 16;
 	ret = api_asic_test(m, c, all/m/c);
