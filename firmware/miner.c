@@ -91,13 +91,14 @@ uint32_t get_asic_freq()
 
 extern uint32_t g_clock_conf_count;
 
-void miner_init_work(struct mm_work *mw, struct work *work)
+void miner_finish_work(struct work *work)
 {
 	unsigned int tmp;
 
-	memcpy(work->task_id, (uint8_t *)(&mw->pool_no), 4);
+	/* TODO: Add info on task_id */
 	memcpy(work->task_id + 4, (uint8_t *)(&work->nonce2), 4);
 
+	/* Set up the three frequency */
 	if (g_asic_freq == 200)
 		tmp = api_set_cpm(1, 16, 1, 16, 2);
 

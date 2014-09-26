@@ -496,7 +496,7 @@ int main(int argv, char **argc)
 				continue;
 
 			mm_work.nonce2++;
-			miner_init_work(&mm_work, &work);
+			miner_finish_work(&work);
 			api_send_work(&work);
 		}
 
