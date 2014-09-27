@@ -143,7 +143,7 @@ end
 always @ (posedge clk) begin
 	if(rst)
 		ch_cnt <= 6'b0;
-	else if(cur_state == IDLE)
+	else if(nxt_state == IDLE)
 		ch_cnt <= 6'b0;
 	else if(cur_state != WORK && nxt_state == WORK)
 		ch_cnt <= 6'b1 + ch_cnt;

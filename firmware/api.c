@@ -138,7 +138,7 @@ static inline unsigned int api_verify_nonce(unsigned int ch_num, unsigned int ch
 				pass_cal_num++;
 			else
 				if (verify_on)
-					debug32("TN:%08x, RX[2]:%08x, RX[3]:%08x\n", target_nonce, rx_data[2], rx_data[3]);
+					debug32("ch: %d, TN:%08x, RX[0]:%08x, RX[1]:%08x, RX[2]:%08x, RX[3]:%08x\n",i, target_nonce, rx_data[0], rx_data[1], rx_data[2], rx_data[3]);
 		}
 	}
 	return pass_cal_num;
@@ -146,7 +146,8 @@ static inline unsigned int api_verify_nonce(unsigned int ch_num, unsigned int ch
 
 unsigned int api_asic_test(unsigned int ch_num, unsigned int chip_num, unsigned int cal_core_num)
 {
-	unsigned int i, j, k;
+	unsigned int i, k;
+	int j;
 	unsigned int tx_data[23];
 	unsigned int target_nonce;
 	unsigned int pass_cal_num = 0;
@@ -154,11 +155,11 @@ unsigned int api_asic_test(unsigned int ch_num, unsigned int chip_num, unsigned 
 	unsigned int spi_speed = 0x1;
 
 	api_initial(ch_num, chip_num, spi_speed);
-	api_set_timeout(0x10000);
+	api_set_timeout(0x8d40);
 
-	for (j = 0; j < cal_core_num + 2; j++){
+	for (j = -1; j < cal_core_num + 2; j++){
 		api_gen_test_work(j, tx_data);
-		if (!j) {
+		if (j == -1) {
 			tx_data[20] = api_set_cpm(1, 16, 1, 16, 2);
 			tx_data[21] = api_set_cpm(1, 16, 1, 16, 2);
 			tx_data[22] = api_set_cpm(1, 16, 1, 16, 2);
@@ -166,8 +167,9 @@ unsigned int api_asic_test(unsigned int ch_num, unsigned int chip_num, unsigned 
 		for (k = 0; k < ch_num; k++){
 			while((512 - api_get_tx_cnt()) < (chip_num * 23))
 				;
-			for(i = 0; i < chip_num; i++)
+			for(i = 0; i < chip_num; i++){
 				api_set_tx_fifo(tx_data);
+			}
 		}
 
 		api_wait_done(ch_num, chip_num);

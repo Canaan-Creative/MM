@@ -455,7 +455,7 @@ int main(int argv, char **argc)
 	int ret;
 	int m = 5;
 	int c = ASIC_COUNT;
-	int all = m * c * 248 * 16;
+	int all = m * c * 100 *16;
 	ret = api_asic_test(m, c, all/m/c);
 	debug32("A.T: %d / %d = %d%%\n", all-ret, all, ((all-ret)*100/all));
 	}
