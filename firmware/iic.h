@@ -13,7 +13,7 @@ void iic_isr(void);
 
 int iic_read_nonblock(void);
 uint32_t iic_read();
-uint32_t iic_write(uint8_t *data, uint16_t len);
+uint32_t iic_write(uint8_t *data, uint16_t len, int block);
 
 uint8_t iic_addr_get(void);
 void iic_addr_set(unsigned char addr);

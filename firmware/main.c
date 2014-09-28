@@ -127,11 +127,11 @@ static void encode_pkg(uint8_t *p, int type, uint8_t *buf, unsigned int len)
 	p[AVA2_P_COUNT - 1] = (crc & 0xff00) >> 8;
 }
 
-void send_pkg(int type, uint8_t *buf, unsigned int len)
+void send_pkg(int type, uint8_t *buf, unsigned int len, int block)
 {
 	debug32("%d-Send: %d\n", g_module_id, type);
 	encode_pkg(g_act, type, buf, len);
-	if (!iic_write(g_act, AVA2_P_COUNT + 1))
+	if (!iic_write(g_act, AVA2_P_COUNT + 1, block))
 		iic_tx_reset();
 }
 
@@ -140,7 +140,7 @@ static void polling()
 	uint8_t *data;
 
 	if (ret_consume == ret_produce) {
-		send_pkg(AVA2_P_STATUS, NULL, 0);
+		send_pkg(AVA2_P_STATUS, NULL, 0, 0);
 
 		g_local_work = 0;
 		g_hw_work = 0;
@@ -149,7 +149,7 @@ static void polling()
 
 	data = ret_buf[ret_consume];
 	ret_consume = (ret_consume + 1) & RET_RINGBUFFER_MASK_RX;
-	send_pkg(AVA2_P_NONCE, data, AVA2_P_DATA_LEN - 4);
+	send_pkg(AVA2_P_NONCE, data, AVA2_P_DATA_LEN - 4, 0);
 	return;
 }
 
@@ -363,35 +363,35 @@ static int get_pkg(struct mm_work *mw)
 
 			if (decode_pkg(g_pkg, mw)) {
 #ifdef CFG_ENABLE_ACK
-				send_pkg(AVA2_P_NAK, NULL, 0);
+				send_pkg(AVA2_P_NAK, NULL, 0, 0);
 #endif
 				return 1;
 			} else {
 				/* Here we send back PKG if necessary */
 #ifdef CFG_ENABLE_ACK
-				send_pkg(AVA2_P_ACK, NULL, 0);
+				send_pkg(AVA2_P_ACK, NULL, 0, 0);
 #endif
 				switch (g_pkg[2]) {
 				case AVA2_P_DETECT:
 					memcpy(&tmp, g_pkg + 5 + 28, 4);
 					if (g_module_id == tmp)
-						send_pkg(AVA2_P_ACKDETECT, (uint8_t *)MM_VERSION, MM_VERSION_LEN);
+						send_pkg(AVA2_P_ACKDETECT, (uint8_t *)MM_VERSION, MM_VERSION_LEN, 1);
 					break;
 				case AVA2_P_REQUIRE:
 					memcpy(&tmp, g_pkg + 5 + 28, 4);
 					if (g_module_id == tmp)
-						send_pkg(AVA2_P_STATUS, NULL, 0);
+						send_pkg(AVA2_P_STATUS, NULL, 0, 0);
 					break;
 				case AVA2_P_DISCOVER:
 					if (g_module_id == AVA2_MODULE_BROADCAST)
-						send_pkg(AVA2_P_ACKDISCOVER, (uint8_t *)MM_VERSION, MM_VERSION_LEN);
+						send_pkg(AVA2_P_ACKDISCOVER, (uint8_t *)MM_VERSION, MM_VERSION_LEN, 1);
 					break;
 				case AVA2_P_SETDEVID:
 					if (!strncmp((char *)(g_pkg + 5 + MM_VERSION_LEN), (char *)g_dna, 8)) {
 						memcpy(&g_module_id, g_pkg + 5 + 28, 4);
 						debug32("ID: %d\n", g_module_id);
 						iic_addr_set(g_module_id);
-						send_pkg(AVA2_P_ACKSETDEVID, (uint8_t *)MM_VERSION, MM_VERSION_LEN);
+						send_pkg(AVA2_P_ACKSETDEVID, (uint8_t *)MM_VERSION, MM_VERSION_LEN, 1);
 					}
 					break;
 				default:
