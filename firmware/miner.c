@@ -74,13 +74,17 @@ static void calc_midstate(struct mm_work *mw, struct work *work)
 	memcpy(work->data + 32, mw->header + 64, 12);
 }
 
+extern uint32_t g_clock_conf_count;
+
 void set_asic_freq(uint32_t value)
 {
 	if (g_asic_freq == value)
 		return;
 
 	g_asic_freq = value;
-	/* TODO: update timeout base on freq */
+	g_clock_conf_count = 0;
+
+	/* The timeout value: 2^32÷(0.1GHz×1000000000×3968÷65)×100000000 = 0x4318c63 */
 	api_set_timeout(ASIC_TIMEOUT_100M / g_asic_freq * 100); /* Default timeout */
 }
 
@@ -88,8 +92,6 @@ uint32_t get_asic_freq()
 {
 	return g_asic_freq;
 }
-
-extern uint32_t g_clock_conf_count;
 
 void miner_finish_work(struct work *work)
 {

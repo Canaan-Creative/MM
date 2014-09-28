@@ -191,6 +191,8 @@ static int decode_pkg(uint8_t *p, struct mm_work *mw)
 		break;
 	case AVA2_P_STATIC:
 		g_new_stratum = 0;
+		g_local_work = 0;
+		g_hw_work = 0;
 		/* TODO: Flash api fifo */
 		memcpy(&mw->coinbase_len, data, 4);
 		memcpy(&mw->nonce2_offset, data + 4, 4);
@@ -240,7 +242,6 @@ static int decode_pkg(uint8_t *p, struct mm_work *mw)
 			set_voltage(tmp);
 			memcpy(&tmp, data + 8, 4);
 			set_asic_freq(tmp);
-			g_clock_conf_count = 0;
 		}
 
 		memcpy(&tmp, data + 12, 4);
@@ -258,7 +259,6 @@ static int decode_pkg(uint8_t *p, struct mm_work *mw)
 		set_voltage(tmp);
 		memcpy(&tmp, data + 8, 4);
 		set_asic_freq(tmp);
-		g_clock_conf_count = 0;
 
 		memcpy(&g_nonce2_offset, data + 12, 4);
 		memcpy(&g_nonce2_range, data + 16, 4);
@@ -293,26 +293,14 @@ static int read_result(struct mm_work *mw, struct result *ret)
 {
 	uint8_t *data, api_ret[16];
 	int n, i;
-	uint32_t nonce2, nonce0;
-	static uint32_t valid = 0, hw = 0, diff = 0, lw = 0;
-	static uint32_t last_nonce2 = 0, ntime = 0;
+	uint32_t nonce2, nonce0, ntime = 0;
+	static uint32_t valid = 0, hw = 0, diff = 0;
 
 	if (api_get_rx_cnt() < 4)
 		return 0;
 
 	/* Read result out */
 	api_get_rx_fifo((unsigned int *)api_ret);
-	g_local_work++;
-
-	/* Debug: */
-	hexdump(api_ret, 16);
-
-	/* Copy the task_id to ret pkg */
-	memcpy(ret->task_id, api_ret, 8);
-	memcpy(&nonce2, ret->task_id + 4, 4);
-
-	/* Handle the ntime */
-	memcpy(ret->ntime, &ntime, 4);
 
 	/* Handle the real nonce */
 	for (i = 0; i < 2; i++) {
@@ -320,6 +308,9 @@ static int read_result(struct mm_work *mw, struct result *ret)
 		if (nonce0 == 0xbeafbeaf)
 			continue;
 
+		g_local_work++;
+
+		memcpy(&nonce2, api_ret + 4, 4);
 		n = test_nonce(mw, nonce2, nonce0, ntime);
 		if (n == NONCE_HW) {
 			hw++;
@@ -328,21 +319,24 @@ static int read_result(struct mm_work *mw, struct result *ret)
 
 		if (n == NONCE_DIFF) {
 			diff++;
+
+
 			data = ret_buf[ret_produce];
 			ret_produce = (ret_produce + 1) & RET_RINGBUFFER_MASK_RX;
+
+			/* TODO: Miner ID information */
+			memcpy(ret->task_id, api_ret, 8);
 			nonce0 = nonce0 - 0x4000 + 0x180;
 			memcpy(ret->nonce, &nonce0, 4);
+			memcpy(ret->ntime, &ntime, 4);
+
 			memcpy(data, (uint8_t *)ret, 20);
 			memcpy(data + 20, mw->job_id, 4); /* Attach the job_id */
 		}
 
-		if (n == NONCE_VALID)
-			debug32("NONCE_VALID: %d\n", valid++);
-
-		debug32("N2N: %d, %08x, %08x[%d, %d, %d, %d][%08x]\n", ntime, nonce2, nonce0, ++lw, hw, diff, valid, *((uint32_t *)0x80000510));
+		debug32("N2N: [%d, %d, %d][%d, %d]\n", hw, diff, valid++, g_local_work, g_hw_work);
 	}
 
-	last_nonce2 = nonce2;	/* Remember the last nonce2 */
 	return 1;
 }
 
@@ -461,8 +455,6 @@ int main(int argv, char **argc)
 	}
 #endif
 
-	/* The timeout value: 2^32÷(0.1GHz×1000000000×3968÷65)×100000000 = 0x4318c63*/
-	api_set_timeout(ASIC_TIMEOUT_100M / ASIC_FREQUENCY * 100); /* Default timeout */
 	set_voltage(ASIC_0V);
 
 	while (1) {
@@ -486,7 +478,7 @@ int main(int argv, char **argc)
 		if (!g_new_stratum)
 			continue;
 
-		if (api_get_tx_cnt() < (23 * 5)) {
+		if (api_get_tx_cnt() < (23 * 10)) {
 			if (g_clock_conf_count < 100)
 				g_clock_conf_count++;
 
@@ -500,11 +492,7 @@ int main(int argv, char **argc)
 			api_send_work(&work);
 		}
 
-		while (read_result(&mm_work, &result)) {
-			get_pkg(&mm_work);
-			if (!g_new_stratum)
-				break;
-		}
+		read_result(&mm_work, &result);
 	}
 
 	return 0;

@@ -196,9 +196,9 @@ unsigned int api_asic_test(unsigned int ch_num, unsigned int chip_num, unsigned 
 	api_set_timeout(0x8d40);
 	api_flush();
 	api_change_cpm(ch_num, chip_num,
-		       1, 16, 1, 16, 4,
-		       1, 16, 1, 16, 4,
-		       1, 16, 1, 16, 4);
+		       1, 16, 1, 16, 2,
+		       1, 16, 1, 16, 2,
+		       1, 16, 1, 16, 2);
 
 	for (j = 0; j < cal_core_num + 2; j++){
 		api_gen_test_work(j, tx_data);
@@ -220,7 +220,6 @@ unsigned int api_asic_test(unsigned int ch_num, unsigned int chip_num, unsigned 
 	return pass_cal_num;
 }
 
-extern void delay(unsigned int ms);
 int api_send_work(struct work *w)
 {
 	uint32_t tmp;
