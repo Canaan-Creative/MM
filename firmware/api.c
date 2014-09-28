@@ -163,9 +163,9 @@ unsigned int NR2, unsigned int NF2, unsigned int OD2, unsigned int NB2, unsigned
 	unsigned int tx_data[23];
 	unsigned int i, k;
 
-	tx_data[20] = api_set_cpm(1, 16, 1, 16, 4);
-	tx_data[21] = api_set_cpm(1, 16, 1, 16, 4);
-	tx_data[22] = api_set_cpm(1, 16, 1, 16, 4);
+	tx_data[20] = api_set_cpm(1, 16, 1, 16, 2);
+	tx_data[21] = api_set_cpm(1, 16, 1, 16, 2);
+	tx_data[22] = api_set_cpm(1, 16, 1, 16, 2);
 
 	for (k = 0; k < ch_num; k++){
 		while((512 - api_get_tx_cnt()) < (chip_num * 23))
@@ -190,7 +190,7 @@ unsigned int api_asic_test(unsigned int ch_num, unsigned int chip_num, unsigned 
 	unsigned int target_nonce;
 	unsigned int pass_cal_num = 0;
 	unsigned int verify_on = 0;
-	unsigned int spi_speed = 0x1;
+	unsigned int spi_speed = 0x2;
 
 	api_initial(ch_num, chip_num, spi_speed);
 	api_set_timeout(0x8d40);
