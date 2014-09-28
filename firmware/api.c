@@ -166,9 +166,9 @@ unsigned int NR2, unsigned int NF2, unsigned int OD2, unsigned int NB2, unsigned
 	unsigned int tx_data[23];
 	unsigned int i, k;
 
-	tx_data[20] = api_set_cpm(NR0, NF0, OD0, NB0, div0);
-	tx_data[21] = api_set_cpm(NR1, NF1, OD1, NB1, div1);
-	tx_data[22] = api_set_cpm(NR2, NF2, OD2, NB2, div2);
+	tx_data[20] = api_set_cpm(NR0, NF0, OD0, NB0, div0) | 0x40;
+	tx_data[21] = api_set_cpm(NR1, NF1, OD1, NB1, div1) | 0x40;
+	tx_data[22] = api_set_cpm(NR2, NF2, OD2, NB2, div2) | 0x40;
 
 	for (k = 0; k < ch_num; k++){
 		while((512 - api_get_tx_cnt()) < (chip_num * 23))
@@ -323,8 +323,7 @@ void set_asic_freq(uint32_t value)
 	g_asic_freq = value;
 
 	/* The timeout value: 2^32÷(0.1GHz×1000000000×3968÷65)×100000000 = 0x4318c63 */
-	api_set_timeout((ASIC_TIMEOUT_100M / g_asic_freq * 50) +
-			(ASIC_COUNT * 23 * SPI_SPEED * 2));
+	api_set_timeout(ASIC_TIMEOUT_100M / g_asic_freq * 100);
 	api_flush();
 	api_change_cpm(MINER_COUNT, ASIC_COUNT,
 		       1, 16, 1, 16, 2,
