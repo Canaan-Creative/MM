@@ -291,7 +291,6 @@ static int read_result(struct mm_work *mw, struct result *ret)
 	uint8_t *data, api_ret[16];
 	int n, i;
 	uint32_t nonce2, nonce0, ntime = 0;
-	static uint32_t valid = 0, hw = 0, diff = 0;
 
 	if (api_get_rx_cnt() < 4)
 		return 0;
@@ -310,14 +309,11 @@ static int read_result(struct mm_work *mw, struct result *ret)
 		memcpy(&nonce2, api_ret + 4, 4);
 		n = test_nonce(mw, nonce2, nonce0, ntime);
 		if (n == NONCE_HW) {
-			hw++;
 			g_hw_work++;
+			continue;
 		}
 
 		if (n == NONCE_DIFF) {
-			diff++;
-
-
 			data = ret_buf[ret_produce];
 			ret_produce = (ret_produce + 1) & RET_RINGBUFFER_MASK_RX;
 
@@ -330,8 +326,6 @@ static int read_result(struct mm_work *mw, struct result *ret)
 			memcpy(data, (uint8_t *)ret, 20);
 			memcpy(data + 20, mw->job_id, 4); /* Attach the job_id */
 		}
-
-		debug32("N2N: [%d, %d, %d][%d, %d]\n", hw, diff, valid++, g_local_work, g_hw_work);
 	}
 
 	return 1;
@@ -438,19 +432,14 @@ int main(int argv, char **argc)
 
 
 #if 1
+	if (1) {
 	/* Test part of ASIC cores */
 	set_voltage(ASIC_CORETEST_VOLT);
-
-	if (1) {
 	int ret;
 	int m = MINER_COUNT;
 	int c = ASIC_COUNT;
 	int all = m*c * 100 *16;
 	ret = api_asic_test(m, c, all/m/c);
-
-	uint32_t to = (ASIC_TIMEOUT_100M / 200 * 100) + (ASIC_COUNT * 23 * SPI_SPEED * 2);
-	debug32("TO: %08x\n", to);
-
 	debug32("A.T: %d / %d = %d%%\n", all-ret, all, ((all-ret)*100/all));
 	}
 #endif
@@ -478,12 +467,8 @@ int main(int argv, char **argc)
 		if (!g_new_stratum)
 			continue;
 
-		if (api_get_tx_cnt() < (23 * 10)) {
+		if (api_get_tx_cnt() < (23 * 8)) {
 			miner_gen_nonce2_work(&mm_work, mm_work.nonce2++, &work);
-			get_pkg(&mm_work);
-			if (!g_new_stratum)
-				continue;
-
 			api_send_work(&work);
 		}
 
