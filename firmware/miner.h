@@ -19,10 +19,8 @@
 #define NONCE_DIFF	2
 
 struct work {
+	uint32_t memo;
 	uint32_t nonce2;
-	uint8_t	clock[12];
-
-	uint8_t	task_id[8];	/* Nonce2 + job_id etc */
 
 	uint8_t a2[4];
 	uint8_t e0[4];
@@ -31,6 +29,7 @@ struct work {
 	uint8_t a0[4];
 	uint8_t a1[4];
 	uint8_t data[44]; 	/* midstate[32] + data[12] */
+
 	uint8_t header[128]; 	/* Block header */
 };
 
@@ -64,12 +63,8 @@ struct mm_work {
 };
 
 void miner_gen_nonce2_work(struct mm_work *mw, uint32_t nonce2, struct work *work);
-void miner_finish_work(struct work *work);
 void roll_work(struct work *work, int ntime_offset);
 
 int test_nonce(struct mm_work *mw, uint32_t nonce2, uint32_t nonce, int ntime_offset);
-
-void set_asic_freq(uint32_t value);
-uint32_t get_asic_freq();
 
 #endif /* __MINER_H__ */

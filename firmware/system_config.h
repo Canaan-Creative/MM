@@ -9,15 +9,16 @@
 #ifndef _SYSTEM_CONFIG_H_
 #define _SYSTEM_CONFIG_H_
 
-#define ASIC_FREQUENCY	200 /* MHz */
-#define ASIC_CORETEST_VOLT	0x8100 /* 0.7V */
-#define ASIC_TIMEOUT_100M	0x4318c63
-
-#define ASIC_0V	0x8f00
-
 #define AVA4_DEFAULT_MODULES	4
-#define ASIC_COUNT	4
 
+#define ASIC_FREQUENCY		200 /* MHz */
+#define ASIC_CORETEST_VOLT	0x8100 /* 0.7V */
+#define ASIC_0V			0x8f00
+#define ASIC_TIMEOUT_100M	0x4318c63
+#define MINER_COUNT		5
+#define ASIC_COUNT		4
+
+#define SPI_SPEED		(0x2)
 #define CPU_FREQUENCY		(100 * 1000 * 1000) /* 50Mhz */
 #define UART_BAUD_RATE          (115200)
 

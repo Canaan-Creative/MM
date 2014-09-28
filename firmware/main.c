@@ -39,9 +39,6 @@ static int g_module_id = AVA2_MODULE_BROADCAST;
 static int g_new_stratum = 0;
 static int g_local_work = 0;
 static int g_hw_work = 0;
-
-uint32_t g_clock_conf_count = 0;
-
 static uint32_t g_nonce2_offset = 0;
 static uint32_t g_nonce2_range = 0xffffffff;
 
@@ -428,35 +425,38 @@ int main(int argv, char **argc)
 	/* Dump the FPGA DNA */
 	iic_dna_read(g_dna);
 	hexdump(g_dna, 8);
-
 	debug32("%d:MM-%s,%dC\n", g_module_id, MM_VERSION, read_temp());
-
 #ifdef DEBUG_IIC_TEST
 	extern void iic_test(void);
 	iic_test();
 #endif
+	api_initial(MINER_COUNT, ASIC_COUNT, SPI_SPEED);
 
 	timer_set(0, IDLE_TIME);
-	g_new_stratum = 0;
-
-	/* Test part of ASIC cores */
-	set_voltage(ASIC_CORETEST_VOLT);
 	gpio_led(0xf);
 	sft_led(0x1);
 
+
 #if 1
+	/* Test part of ASIC cores */
+	set_voltage(ASIC_CORETEST_VOLT);
+
 	if (1) {
 	int ret;
-	int m = 5;
+	int m = MINER_COUNT;
 	int c = ASIC_COUNT;
-	int all = m * c * 100 *16;
+	int all = m*c * 100 *16;
 	ret = api_asic_test(m, c, all/m/c);
+
+	uint32_t to = (ASIC_TIMEOUT_100M / 200 * 100) + (ASIC_COUNT * 23 * SPI_SPEED * 2);
+	debug32("TO: %08x\n", to);
+
 	debug32("A.T: %d / %d = %d%%\n", all-ret, all, ((all-ret)*100/all));
 	}
 #endif
 
 	set_voltage(ASIC_0V);
-
+	g_new_stratum = 0;
 	while (1) {
 		get_pkg(&mm_work);
 
@@ -479,16 +479,11 @@ int main(int argv, char **argc)
 			continue;
 
 		if (api_get_tx_cnt() < (23 * 10)) {
-			if (g_clock_conf_count < 100)
-				g_clock_conf_count++;
-
-			miner_gen_nonce2_work(&mm_work, mm_work.nonce2, &work);
+			miner_gen_nonce2_work(&mm_work, mm_work.nonce2++, &work);
 			get_pkg(&mm_work);
 			if (!g_new_stratum)
 				continue;
 
-			mm_work.nonce2++;
-			miner_finish_work(&work);
 			api_send_work(&work);
 		}
 

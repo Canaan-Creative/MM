@@ -16,6 +16,8 @@
 
 #include "api_test_data.c"	/* The test data array */
 
+static uint32_t g_asic_freq = 0;
+
 static struct lm32_api *api = (struct lm32_api *)API_BASE;
 
 unsigned int api_set_cpm(unsigned int NR, unsigned int NF, unsigned int OD, unsigned int NB, unsigned int div)
@@ -144,7 +146,8 @@ static inline unsigned int api_verify_nonce(unsigned int ch_num, unsigned int ch
 	return pass_cal_num;
 }
 
-int api_flush(){
+static inline int api_flush()
+{
 	while(1){
 		while(api_get_rx_cnt())
 			readl(&api->rx);
@@ -163,9 +166,9 @@ unsigned int NR2, unsigned int NF2, unsigned int OD2, unsigned int NB2, unsigned
 	unsigned int tx_data[23];
 	unsigned int i, k;
 
-	tx_data[20] = api_set_cpm(1, 16, 1, 16, 2);
-	tx_data[21] = api_set_cpm(1, 16, 1, 16, 2);
-	tx_data[22] = api_set_cpm(1, 16, 1, 16, 2);
+	tx_data[20] = api_set_cpm(NR0, NF0, OD0, NB0, div0);
+	tx_data[21] = api_set_cpm(NR1, NF1, OD1, NB1, div1);
+	tx_data[22] = api_set_cpm(NR2, NF2, OD2, NB2, div2);
 
 	for (k = 0; k < ch_num; k++){
 		while((512 - api_get_tx_cnt()) < (chip_num * 23))
@@ -190,9 +193,6 @@ unsigned int api_asic_test(unsigned int ch_num, unsigned int chip_num, unsigned 
 	unsigned int target_nonce;
 	unsigned int pass_cal_num = 0;
 	unsigned int verify_on = 0;
-	unsigned int spi_speed = 0x2;
-
-	api_initial(ch_num, chip_num, spi_speed);
 	api_set_timeout(0x8d40);
 	api_flush();
 	api_change_cpm(ch_num, chip_num,
@@ -301,21 +301,38 @@ int api_send_work(struct work *w)
 		writel(tmp, &api->tx);
 	}
 
-	memcpy((uint8_t *)(&tmp), w->task_id, 4);
+	memcpy((uint8_t *)(&tmp), &w->memo, 4);
 	writel(tmp, &api->tx);
 
-	memcpy((uint8_t *)(&tmp), w->task_id + 4, 4);
+	memcpy((uint8_t *)(&tmp), &w->nonce2, 4);
 	writel(tmp, &api->tx);
 
 	/* The chip configure information */
-	memcpy((uint8_t *)(&tmp), w->clock + 8, 4);
 	writel(1, &api->tx);
-
-	memcpy((uint8_t *)(&tmp), w->clock + 4, 4);
 	writel(1, &api->tx);
-
-	memcpy((uint8_t *)(&tmp), w->clock, 4);
 	writel(1, &api->tx);
 
 	return 0;
+}
+
+void set_asic_freq(uint32_t value)
+{
+	if (g_asic_freq == value)
+		return;
+
+	g_asic_freq = value;
+
+	/* The timeout value: 2^32÷(0.1GHz×1000000000×3968÷65)×100000000 = 0x4318c63 */
+	api_set_timeout((ASIC_TIMEOUT_100M / g_asic_freq * 50) +
+			(ASIC_COUNT * 23 * SPI_SPEED * 2));
+	api_flush();
+	api_change_cpm(MINER_COUNT, ASIC_COUNT,
+		       1, 16, 1, 16, 2,
+		       1, 16, 1, 16, 2,
+		       1, 16, 1, 16, 2);
+}
+
+uint32_t get_asic_freq()
+{
+	return g_asic_freq;
 }

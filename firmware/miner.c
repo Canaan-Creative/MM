@@ -19,8 +19,6 @@
 #include "twipwm.h"
 #include "api.h"
 
-static uint32_t g_asic_freq = ASIC_FREQUENCY;
-
 static inline void flip32(void *dest_p, const void *src_p)
 {
 	uint32_t *dest = dest_p;
@@ -72,41 +70,6 @@ static void calc_midstate(struct mm_work *mw, struct work *work)
 
 	memcpy(work->data, data, 32);
 	memcpy(work->data + 32, mw->header + 64, 12);
-}
-
-extern uint32_t g_clock_conf_count;
-
-void set_asic_freq(uint32_t value)
-{
-	if (g_asic_freq == value)
-		return;
-
-	g_asic_freq = value;
-	g_clock_conf_count = 0;
-
-	/* The timeout value: 2^32÷(0.1GHz×1000000000×3968÷65)×100000000 = 0x4318c63 */
-	api_set_timeout(ASIC_TIMEOUT_100M / g_asic_freq * 100); /* Default timeout */
-}
-
-uint32_t get_asic_freq()
-{
-	return g_asic_freq;
-}
-
-void miner_finish_work(struct work *work)
-{
-	unsigned int tmp;
-
-	/* TODO: Add info on task_id */
-	memcpy(work->task_id + 4, (uint8_t *)(&work->nonce2), 4);
-
-	/* Set up the three frequency */
-	if (g_asic_freq == 200)
-		tmp = api_set_cpm(1, 16, 1, 16, 2);
-
-	memcpy(work->clock, (uint8_t *)&tmp, 4);
-	memcpy(work->clock + 4, (uint8_t *)&tmp, 4);
-	memcpy(work->clock + 8, (uint8_t *)&tmp, 4);
 }
 
 static void rev(unsigned char *s, size_t l)
