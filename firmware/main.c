@@ -446,7 +446,7 @@ int main(int argv, char **argc)
 	g_new_stratum = 0;
 
 	/* Test part of ASIC cores */
-	set_voltage(ASIC_CORETEST_VOLT);
+	set_voltage(0xbe00);
 	gpio_led(0xf);
 	sft_led(0x1);
 

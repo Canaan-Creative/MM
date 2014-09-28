@@ -144,6 +144,44 @@ static inline unsigned int api_verify_nonce(unsigned int ch_num, unsigned int ch
 	return pass_cal_num;
 }
 
+int api_flush(){
+	while(1){
+		while(api_get_rx_cnt())
+			readl(&api->rx);
+		if(api_get_tx_cnt() == 0 && api_get_rx_cnt() == 0)
+			return 0;
+	}
+}
+
+extern void delay(unsigned int ms);
+void api_change_cpm(
+unsigned int ch_num, unsigned int chip_num,
+unsigned int NR0, unsigned int NF0, unsigned int OD0, unsigned int NB0, unsigned int div0,
+unsigned int NR1, unsigned int NF1, unsigned int OD1, unsigned int NB1, unsigned int div1,
+unsigned int NR2, unsigned int NF2, unsigned int OD2, unsigned int NB2, unsigned int div2
+){
+	unsigned int tx_data[23];
+	unsigned int i, k;
+
+	tx_data[20] = api_set_cpm(1, 16, 1, 16, 4);
+	tx_data[21] = api_set_cpm(1, 16, 1, 16, 4);
+	tx_data[22] = api_set_cpm(1, 16, 1, 16, 4);
+
+	for (k = 0; k < ch_num; k++){
+		while((512 - api_get_tx_cnt()) < (chip_num * 23))
+			;
+		for(i = 0; i < chip_num; i++){
+			api_set_tx_fifo(tx_data);
+		}
+	}
+
+	api_wait_done(ch_num, chip_num);
+
+	api_verify_nonce(ch_num, chip_num, 0, 0);
+	delay(1);
+}
+
+
 unsigned int api_asic_test(unsigned int ch_num, unsigned int chip_num, unsigned int cal_core_num)
 {
 	unsigned int i, k;
@@ -156,14 +194,14 @@ unsigned int api_asic_test(unsigned int ch_num, unsigned int chip_num, unsigned 
 
 	api_initial(ch_num, chip_num, spi_speed);
 	api_set_timeout(0x8d40);
+	api_flush();
+	api_change_cpm(ch_num, chip_num,
+		       1, 16, 1, 16, 4,
+		       1, 16, 1, 16, 4,
+		       1, 16, 1, 16, 4);
 
-	for (j = -1; j < cal_core_num + 2; j++){
+	for (j = 0; j < cal_core_num + 2; j++){
 		api_gen_test_work(j, tx_data);
-		if (j == -1) {
-			tx_data[20] = api_set_cpm(1, 16, 1, 16, 2);
-			tx_data[21] = api_set_cpm(1, 16, 1, 16, 2);
-			tx_data[22] = api_set_cpm(1, 16, 1, 16, 2);
-		}
 		for (k = 0; k < ch_num; k++){
 			while((512 - api_get_tx_cnt()) < (chip_num * 23))
 				;
@@ -177,6 +215,7 @@ unsigned int api_asic_test(unsigned int ch_num, unsigned int chip_num, unsigned 
 		target_nonce = api_gen_test_work((j-2)%16, tx_data);
 		verify_on = j >= 2 ? 1 : 0;
 		pass_cal_num += api_verify_nonce(ch_num, chip_num, verify_on, target_nonce);
+
 	}
 	return pass_cal_num;
 }
