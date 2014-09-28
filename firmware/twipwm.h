@@ -20,8 +20,8 @@ void wdg_feed(uint32_t value);
 uint32_t read_fan0();
 uint32_t read_fan1();
 
-uint16_t read_temp0();
-uint16_t read_temp1();
+uint16_t read_temp0(uint16_t *temperature);
+uint16_t read_temp1(uint16_t *temperature);
 
 void adjust_fan(uint32_t pwm);
 void reset();

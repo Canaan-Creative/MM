@@ -71,4 +71,6 @@ int test_nonce(struct mm_work *mw, struct result *ret);
 void set_asic_freq(uint32_t value);
 uint32_t get_asic_freq();
 
+extern uint8_t hardware_info[0x1c];
+
 #endif /* __MINER_H__ */
