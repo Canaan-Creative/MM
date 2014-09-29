@@ -118,7 +118,7 @@ void api_set_tx_fifo(unsigned int * data)
 void api_get_rx_fifo(unsigned int * data)
 {
 	int i;
-	for (i = 0; i < 4; i++)
+	for (i = 0; i < 6; i++)
 		data[i] = readl(&api->rx);
 }
 
@@ -131,7 +131,7 @@ static inline void api_wait_done(unsigned int ch_num, unsigned int chip_num)
 static inline unsigned int api_verify_nonce(unsigned int ch_num, unsigned int chip_num, unsigned int verify_on, unsigned int target_nonce)
 {
 	unsigned int i, j;
-	unsigned int rx_data[4];
+	unsigned int rx_data[6];
 	unsigned int pass_cal_num = 0;
 	for (i = 0; i < ch_num; i++) {
 		for (j = 0; j < chip_num; j++) {
