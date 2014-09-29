@@ -12,7 +12,7 @@
 #include "timer.h"
 
 static struct lm32_shifter *sft = (struct lm32_shifter *)SHIFTER_BASE;
-static uint32_t g_voltage = 0x8f00; /* 0V */
+static uint32_t g_voltage = ASIC_0V;
 
 static void shift_done()
 {
@@ -41,7 +41,7 @@ int set_voltage(uint32_t value)
 
 	g_voltage = value;
 
-	if (value == 0x8f00) {
+	if (value == ASIC_0V) {
 		writel(0x7, &sft->reg);
 		delay(VOLTAGE_DELAY);
 		return 0;

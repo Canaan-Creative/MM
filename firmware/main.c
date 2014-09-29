@@ -288,22 +288,27 @@ static int decode_pkg(uint8_t *p, struct mm_work *mw)
 
 static int read_result(struct mm_work *mw, struct result *ret)
 {
-	uint8_t *data, api_ret[16];
+	uint8_t *data, api_ret[24];
 	int n, i;
-	uint32_t nonce2, nonce0, ntime = 0;
+	uint32_t nonce2, nonce0, ntime = 0, last_nonce0 = 0xbeafbeaf;
 
-	if (api_get_rx_cnt() < 4)
+	if (api_get_rx_cnt() < 6)
 		return 0;
 
 	/* Read result out */
 	api_get_rx_fifo((unsigned int *)api_ret);
 
+	memcpy(&nonce0, api_ret + 8 + 3 * 4, 4);
+	if (nonce0 != 0xbeafbeaf)
+		return 1;
+
 	/* Handle the real nonce */
-	for (i = 0; i < 2; i++) {
+	for (i = 0; i < 3; i++) {
 		memcpy(&nonce0, api_ret + 8 + i * 4, 4);
-		if (nonce0 == 0xbeafbeaf)
+		if (nonce0 == 0xbeafbeaf || nonce0 == last_nonce0)
 			continue;
 
+		last_nonce0 = nonce0;
 		g_local_work++;
 
 		memcpy(&nonce2, api_ret + 4, 4);
@@ -438,7 +443,7 @@ int main(int argv, char **argc)
 	int ret;
 	int m = MINER_COUNT;
 	int c = ASIC_COUNT;
-	int all = m*c * 100 *16;
+	int all = m*c * 248*16;
 	ret = api_asic_test(m, c, all/m/c);
 	debug32("A.T: %d / %d = %d%%\n", all-ret, all, ((all-ret)*100/all));
 	}

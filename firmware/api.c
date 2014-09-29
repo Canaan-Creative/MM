@@ -124,7 +124,7 @@ void api_get_rx_fifo(unsigned int * data)
 
 static inline void api_wait_done(unsigned int ch_num, unsigned int chip_num)
 {
-	while (api_get_rx_cnt() != (ch_num * chip_num * 4))
+	while (api_get_rx_cnt() != (ch_num * chip_num * 6))
 		;
 }
 
@@ -157,12 +157,11 @@ static inline int api_flush()
 }
 
 extern void delay(unsigned int ms);
-void api_change_cpm(
-unsigned int ch_num, unsigned int chip_num,
-unsigned int NR0, unsigned int NF0, unsigned int OD0, unsigned int NB0, unsigned int div0,
-unsigned int NR1, unsigned int NF1, unsigned int OD1, unsigned int NB1, unsigned int div1,
-unsigned int NR2, unsigned int NF2, unsigned int OD2, unsigned int NB2, unsigned int div2
-){
+void api_change_cpm(unsigned int ch_num, unsigned int chip_num,
+		    unsigned int NR0, unsigned int NF0, unsigned int OD0, unsigned int NB0, unsigned int div0,
+		    unsigned int NR1, unsigned int NF1, unsigned int OD1, unsigned int NB1, unsigned int div1,
+		    unsigned int NR2, unsigned int NF2, unsigned int OD2, unsigned int NB2, unsigned int div2)
+{
 	unsigned int tx_data[23];
 	unsigned int i, k;
 
@@ -173,9 +172,8 @@ unsigned int NR2, unsigned int NF2, unsigned int OD2, unsigned int NB2, unsigned
 	for (k = 0; k < ch_num; k++){
 		while((512 - api_get_tx_cnt()) < (chip_num * 23))
 			;
-		for(i = 0; i < chip_num; i++){
+		for(i = 0; i < chip_num; i++)
 			api_set_tx_fifo(tx_data);
-		}
 	}
 
 	api_wait_done(ch_num, chip_num);
@@ -274,7 +272,6 @@ int api_send_work(struct work *w)
 
 	return 1;
 #endif
-	/* ============================================= */
 	writel(0, &api->tx);
 
 	memcpy((uint8_t *)(&tmp), w->a2, 4);
@@ -322,7 +319,8 @@ void set_asic_freq(uint32_t value)
 
 	g_asic_freq = value;
 
-	/* The timeout value: 2^32÷(0.1GHz×1000000000×3968÷65)×100000000 = 0x4318c63 */
+	/* The timeout value:
+	 * 2^32÷(0.1GHz×1000000000×3968÷65)×100000000 = 0x4318c63 */
 	api_set_timeout(ASIC_TIMEOUT_100M / g_asic_freq * 100);
 	api_flush();
 	api_change_cpm(MINER_COUNT, ASIC_COUNT,
