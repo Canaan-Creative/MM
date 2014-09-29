@@ -25,7 +25,7 @@ input  [`API_NUM-1:0] miso
 );
 parameter RX_FIFO_DEPTH = 256;//words
 parameter WORK_LEN = 736/32;//words
-parameter RX_BLOCK_LEN = 4;//words
+parameter RX_BLOCK_LEN = 6;//words
 parameter MAX_CHIP_IN_CH = 5;//words
 
 parameter IDLE = 2'd0;
