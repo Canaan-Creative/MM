@@ -31,13 +31,18 @@ isedir  ?= /home/Xilinx/14.6/ISE_DS/
 xil_env ?= . $(isedir)/settings$(shell getconf LONG_BIT).sh &>/dev/null
 
 
-.PHONY: all clean distclean load reflash
+.PHONY: all clean distclean load reflash fpga fpga_fake
 
 # C rules
 all: $(PRJ_NAME).objdump $(PRJ_NAME).hexdump $(HARDWARE_NAME).bit $(HARDWARE_NAME).mcs
 	mkdir -p bin/${BIN_DIR}
 	cp $(PRJ_NAME).elf $^ bin/${BIN_DIR}
 	cd bin/${BIN_DIR} && md5sum -b * > md5sums
+
+fpga: all fpga_fake
+
+fpga_fake:
+	touch ../verilog/superkdf9/soc/superkdf9_simple.v
 
 $(PRJ_NAME).objdump: $(PRJ_NAME).elf
 	$(CROSS)objdump -D $^ > $@
