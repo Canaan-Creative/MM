@@ -1,6 +1,61 @@
 100M - 1, 16, 1, 16, 4
+170M - 1, 27, 1, 27, 4
 200M - 1, 16, 1, 16, 2
+220M - 1, 17, 1, 17, 2
+230M - 1, 18, 1, 18, 2
 300M - 1, 24, 1, 24, 2
 350M - 1, 28, 1, 28, 2
 380M - 1, 30, 1, 30, 2
 400M - 1, 16, 1, 16, 1
+
+
+API send work example:
+#if 0
+	static int n2 = 0;
+	uint32_t msg_blk[23];
+
+	msg_blk[0] = 0x010f0e00;		 /* Nonce */
+
+	msg_blk[1] = 0x220f1dbd;	/* a2 */
+
+	msg_blk[2] = 0xd8f8ef67;	/* Midstat */
+	msg_blk[3] = 0x12146495;
+	msg_blk[4] = 0xc44192c0;
+	msg_blk[5] = 0x7145fd6d;
+	msg_blk[6] = 0x974bf4bb;
+	msg_blk[7] = 0x8f41371d;
+	msg_blk[8] = 0x65c90d1e;
+	msg_blk[9] = 0x9cb18a17;
+
+	msg_blk[10] = 0xfa77fe7d;	/* e0 */
+	msg_blk[11] = 0x12cdfd7b;	/* e1 */
+	msg_blk[12] = 0x81677107;	/* e2 */
+	msg_blk[13] = 0x62a5f25c;	/* a0 */
+	msg_blk[14]  = 0x05b168ae;	/* a1 */
+
+	msg_blk[15]  = 0x087e051a;	/* Data */
+	msg_blk[16]  = 0x88517050;
+	msg_blk[17]  = 0x4ac1d001;
+
+	msg_blk[18]  = n2;
+	msg_blk[19]  = n2++;
+
+	msg_blk[20]  = 1;
+	msg_blk[21]  = 1;
+	msg_blk[22]  = 1;
+
+	/* for (i = 0; i < 23; i++) { */
+	/* 	writel(msg_blk[i], &api->tx); */
+	/* } */
+
+	writel(0, &api->tx);
+	for (i = 1; i < 18; i++) {
+		writel(test_data[0][i], &api->tx);
+	}
+
+	for (i = 18; i < 23; i++) {
+		writel(msg_blk[i], &api->tx);
+	}
+
+	return 1;
+#endif
