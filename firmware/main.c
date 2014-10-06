@@ -288,22 +288,22 @@ static int decode_pkg(uint8_t *p, struct mm_work *mw)
 
 static int read_result(struct mm_work *mw, struct result *ret)
 {
-	uint8_t *data, api_ret[24];
+	uint8_t *data, api_ret[4 * LM32_API_RX_BUFF_LEN];
 	int n, i;
 	uint32_t nonce2, nonce0, ntime = 0, job_id, last_nonce0 = 0xbeafbeaf;
 
-	if (api_get_rx_cnt() < 6)
+	if (api_get_rx_cnt() < LM32_API_RX_BUFF_LEN)
 		return 0;
 
 	/* Read result out */
 	api_get_rx_fifo((unsigned int *)api_ret);
 
-	memcpy(&nonce0, api_ret + 8 + 3 * 4, 4);
+	memcpy(&nonce0, api_ret + LM32_API_RX_BUFF_LEN - 4, 4);
 	if (nonce0 != 0xbeafbeaf)
 		return 1;
 
 	/* Handle the real nonce */
-	for (i = 0; i < 3; i++) {
+	for (i = 0; i < LM32_API_RX_BUFF_LEN - 3; i++) {
 		memcpy(&nonce0, api_ret + 8 + i * 4, 4);
 		if (nonce0 == 0xbeafbeaf || nonce0 == last_nonce0)
 			continue;

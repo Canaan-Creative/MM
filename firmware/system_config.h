@@ -101,6 +101,7 @@ struct lm32_sha256 {
 
 
 /* API */
+#define LM32_API_RX_BUFF_LEN	11
 struct lm32_api {
 	volatile unsigned int tx;
 	volatile unsigned int rx;

@@ -97,13 +97,13 @@ void api_set_tx_fifo(unsigned int * data)
 void api_get_rx_fifo(unsigned int * data)
 {
 	int i;
-	for (i = 0; i < 11; i++)
+	for (i = 0; i < LM32_API_RX_BUFF_LEN; i++)
 		data[i] = readl(&api->rx);
 }
 
 static inline void api_wait_done(unsigned int ch_num, unsigned int chip_num)
 {
-	while (api_get_rx_cnt() != (ch_num * chip_num * 11))
+	while (api_get_rx_cnt() != (ch_num * chip_num * LM32_API_RX_BUFF_LEN))
 		;
 }
 
@@ -131,7 +131,7 @@ static inline unsigned int api_gen_test_work(unsigned int i, unsigned int * data
 static inline unsigned int api_verify_nonce(unsigned int ch_num, unsigned int chip_num, unsigned int verify_on, unsigned int target_nonce)
 {
 	unsigned int i, j;
-	unsigned int rx_data[11];
+	unsigned int rx_data[LM32_API_RX_BUFF_LEN];
 	unsigned int pass_cal_num = 0;
 	for (i = 0; i < ch_num; i++) {
 		for (j = 0; j < chip_num; j++) {
