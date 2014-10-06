@@ -229,8 +229,6 @@ int api_send_work(struct work *w)
 
 	for (j = 1; j < 18; j++)
 		writel(test_data[i%16][j], &api->tx);
-
-
 #else
 	uint32_t tmp;
 	int i;
@@ -278,16 +276,19 @@ int api_send_work(struct work *w)
 
 void set_asic_freq(uint32_t value)
 {
+	if (g_asic_freq == value)
+		return;
+
 	g_asic_freq = value;
 
 	/* The timeout value:
 	 * 2^32÷(0.1GHz×1000000000×3968÷65)×100000000 = 0x4318c63 */
-	api_set_timeout(ASIC_TIMEOUT_100M / g_asic_freq * 100);
+	api_set_timeout(ASIC_TIMEOUT_100M / g_asic_freq * 50);
 	api_flush();
 	api_change_cpm(MINER_COUNT, ASIC_COUNT,
-		       1, 16, 1, 16, 4,
-		       1, 16, 1, 16, 4,
-		       1, 16, 1, 16, 4);
+		       1, 16, 1, 16, 2,
+		       1, 16, 1, 16, 2,
+		       1, 16, 1, 16, 2);
 }
 
 uint32_t get_asic_freq()

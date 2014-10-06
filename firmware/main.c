@@ -209,8 +209,8 @@ static int decode_pkg(uint8_t *p, struct mm_work *mw)
 			mw->pool_no);
 		break;
 	case AVA2_P_JOB_ID:
-		memcpy(mw->job_id, data, 4);
-		hexdump(mw->job_id, 4);
+		memcpy((uint8_t *)&mw->job_id, data, 4);
+		hexdump((uint8_t *)&mw->job_id, 4);
 		break;
 	case AVA2_P_COINBASE:
 		if (idx == 1)
@@ -290,7 +290,7 @@ static int read_result(struct mm_work *mw, struct result *ret)
 {
 	uint8_t *data, api_ret[24];
 	int n, i;
-	uint32_t nonce2, nonce0, ntime = 0, last_nonce0 = 0xbeafbeaf;
+	uint32_t nonce2, nonce0, ntime = 0, job_id, last_nonce0 = 0xbeafbeaf;
 
 	if (api_get_rx_cnt() < 6)
 		return 0;
@@ -312,24 +312,26 @@ static int read_result(struct mm_work *mw, struct result *ret)
 		g_local_work++;
 
 		memcpy(&nonce2, api_ret + 4, 4);
+		memcpy(&job_id, api_ret, 4);
+		debug32("JI: %08x:%08x\n", job_id, mw->job_id);
 		n = test_nonce(mw, nonce2, nonce0, ntime);
-		if (n == NONCE_HW) {
+		if (n == NONCE_HW && job_id == mw->job_id) {
 			g_hw_work++;
 			continue;
 		}
 
-		if (n == NONCE_DIFF) {
+		if (n == NONCE_DIFF || job_id != mw->job_id) {
 			data = ret_buf[ret_produce];
 			ret_produce = (ret_produce + 1) & RET_RINGBUFFER_MASK_RX;
 
 			/* TODO: Miner ID information */
-			memcpy(ret->task_id, api_ret, 8);
+			memcpy(ret->task_id + 4, api_ret + 4, 8);
 			nonce0 = nonce0 - 0x4000 + 0x180;
 			memcpy(ret->nonce, &nonce0, 4);
 			memcpy(ret->ntime, &ntime, 4);
 
 			memcpy(data, (uint8_t *)ret, 20);
-			memcpy(data + 20, mw->job_id, 4); /* Attach the job_id */
+			memcpy(data + 20, &job_id, 4); /* Attach the job_id */
 		}
 	}
 
