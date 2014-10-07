@@ -236,9 +236,10 @@ static int decode_pkg(uint8_t *p, struct mm_work *mw)
 			memcpy(&tmp, data, 4);
 			adjust_fan(tmp);
 			memcpy(&tmp, data + 4, 4);
-			set_voltage(tmp);
-			memcpy(&tmp, data + 8, 4);
-			set_asic_freq(tmp);
+			if (set_voltage(tmp)) {
+				memcpy(&tmp, data + 8, 4);
+				set_asic_freq(tmp);
+			}
 		}
 
 		memcpy(&tmp, data + 12, 4);
@@ -253,9 +254,10 @@ static int decode_pkg(uint8_t *p, struct mm_work *mw)
 		memcpy(&tmp, data, 4);
 		adjust_fan(tmp);
 		memcpy(&tmp, data + 4, 4);
-		set_voltage(tmp);
-		memcpy(&tmp, data + 8, 4);
-		set_asic_freq(tmp);
+		if (set_voltage(tmp)) {
+			memcpy(&tmp, data + 8, 4);
+			set_asic_freq(tmp);
+		}
 
 		memcpy(&g_nonce2_offset, data + 12, 4);
 		memcpy(&g_nonce2_range, data + 16, 4);

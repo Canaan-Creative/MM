@@ -16,9 +16,21 @@
 
 #include "api_test_data.c"	/* The test data array */
 
-static uint32_t g_asic_freq = 0;
-
 static struct lm32_api *api = (struct lm32_api *)API_BASE;
+
+static uint32_t g_asic_freq = 0;
+static uint32_t g_freq_array[][6] = {
+	{100, 1, 16, 1, 16, 4},
+	{170, 1, 27, 1, 27, 4},
+	{200, 1, 16, 1, 16, 2},
+	{220, 1, 17, 1, 17, 2},
+	{230, 1, 18, 1, 18, 2},
+	{300, 1, 24, 1, 24, 2},
+	{350, 1, 28, 1, 28, 2},
+	{380, 1, 30, 1, 30, 2},
+	{400, 1, 16, 1, 16, 1},
+	{410, 1, 16, 1, 16, 1}
+};
 
 unsigned int api_set_cpm(unsigned int NR, unsigned int NF, unsigned int OD, unsigned int NB, unsigned int div)
 {
@@ -276,19 +288,22 @@ int api_send_work(struct work *w)
 
 void set_asic_freq(uint32_t value)
 {
-	if (g_asic_freq == value)
-		return;
-
+	int i;
 	g_asic_freq = value;
 
 	/* The timeout value:
 	 * 2^32÷(0.1GHz×1000000000×3968÷65)×100000000 = 0x4318c63 */
 	api_set_timeout(ASIC_TIMEOUT_100M / g_asic_freq * 50);
 	api_flush();
+
+	for (i = 0; i < 9; i++) {
+		if (g_asic_freq >= g_freq_array[i][0] && g_asic_freq < g_freq_array[i+1][0])
+			break;
+	}
 	api_change_cpm(MINER_COUNT, ASIC_COUNT,
-		       1, 16, 1, 16, 2,
-		       1, 16, 1, 16, 2,
-		       1, 16, 1, 16, 2);
+		       g_freq_array[i][1], g_freq_array[i][2], g_freq_array[i][3], g_freq_array[i][4], g_freq_array[i][5],
+		       g_freq_array[i][1], g_freq_array[i][2], g_freq_array[i][3], g_freq_array[i][4], g_freq_array[i][5],
+		       g_freq_array[i][1], g_freq_array[i][2], g_freq_array[i][3], g_freq_array[i][4], g_freq_array[i][5]);
 }
 
 uint32_t get_asic_freq()
