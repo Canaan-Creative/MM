@@ -259,9 +259,7 @@ static int decode_pkg(uint8_t *p, struct mm_work *mw)
 
 		memcpy(&g_nonce2_offset, data + 12, 4);
 		memcpy(&g_nonce2_range, data + 16, 4);
-
 		mw->nonce2 = g_nonce2_offset + (g_nonce2_range / AVA4_DEFAULT_MODULES) * g_module_id;
-		/* TODO: Flash api fifo */
 
 		g_new_stratum = 1;
 		break;
@@ -298,9 +296,11 @@ static int read_result(struct mm_work *mw, struct result *ret)
 	/* Read result out */
 	api_get_rx_fifo((unsigned int *)api_ret);
 
-	memcpy(&nonce0, api_ret + LM32_API_RX_BUFF_LEN - 4, 4);
-	if (nonce0 != 0xbeafbeaf)
+	memcpy(&nonce0, api_ret + LM32_API_RX_BUFF_LEN * 4 - 4, 4);
+	if (nonce0 != 0xbeafbeaf) {
+		debug32("NN: %08x\n", nonce0);
 		return 1;
+	}
 
 	/* Handle the real nonce */
 	for (i = 0; i < LM32_API_RX_BUFF_LEN - 3; i++) {
@@ -313,7 +313,6 @@ static int read_result(struct mm_work *mw, struct result *ret)
 
 		memcpy(&nonce2, api_ret + 4, 4);
 		memcpy(&job_id, api_ret, 4);
-		debug32("JI: %08x:%08x\n", job_id, mw->job_id);
 		n = test_nonce(mw, nonce2, nonce0, ntime);
 		if (n == NONCE_HW && job_id == mw->job_id) {
 			g_hw_work++;
@@ -437,17 +436,16 @@ int main(int argv, char **argc)
 	gpio_led(0xf);
 	sft_led(0x1);
 
-
-#if 1
+#if 0
 	if (1) {
-	/* Test part of ASIC cores */
-	set_voltage(ASIC_CORETEST_VOLT);
-	int ret;
-	int m = MINER_COUNT;
-	int c = ASIC_COUNT;
-	int all = m*c * 248*16;
-	ret = api_asic_test(m, c, all/m/c);
-	debug32("A.T: %d / %d = %d%%\n", all-ret, all, ((all-ret)*100/all));
+		/* Test part of ASIC cores */
+		set_voltage(ASIC_CORETEST_VOLT);
+		int ret;
+		int m = MINER_COUNT;
+		int c = ASIC_COUNT;
+		int all = m*c * 248*16;
+		ret = api_asic_test(m, c, all/m/c);
+		debug32("A.T: %d / %d = %d%%\n", all-ret, all, ((all-ret)*100/all));
 	}
 #endif
 
