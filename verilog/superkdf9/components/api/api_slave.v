@@ -122,7 +122,7 @@ assign rxfifo_pop = api_rxfifo_rd_en ;
 always @ ( posedge clk ) begin
 	case( 1'b1 )
 		api_state_rd_en  : API_DAT_O <= rd_state  ;
-		api_rxfifo_rd_en : API_DAT_O <= rd_rxfifo ;
+		api_rxfifo_rd_en : API_DAT_O <= rxempty ? 32'h12345678 : rd_rxfifo ;
 		api_timeout_rd_en: API_DAT_O <= {4'b0, reg_timeout[27:0]};
 		api_sck_rd_en    : API_DAT_O <= {reg_word_num[7:0], 2'b0,reg_ch_num[5:0], 8'h0, reg_sck[7:0]};
 		default: API_DAT_O <= 32'hdeaddead ; 

@@ -119,9 +119,9 @@ always @ (posedge clk) begin
 		work_cnt <= 5'b0;
 	else if(cur_state != WORK && nxt_state == WORK)
 		work_cnt <= 5'b0;
-	else if(cur_state == WORK && word_cnt != reg_word_num && miso_vld && work_cnt != 22)
-		work_cnt <= work_cnt + 8'b1;
-	else if(cur_state == WORK && word_cnt != reg_word_num && miso_vld && work_cnt == 22)
+	else if(cur_state == WORK && word_cnt != reg_word_num && miso_vld && work_cnt != 5'd22)
+		work_cnt <= work_cnt + 5'b1;
+	else if(cur_state == WORK && word_cnt != reg_word_num && miso_vld && work_cnt == 5'd22)
 		work_cnt <= 5'b0;
 end
 
