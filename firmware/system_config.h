@@ -18,7 +18,7 @@
 #define MINER_COUNT		5
 #define ASIC_COUNT		4
 
-#define SPI_SPEED		(0x2)
+#define SPI_SPEED		(0x4)
 #define CPU_FREQUENCY		(100 * 1000 * 1000) /* 50Mhz */
 #define UART_BAUD_RATE          (115200)
 
@@ -101,6 +101,7 @@ struct lm32_sha256 {
 
 
 /* API */
+#define LM32_API_RX_BUFF_LEN	11
 struct lm32_api {
 	volatile unsigned int tx;
 	volatile unsigned int rx;

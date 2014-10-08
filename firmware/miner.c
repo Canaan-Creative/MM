@@ -196,6 +196,8 @@ void miner_gen_nonce2_work(struct mm_work *mw, uint32_t nonce2, struct work *wor
 	memcpy((uint8_t *)(&tmp32), work->e1, 4);
 	memcpy((uint8_t *)(&tmp32), work->e0, 4);
 	memcpy((uint8_t *)(&tmp32), work->a2, 4);
+
+	work->memo = mw->job_id;
 }
 
 int fulltest(const unsigned char *hash, const unsigned char *target)

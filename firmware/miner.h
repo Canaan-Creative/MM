@@ -41,8 +41,7 @@ struct result {
 };
 
 struct mm_work {
-	uint8_t job_id[4];
-
+	uint32_t job_id;
 	size_t coinbase_len;
 	uint8_t coinbase[AVA2_P_COINBASE_SIZE];
 

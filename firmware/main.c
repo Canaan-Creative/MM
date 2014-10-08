@@ -209,8 +209,8 @@ static int decode_pkg(uint8_t *p, struct mm_work *mw)
 			mw->pool_no);
 		break;
 	case AVA2_P_JOB_ID:
-		memcpy(mw->job_id, data, 4);
-		hexdump(mw->job_id, 4);
+		memcpy((uint8_t *)&mw->job_id, data, 4);
+		hexdump((uint8_t *)&mw->job_id, 4);
 		break;
 	case AVA2_P_COINBASE:
 		if (idx == 1)
@@ -236,9 +236,10 @@ static int decode_pkg(uint8_t *p, struct mm_work *mw)
 			memcpy(&tmp, data, 4);
 			adjust_fan(tmp);
 			memcpy(&tmp, data + 4, 4);
-			set_voltage(tmp);
-			memcpy(&tmp, data + 8, 4);
-			set_asic_freq(tmp);
+			if (set_voltage(tmp)) {
+				memcpy(&tmp, data + 8, 4);
+				set_asic_freq(tmp);
+			}
 		}
 
 		memcpy(&tmp, data + 12, 4);
@@ -253,15 +254,14 @@ static int decode_pkg(uint8_t *p, struct mm_work *mw)
 		memcpy(&tmp, data, 4);
 		adjust_fan(tmp);
 		memcpy(&tmp, data + 4, 4);
-		set_voltage(tmp);
-		memcpy(&tmp, data + 8, 4);
-		set_asic_freq(tmp);
+		if (set_voltage(tmp)) {
+			memcpy(&tmp, data + 8, 4);
+			set_asic_freq(tmp);
+		}
 
 		memcpy(&g_nonce2_offset, data + 12, 4);
 		memcpy(&g_nonce2_range, data + 16, 4);
-
 		mw->nonce2 = g_nonce2_offset + (g_nonce2_range / AVA4_DEFAULT_MODULES) * g_module_id;
-		/* TODO: Flash api fifo */
 
 		g_new_stratum = 1;
 		break;
@@ -288,22 +288,24 @@ static int decode_pkg(uint8_t *p, struct mm_work *mw)
 
 static int read_result(struct mm_work *mw, struct result *ret)
 {
-	uint8_t *data, api_ret[24];
+	uint8_t *data, api_ret[4 * LM32_API_RX_BUFF_LEN];
 	int n, i;
-	uint32_t nonce2, nonce0, ntime = 0, last_nonce0 = 0xbeafbeaf;
+	uint32_t nonce2, nonce0, ntime = 0, job_id, last_nonce0 = 0xbeafbeaf;
 
-	if (api_get_rx_cnt() < 6)
+	if (api_get_rx_cnt() < LM32_API_RX_BUFF_LEN)
 		return 0;
 
 	/* Read result out */
 	api_get_rx_fifo((unsigned int *)api_ret);
 
-	memcpy(&nonce0, api_ret + 8 + 3 * 4, 4);
-	if (nonce0 != 0xbeafbeaf)
+	memcpy(&nonce0, api_ret + LM32_API_RX_BUFF_LEN * 4 - 4, 4);
+	if (nonce0 != 0xbeafbeaf) {
+		debug32("NN: %08x\n", nonce0);
 		return 1;
+	}
 
 	/* Handle the real nonce */
-	for (i = 0; i < 3; i++) {
+	for (i = 0; i < LM32_API_RX_BUFF_LEN - 3; i++) {
 		memcpy(&nonce0, api_ret + 8 + i * 4, 4);
 		if (nonce0 == 0xbeafbeaf || nonce0 == last_nonce0)
 			continue;
@@ -312,24 +314,25 @@ static int read_result(struct mm_work *mw, struct result *ret)
 		g_local_work++;
 
 		memcpy(&nonce2, api_ret + 4, 4);
+		memcpy(&job_id, api_ret, 4);
 		n = test_nonce(mw, nonce2, nonce0, ntime);
-		if (n == NONCE_HW) {
+		if (n == NONCE_HW && job_id == mw->job_id) {
 			g_hw_work++;
 			continue;
 		}
 
-		if (n == NONCE_DIFF) {
+		if (n == NONCE_DIFF || job_id != mw->job_id) {
 			data = ret_buf[ret_produce];
 			ret_produce = (ret_produce + 1) & RET_RINGBUFFER_MASK_RX;
 
 			/* TODO: Miner ID information */
-			memcpy(ret->task_id, api_ret, 8);
+			memcpy(ret->task_id + 4, api_ret + 4, 8);
 			nonce0 = nonce0 - 0x4000 + 0x180;
 			memcpy(ret->nonce, &nonce0, 4);
 			memcpy(ret->ntime, &ntime, 4);
 
 			memcpy(data, (uint8_t *)ret, 20);
-			memcpy(data + 20, mw->job_id, 4); /* Attach the job_id */
+			memcpy(data + 20, &job_id, 4); /* Attach the job_id */
 		}
 	}
 
@@ -435,17 +438,16 @@ int main(int argv, char **argc)
 	gpio_led(0xf);
 	sft_led(0x1);
 
-
-#if 1
+#if 0
 	if (1) {
-	/* Test part of ASIC cores */
-	set_voltage(ASIC_CORETEST_VOLT);
-	int ret;
-	int m = MINER_COUNT;
-	int c = ASIC_COUNT;
-	int all = m*c * 248*16;
-	ret = api_asic_test(m, c, all/m/c);
-	debug32("A.T: %d / %d = %d%%\n", all-ret, all, ((all-ret)*100/all));
+		/* Test part of ASIC cores */
+		set_voltage(ASIC_CORETEST_VOLT);
+		int ret;
+		int m = MINER_COUNT;
+		int c = ASIC_COUNT;
+		int all = m*c * 248*16;
+		ret = api_asic_test(m, c, all/m/c);
+		debug32("A.T: %d / %d = %d%%\n", all-ret, all, ((all-ret)*100/all));
 	}
 #endif
 
