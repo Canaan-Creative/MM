@@ -317,7 +317,7 @@ static int read_result(struct mm_work *mw, struct result *ret)
 
 		memcpy(&nonce2, api_ret + 4, 4);
 		memcpy(&memo, api_ret, 4);
-		job_id = memo | 0xffff0000;
+		job_id = memo & 0xffff0000;
 
 		n = test_nonce(mw, nonce2, nonce0, ntime);
 		if (n == NONCE_HW && job_id == mw->job_id) {
@@ -330,7 +330,7 @@ static int read_result(struct mm_work *mw, struct result *ret)
 			ret_produce = (ret_produce + 1) & RET_RINGBUFFER_MASK_RX;
 
 			/* TODO: Miner ID information */
-			pool_no = memo | 0xff;
+			pool_no = memo & 0xff;
 			memcpy(ret->pool_no, &pool_no, 4);
 			memcpy(ret->nonce2, api_ret + 4, 8);
 			nonce0 = nonce0 - 0x4000 + 0x180;

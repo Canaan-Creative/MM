@@ -100,43 +100,35 @@ void iic_dna_read(uint8_t *dnadat)
 	}
 }
 
-uint32_t iic_write(uint8_t *data, uint16_t len, int block)
+uint32_t iic_write(uint8_t *data, uint16_t len_byte, int block)
 {
-	uint32_t tmp, i, j = 0, ret = 0;
+	uint32_t len_word, tmp, i, j = 0;
 	uint32_t *pdat = (uint32_t *)data;
 
-	len = len >> 2;
-	for (i = 0; i < len; i++)
+	len_word = len_byte >> 2;
+	for (i = 0; i < len_word; i++)
 		writel(pdat[i], &iic->tx);
 
 	if (!block)
-		return len << 2;
+		return len_byte;
 
 	tmp = readl(&iic->ctrl);
 	while (!(tmp & (LM32_IIC_CR_RSTOP | LM32_IIC_CR_RERR))) {
-		if (tmp & LM32_IIC_CR_RERR) {
-			debug32("D: IIC_CR_RERR\n");
-			ret = 0;
-			break;
-		}
-
-		if (tmp & LM32_IIC_CR_RSTOP) {
-			ret = len << 2;
-			break;
-		}
+		tmp = readl(&iic->ctrl);
 
 		if (++j > 0xfffff) {
-			debug32("D: iic write timeout\n");
-			ret = 0;
-			break;
+			debug32("D: IIC write timeout\n");
+			return 0;
 		}
-
-		tmp = readl(&iic->ctrl);
 	}
-
 	writel((tmp & (LM32_IIC_CR_RSTOP | LM32_IIC_CR_RERR)), &iic->ctrl);
 
-	return ret;
+	if (tmp & LM32_IIC_CR_RERR) {
+		debug32("D: IIC_CR_RERR\n");
+		return 0;
+	}
+
+	return len_byte;
 }
 
 int iic_read_nonblock(void)
