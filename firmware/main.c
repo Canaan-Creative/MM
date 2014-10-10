@@ -114,9 +114,8 @@ static void encode_pkg(uint8_t *p, int type, uint8_t *buf, unsigned int len)
 		memcpy(data + 24, &tmp, 4);
 		break;
 	case AVA2_P_ACKDISCOVER:
-	case AVA2_P_ACKSETDEVID:
-		memcpy(data, buf, len); /* MM_VERSION */
-		memcpy(data + len, g_dna, 8); /* MM_DNA */
+		memcpy(data, g_dna, 8); /* MM_DNA */
+		memcpy(data + 8, buf, len); /* MM_VERSION */
 		break;
 	default:
 		break;
@@ -127,12 +126,16 @@ static void encode_pkg(uint8_t *p, int type, uint8_t *buf, unsigned int len)
 	p[AVA2_P_COUNT - 1] = (crc & 0xff00) >> 8;
 }
 
-void send_pkg(int type, uint8_t *buf, unsigned int len, int block)
+uint32_t send_pkg(int type, uint8_t *buf, uint32_t len, int block)
 {
 	debug32("%d-Send: %d\n", g_module_id, type);
 	encode_pkg(g_act, type, buf, len);
-	if (!iic_write(g_act, AVA2_P_COUNT + 1, block))
+	if (!iic_write(g_act, AVA2_P_COUNT + 1, block)) {
 		iic_tx_reset();
+		return 0;
+	}
+
+	return len;
 }
 
 static void polling()
@@ -288,9 +291,10 @@ static int decode_pkg(uint8_t *p, struct mm_work *mw)
 
 static int read_result(struct mm_work *mw, struct result *ret)
 {
-	uint8_t *data, api_ret[4 * LM32_API_RX_BUFF_LEN];
 	int n, i;
-	uint32_t nonce2, nonce0, ntime = 0, job_id, last_nonce0 = 0xbeafbeaf;
+	uint8_t *data, api_ret[4 * LM32_API_RX_BUFF_LEN];
+	uint32_t nonce2, nonce0, memo, job_id, pool_no;
+	uint32_t ntime = 0, last_nonce0 = 0xbeafbeaf;
 
 	if (api_get_rx_cnt() < LM32_API_RX_BUFF_LEN)
 		return 0;
@@ -299,10 +303,8 @@ static int read_result(struct mm_work *mw, struct result *ret)
 	api_get_rx_fifo((unsigned int *)api_ret);
 
 	memcpy(&nonce0, api_ret + LM32_API_RX_BUFF_LEN * 4 - 4, 4);
-	if (nonce0 != 0xbeafbeaf) {
-		debug32("NN: %08x\n", nonce0);
+	if (nonce0 != 0xbeafbeaf)
 		return 1;
-	}
 
 	/* Handle the real nonce */
 	for (i = 0; i < LM32_API_RX_BUFF_LEN - 3; i++) {
@@ -314,7 +316,9 @@ static int read_result(struct mm_work *mw, struct result *ret)
 		g_local_work++;
 
 		memcpy(&nonce2, api_ret + 4, 4);
-		memcpy(&job_id, api_ret, 4);
+		memcpy(&memo, api_ret, 4);
+		job_id = memo | 0xffff0000;
+
 		n = test_nonce(mw, nonce2, nonce0, ntime);
 		if (n == NONCE_HW && job_id == mw->job_id) {
 			g_hw_work++;
@@ -326,7 +330,9 @@ static int read_result(struct mm_work *mw, struct result *ret)
 			ret_produce = (ret_produce + 1) & RET_RINGBUFFER_MASK_RX;
 
 			/* TODO: Miner ID information */
-			memcpy(ret->task_id + 4, api_ret + 4, 8);
+			pool_no = memo | 0xff;
+			memcpy(ret->pool_no, &pool_no, 4);
+			memcpy(ret->nonce2, api_ret + 4, 8);
 			nonce0 = nonce0 - 0x4000 + 0x180;
 			memcpy(ret->nonce, &nonce0, 4);
 			memcpy(ret->ntime, &ntime, 4);
@@ -386,15 +392,11 @@ static int get_pkg(struct mm_work *mw)
 					break;
 				case AVA2_P_DISCOVER:
 					if (g_module_id == AVA2_MODULE_BROADCAST)
-						send_pkg(AVA2_P_ACKDISCOVER, (uint8_t *)MM_VERSION, MM_VERSION_LEN, 1);
-					break;
-				case AVA2_P_SETDEVID:
-					if (!strncmp((char *)(g_pkg + 5 + MM_VERSION_LEN), (char *)g_dna, 8)) {
-						memcpy(&g_module_id, g_pkg + 5 + 28, 4);
-						debug32("ID: %d\n", g_module_id);
-						iic_addr_set(g_module_id);
-						send_pkg(AVA2_P_ACKSETDEVID, (uint8_t *)MM_VERSION, MM_VERSION_LEN, 1);
-					}
+						if (send_pkg(AVA2_P_ACKDISCOVER, (uint8_t *)MM_VERSION, MM_VERSION_LEN, 1)) {
+							memcpy(&g_module_id, g_pkg + 5 + 28, 4);
+							debug32("ID: %d\n", g_module_id);
+							iic_addr_set(g_module_id);
+						}
 					break;
 				default:
 					break;

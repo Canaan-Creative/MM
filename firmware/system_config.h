@@ -15,7 +15,7 @@
 #define ASIC_CORETEST_VOLT	0x8100 /* 0.7V */
 #define ASIC_0V			0x8f00
 #define ASIC_TIMEOUT_100M	0x4113e98
-#define MINER_COUNT		5
+#define MINER_COUNT		4
 #define ASIC_COUNT		4
 
 #define SPI_SPEED		(0x4)
