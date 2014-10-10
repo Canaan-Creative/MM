@@ -72,7 +72,7 @@ reg [2:0] cur_state;
 reg [2:0] nxt_state;
 
 always @ (posedge clk) begin
-	if(rst)
+	if(rst || i2c_stop || i2c_start)
 		cur_state <= IDLE;
 	else
 		cur_state <= nxt_state;
