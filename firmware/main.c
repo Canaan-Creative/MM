@@ -318,6 +318,7 @@ static int read_result(struct mm_work *mw, struct result *ret)
 		memcpy(&nonce2, api_ret + 4, 4);
 		memcpy(&memo, api_ret, 4);
 		job_id = memo & 0xffff0000;
+		ntime = (memo & 0xff00) >> 8;
 
 		n = test_nonce(mw, nonce2, nonce0, ntime);
 		if (n == NONCE_HW && job_id == mw->job_id) {
@@ -413,6 +414,7 @@ int main(int argv, char **argc)
 	struct mm_work mm_work;
 	struct work work;
 	struct result result;
+	int i;
 
 	adjust_fan(0x2ff);		/* Set the fan to 50% */
 	/* TODO: Flash api fifo */
@@ -476,10 +478,19 @@ int main(int argv, char **argc)
 		if (!g_new_stratum)
 			continue;
 
-		if (api_get_tx_cnt() < (23 * 8)) {
+		if (api_get_tx_cnt() <= (23 * 8)) {
 			miner_gen_nonce2_work(&mm_work, mm_work.nonce2++, &work);
 			api_send_work(&work);
+
+			for (i = 1; i < ASIC_COUNT; i++) {
+				roll_work(&work, 1); /* Roll the same work */
+				work.memo &= 0xffff00ff;
+				work.memo |= i << 8;
+
+				api_send_work(&work);
+			}
 		}
+
 
 		read_result(&mm_work, &result);
 	}
