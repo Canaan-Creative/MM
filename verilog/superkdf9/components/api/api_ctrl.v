@@ -127,7 +127,7 @@ end
 
 
 assign rx_fifo_wr_en = miso_vld && (work_cnt < RX_BLOCK_LEN) && (cur_state == WORK);
-assign rx_fifo_din = miso_dat;
+assign rx_fifo_din = (work_cnt == (RX_BLOCK_LEN-1)) ? {miso_dat[31:16], 8'h12, 2'b0, ch_cnt} : miso_dat;
 
 always @ (posedge clk) begin
 	if(rst)
