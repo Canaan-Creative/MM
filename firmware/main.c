@@ -295,6 +295,8 @@ static int read_result(struct mm_work *mw, struct result *ret)
 	uint8_t *data, api_ret[4 * LM32_API_RX_BUFF_LEN];
 	uint32_t nonce2, nonce0, memo, job_id, pool_no, miner_id;
 	uint32_t ntime = 0, last_nonce0 = 0xbeafbeaf;
+	static uint32_t last_minerid = 0xff;
+	static uint8_t chip_id;
 
 	if (api_get_rx_cnt() < LM32_API_RX_BUFF_LEN)
 		return 0;
@@ -303,10 +305,17 @@ static int read_result(struct mm_work *mw, struct result *ret)
 	api_get_rx_fifo((unsigned int *)api_ret);
 
 	memcpy(&nonce0, api_ret + LM32_API_RX_BUFF_LEN * 4 - 4, 4);
-	if (nonce0 != 0xbeafbeaf)
+	if ((nonce0 & 0xffffff00) != 0xbeaf1200)
 		return 1;
 
-	miner_id = 0; /* FIXME: nonce0 & 0xff; */
+	miner_id = nonce0 & 0xff;
+
+	/* Calculate chip id */
+	if (last_minerid != miner_id) {
+		chip_id = 0;
+		last_minerid = miner_id;
+	} else
+		chip_id++;
 
 	/* Handle the real nonce */
 	for (i = 0; i < LM32_API_RX_BUFF_LEN - 3; i++) {
