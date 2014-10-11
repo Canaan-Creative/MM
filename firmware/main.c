@@ -293,7 +293,7 @@ static int read_result(struct mm_work *mw, struct result *ret)
 {
 	int n, i;
 	uint8_t *data, api_ret[4 * LM32_API_RX_BUFF_LEN];
-	uint32_t nonce2, nonce0, memo, job_id, pool_no;
+	uint32_t nonce2, nonce0, memo, job_id, pool_no, miner_id;
 	uint32_t ntime = 0, last_nonce0 = 0xbeafbeaf;
 
 	if (api_get_rx_cnt() < LM32_API_RX_BUFF_LEN)
@@ -305,6 +305,8 @@ static int read_result(struct mm_work *mw, struct result *ret)
 	memcpy(&nonce0, api_ret + LM32_API_RX_BUFF_LEN * 4 - 4, 4);
 	if (nonce0 != 0xbeafbeaf)
 		return 1;
+
+	miner_id = 0; /* FIXME: nonce0 & 0xff; */
 
 	/* Handle the real nonce */
 	for (i = 0; i < LM32_API_RX_BUFF_LEN - 3; i++) {
@@ -330,13 +332,13 @@ static int read_result(struct mm_work *mw, struct result *ret)
 			data = ret_buf[ret_produce];
 			ret_produce = (ret_produce + 1) & RET_RINGBUFFER_MASK_RX;
 
-			/* TODO: Miner ID information */
 			pool_no = memo & 0xff;
 			memcpy(ret->pool_no, &pool_no, 4);
 			memcpy(ret->nonce2, api_ret + 4, 8);
 			nonce0 = nonce0 - 0x4000 + 0x180;
 			memcpy(ret->nonce, &nonce0, 4);
 			memcpy(ret->ntime, &ntime, 4);
+			memcpy(ret->miner_id, &miner_id, 4);
 
 			memcpy(data, (uint8_t *)ret, 20);
 			memcpy(data + 20, &job_id, 4); /* Attach the job_id */
