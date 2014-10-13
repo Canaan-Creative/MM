@@ -34,8 +34,10 @@ static void shift_update(struct lm32_shifter *s, uint32_t value)
 {
 	int i;
 
-	if (value == ASIC_0V)
+	if (value == ASIC_0V) {
 		writel(0x7, &s->reg);
+		return;
+	}
 
 	/* Reset */
 	writel(0, &s->reg);
@@ -70,9 +72,10 @@ uint32_t set_voltage(uint32_t value)
 
 	shift_update(sft0, g_voltage);
 	shift_update(sft1, g_voltage);
-	gpio_reset_asic();
+	if (g_voltage != ASIC_0V)
+		gpio_reset_asic();
 
-	return value;
+	return (g_voltage != ASIC_0V);
 }
 
 uint32_t get_voltage()
