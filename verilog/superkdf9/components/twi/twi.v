@@ -147,7 +147,7 @@ wire [31:0] reg_sft = {28'b0,sft_done_r,SFT_OE_N,2'b0} ;
 always @ ( posedge CLK_I or posedge RST_I ) begin
 	if( RST_I )
 		sft_done_r <= 1'b0 ;
-	else if( sft_wr_en && TWI_DAT_I[4])
+	else if( sft_wr_en )
 		sft_done_r <= 1'b0 ;
 	else if( sft_done )
 		sft_done_r <= 1'b1 ;
@@ -175,7 +175,7 @@ wire [31:0] reg_sftb = {28'b0,sftb_done_r,SFTB_OE_N,2'b0} ;
 always @ ( posedge CLK_I or posedge RST_I ) begin
 	if( RST_I )
 		sftb_done_r <= 1'b0 ;
-	else if( sftb_wr_en && TWI_DAT_I[4])
+	else if( sftb_wr_en )
 		sftb_done_r <= 1'b0 ;
 	else if( sftb_done )
 		sftb_done_r <= 1'b1 ;
