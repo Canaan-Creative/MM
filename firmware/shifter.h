@@ -11,7 +11,7 @@
 
 #include <stdint.h>
 
-int set_voltage(uint32_t value);
+uint32_t set_voltage(uint32_t value);
 uint32_t get_voltage();
 
 void front_led(uint8_t data);

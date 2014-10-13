@@ -16,37 +16,29 @@ extern void delay(unsigned int ms);
 #define VOLTAGE_DELAY	100
 
 static struct lm32_shifter *sft0 = (struct lm32_shifter *)SHIFTER_BASE0;
-//static struct lm32_shifter *sft1 = (struct lm32_shifter *)SHIFTER_BASE1;
+static struct lm32_shifter *sft1 = (struct lm32_shifter *)SHIFTER_BASE1;
 static struct lm32_shifter *sft2 = (struct lm32_shifter *)SHIFTER_BASE2;
 
 static uint32_t g_voltage = ASIC_0V;
 
-static void shift_done()
+static void shift_done(struct lm32_shifter *s)
 {
 	unsigned int tmp;
-	tmp = readl(&sft0->reg) & 0x8;
+	tmp = readl(&s->reg) & 0x8;
 
 	while(tmp != 0x8)
-		tmp = readl(&sft0->reg) & 0x8;
+		tmp = readl(&s->reg) & 0x8;
 }
 
-int set_voltage(uint32_t value)
+static void shift_update(struct lm32_shifter *s, uint32_t value)
 {
 	int i;
 
-	if (g_voltage == value)
-		return 0;
-
-	g_voltage = value;
-
-	if (value == ASIC_0V) {
-		writel(0x7, &sft0->reg);
-		delay(VOLTAGE_DELAY);
-		return 0;
-	}
+	if (value == ASIC_0V)
+		writel(0x7, &s->reg);
 
 	/* Reset */
-	writel(0, &sft0->reg);
+	writel(0, &s->reg);
 
 	/* The power chip datasheet is here:
 	 *   http://www.onsemi.com/pub_link/Collateral/ADP3208D.PDF
@@ -54,23 +46,33 @@ int set_voltage(uint32_t value)
 
 	/* Set shifter to xx */
 	for (i = 0; i < 5; i++) {
-		writel(value | 0x1, &sft0->reg);
-		shift_done();
+		writel(value | 0x1, &s->reg);
+		shift_done(s);
 	}
 
 	/* Shift to reg */
 	for (i = 0; i < 5; i++) {
-		writel(0x2, &sft0->reg);
-		shift_done();
+		writel(0x2, &s->reg);
+		shift_done(s);
 	}
 
 	/* Output enable, low active  */
-	writel(0x3, &sft0->reg);
+	writel(0x3, &s->reg);
 	delay(VOLTAGE_DELAY);
+}
 
+uint32_t set_voltage(uint32_t value)
+{
+	if (g_voltage == value)
+		return 0;
+
+	g_voltage = value;
+
+	shift_update(sft0, g_voltage);
+	shift_update(sft1, g_voltage);
 	gpio_reset_asic();
 
-	return 1;
+	return value;
 }
 
 uint32_t get_voltage()
