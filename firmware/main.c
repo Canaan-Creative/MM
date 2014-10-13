@@ -347,6 +347,7 @@ static int read_result(struct mm_work *mw, struct result *ret)
 			nonce0 = nonce0 - 0x4000 + 0x180;
 			memcpy(ret->nonce, &nonce0, 4);
 			memcpy(ret->ntime, &ntime, 4);
+			miner_id |= chip_id << 16;
 			memcpy(ret->miner_id, &miner_id, 4);
 
 			memcpy(data, (uint8_t *)ret, 20);
@@ -451,7 +452,7 @@ int main(int argv, char **argc)
 
 	timer_set(0, IDLE_TIME);
 	gpio_led(0xf);
-	sft_led(0x1);
+	front_led(0x1);
 
 #if 0
 	if (1) {
@@ -483,7 +484,7 @@ int main(int argv, char **argc)
 
 			iic_rx_reset();
 			iic_tx_reset();
-			sft_led(0xff);
+			front_led(0xff);
 		}
 
 		if (!g_new_stratum)

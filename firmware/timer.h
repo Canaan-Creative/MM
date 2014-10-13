@@ -19,7 +19,6 @@ void timer_set(unsigned char timer, unsigned char load);
 uint32_t timer_read(unsigned char timer);
 
 void gpio_led(uint8_t value);
-void sft_led(unsigned char data);
 void gpio_reset_asic();
 int read_power_good();
 

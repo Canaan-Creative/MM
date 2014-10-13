@@ -37,10 +37,12 @@
 #define SHA256_BASE		(0x80000400)
 #define API_BASE		(0x80000500)
 #define TWIPWM_BASE		(0x80000600)
-#define SHIFTER_BASE		(0x80000614)
+#define SHIFTER_BASE0		(0x80000614) /* Blade 1 power controller */
 #define TIMER_BASE		(0x80000620)
 #define GPIO_BASE		(0x80000624)
 #define CLKO_BASE		(0x80000628)
+#define SHIFTER_BASE1		(0x8000062C) /* Blade 2 power controller */
+#define SHIFTER_BASE2		(0x80000630) /* Front LED controller */
 #define IIC_BASE		(0x80000700)
 #define DNA_BASE		(0x80000710)
 
