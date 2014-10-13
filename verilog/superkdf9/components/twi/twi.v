@@ -37,6 +37,9 @@ module twi(
     output         SFTB_MR_N    ,
     output         SFTB_OE_N    ,
 
+    output         SFTC_SHCP    ,
+    output         SFTC_DS      ,
+
     input          FAN_IN0     ,
     input          FAN_IN1     ,
     output         TIME0_INT   ,
@@ -71,6 +74,7 @@ wire time_wr_en  = TWI_STB_I & TWI_WE_I  & ( TWI_ADR_I == `TIME) & ~TWI_ACK_O ;
 wire gpio_wr_en  = TWI_STB_I & TWI_WE_I  & ( TWI_ADR_I == `GPIO) & ~TWI_ACK_O ;
 wire clko_wr_en  = TWI_STB_I & TWI_WE_I  & ( TWI_ADR_I == `CLKO) & ~TWI_ACK_O ;
 wire sftb_wr_en  = TWI_STB_I & TWI_WE_I  & ( TWI_ADR_I == `SFTB) & ~TWI_ACK_O ;
+wire sftc_wr_en  = TWI_STB_I & TWI_WE_I  & ( TWI_ADR_I == `SFTC) & ~TWI_ACK_O ;
 
 wire i2cr_rd_en  = TWI_STB_I & ~TWI_WE_I  & ( TWI_ADR_I == `I2CR) & ~TWI_ACK_O ;
 wire i2rd_rd_en  = TWI_STB_I & ~TWI_WE_I  & ( TWI_ADR_I == `I2RD) & ~TWI_ACK_O ;
@@ -81,6 +85,7 @@ wire fan1_rd_en  = TWI_STB_I & ~TWI_WE_I  & ( TWI_ADR_I == `FAN1) & ~TWI_ACK_O ;
 wire time_rd_en  = TWI_STB_I & ~TWI_WE_I  & ( TWI_ADR_I == `TIME) & ~TWI_ACK_O ;
 wire gpio_rd_en  = TWI_STB_I & ~TWI_WE_I  & ( TWI_ADR_I == `GPIO) & ~TWI_ACK_O ;
 wire sftb_rd_en  = TWI_STB_I & ~TWI_WE_I  & ( TWI_ADR_I == `SFTB) & ~TWI_ACK_O ;
+wire sftc_rd_en  = TWI_STB_I & ~TWI_WE_I  & ( TWI_ADR_I == `SFTC) & ~TWI_ACK_O ;
 
 //-----------------------------------------------------
 // PWM
@@ -142,7 +147,7 @@ wire [31:0] reg_sft = {28'b0,sft_done_r,SFT_OE_N,2'b0} ;
 always @ ( posedge CLK_I or posedge RST_I ) begin
 	if( RST_I )
 		sft_done_r <= 1'b0 ;
-	else if( sft_wr_en )
+	else if( sft_wr_en && TWI_DAT_I[4])
 		sft_done_r <= 1'b0 ;
 	else if( sft_done )
 		sft_done_r <= 1'b1 ;
@@ -170,7 +175,7 @@ wire [31:0] reg_sftb = {28'b0,sftb_done_r,SFTB_OE_N,2'b0} ;
 always @ ( posedge CLK_I or posedge RST_I ) begin
 	if( RST_I )
 		sftb_done_r <= 1'b0 ;
-	else if( sftb_wr_en )
+	else if( sftb_wr_en && TWI_DAT_I[4])
 		sftb_done_r <= 1'b0 ;
 	else if( sftb_done )
 		sftb_done_r <= 1'b1 ;
@@ -191,6 +196,35 @@ shift u_shift_b(
 /*output      */ .sft_mr_n (SFTB_MR_N       ) ,
 /*output      */ .sft_oe_n (SFTB_OE_N       )
 );
+
+wire sftc_done ;
+reg sftc_done_r ;
+wire [31:0] reg_sftc = {28'b0,sftc_done_r,3'b0} ;
+always @ ( posedge CLK_I or posedge RST_I ) begin
+	if( RST_I )
+		sftc_done_r <= 1'b0 ;
+	else if( sftc_wr_en && TWI_DAT_I[4])
+		sftc_done_r <= 1'b0 ;
+	else if( sftc_done )
+		sftc_done_r <= 1'b1 ;
+end
+
+shift u_shift_c(
+/*input       */ .clk      (CLK_I           ) ,
+/*input       */ .rst      (RST_I           ) ,
+/*input       */ .vld      (sftc_wr_en      ) ,
+/*input  [1:0]*/ .cmd      (TWI_DAT_I[1:0]  ) ,
+/*input       */ .cmd_oen  (TWI_DAT_I[2]    ) ,
+/*input  [7:0]*/ .din      (TWI_DAT_I[15:8] ) ,
+/*output      */ .done     (sftc_done       ) ,
+
+/*output      */ .sft_shcp (SFTC_SHCP       ) ,
+/*output      */ .sft_ds   (SFTC_DS         ) ,
+/*output      */ .sft_stcp (                ) ,
+/*output      */ .sft_mr_n (                ) ,
+/*output      */ .sft_oe_n (                )
+);
+
 
 //-----------------------------------------------------
 // fan speed
@@ -361,6 +395,7 @@ reg fan1_rd_en_r ;
 reg time_rd_en_r ;
 reg gpio_rd_en_r ;
 reg sftb_rd_en_r ;
+reg sftc_rd_en_r ;
 
 wire [7:0] reg_i2cr ;
 wire [7:0] reg_i2rd ;
@@ -373,6 +408,7 @@ always @ ( posedge CLK_I ) begin
 	time_rd_en_r <= time_rd_en ;
 	gpio_rd_en_r <= gpio_rd_en ;
 	sftb_rd_en_r <= sftb_rd_en ;
+	sftc_rd_en_r <= sftc_rd_en ;
 end
 
 assign TWI_DAT_O = i2cr_rd_en_r ? {24'b0,reg_i2cr}     :
@@ -383,6 +419,7 @@ assign TWI_DAT_O = i2cr_rd_en_r ? {24'b0,reg_i2cr}     :
 		   time_rd_en_r ? reg_tim              :
 		   gpio_rd_en_r ? reg_gpio             :
 		   sftb_rd_en_r ? reg_sftb             :
+		   sftc_rd_en_r ? reg_sftc             :
 		   {24'b0,reg_i2rd} ;
 
 twi_core twi_core (

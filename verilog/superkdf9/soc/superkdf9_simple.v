@@ -417,6 +417,8 @@ module mm (
 , SFTB_MR_N
 , SFTB_OE_N
 
+, SFTC_SHCP
+, SFTC_DS
 
 );
 
@@ -436,6 +438,9 @@ output SFTB_DS  ;
 output SFTB_STCP;
 output SFTB_MR_N;
 output SFTB_OE_N;
+
+output SFTC_SHCP;
+output SFTC_DS  ;
 
 output PWM ;
 input	ex_clk_i;
@@ -1226,6 +1231,9 @@ twi u_twi(
 /*output        */ .SFTB_STCP   (SFTB_STCP                   ) ,
 /*output        */ .SFTB_MR_N   (SFTB_MR_N                   ) ,
 /*output        */ .SFTB_OE_N   (SFTB_OE_N                   ) ,
+
+/*output        */ .SFTC_SHCP   (SFTC_SHCP                   ) ,
+/*output        */ .SFTC_DS     (SFTC_DS                     ) ,
 
 /*input         */ .FAN_IN0     (FAN_IN0                     ) ,
 /*input         */ .FAN_IN1     (FAN_IN1                     ) ,

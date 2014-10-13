@@ -10,4 +10,5 @@
 `define GPIO  6'h24
 `define CLKO  6'h28
 `define SFTB  6'h2c
+`define SFTC  6'h30
 
