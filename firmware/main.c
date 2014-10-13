@@ -452,7 +452,7 @@ int main(int argv, char **argc)
 
 	timer_set(0, IDLE_TIME);
 	gpio_led(0xf);
-	front_led(0x1);
+	front_led(0xf);
 
 #if 0
 	if (1) {

@@ -83,10 +83,10 @@ void front_led(uint8_t data)
 	static uint32_t value = 0;
 
 	if (value) {
-		while (!(readl(&sft2->reg) & 0x4))
+		while (!(readl(&sft2->reg) & 0x8))
 			;
 
-		writel(0x4, &sft2->reg);
+		writel(0x8, &sft2->reg);
 	} else
 		value = 1;
 
