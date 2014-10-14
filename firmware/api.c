@@ -208,14 +208,23 @@ static inline unsigned int api_verify_nonce(unsigned int ch_num, unsigned int ch
 	unsigned int i, j;
 	unsigned int rx_data[LM32_API_RX_BUFF_LEN];
 	unsigned int pass_cal_num = 0;
+	static uint32_t last_minerid = 0xff;
+	static uint8_t chip_id;
+
 	for (i = 0; i < ch_num; i++) {
 		for (j = 0; j < chip_num; j++) {
 			api_get_rx_fifo(rx_data);
-			if (verify_on && ((rx_data[2] == target_nonce) || (rx_data[3] == target_nonce)))
+			if (last_minerid != (rx_data[10] & 0xff)) {
+				chip_id = 0;
+				last_minerid = rx_data[10] & 0xff;
+			} else
+				chip_id++;
+
+			if (verify_on && (rx_data[2] == target_nonce))
 				pass_cal_num++;
 			else
 				if (verify_on)
-					debug32("channel id: %d,chip id: %d, TN:%08x, RX[0]:%08x, RX[1]:%08x, RX[2]:%08x, RX[3]:%08x\n",i, j, target_nonce, rx_data[0], rx_data[1], rx_data[2], rx_data[3]);
+					debug32("channel id: %d,chip id: %d, TN:%08x, RX[0]:%08x, RX[1]:%08x, RX[2]:%08x, RX[3]:%08x\n", rx_data[10] & 0xff, chip_id, target_nonce, rx_data[0], rx_data[1], rx_data[2], rx_data[3]);
 		}
 	}
 	return pass_cal_num;
