@@ -215,7 +215,7 @@ static inline unsigned int api_verify_nonce(unsigned int ch_num, unsigned int ch
 				pass_cal_num++;
 			else
 				if (verify_on)
-					debug32("ch: %d, TN:%08x, RX[0]:%08x, RX[1]:%08x, RX[2]:%08x, RX[3]:%08x\n",i, target_nonce, rx_data[0], rx_data[1], rx_data[2], rx_data[3]);
+					debug32("channel id: %d,chip id: %d, TN:%08x, RX[0]:%08x, RX[1]:%08x, RX[2]:%08x, RX[3]:%08x\n",i, j, target_nonce, rx_data[0], rx_data[1], rx_data[2], rx_data[3]);
 		}
 	}
 	return pass_cal_num;
