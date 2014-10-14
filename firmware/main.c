@@ -454,15 +454,15 @@ int main(int argv, char **argc)
 	gpio_led(0xf);
 	front_led(0xf);
 
-#if 0
+#if 1
 	if (1) {
 		/* Test part of ASIC cores */
 		set_voltage(ASIC_CORETEST_VOLT);
 		int ret;
 		int m = MINER_COUNT;
 		int c = ASIC_COUNT;
-		int all = m*c * 248*16;
-		ret = api_asic_test(m, c, all/m/c);
+		int all = m*c;
+		ret = api_asic_test(m, c, 1);
 		debug32("A.T: %d / %d = %d%%\n", all-ret, all, ((all-ret)*100/all));
 	}
 #endif
