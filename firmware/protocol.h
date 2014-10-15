@@ -41,10 +41,7 @@
 
 /* Only for addressing */
 #define AVA2_P_DISCOVER		30
-#define AVA2_P_SETDEVID		31
-
 #define AVA2_P_ACKDISCOVER	40
-#define AVA2_P_ACKSETDEVID	41
 
 #define AVA2_MODULE_BROADCAST	0
 

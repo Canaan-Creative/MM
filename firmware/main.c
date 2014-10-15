@@ -116,9 +116,8 @@ static void encode_pkg(uint8_t *p, int type, uint8_t *buf, unsigned int len)
 		memcpy(data + 24, &tmp, 4);
 		break;
 	case AVA2_P_ACKDISCOVER:
-	case AVA2_P_ACKSETDEVID:
-		memcpy(data, buf, len); /* MM_VERSION */
-		memcpy(data + len, g_dna, 8); /* MM_DNA */
+		memcpy(data, g_dna, 8); /* MM_DNA */
+		memcpy(data + 8, buf, len); /* MM_VERSION */
 		break;
 	default:
 		break;
@@ -371,16 +370,12 @@ static int get_pkg(struct mm_work *mw)
 						send_pkg(AVA2_P_STATUS, NULL, 0);
 					break;
 				case AVA2_P_DISCOVER:
-					if (g_module_id == AVA2_MODULE_BROADCAST)
-						send_pkg(AVA2_P_ACKDISCOVER, (uint8_t *)MM_VERSION, MM_VERSION_LEN);
-					break;
-				case AVA2_P_SETDEVID:
-					if (!strncmp((char *)(g_pkg + 5 + MM_VERSION_LEN), (char *)g_dna, 8)) {
-						memcpy(&g_module_id, g_pkg + 5 + 28, 4);
-						debug32("ID: %d\n", g_module_id);
-						iic_addr_set(g_module_id);
-						send_pkg(AVA2_P_ACKSETDEVID, (uint8_t *)MM_VERSION, MM_VERSION_LEN);
-					}
+					if (g_module_id == AVA2_MODULE_BROADCAST) {
+							memcpy(&g_module_id, g_pkg + 5 + 28, 4);
+							debug32("ID: %d\n", g_module_id);
+							iic_addr_set(g_module_id);
+							send_pkg(AVA2_P_ACKDISCOVER, (uint8_t *)MM_VERSION, MM_VERSION_LEN);
+                    }
 					break;
 				default:
 					break;
