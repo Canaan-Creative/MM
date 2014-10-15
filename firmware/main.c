@@ -462,7 +462,11 @@ int main(int argv, char **argc)
 		int m = MINER_COUNT;
 		int c = ASIC_COUNT;
 		int all = m*c;
-		ret = api_asic_test(m, c, 1);
+
+		unsigned int add_step = 1;
+		unsigned int pass_zone_num[3];
+		
+		ret = api_asic_test(m, c, 1, add_step, pass_zone_num);
 		debug32("A.T: %d / %d = %d%%\n", all-ret, all, ((all-ret)*100/all));
 	}
 #endif

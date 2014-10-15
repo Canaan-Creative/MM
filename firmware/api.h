@@ -22,5 +22,5 @@ int api_send_work(struct work *w);
 void set_asic_freq(uint32_t value);
 uint32_t get_asic_freq();
 
-unsigned int api_asic_test(unsigned int ch_num, unsigned int chip_num, unsigned int cal_core_num);
+unsigned int api_asic_test(unsigned int ch_num, unsigned int chip_num, unsigned int cal_core_num, unsigned int add_step, unsigned int *pass_zone_num);
 #endif	/* _API_H_ */
