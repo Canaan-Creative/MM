@@ -41,8 +41,10 @@ static int g_local_work = 0;
 static int g_hw_work = 0;
 static uint32_t g_nonce2_offset = 0;
 static uint32_t g_nonce2_range = 0xffffffff;
+static struct mm_work mm_work;
 
-#define RET_RINGBUFFER_SIZE_RX 16
+
+#define RET_RINGBUFFER_SIZE_RX 32
 #define RET_RINGBUFFER_MASK_RX (RET_RINGBUFFER_SIZE_RX-1)
 static uint8_t ret_buf[RET_RINGBUFFER_SIZE_RX][AVA2_P_DATA_LEN];
 static volatile unsigned int ret_produce = 0;
@@ -128,7 +130,9 @@ static void encode_pkg(uint8_t *p, int type, uint8_t *buf, unsigned int len)
 
 uint32_t send_pkg(int type, uint8_t *buf, uint32_t len, int block)
 {
+#if DEBUG_VERBOSE
 	debug32("%d-Send: %d\n", g_module_id, type);
+#endif
 	encode_pkg(g_act, type, buf, len);
 	if (!iic_write(g_act, AVA2_P_COUNT + 1, block)) {
 		iic_tx_reset();
@@ -168,15 +172,16 @@ static int decode_pkg(uint8_t *p, struct mm_work *mw)
 	idx = p[3];
 	cnt = p[4];
 
+#if DEBUG_VERBOSE
 	debug32("%d-Decode: %d %d/%d\n", g_module_id, p[2], idx, cnt);
-
+#endif
 	expected_crc = (p[AVA2_P_COUNT - 1] & 0xff) |
 		((p[AVA2_P_COUNT - 2] & 0xff) << 8);
 
 	actual_crc = crc16(data, AVA2_P_DATA_LEN);
 	if(expected_crc != actual_crc) {
-		debug32("PKG: CRC failed (W %08x, R %08x)\n",
-			expected_crc, actual_crc);
+		debug32("PKG: CRC failed %d:(W %08x, R %08x)\n",
+			p[2], expected_crc, actual_crc);
 		return 1;
 	}
 
@@ -186,14 +191,14 @@ static int decode_pkg(uint8_t *p, struct mm_work *mw)
 		g_new_stratum = 0;
 		g_local_work = 0;
 		g_hw_work = 0;
-		/* TODO: Flash api fifo */
+		/* TODO: Flash api fifo ?? */
 		gpio_led(0);
 		break;
 	case AVA2_P_STATIC:
 		g_new_stratum = 0;
 		g_local_work = 0;
 		g_hw_work = 0;
-		/* TODO: Flash api fifo */
+		/* TODO: Flash api fifo ?? */
 		memcpy(&mw->coinbase_len, data, 4);
 		memcpy(&mw->nonce2_offset, data + 4, 4);
 		memcpy(&mw->nonce2_size, data + 8, 4);
@@ -201,19 +206,18 @@ static int decode_pkg(uint8_t *p, struct mm_work *mw)
 		memcpy(&mw->nmerkles, data + 16, 4);
 		memcpy(&mw->diff, data + 20, 4);
 		memcpy(&mw->pool_no, data + 24, 4);
-		debug32("D: (%d):  %d, %d, %d, %d, %d, %d, %d\n",
-			g_new_stratum,
+		debug32("S: (%d) %d, %d, %d, %d, %d, %d\n",
+			mw->pool_no,
 			mw->coinbase_len,
 			mw->nonce2_offset,
 			mw->nonce2_size,
 			mw->merkle_offset,
 			mw->nmerkles,
-			mw->diff,
-			mw->pool_no);
+			mw->diff);
 		break;
 	case AVA2_P_JOB_ID:
 		memcpy((uint8_t *)&mw->job_id, data, 4);
-		hexdump((uint8_t *)&mw->job_id, 4);
+		debug32("J: %08x\n", mw->job_id);
 		break;
 	case AVA2_P_COINBASE:
 		if (idx == 1)
@@ -228,7 +232,9 @@ static int decode_pkg(uint8_t *p, struct mm_work *mw)
 		break;
 	case AVA2_P_POLLING:
 		memcpy(&tmp, data + 28, 4);
+#if DEBUG_VERBOSE
 		debug32("ID: %d-%d\n", g_module_id, tmp);
+#endif
 		if (g_module_id != tmp)
 			break;
 
@@ -423,7 +429,6 @@ static int get_pkg(struct mm_work *mw)
 
 int main(int argv, char **argc)
 {
-	struct mm_work mm_work;
 	struct work work;
 	struct result result;
 	int i;
@@ -452,9 +457,9 @@ int main(int argv, char **argc)
 
 	timer_set(0, IDLE_TIME);
 	gpio_led(0xf);
-	front_led(0xf);
+	front_led(0x3);
 
-#if 1
+#if 0
 	if (1) {
 		/* Test part of ASIC cores */
 		set_voltage(ASIC_CORETEST_VOLT);
@@ -466,6 +471,7 @@ int main(int argv, char **argc)
 		unsigned int add_step = 1;
 		unsigned int pass_zone_num[3];
 		
+		debug32("ABC\n");
 		ret = api_asic_test(m, c, 1, add_step, pass_zone_num);
 		debug32("A.T: %d / %d = %d%%\n", all-ret, all, ((all-ret)*100/all));
 	}
@@ -488,12 +494,15 @@ int main(int argv, char **argc)
 
 			iic_rx_reset();
 			iic_tx_reset();
-			front_led(0xff);
+			front_led(0x43);
 		}
 
-		if (!g_new_stratum)
+		if (!g_new_stratum) {
+			front_led(0x43);
 			continue;
+		}
 
+		front_led(0x3);
 		if (api_get_tx_cnt() <= (23 * 8)) {
 			miner_gen_nonce2_work(&mm_work, mm_work.nonce2++, &work);
 			api_send_work(&work);

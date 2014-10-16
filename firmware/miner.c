@@ -181,7 +181,6 @@ void miner_gen_nonce2_work(struct mm_work *mw, uint32_t nonce2, struct work *wor
 	hexdump(work->header, 128);
 #endif
 
-	debug32("W: N2 %08x\n", work->nonce2);
 	calc_midstate(mw, work);
 
 	memcpy(work_t, work->data, 44);
@@ -227,8 +226,9 @@ int fulltest(const unsigned char *hash, const unsigned char *target)
 int test_nonce(struct mm_work *mw, uint32_t nonce2, uint32_t nonce, int ntime_offset)
 {
 	nonce -= 0x4000;
+#if DEBUG_VERBOSE
 	debug32("Test: %08x %08x %d\n", nonce2, nonce, ntime_offset);
-
+#endif
 	/* Generate the work base on nonce2 */
 	struct work work;
 	miner_gen_nonce2_work(mw, nonce2, &work);
