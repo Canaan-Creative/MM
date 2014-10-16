@@ -43,7 +43,6 @@ static uint32_t g_nonce2_offset = 0;
 static uint32_t g_nonce2_range = 0xffffffff;
 static struct mm_work mm_work;
 
-
 #define RET_RINGBUFFER_SIZE_RX 32
 #define RET_RINGBUFFER_MASK_RX (RET_RINGBUFFER_SIZE_RX-1)
 static uint8_t ret_buf[RET_RINGBUFFER_SIZE_RX][AVA2_P_DATA_LEN];
@@ -66,6 +65,41 @@ void delay(unsigned int ms)
 		for (i = 0; i < CPU_FREQUENCY / 1000 / 5; i++)
 			__asm__ __volatile__("nop");
 	}
+}
+
+static inline void led_nonce(int id)
+{
+	uint8_t value = get_front_led();
+	if (id <= 4)
+		value ^= 0x04;
+	else
+		value ^= 0x08;
+	set_front_led(value);
+}
+
+static inline void led_iic(int rx)
+{
+	uint8_t value = get_front_led();
+	if (rx)
+		value ^= 0x10;
+	else
+		value ^= 0x30;
+	set_front_led(value);
+}
+
+static inline void led_idle()
+{
+	uint8_t value = get_front_led();
+	value &= 0xf3;
+	value |= 0x40;
+	set_front_led(value);
+}
+
+static inline void led_busy()
+{
+	uint8_t value = get_front_led();
+	value &= 0xbf;
+	set_front_led(value);
 }
 
 static void encode_pkg(uint8_t *p, int type, uint8_t *buf, unsigned int len)
@@ -146,6 +180,7 @@ static void polling()
 {
 	uint8_t *data;
 
+	led_iic(0);
 	if (ret_consume == ret_produce) {
 		send_pkg(AVA2_P_STATUS, NULL, 0, 0);
 
@@ -323,6 +358,7 @@ static int read_result(struct mm_work *mw, struct result *ret)
 	} else
 		chip_id++;
 
+	led_nonce(miner_id);
 	/* Handle the real nonce */
 	for (i = 0; i < LM32_API_RX_BUFF_LEN - 3; i++) {
 		memcpy(&nonce0, api_ret + 8 + i * 4, 4);
@@ -388,6 +424,7 @@ static int get_pkg(struct mm_work *mw)
 			start = 0;
 			count = 0;
 
+			led_iic(1);
 			if (decode_pkg(g_pkg, mw)) {
 #ifdef CFG_ENABLE_ACK
 				send_pkg(AVA2_P_NAK, NULL, 0, 0);
@@ -457,7 +494,7 @@ int main(int argv, char **argc)
 
 	timer_set(0, IDLE_TIME);
 	gpio_led(0xf);
-	front_led(0x3);
+	set_front_led(0x3);
 
 #if 0
 	if (1) {
@@ -477,6 +514,7 @@ int main(int argv, char **argc)
 	}
 #endif
 
+	led_idle();
 	set_voltage(ASIC_0V);
 	g_new_stratum = 0;
 	while (1) {
@@ -494,15 +532,13 @@ int main(int argv, char **argc)
 
 			iic_rx_reset();
 			iic_tx_reset();
-			front_led(0x43);
+			led_idle();
 		}
 
-		if (!g_new_stratum) {
-			front_led(0x43);
+		if (!g_new_stratum)
 			continue;
-		}
 
-		front_led(0x3);
+		led_busy();
 		if (api_get_tx_cnt() <= (23 * 8)) {
 			miner_gen_nonce2_work(&mm_work, mm_work.nonce2++, &work);
 			api_send_work(&work);
@@ -515,8 +551,6 @@ int main(int argv, char **argc)
 				api_send_work(&work);
 			}
 		}
-
-
 		read_result(&mm_work, &result);
 	}
 
