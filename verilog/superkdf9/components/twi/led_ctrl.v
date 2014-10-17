@@ -3,6 +3,7 @@ input         clk       ,
 input         rst       ,
 input         vld       ,
 input  [31:0] reg_din   ,//stable
+input  [7:0]  reg_breath,
 
 input  [3:0]  led_bling ,
 

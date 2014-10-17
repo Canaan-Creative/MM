@@ -77,6 +77,7 @@ wire gpio_wr_en  = TWI_STB_I & TWI_WE_I  & ( TWI_ADR_I == `GPIO) & ~TWI_ACK_O ;
 wire clko_wr_en  = TWI_STB_I & TWI_WE_I  & ( TWI_ADR_I == `CLKO) & ~TWI_ACK_O ;
 wire sftb_wr_en  = TWI_STB_I & TWI_WE_I  & ( TWI_ADR_I == `SFTB) & ~TWI_ACK_O ;
 wire sftc_wr_en  = TWI_STB_I & TWI_WE_I  & ( TWI_ADR_I == `SFTC) & ~TWI_ACK_O ;
+wire brea_wr_en  = TWI_STB_I & TWI_WE_I  & ( TWI_ADR_I == `BREA) & ~TWI_ACK_O ;
 
 wire i2cr_rd_en  = TWI_STB_I & ~TWI_WE_I  & ( TWI_ADR_I == `I2CR) & ~TWI_ACK_O ;
 wire i2rd_rd_en  = TWI_STB_I & ~TWI_WE_I  & ( TWI_ADR_I == `I2RD) & ~TWI_ACK_O ;
@@ -88,6 +89,7 @@ wire time_rd_en  = TWI_STB_I & ~TWI_WE_I  & ( TWI_ADR_I == `TIME) & ~TWI_ACK_O ;
 wire gpio_rd_en  = TWI_STB_I & ~TWI_WE_I  & ( TWI_ADR_I == `GPIO) & ~TWI_ACK_O ;
 wire sftb_rd_en  = TWI_STB_I & ~TWI_WE_I  & ( TWI_ADR_I == `SFTB) & ~TWI_ACK_O ;
 wire sftc_rd_en  = TWI_STB_I & ~TWI_WE_I  & ( TWI_ADR_I == `SFTC) & ~TWI_ACK_O ;
+wire brea_rd_en  = TWI_STB_I & ~TWI_WE_I  & ( TWI_ADR_I == `BREA) & ~TWI_ACK_O ;
 
 //-----------------------------------------------------
 // PWM
@@ -211,11 +213,20 @@ always @ ( posedge CLK_I or posedge RST_I ) begin
 		reg_sftc <= TWI_DAT_I[31:0];
 end
 
+reg [7:0] reg_brea;
+always @ ( posedge CLK_I or posedge RST_I ) begin
+	if( RST_I )
+		reg_brea <= 200;
+	else if( brea_wr_en )
+		reg_brea <= TWI_DAT_I[7:0];
+end
+
 led_ctrl u_shift_c(
 /*input       */ .clk      (CLK_I           ) ,
 /*input       */ .rst      (RST_I           ) ,
 /*input       */ .vld      (sftc_wr_en_f    ) ,
 /*input [31:0]*/ .reg_din  (reg_sftc        ) ,
+/*input  [7:0]*/ .reg_breath(reg_brea       ) ,
 
 /*input  [3:0]*/ .led_bling(led_bling       ) ,
 /*output      */ .sft_shcp (SFTC_SHCP       ) ,
@@ -392,6 +403,7 @@ reg time_rd_en_r ;
 reg gpio_rd_en_r ;
 reg sftb_rd_en_r ;
 reg sftc_rd_en_r ;
+reg brea_rd_en_r ;
 
 wire [7:0] reg_i2cr ;
 wire [7:0] reg_i2rd ;
@@ -405,6 +417,7 @@ always @ ( posedge CLK_I ) begin
 	gpio_rd_en_r <= gpio_rd_en ;
 	sftb_rd_en_r <= sftb_rd_en ;
 	sftc_rd_en_r <= sftc_rd_en ;
+	brea_rd_en_r <= brea_rd_en ;
 end
 
 assign TWI_DAT_O = i2cr_rd_en_r ? {24'b0,reg_i2cr}     :
@@ -416,6 +429,7 @@ assign TWI_DAT_O = i2cr_rd_en_r ? {24'b0,reg_i2cr}     :
 		   gpio_rd_en_r ? reg_gpio             :
 		   sftb_rd_en_r ? reg_sftb             :
 		   sftc_rd_en_r ? reg_sftc             :
+		   brea_rd_en_r ? reg_brea             :
 		   {24'b0,reg_i2rd} ;
 
 twi_core twi_core (
