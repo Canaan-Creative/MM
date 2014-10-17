@@ -383,9 +383,8 @@ void set_asic_freq(uint32_t value[])
 	int i, j, freq_index[3];
 	uint32_t max_freq = 0;
 
-	for ( i = 0; i < 3; i++) {
+	for (i = 0; i < 3; i++)
 		g_asic_freq[i] = value[i];
-	}
 
 	max_freq = g_asic_freq[0];
 	for (i = 1; i < 3; i++) {
@@ -417,5 +416,5 @@ void set_asic_freq(uint32_t value[])
 
 uint32_t get_asic_freq()
 {
-	return (g_asic_freq[0] * 4 + g_asic_freq[1] * 4 + g_asic_freq[2]) / 9;
+	return (g_asic_freq[0] + g_asic_freq[1] * 4 + g_asic_freq[2] * 4) / 9;
 }
