@@ -12,7 +12,7 @@ output       sft_ds
 //--------------------------------------------------
 // shcp counter
 //--------------------------------------------------
-reg [5:0] shcp_cnt ;
+reg [4:0] shcp_cnt ;
 always @ ( posedge clk ) begin
 	if( rst )
 		shcp_cnt <= 0 ;
@@ -22,13 +22,13 @@ always @ ( posedge clk ) begin
 		shcp_cnt <= shcp_cnt + 1 ;
 end
 
-assign sft_shcp = shcp_cnt[2] ;
+assign sft_shcp = shcp_cnt[1] ;
 
 reg [7:0] data ;
 always @ ( posedge clk ) begin
 	if( vld )
 		data <= din ;
-	else if( &shcp_cnt[2:0] )
+	else if( &shcp_cnt[1:0] )
 		data <= data >> 1 ;
 end
 
@@ -37,6 +37,6 @@ assign sft_ds = vld ? din[0] : data[0] ;
 //--------------------------------------------------
 // done
 //--------------------------------------------------
-assign done = shcp_cnt == 63 ;
+assign done = shcp_cnt == 31 ;
 
 endmodule
