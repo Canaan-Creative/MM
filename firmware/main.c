@@ -201,6 +201,7 @@ static int decode_pkg(uint8_t *p, struct mm_work *mw)
 	unsigned int actual_crc;
 	int idx, cnt;
 	uint32_t tmp;
+	uint32_t freq[3];
 
 	uint8_t *data = p + 5;
 
@@ -282,7 +283,10 @@ static int decode_pkg(uint8_t *p, struct mm_work *mw)
 			memcpy(&tmp, data + 4, 4);
 			if (set_voltage(tmp)) {
 				memcpy(&tmp, data + 8, 4);
-				set_asic_freq(tmp);
+				freq[0] = tmp;
+				freq[1] = tmp;
+				freq[2] = tmp;
+				set_asic_freq(freq);
 			}
 		}
 
@@ -300,7 +304,10 @@ static int decode_pkg(uint8_t *p, struct mm_work *mw)
 		memcpy(&tmp, data + 4, 4);
 		if (set_voltage(tmp)) {
 			memcpy(&tmp, data + 8, 4);
-			set_asic_freq(tmp);
+			freq[0] = tmp;
+			freq[1] = tmp;
+			freq[2] = tmp;
+			set_asic_freq(freq);
 		}
 
 		memcpy(&g_nonce2_offset, data + 12, 4);
@@ -501,16 +508,26 @@ int main(int argv, char **argc)
 		/* Test part of ASIC cores */
 		set_voltage(ASIC_CORETEST_VOLT);
 		int ret;
+		uint32_t freq[3];
 		int m = MINER_COUNT;
 		int c = ASIC_COUNT;
-		int all = m*c;
+		int all = m * c * (248 * 16);
 
 		unsigned int add_step = 1;
 		unsigned int pass_zone_num[3];
-		
-		debug32("ABC\n");
-		ret = api_asic_test(m, c, 1, add_step, pass_zone_num);
+
+		adjust_fan(0);
+
+		freq[0] = freq[1] = freq[2] = 200;
+		ret = api_asic_test(m, c, all/m/c, add_step, pass_zone_num, freq);
+		debug32("DEBUG pass_zone_num %d/%d, %d/%d, %d/%d\n",
+				pass_zone_num[0], m*c*(28*4-4)*16,
+				pass_zone_num[1], m*c*(28*4)*16,
+				pass_zone_num[2], m*c*28*16);
+
 		debug32("A.T: %d / %d = %d%%\n", all-ret, all, ((all-ret)*100/all));
+		adjust_fan(0x2ff);
+		set_voltage(ASIC_0V);
 	}
 #endif
 

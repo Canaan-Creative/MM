@@ -13,12 +13,13 @@
 #include "defines.h"
 #include "miner.h"
 #include "io.h"
+#include "api.h"
 
 #include "api_test_data.c"	/* The test data array */
 
 static struct lm32_api *api = (struct lm32_api *)API_BASE;
 
-static uint32_t g_asic_freq = 0;
+static uint32_t g_asic_freq[3];
 static uint32_t g_freq_array[][6] = {
 	{100, 1, 16, 1, 16, 4},
 	{170, 1, 27, 1, 27, 4},
@@ -26,15 +27,20 @@ static uint32_t g_freq_array[][6] = {
 	{220, 1, 17, 1, 17, 2},
 	{230, 1, 18, 1, 18, 2},
 	{300, 1, 24, 1, 24, 2},
+	{340, 1, 27, 1, 27, 2},
 	{350, 1, 28, 1, 28, 2},
 	{360, 1, 43, 3, 43, 1},
 	{370, 1, 59, 4, 59, 1},
-	{380, 1, 30, 1, 30, 2},
-	/* {380, 1, 61, 4, 61, 1}, */
+	/* {380, 1, 30, 1, 30, 2}, */
+	{380, 1, 61, 4, 61, 1},
 	{390, 1, 47, 3, 47, 1},
+	{395, 1, 63, 4, 63, 1},
 	{400, 1, 16, 1, 16, 1},
 	{410, 1, 49, 3, 49, 1},
+	{411, 1, 33, 1, 33, 2},
+	{415, 1, 50, 3, 50, 1},
 	{420, 1, 50, 3, 50, 1},
+	{425, 1, 17, 1, 17, 1},
 	{430, 1, 52, 3, 52, 1},
 	{440, 1, 53, 3, 53, 1},
 	{450, 1, 18, 1, 18, 1},
@@ -220,7 +226,7 @@ static inline unsigned int api_verify_nonce(unsigned int ch_num, unsigned int ch
 			} else
 				chip_id++;
 
-			if (verify_on && (rx_data[2] == target_nonce))
+			if (verify_on && ((rx_data[2] == target_nonce) || (rx_data[3] == target_nonce)))
 				pass_cal_num++;
 			else
 				if (verify_on)
@@ -272,7 +278,8 @@ void api_change_cpm(unsigned int ch_num, unsigned int chip_num,
 //cal_core_num = 248;
 //add_step = 16;
 //api_asic_test(ch_num, chip_num, cal_core_num, add_step, pass_zone_num);
-unsigned int api_asic_test(unsigned int ch_num, unsigned int chip_num, unsigned int cal_core_num, unsigned int add_step, unsigned int *pass_zone_num)
+//freq : //worst -> best
+unsigned int api_asic_test(unsigned int ch_num, unsigned int chip_num, unsigned int cal_core_num, unsigned int add_step, unsigned int *pass_zone_num, uint32_t freq[])
 {
 	unsigned int i, j, k;
 	unsigned int tx_data[23];
@@ -284,12 +291,8 @@ unsigned int api_asic_test(unsigned int ch_num, unsigned int chip_num, unsigned 
 	pass_zone_num[1] = 0;
 	pass_zone_num[2] = 0;
 
-	api_set_timeout(0x8d40);
-	api_flush();
-	api_change_cpm(ch_num, chip_num,
-		       1, 16, 1, 16, 2,
-		       1, 16, 1, 16, 2,
-		       1, 16, 1, 16, 2);
+	set_asic_freq(freq);
+
 	for (j = 0; j < cal_core_num + 2 * add_step; j += add_step) {
 		api_gen_test_work(j, tx_data);
 		for (k = 0; k < ch_num; k++) {
@@ -301,17 +304,19 @@ unsigned int api_asic_test(unsigned int ch_num, unsigned int chip_num, unsigned 
 
 		api_wait_done(ch_num, chip_num);
 
-		target_nonce = api_gen_test_work((j-2)%16, tx_data);
+		target_nonce = api_gen_test_work((j - 2 * add_step) % 16, tx_data);
 		verify_on = j >= 2 ? 1 : 0;
 		tmp = api_verify_nonce(ch_num, chip_num, verify_on, target_nonce);
 		pass_cal_num += tmp;
 
-		if(j % 16 < 28 * 4 - 4)
-			pass_zone_num[0] += tmp;
-		else if(j % 16 < 28 * 4 - 4 + 28 * 4)
-			pass_zone_num[1] += tmp;
-		else
-			pass_zone_num[2] += tmp;
+		if (verify_on) {
+			if ((j - 2) < (28 * 4 - 4) * 16)
+				pass_zone_num[0] += tmp;
+			else if ((j - 2) < (28 * 4 - 4 + 28 * 4) * 16)
+				pass_zone_num[1] += tmp;
+			else
+				pass_zone_num[2] += tmp;
+		}
 	}
 
 	return pass_cal_num;
@@ -373,29 +378,44 @@ int api_send_work(struct work *w)
 	return 0;
 }
 
-void set_asic_freq(uint32_t value)
+void set_asic_freq(uint32_t value[])
 {
-	int i;
-	g_asic_freq = value;
+	int i, j, freq_index[3];
+	uint32_t max_freq = 0;
+
+	for ( i = 0; i < 3; i++) {
+		g_asic_freq[i] = value[i];
+	}
+
+	max_freq = g_asic_freq[0];
+	for (i = 1; i < 3; i++) {
+		if (max_freq < g_asic_freq[i])
+			max_freq = g_asic_freq[i];
+	}
 
 	/* The timeout value:
 	 * 2^32÷(0.1GHz×1000000000×3968÷65)×100000000 = 0x4318c63 */
-	api_set_timeout(ASIC_TIMEOUT_100M / g_asic_freq * 50);
+	api_set_timeout(ASIC_TIMEOUT_100M / max_freq * 50);
 	api_flush();
 
-	i = 0;
-	while (g_freq_array[i][0] != 1000) {
-		if (g_asic_freq >= g_freq_array[i][0] && g_asic_freq < g_freq_array[i+1][0])
-			break;
-		i++;
+	for (j = 0; j < 3; j++) {
+		i = 0;
+		while (g_freq_array[i][0] != 1000) {
+			if (g_asic_freq[j] >= g_freq_array[i][0] && g_asic_freq[j] < g_freq_array[i+1][0])
+				break;
+			i++;
+		}
+
+		freq_index[j] = i;
 	}
+
 	api_change_cpm(MINER_COUNT, ASIC_COUNT,
-		       g_freq_array[i][1], g_freq_array[i][2], g_freq_array[i][3], g_freq_array[i][4], g_freq_array[i][5],
-		       g_freq_array[i][1], g_freq_array[i][2], g_freq_array[i][3], g_freq_array[i][4], g_freq_array[i][5],
-		       g_freq_array[i][1], g_freq_array[i][2], g_freq_array[i][3], g_freq_array[i][4], g_freq_array[i][5]);
+		       g_freq_array[freq_index[0]][1], g_freq_array[freq_index[0]][2], g_freq_array[freq_index[0]][3], g_freq_array[freq_index[0]][4], g_freq_array[freq_index[0]][5],
+		       g_freq_array[freq_index[1]][1], g_freq_array[freq_index[1]][2], g_freq_array[freq_index[1]][3], g_freq_array[freq_index[1]][4], g_freq_array[freq_index[1]][5],
+		       g_freq_array[freq_index[2]][1], g_freq_array[freq_index[2]][2], g_freq_array[freq_index[2]][3], g_freq_array[freq_index[2]][4], g_freq_array[freq_index[2]][5]);
 }
 
 uint32_t get_asic_freq()
 {
-	return g_asic_freq;
+	return (g_asic_freq[0] * 4 + g_asic_freq[1] * 4 + g_asic_freq[2]) / 9;
 }
