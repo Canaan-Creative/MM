@@ -23,7 +23,6 @@ parameter SPARK_MAX = 25'h989680 * 3;//300ms
 parameter BLING_MAX = 25'h8;
 
 parameter BREATH_MAX  = 25'h180000;// 1/60s
-parameter BREATH_ROUND  = 200;//20 time from min to max
 
 reg [SPARK_WIH-1:0] led0_spark_cnt;
 reg [SPARK_WIH-1:0] led1_spark_cnt;
@@ -49,7 +48,7 @@ reg led7_breath_flg;
 always @ (posedge clk) begin
 	if(rst || (vld && (led7 == LED_OFF || led7 == LED_ON)))
 		led7_breath_cnt <= 0;
-	else if(led_spark_cnt_max[7] && led7_breath_cnt != BREATH_ROUND)
+	else if(led_spark_cnt_max[7] && led7_breath_cnt != reg_breath)
 		led7_breath_cnt <= led7_breath_cnt + 1;
 	else if(led_spark_cnt_max[7])
 		led7_breath_cnt <= 0;
@@ -58,16 +57,16 @@ end
 always @ (posedge clk) begin
 	if(rst || (vld && (led7 == LED_OFF || led7 == LED_ON)))
 		led7_breath_round_cnt <= 0;
-	else if(led_spark_cnt_max[7] && led7_breath_cnt == BREATH_ROUND && led7_breath_round_cnt != BREATH_ROUND)
+	else if(led_spark_cnt_max[7] && led7_breath_cnt == reg_breath && led7_breath_round_cnt != reg_breath)
 		led7_breath_round_cnt <= led7_breath_round_cnt + 1;
-	else if(led_spark_cnt_max[7] && led7_breath_cnt == BREATH_ROUND)
+	else if(led_spark_cnt_max[7] && led7_breath_cnt == reg_breath)
 		led7_breath_round_cnt <= 0;
 end
 
 always @ (posedge clk) begin
 	if(rst || (vld && (led7 == LED_OFF || led7 == LED_ON)))
 		led7_breath_flg <= 0;
-	else if(led_spark_cnt_max[7] && led7_breath_cnt == BREATH_ROUND && led7_breath_round_cnt == BREATH_ROUND)
+	else if(led_spark_cnt_max[7] && led7_breath_cnt == reg_breath && led7_breath_round_cnt == reg_breath)
 		led7_breath_flg <= ~led7_breath_flg;
 end
 
@@ -87,8 +86,9 @@ reg [7:0] led_r;
 wire led7_w, led6_w, led5_w, led4_w, led3_w, led2_w, led1_w, led0_w;
 wire [7:0] led_tmp;
 assign led_tmp[6:0] = led_r[6:0] ^ led_spark_cnt_max[6:0];
-assign led_tmp[7] =     led7 == LED_BREATH && led7_breath_flg ? (led7_breath_cnt >= led7_breath_round_cnt):
-			led7 == LED_BREATH                    ? (led7_breath_cnt < led7_breath_round_cnt) : (led_r[7] ^ led_spark_cnt_max[7]);
+assign led_tmp[7] =     (led7 == LED_BREATH && (~led7_breath_flg))? (led7_breath_cnt >= led7_breath_round_cnt):
+			(led7 == LED_BREATH                      )? (led7_breath_cnt < led7_breath_round_cnt) :
+                        (led_r[7] ^ led_spark_cnt_max[7]);
 
 always @ (posedge clk) begin
 	if(rst)
