@@ -67,38 +67,48 @@ void delay(unsigned int ms)
 	}
 }
 
-static inline void led_nonce(int id)
-{
-	uint8_t value = get_front_led();
-	if (id <= 4)
-		value ^= 0x04;
-	else
-		value ^= 0x08;
-	set_front_led(value);
-}
+#define LED_OFF_ALL	0
+#define LED_ON_ALL	1
+#define LED_IDLE	2
+#define LED_BUSY	3
+#define LED_POSTON	4
+#define LED_POSTOFF	5
+#define LED_POWER	6
 
-static inline void led_iic(int rx)
+static inline void led_ctrl(int led_op)
 {
-	uint8_t value = get_front_led();
-	if (rx)
-		value ^= 0x10;
-	else
-		value ^= 0x30;
-	set_front_led(value);
-}
+	uint32_t value = get_front_led();
 
-static inline void led_idle()
-{
-	uint8_t value = get_front_led();
-	value &= 0xf3;
-	value |= 0x40;
-	set_front_led(value);
-}
+	switch (led_op) {
+	case LED_OFF_ALL:
+		value = 0;
+		break;
+	case LED_ON_ALL:
+		value = 0x11111111;
+		break;
+	case LED_IDLE:
+		value &= 0xffffff0f;
+		value |= 0x30;
+		break;
+	case LED_BUSY:
+		value &= 0xff0000ff;
+		value |= 0x444400;
+		break;
+	case LED_POSTON:
+		value &= 0xfffffff0;
+		value |= 0x1;
+		break;
+	case LED_POSTOFF:
+		value &= 0xfffffff0;
+		break;
+	case LED_POWER:
+		value &= 0xfffffff;
+		value |= 0x10000000;
+		break;
+	default:
+		return;
+	}
 
-static inline void led_busy()
-{
-	uint8_t value = get_front_led();
-	value &= 0xbf;
 	set_front_led(value);
 }
 
@@ -180,7 +190,6 @@ static void polling()
 {
 	uint8_t *data;
 
-	led_iic(0);
 	if (ret_consume == ret_produce) {
 		send_pkg(AVA2_P_STATUS, NULL, 0, 0);
 
@@ -336,10 +345,12 @@ static int decode_pkg(uint8_t *p, struct mm_work *mw)
 			break;
 
 		gpio_led(1);
+		led_ctrl(LED_POSTON);
 		set_voltage(ASIC_CORETEST_VOLT);
 		/* TODO: test asic */
 		set_voltage(ASIC_0V);
 		gpio_led(0);
+		led_ctrl(LED_POSTOFF);
 		break;
 	default:
 		break;
@@ -376,7 +387,6 @@ static int read_result(struct mm_work *mw, struct result *ret)
 	} else
 		chip_id++;
 
-	led_nonce(miner_id);
 	/* Handle the real nonce */
 	for (i = 0; i < LM32_API_RX_BUFF_LEN - 3; i++) {
 		memcpy(&nonce0, api_ret + 8 + i * 4, 4);
@@ -442,7 +452,6 @@ static int get_pkg(struct mm_work *mw)
 			start = 0;
 			count = 0;
 
-			led_iic(1);
 			if (decode_pkg(g_pkg, mw)) {
 #ifdef CFG_ENABLE_ACK
 				send_pkg(AVA2_P_NAK, NULL, 0, 0);
@@ -488,7 +497,12 @@ int main(int argv, char **argc)
 	struct result result;
 	int i;
 
+	adjust_fan(0x3ff);		/* Set the fan to 100% */
+	led_ctrl(LED_ON_ALL);
+	delay(2000);
+	led_ctrl(LED_OFF_ALL);
 	adjust_fan(0x2ff);		/* Set the fan to 50% */
+
 	/* TODO: Flash api fifo */
 
 	wdg_init(1);
@@ -512,7 +526,7 @@ int main(int argv, char **argc)
 
 	timer_set(0, IDLE_TIME);
 	gpio_led(0xf);
-	set_front_led(0x3);
+	led_ctrl(LED_POWER);
 
 #if 0
 	if (1) {
@@ -542,7 +556,7 @@ int main(int argv, char **argc)
 	}
 #endif
 
-	led_idle();
+	led_ctrl(LED_IDLE);
 	set_voltage(ASIC_0V);
 	g_new_stratum = 0;
 	while (1) {
@@ -560,13 +574,13 @@ int main(int argv, char **argc)
 
 			iic_rx_reset();
 			iic_tx_reset();
-			led_idle();
+			led_ctrl(LED_IDLE);
 		}
 
 		if (!g_new_stratum)
 			continue;
 
-		led_busy();
+		led_ctrl(LED_BUSY);
 		if (api_get_tx_cnt() <= (23 * 8)) {
 			miner_gen_nonce2_work(&mm_work, mm_work.nonce2++, &work);
 			api_send_work(&work);

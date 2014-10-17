@@ -14,6 +14,6 @@
 uint32_t set_voltage(uint32_t value);
 uint32_t get_voltage();
 
-void set_front_led(uint8_t data);
-uint8_t get_front_led();
+void set_front_led(uint32_t data);
+uint32_t get_front_led();
 #endif	/* __SHIFTER_H__ */

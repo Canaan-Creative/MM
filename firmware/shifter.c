@@ -20,7 +20,7 @@ static struct lm32_shifter *sft1 = (struct lm32_shifter *)SHIFTER_BASE1;
 static struct lm32_shifter *sft2 = (struct lm32_shifter *)SHIFTER_BASE2;
 
 static uint32_t g_voltage = ASIC_0V;
-static int8_t g_led = 0;
+static int32_t g_led = 0;
 
 static void shift_done(struct lm32_shifter *s)
 {
@@ -84,26 +84,16 @@ uint32_t get_voltage()
 	return g_voltage;
 }
 
-uint8_t get_front_led()
+uint32_t get_front_led()
 {
 	return g_led;
 }
 
-void set_front_led(uint8_t value)
+void set_front_led(uint32_t value)
 {
 	if (g_led == value)
 		return;
 
 	g_led = value;
-
-	static uint32_t flag = 0;
-	if (flag) {
-		while (!(readl(&sft2->reg) & 0x8))
-			;
-
-		writel(0x8, &sft2->reg);
-	} else
-		flag = 1;
-
-	writel((g_led << 8) | 0x1, &sft2->reg);
+	writel(value, &sft2->reg);
 }
