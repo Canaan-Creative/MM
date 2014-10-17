@@ -22,7 +22,7 @@ parameter SPARK_MAX = 25'h989680 * 3;//300ms
 parameter BLING_MAX = 25'h8;
 
 parameter BREATH_MAX  = 25'h180000;// 1/60s
-parameter BREATH_ROUND  = 20;//20 time from min to max
+parameter BREATH_ROUND  = 200;//20 time from min to max
 
 reg [SPARK_WIH-1:0] led0_spark_cnt;
 reg [SPARK_WIH-1:0] led1_spark_cnt;
@@ -42,8 +42,8 @@ wire [3:0] led5 = reg_din[23:20];
 wire [3:0] led6 = reg_din[27:24];
 wire [3:0] led7 = reg_din[31:28];
 
-reg [5:0] led7_breath_cnt;
-reg [5:0] led7_breath_round_cnt;
+reg [7:0] led7_breath_cnt;
+reg [7:0] led7_breath_round_cnt;
 reg led7_breath_flg;
 always @ (posedge clk) begin
 	if(rst || (vld && (led7 == LED_OFF || led7 == LED_ON)))
