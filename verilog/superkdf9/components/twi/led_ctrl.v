@@ -95,6 +95,8 @@ assign led7_w = (led7 == LED_OFF) ? 1'b0 : (led7 == LED_ON) ? 1'b1 : (led7 == LE
 always @ (posedge clk) begin
 	if(rst)
 		led0_spark_cnt <= 0;
+	else if(vld && (led0 == LED_OFF || led0 == LED_ON))
+		led0_spark_cnt <= 0;
 	else if(vld && (led0 == LED_SPARK || (led0 == LED_SPARK1 && led0_change)))
 		led0_spark_cnt <= 1;
 	else if(led_spark_cnt_max[0] && led0 == LED_SPARK)
@@ -108,6 +110,8 @@ end
 always @ (posedge clk) begin
         if(rst)
                 led1_spark_cnt <= 0;                                                                              
+       else if(vld && (led1 == LED_OFF || led1 == LED_ON))                                                       
+                led1_spark_cnt <= 0;
 	else if(vld && (led1 == LED_SPARK || (led1 == LED_SPARK1 && led1_change)))
                 led1_spark_cnt <= 1;                                                                              
         else if(led_spark_cnt_max[1] && led1 == LED_SPARK)
@@ -122,6 +126,8 @@ end
 always @ (posedge clk) begin
 	if(rst)
 		led2_spark_cnt <= 0;
+       else if(vld && (led2 == LED_OFF || led2 == LED_ON))                                                       
+                led2_spark_cnt <= 0;
 	else if(vld && (led2 == LED_SPARK || ((led2 == LED_SPARK1 || led2 == LED_BLING) && led2_change)))
 		led2_spark_cnt <= 1;
 	else if(led_spark_cnt_max[2] && led2 == LED_SPARK)
@@ -134,6 +140,8 @@ end
 
 always @ (posedge clk) begin
         if(rst)
+                led3_spark_cnt <= 0;
+       else if(vld && (led3 == LED_OFF || led3 == LED_ON))                                                       
                 led3_spark_cnt <= 0;
 	else if(vld && (led3 == LED_SPARK || ((led3 == LED_SPARK1 || led3 == LED_BLING) && led3_change)))
                 led3_spark_cnt <= 1;
@@ -148,6 +156,8 @@ end
 always @ (posedge clk) begin
         if(rst)
                 led4_spark_cnt <= 0;
+       else if(vld && (led4 == LED_OFF || led4 == LED_ON))                                                       
+                led4_spark_cnt <= 0;
 	else if(vld && (led4 == LED_SPARK || ((led4 == LED_SPARK1 || led4 == LED_BLING) && led4_change)))
                 led4_spark_cnt <= 1;
         else if(led_spark_cnt_max[4] && led4 == LED_SPARK)
@@ -161,6 +171,8 @@ end
 always @ (posedge clk) begin
         if(rst)
                 led5_spark_cnt <= 0;
+       else if(vld && (led5 == LED_OFF || led5 == LED_ON))                                                       
+                led5_spark_cnt <= 0;
 	else if(vld && (led5 == LED_SPARK || ((led5 == LED_SPARK1 || led5 == LED_BLING) && led5_change)))
                 led5_spark_cnt <= 1;
         else if(led_spark_cnt_max[5] && led5 == LED_SPARK)
@@ -173,7 +185,9 @@ end
 
 always @ (posedge clk) begin
         if(rst)
-                led6_spark_cnt <= 0;                                                                              
+                led6_spark_cnt <= 0;      
+       else if(vld && (led6 == LED_OFF || led6 == LED_ON))                                                       
+                led6_spark_cnt <= 0;                                                                        
 	else if(vld && (led6 == LED_SPARK || (led6 == LED_SPARK1 && led6_change)))
                 led6_spark_cnt <= 1;                                                                              
         else if(led_spark_cnt_max[6] && led6 == LED_SPARK)
@@ -186,6 +200,8 @@ end
 
 always @ (posedge clk) begin
         if(rst)
+                led7_spark_cnt <= 0;
+       else if(vld && (led7 == LED_OFF || led7 == LED_ON))                                                       
                 led7_spark_cnt <= 0;                                                                              
 	else if(vld && (led7 == LED_SPARK || (led7 == LED_SPARK1 && led7_change)))
                 led7_spark_cnt <= 1;                                                                              
