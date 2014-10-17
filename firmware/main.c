@@ -346,8 +346,33 @@ static int decode_pkg(uint8_t *p, struct mm_work *mw)
 
 		gpio_led(1);
 		led_ctrl(LED_POSTON);
-		set_voltage(ASIC_CORETEST_VOLT);
-		/* TODO: test asic */
+		memcpy(&tmp, data + 4, 4);
+		debug32("V: %08x", tmp);
+		set_voltage(tmp);
+		memcpy(&tmp, data + 8, 4);
+		freq[0] = (tmp & 0x3ff00000) >> 20;
+		freq[1] = (tmp & 0xffc00) >> 10;
+		freq[2] = tmp & 0x3ff;
+		debug32(", F: %08x/%d-%d-%d\n", tmp, freq[0], freq[1], freq[2]);
+		{
+			int m = MINER_COUNT;
+			int c = ASIC_COUNT;
+			int all = m * c;
+			uint8_t result[8];
+
+			tmp = api_asic_test(m, c, all/m/c, 1, NULL, freq);
+			result[0] = (tmp >> 24) & 0xff;
+			result[1] = (tmp >> 16) & 0xff;
+			result[2] = (tmp >> 8) & 0xff;
+			result[3] = tmp & 0xff;
+			result[4] = (all >> 24) & 0xff;
+			result[5] = (all >> 16) & 0xff;
+			result[6] = (all >> 8) & 0xff;
+			result[7] = all & 0xff;
+			debug32("A.T: pass %d, all %d\n", tmp, all);
+			send_pkg(AVA2_P_TEST_RET, result, 8, 0);
+		}
+
 		set_voltage(ASIC_0V);
 		gpio_led(0);
 		led_ctrl(LED_POSTOFF);

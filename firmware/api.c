@@ -287,9 +287,12 @@ unsigned int api_asic_test(unsigned int ch_num, unsigned int chip_num, unsigned 
 	unsigned int pass_cal_num = 0;
 	unsigned int verify_on = 0;
 	unsigned int tmp;
-	pass_zone_num[0] = 0;
-	pass_zone_num[1] = 0;
-	pass_zone_num[2] = 0;
+
+	if (pass_zone_num) {
+		pass_zone_num[0] = 0;
+		pass_zone_num[1] = 0;
+		pass_zone_num[2] = 0;
+	}
 
 	set_asic_freq(freq);
 
@@ -309,7 +312,7 @@ unsigned int api_asic_test(unsigned int ch_num, unsigned int chip_num, unsigned 
 		tmp = api_verify_nonce(ch_num, chip_num, verify_on, target_nonce);
 		pass_cal_num += tmp;
 
-		if (verify_on) {
+		if (pass_zone_num && verify_on) {
 			if ((j - 2) < (28 * 4 - 4) * 16)
 				pass_zone_num[0] += tmp;
 			else if ((j - 2) < (28 * 4 - 4 + 28 * 4) * 16)
