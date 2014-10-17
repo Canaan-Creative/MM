@@ -253,7 +253,7 @@ static int decode_pkg(uint8_t *p, struct mm_work *mw)
 		break;
 	case AVA2_P_JOB_ID:
 		memcpy((uint8_t *)&mw->job_id, data, 4);
-		debug32("J: %08x\n", mw->job_id);
+		debug32("[%d]J: %08x\n", g_module_id, mw->job_id);
 		break;
 	case AVA2_P_COINBASE:
 		if (idx == 1)
