@@ -347,6 +347,8 @@ endmodule
 `include "../components/twi/twi.v"
 `include "../components/twi/shift.v"
 `include "../components/twi/twi_core.v"
+`include "../components/twi/led_ctrl.v"
+`include "../components/twi/led_shift.v"
 
 `include "../components/i2c/i2c.v"
 `include "../components/i2c/i2c_phy.v"
@@ -902,6 +904,8 @@ assign uartUART_en = (SHAREDBUS_ADR_I[31:4] == 28'b1000000000000000000000010000)
 wire uartSOUT_w ;
 assign uartSOUT     = uartSOUT_w ? 1'bz : 1'b0;
 
+wire led_iic_wr, led_iic_rd, led_get_nonce_l, led_get_nonce_h;
+
 `ifdef UART_EN
 uart_core
 #(
@@ -987,9 +991,10 @@ i2c i2c_slv(
 /*output           */ .ram_wr    (ram_wr                     ),
 /*output [15:0]    */ .ram_addr  (ram_addr                   ),
 /*output [31:0]    */ .ram_dat_wr(ram_dat_wr                 ),
-/*input  [31:0]    */ .ram_dat_rd(ram_dat_rd                 )
+/*input  [31:0]    */ .ram_dat_rd(ram_dat_rd                 ),
 
-
+/*output           */ .led_iic_wr(led_iic_wr),
+/*output           */ .led_iic_rd(led_iic_rd) 
 );
 
 wire [31:0] spiSPI_DAT_I;
@@ -1187,7 +1192,10 @@ api api(
 /*output [`API_NUM-1:0]*/ .load (API_LOAD   ),
 /*output               */ .sck  (api_sck_w  ),
 /*output               */ .mosi (api_mosi_w ),
-/*input  [`API_NUM-1:0]*/ .miso (API_MISO   ) 
+/*input  [`API_NUM-1:0]*/ .miso (API_MISO   ),
+
+/*output               */ .led_get_nonce_l(led_get_nonce_l),
+/*output               */ .led_get_nonce_h(led_get_nonce_h) 
 );
 
 
@@ -1241,7 +1249,9 @@ twi u_twi(
 /*output        */ .TIME1_INT   (TIME1_INT                   ) ,
 /*output        */ .GPIO_OUT    (gpioPIO_OUT                 ) ,
 /*input  [7:0]  */ .GPIO_IN     (gpioPIO_IN                  ) ,
-/*output        */ .clk25m_on   (clk25m_on                   )
+/*output        */ .clk25m_on   (clk25m_on                   ) ,
+
+/*input  [3:0]  */ .led_bling   ({led_iic_rd, led_iic_wr, led_get_nonce_l, led_get_nonce_l})
 ) ;
 
 assign superkdf9interrupt_n[3] = !uartINTR ;

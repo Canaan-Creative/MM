@@ -15,7 +15,10 @@ output [31:0] dout    ,
 
 input         empty   ,
 output reg    pop     ,
-input  [31:0] din     
+input  [31:0] din     ,
+
+output        led_iic_wr,
+output        led_iic_rd 
 );
 
 reg [3:0] scl_f;
@@ -108,6 +111,9 @@ always @ (*) begin
 	default: nxt_state = IDLE;
 	endcase
 end
+
+assign led_iic_wr = cur_state == AACKO && nxt_state == DWR;
+assign led_iic_rd = cur_state == AACKO && nxt_state == DRD;
 
 //-----------------------------------------------------
 // I2C Bit Byte Counter 0~7

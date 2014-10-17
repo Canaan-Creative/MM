@@ -47,7 +47,9 @@ module twi(
 
     output [15:0]  GPIO_OUT    ,
     input  [15:0]  GPIO_IN     ,
-    output         clk25m_on
+    output         clk25m_on   ,
+
+    input [3:0] led_bling
 );
 
 assign TWI_ERR_O = 1'b0 ;
@@ -197,34 +199,28 @@ shift u_shift_b(
 /*output      */ .sft_oe_n (SFTB_OE_N       )
 );
 
-wire sftc_done ;
-reg sftc_done_r ;
-wire [31:0] reg_sftc = {28'b0,sftc_done_r,3'b0} ;
+reg [31:0] reg_sftc;
+reg sftc_wr_en_f;
+always @ ( posedge CLK_I )
+	sftc_wr_en_f <= sftc_wr_en;
+
 always @ ( posedge CLK_I or posedge RST_I ) begin
 	if( RST_I )
-		sftc_done_r <= 1'b0 ;
-	else if( sftc_wr_en && TWI_DAT_I[4])
-		sftc_done_r <= 1'b0 ;
-	else if( sftc_done )
-		sftc_done_r <= 1'b1 ;
+		reg_sftc <= 32'h0;
+	else if( sftc_wr_en )
+		reg_sftc <= TWI_DAT_I[31:0];
 end
 
-shift u_shift_c(
+led_ctrl u_shift_c(
 /*input       */ .clk      (CLK_I           ) ,
 /*input       */ .rst      (RST_I           ) ,
-/*input       */ .vld      (sftc_wr_en      ) ,
-/*input  [1:0]*/ .cmd      (TWI_DAT_I[1:0]  ) ,
-/*input       */ .cmd_oen  (TWI_DAT_I[2]    ) ,
-/*input  [7:0]*/ .din      (TWI_DAT_I[15:8] ) ,
-/*output      */ .done     (sftc_done       ) ,
+/*input       */ .vld      (sftc_wr_en_f    ) ,
+/*input [31:0]*/ .reg_din  (reg_sftc        ) ,
 
+/*input  [3:0]*/ .led_bling(led_bling       ) ,
 /*output      */ .sft_shcp (SFTC_SHCP       ) ,
-/*output      */ .sft_ds   (SFTC_DS         ) ,
-/*output      */ .sft_stcp (                ) ,
-/*output      */ .sft_mr_n (                ) ,
-/*output      */ .sft_oe_n (                )
+/*output      */ .sft_ds   (SFTC_DS         )  
 );
-
 
 //-----------------------------------------------------
 // fan speed
