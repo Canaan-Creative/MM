@@ -31,7 +31,6 @@ static uint32_t g_freq_array[][6] = {
 	{350, 1, 28, 1, 28, 2},
 	{360, 1, 43, 3, 43, 1},
 	{370, 1, 59, 4, 59, 1},
-	/* {380, 1, 30, 1, 30, 2}, */
 	{380, 1, 61, 4, 61, 1},
 	{390, 1, 47, 3, 47, 1},
 	{395, 1, 63, 4, 63, 1},
@@ -101,13 +100,13 @@ static uint32_t g_freq_array[][6] = {
 	{1000, 1, 40, 1, 40, 1}
 };
 
-unsigned int api_set_cpm(unsigned int NR, unsigned int NF, unsigned int OD, unsigned int NB, unsigned int div)
+static uint32_t api_set_cpm(uint32_t NR, uint32_t NF, uint32_t OD, uint32_t NB, uint32_t div)
 {
-	unsigned int div_loc = 0;
-	unsigned int NR_sub;
-	unsigned int NF_sub;
-	unsigned int OD_sub;
-	unsigned int NB_sub;
+	uint32_t div_loc = 0;
+	uint32_t NR_sub;
+	uint32_t NF_sub;
+	uint32_t OD_sub;
+	uint32_t NB_sub;
 
 	NR_sub = NR - 1;
 	NF_sub = NF - 1;
@@ -127,70 +126,37 @@ unsigned int api_set_cpm(unsigned int NR, unsigned int NF, unsigned int OD, unsi
 		(NR_sub << 11) | (NF_sub << 15) | (OD_sub << 21) | (NB_sub << 25);
 }
 
-static inline void api_set_num(unsigned int ch_num, unsigned int chip_num)
+static inline void api_set_num(uint32_t ch_num, uint32_t chip_num)
 {
-	unsigned int tmp;
+	uint32_t tmp;
 	tmp = readl(&api->sck) & 0xff;
 	tmp = (ch_num << 16) | ((chip_num*23) << 24) | tmp;
 	writel(tmp, &api->sck);
 }
 
-static inline void api_set_sck(unsigned int spi_speed)
+static inline void api_set_sck(uint32_t spi_speed)
 {
-	unsigned int tmp;
+	uint32_t tmp;
 	tmp = (readl(&api->sck) & 0xffff0000) | spi_speed;
 	writel(tmp, &api->sck);
 }
 
-void api_initial(unsigned int ch_num, unsigned int chip_num, unsigned int spi_speed)
-{
-	api_set_num(ch_num, chip_num);
-	api_set_sck(spi_speed);
-}
-
-void api_set_timeout(unsigned int timeout)
-{
-	writel(timeout, &api->timeout);
-}
-
-void api_set_flush()
-{
-	writel(0x2, &api->state);
-}
-
-unsigned int api_get_tx_cnt()
-{
-	return (readl(&api->state) >> 2) & 0x3ff;
-}
-
-unsigned int api_get_rx_cnt()
-{
-	return (readl(&api->state) >> 20) & 0x3ff;
-}
-
-void api_set_tx_fifo(unsigned int * data)
+static void api_set_tx_fifo(uint32_t * data)
 {
 	int i;
 	for (i = 0; i < 23; i++)
 		writel(data[i], &api->tx);
 }
 
-void api_get_rx_fifo(unsigned int * data)
-{
-	int i;
-	for (i = 0; i < LM32_API_RX_BUFF_LEN; i++)
-		data[i] = readl(&api->rx);
-}
-
-static inline void api_wait_done(unsigned int ch_num, unsigned int chip_num)
+static inline void api_wait_done(uint32_t ch_num, uint32_t chip_num)
 {
 	while (api_get_rx_cnt() != (ch_num * chip_num * LM32_API_RX_BUFF_LEN))
 		;
 }
 
-static inline unsigned int api_gen_test_work(unsigned int i, unsigned int * data)
+static inline uint32_t api_gen_test_work(uint32_t i, uint32_t * data)
 {
-	unsigned int tmp = 0;
+	uint32_t tmp = 0;
 	int j;
 
 	for (j = 0; j < 18; j++) {
@@ -209,11 +175,11 @@ static inline unsigned int api_gen_test_work(unsigned int i, unsigned int * data
 	return tmp + 0x18000;
 }
 
-static inline unsigned int api_verify_nonce(unsigned int ch_num, unsigned int chip_num, unsigned int verify_on, unsigned int target_nonce)
+static uint32_t api_verify_nonce(uint32_t ch_num, uint32_t chip_num, uint32_t verify_on, uint32_t target_nonce)
 {
-	unsigned int i, j;
-	unsigned int rx_data[LM32_API_RX_BUFF_LEN];
-	unsigned int pass_cal_num = 0;
+	uint32_t i, j;
+	uint32_t rx_data[LM32_API_RX_BUFF_LEN];
+	uint32_t pass_cal_num = 0;
 	static uint32_t last_minerid = 0xff;
 	static uint8_t chip_id;
 
@@ -238,22 +204,22 @@ static inline unsigned int api_verify_nonce(unsigned int ch_num, unsigned int ch
 
 static inline int api_flush()
 {
-	while(1){
-		while(api_get_rx_cnt())
+	while(1) {
+		while (api_get_rx_cnt())
 			readl(&api->rx);
-		if(api_get_tx_cnt() == 0 && api_get_rx_cnt() == 0)
+		if (api_get_tx_cnt() == 0 && api_get_rx_cnt() == 0)
 			return 0;
 	}
 }
 
-extern void delay(unsigned int ms);
-void api_change_cpm(unsigned int ch_num, unsigned int chip_num,
-		    unsigned int NR0, unsigned int NF0, unsigned int OD0, unsigned int NB0, unsigned int div0,
-		    unsigned int NR1, unsigned int NF1, unsigned int OD1, unsigned int NB1, unsigned int div1,
-		    unsigned int NR2, unsigned int NF2, unsigned int OD2, unsigned int NB2, unsigned int div2)
+extern void delay(uint32_t ms);
+static void api_change_cpm(uint32_t ch_num, uint32_t chip_num,
+		    uint32_t NR0, uint32_t NF0, uint32_t OD0, uint32_t NB0, uint32_t div0,
+		    uint32_t NR1, uint32_t NF1, uint32_t OD1, uint32_t NB1, uint32_t div1,
+		    uint32_t NR2, uint32_t NF2, uint32_t OD2, uint32_t NB2, uint32_t div2)
 {
-	unsigned int tx_data[23];
-	unsigned int i, k;
+	uint32_t tx_data[23];
+	uint32_t i, k;
 
 	tx_data[20] = api_set_cpm(NR0, NF0, OD0, NB0, div0) | 0x40;
 	tx_data[21] = api_set_cpm(NR1, NF1, OD1, NB1, div1) | 0x40;
@@ -272,27 +238,64 @@ void api_change_cpm(unsigned int ch_num, unsigned int chip_num,
 	delay(1);
 }
 
-
-//pass_zone_num : [0] for the best 4/9 core; [1] for the mid 4/9 core; [2] for the worst 1/9
-//when you want to know the health of a3222(within three diff zone), you may use this func like this:
-//cal_core_num = 248;
-//add_step = 16;
-//api_asic_test(ch_num, chip_num, cal_core_num, add_step, pass_zone_num);
-//freq : //worst -> best
-unsigned int api_asic_test(unsigned int ch_num, unsigned int chip_num, unsigned int cal_core_num, unsigned int add_step, unsigned int *pass_zone_num, uint32_t freq[])
+void api_initial(uint32_t ch_num, uint32_t chip_num, uint32_t spi_speed)
 {
-	unsigned int i, j, k;
-	unsigned int tx_data[23];
-	unsigned int target_nonce;
-	unsigned int pass_cal_num = 0;
-	unsigned int verify_on = 0;
-	unsigned int tmp;
+	api_set_num(ch_num, chip_num);
+	api_set_sck(spi_speed);
+}
+
+void api_set_timeout(uint32_t timeout)
+{
+	writel(timeout, &api->timeout);
+}
+
+void api_set_flush()
+{
+	/* FIXME: hang the soc */
+	writel(0x2, &api->state);
+}
+
+uint32_t api_get_tx_cnt()
+{
+	return (readl(&api->state) >> 2) & 0x3ff;
+}
+
+uint32_t api_get_rx_cnt()
+{
+	return (readl(&api->state) >> 20) & 0x3ff;
+}
+
+void api_get_rx_fifo(uint32_t * data)
+{
+	int i;
+	for (i = 0; i < LM32_API_RX_BUFF_LEN; i++)
+		data[i] = readl(&api->rx);
+}
+
+/*
+ * when you want to know the health of a3222(within three diff zone), you may use this func like this:
+ * cal_core_num = 248;
+ * add_step = 16;
+ * pass_zone_num: [0] for the best 4/9 core; [1] for the mid 4/9 core; [2] for the worst 1/9;
+ * freq: worst -> best;
+ * api_asic_test(ch_num, chip_num, cal_core_num, add_step, pass_zone_num, freq);
+ */
+uint32_t api_asic_test(uint32_t ch_num, uint32_t chip_num,
+		       uint32_t cal_core_num, uint32_t add_step,
+		       uint32_t *pass_zone_num, uint32_t freq[])
+{
+	uint32_t i, j, k;
+	uint32_t tx_data[23];
+	uint32_t target_nonce;
+	uint32_t pass_cal_num = 0;
+	uint32_t verify_on = 0;
+	uint32_t tmp;
 
 	if (pass_zone_num) {
 		pass_zone_num[0] = 0;
 		pass_zone_num[1] = 0;
 		pass_zone_num[2] = 0;
-	}
+}
 
 	set_asic_freq(freq);
 
@@ -412,9 +415,14 @@ void set_asic_freq(uint32_t value[])
 	}
 
 	api_change_cpm(MINER_COUNT, ASIC_COUNT,
-		       g_freq_array[freq_index[0]][1], g_freq_array[freq_index[0]][2], g_freq_array[freq_index[0]][3], g_freq_array[freq_index[0]][4], g_freq_array[freq_index[0]][5],
-		       g_freq_array[freq_index[1]][1], g_freq_array[freq_index[1]][2], g_freq_array[freq_index[1]][3], g_freq_array[freq_index[1]][4], g_freq_array[freq_index[1]][5],
-		       g_freq_array[freq_index[2]][1], g_freq_array[freq_index[2]][2], g_freq_array[freq_index[2]][3], g_freq_array[freq_index[2]][4], g_freq_array[freq_index[2]][5]);
+		       g_freq_array[freq_index[0]][1], g_freq_array[freq_index[0]][2], g_freq_array[freq_index[0]][3],
+		       g_freq_array[freq_index[0]][4], g_freq_array[freq_index[0]][5],
+
+		       g_freq_array[freq_index[1]][1], g_freq_array[freq_index[1]][2], g_freq_array[freq_index[1]][3],
+		       g_freq_array[freq_index[1]][4], g_freq_array[freq_index[1]][5],
+
+		       g_freq_array[freq_index[2]][1], g_freq_array[freq_index[2]][2], g_freq_array[freq_index[2]][3],
+		       g_freq_array[freq_index[2]][4], g_freq_array[freq_index[2]][5]);
 }
 
 uint32_t get_asic_freq()
