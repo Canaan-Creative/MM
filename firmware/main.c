@@ -236,14 +236,14 @@ static int decode_pkg(uint8_t *p, struct mm_work *mw)
 		g_new_stratum = 0;
 		g_local_work = 0;
 		g_hw_work = 0;
-		/* TODO: Flash api fifo ?? */
+
 		gpio_led(0);
 		break;
 	case AVA2_P_STATIC:
 		g_new_stratum = 0;
 		g_local_work = 0;
 		g_hw_work = 0;
-		/* TODO: Flash api fifo ?? */
+
 		memcpy(&mw->coinbase_len, data, 4);
 		memcpy(&mw->nonce2_offset, data + 4, 4);
 		memcpy(&mw->nonce2_size, data + 8, 4);
@@ -397,7 +397,7 @@ static int read_result(struct mm_work *mw, struct result *ret)
 		return 0;
 
 	/* Read result out */
-	api_get_rx_fifo((unsigned int *)api_ret);
+	api_get_rx_fifo((uint32_t *)api_ret);
 
 	memcpy(&nonce0, api_ret + LM32_API_RX_BUFF_LEN * 4 - 4, 4);
 	if ((nonce0 & 0xffffff00) != 0xbeaf1200)
@@ -528,7 +528,6 @@ int main(int argv, char **argc)
 	led_ctrl(LED_OFF_ALL);
 	adjust_fan(0x2ff);		/* Set the fan to 50% */
 
-	/* TODO: Flash api fifo */
 
 	wdg_init(1);
 	wdg_feed((CPU_FREQUENCY / 1000) * 2); /* Configure the wdg to ~2 second, or it will reset FPGA */
@@ -539,16 +538,17 @@ int main(int argv, char **argc)
 	iic_init();
 	iic_addr_set(g_module_id);
 
+	api_initial(MINER_COUNT, ASIC_COUNT, SPI_SPEED);
+
+	debug32("%d:MM-%s,%dC\n", g_module_id, MM_VERSION, read_temp());
+
 	/* Dump the FPGA DNA */
 	iic_dna_read(g_dna);
 	hexdump(g_dna, 8);
-	debug32("%d:MM-%s,%dC\n", g_module_id, MM_VERSION, read_temp());
 #ifdef DEBUG_IIC_TEST
 	extern void iic_test(void);
 	iic_test();
 #endif
-	api_initial(MINER_COUNT, ASIC_COUNT, SPI_SPEED);
-
 	timer_set(0, IDLE_TIME);
 	gpio_led(0xf);
 	led_ctrl(LED_POWER);
@@ -593,6 +593,7 @@ int main(int argv, char **argc)
 			g_new_stratum = 0;
 			g_local_work = 0;
 			g_hw_work = 0;
+			ret_consume = ret_produce;
 
 			adjust_fan(0x2ff);
 			set_voltage(ASIC_0V);
