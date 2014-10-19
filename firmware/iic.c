@@ -100,6 +100,11 @@ void iic_dna_read(uint8_t *dnadat)
 	}
 }
 
+uint32_t iic_tx_fifo_cnt(void)
+{
+	return (readl(&iic->ctrl) & 0x3fe00) >> 9;
+}
+
 uint32_t iic_write(uint8_t *data, uint16_t len_byte, int block)
 {
 	uint32_t len_word, tmp, i, j = 0;
@@ -117,7 +122,7 @@ uint32_t iic_write(uint8_t *data, uint16_t len_byte, int block)
 		tmp = readl(&iic->ctrl);
 
 		if (++j > 0xfffff) {
-			debug32("D: IIC write timeout\n");
+			debug32("D: IIC write timeout: %d\n", iic_tx_fifo_cnt());
 			return 0;
 		}
 	}

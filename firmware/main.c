@@ -83,12 +83,9 @@ static inline void led_ctrl(int led_op)
 	case LED_OFF_ALL:
 		value = 0;
 		break;
-	case LED_ON_ALL:
-		value = 0x11111111;
-		break;
 	case LED_IDLE:
 		value &= 0xffffff0f;
-		value |= 0x30;
+		value |= 0x10;
 		break;
 	case LED_BUSY:
 		value &= 0xff0000ff;
@@ -103,7 +100,7 @@ static inline void led_ctrl(int led_op)
 		break;
 	case LED_POWER:
 		value &= 0xfffffff;
-		value |= 0x10000000;
+		value |= 0x110000000;
 		break;
 	default:
 		return;
@@ -174,7 +171,7 @@ static void encode_pkg(uint8_t *p, int type, uint8_t *buf, unsigned int len)
 
 uint32_t send_pkg(int type, uint8_t *buf, uint32_t len, int block)
 {
-#if DEBUG_VERBOSE
+#ifdef DEBUG_VERBOSE
 	debug32("%d-Send: %d\n", g_module_id, type);
 #endif
 	encode_pkg(g_act, type, buf, len);
@@ -522,12 +519,7 @@ int main(int argv, char **argc)
 	struct result result;
 	int i;
 
-	adjust_fan(0x3ff);		/* Set the fan to 100% */
-	led_ctrl(LED_ON_ALL);
-	delay(2000);
-	led_ctrl(LED_OFF_ALL);
 	adjust_fan(0x2ff);		/* Set the fan to 50% */
-
 
 	wdg_init(1);
 	wdg_feed((CPU_FREQUENCY / 1000) * 2); /* Configure the wdg to ~2 second, or it will reset FPGA */

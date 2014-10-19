@@ -23,5 +23,7 @@ void iic_logic_reset(void);
 void iic_rx_reset(void);
 void iic_tx_reset(void);
 
+uint32_t iic_tx_fifo_cnt(void);
+
 void iic_dna_read(uint8_t *dnadat);
 #endif /* __IIC_H__ */
