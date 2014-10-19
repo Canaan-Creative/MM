@@ -191,12 +191,23 @@ end
 //-----------------------------------------------------
 // Pop Buffer
 //-----------------------------------------------------
+reg addr_ack_r;
+always @ (posedge clk) begin
+	if(cur_state == ADDR && nxt_state == AACKO &&
+           ((~sda_buf[0] && ~full) || (sda_buf[0] && ~empty)) &&
+           (sda_buf[7:1] == reg_addr || ~|sda_buf[7:1]))
+		addr_ack_r <= 1'b1;
+	else if(cur_state == ADDR && nxt_state == AACKO)
+		addr_ack_r <= 1'b0;
+
+end
+
 always @ (posedge clk) begin
 	if(rst)
 		pop <= 1'b0;
-	else if(cur_state == ACKI && i2c_pos && ~sda_o && ~|byte_cnt)
+	else if(cur_state == ACKI && i2c_pos && ~sda && ~|byte_cnt)
 		pop <= 1'b1;
-	else if(cur_state == AACKO && i2c_pos && ~sda_o && sda_buf[0])
+	else if(cur_state == AACKO && i2c_pos && addr_ack_r && sda_buf[0])
 		pop <= 1'b1;
 	else
 		pop <= 1'b0;
