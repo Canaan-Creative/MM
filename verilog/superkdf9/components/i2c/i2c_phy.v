@@ -194,9 +194,9 @@ end
 always @ (posedge clk) begin
 	if(rst)
 		pop <= 1'b0;
-	else if(cur_state == ACKI && i2c_pos && ~sda && ~|byte_cnt)
+	else if(cur_state == ACKI && i2c_pos && ~sda_o && ~|byte_cnt)
 		pop <= 1'b1;
-	else if(cur_state == AACKO && i2c_pos && ~sda && sda_buf[0])
+	else if(cur_state == AACKO && i2c_pos && ~sda_o && sda_buf[0])
 		pop <= 1'b1;
 	else
 		pop <= 1'b0;
