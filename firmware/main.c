@@ -282,20 +282,6 @@ static int decode_pkg(uint8_t *p, struct mm_work *mw)
 
 		polling();
 
-		memcpy(&tmp, data + 24, 4);
-		if (tmp) {
-			memcpy(&tmp, data, 4);
-			adjust_fan(tmp);
-			memcpy(&tmp, data + 4, 4);
-			if (set_voltage(tmp)) {
-				memcpy(&tmp, data + 8, 4);
-				freq[0] = tmp;
-				freq[1] = tmp;
-				freq[2] = tmp;
-				set_asic_freq(freq);
-			}
-		}
-
 		memcpy(&tmp, data + 12, 4);
 		gpio_led(tmp);
 		break;
