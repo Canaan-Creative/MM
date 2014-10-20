@@ -172,7 +172,7 @@ static void encode_pkg(uint8_t *p, int type, uint8_t *buf, unsigned int len)
 uint32_t send_pkg(int type, uint8_t *buf, uint32_t len, int block)
 {
 #ifdef DEBUG_VERBOSE
-	debug32("%d-Send: %d\n", g_module_id, type);
+	debug32("%d-Send: %d, (CNT: %d)\n", g_module_id, type, iic_tx_fifo_cnt());
 #endif
 	encode_pkg(g_act, type, buf, len);
 	if (!iic_write(g_act, AVA2_P_COUNT + 1, block)) {
