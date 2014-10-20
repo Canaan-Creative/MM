@@ -354,20 +354,28 @@ static int decode_pkg(uint8_t *p, struct mm_work *mw)
 		{
 			int m = MINER_COUNT;
 			int c = ASIC_COUNT;
+			int i = 0;
 			int all = m * c;
-			uint8_t result[8];
+			uint8_t txdat[20];
+			uint8_t result[MINER_COUNT][ASIC_COUNT];
 
-			tmp = api_asic_test(m, c, all/m/c, 1, NULL, freq);
-			result[0] = (tmp >> 24) & 0xff;
-			result[1] = (tmp >> 16) & 0xff;
-			result[2] = (tmp >> 8) & 0xff;
-			result[3] = tmp & 0xff;
-			result[4] = (all >> 24) & 0xff;
-			result[5] = (all >> 16) & 0xff;
-			result[6] = (all >> 8) & 0xff;
-			result[7] = all & 0xff;
+			tmp = api_asic_test(m, c, all/m/c, 1, NULL, freq, result);
+
+			for (i = 0; i < MINER_COUNT; i++) {
+				txdat[0] = i;
+				memcpy(txdat + 1, result[i], ASIC_COUNT);
+				send_pkg(AVA2_P_TEST_RET, txdat, ASIC_COUNT + 1, 0);
+			}
+			txdat[0] = (tmp >> 24) & 0xff;
+			txdat[1] = (tmp >> 16) & 0xff;
+			txdat[2] = (tmp >> 8) & 0xff;
+			txdat[3] = tmp & 0xff;
+			txdat[4] = (all >> 24) & 0xff;
+			txdat[5] = (all >> 16) & 0xff;
+			txdat[6] = (all >> 8) & 0xff;
+			txdat[7] = all & 0xff;
 			debug32("A.T: pass %d, all %d\n", tmp, all);
-			send_pkg(AVA2_P_TEST_RET, result, 8, 0);
+			send_pkg(AVA2_P_TEST_RET, txdat, 8, 0);
 		}
 
 		set_voltage(ASIC_0V);
@@ -561,7 +569,7 @@ int main(int argv, char **argc)
 		adjust_fan(0);
 
 		freq[0] = freq[1] = freq[2] = 200;
-		ret = api_asic_test(m, c, all/m/c, add_step, pass_zone_num, freq);
+		ret = api_asic_test(m, c, all/m/c, add_step, pass_zone_num, freq, NULL);
 		debug32("DEBUG pass_zone_num %d/%d, %d/%d, %d/%d\n",
 				pass_zone_num[0], m*c*(28*4-4)*16,
 				pass_zone_num[1], m*c*(28*4)*16,
