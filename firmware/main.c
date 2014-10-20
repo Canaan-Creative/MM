@@ -99,13 +99,12 @@ static inline void led_ctrl(int led_op)
 		value &= 0xfffffff0;
 		break;
 	case LED_POWER:
-		value &= 0xfffffff;
-		value |= 0x110000000;
+		value &= 0xffffffff;
+		value |= 0x11000000;
 		break;
 	default:
 		return;
 	}
-
 	set_front_led(value);
 }
 
