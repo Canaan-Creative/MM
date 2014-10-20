@@ -226,7 +226,7 @@ int fulltest(const unsigned char *hash, const unsigned char *target)
 int test_nonce(struct mm_work *mw, uint32_t nonce2, uint32_t nonce, int ntime_offset)
 {
 	nonce -= 0x4000;
-#if DEBUG_VERBOSE
+#ifdef DEBUG_VERBOSE
 	debug32("Test: %08x %08x %d\n", nonce2, nonce, ntime_offset);
 #endif
 	/* Generate the work base on nonce2 */

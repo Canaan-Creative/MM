@@ -214,7 +214,7 @@ static int decode_pkg(uint8_t *p, struct mm_work *mw)
 	idx = p[3];
 	cnt = p[4];
 
-#if DEBUG_VERBOSE
+#ifdef DEBUG_VERBOSE
 	debug32("%d-Decode: %d %d/%d\n", g_module_id, p[2], idx, cnt);
 #endif
 	expected_crc = (p[AVA2_P_COUNT - 1] & 0xff) |
@@ -274,7 +274,7 @@ static int decode_pkg(uint8_t *p, struct mm_work *mw)
 		break;
 	case AVA2_P_POLLING:
 		memcpy(&tmp, data + 28, 4);
-#if DEBUG_VERBOSE
+#ifdef DEBUG_VERBOSE
 		debug32("ID: %d-%d\n", g_module_id, tmp);
 #endif
 		if (g_module_id != tmp)
