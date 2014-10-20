@@ -172,7 +172,7 @@ static void encode_pkg(uint8_t *p, int type, uint8_t *buf, unsigned int len)
 uint32_t send_pkg(int type, uint8_t *buf, uint32_t len, int block)
 {
 #ifdef DEBUG_VERBOSE
-	debug32("%d-Send: %d\n", g_module_id, type);
+	debug32("%d-Send: %d, (CNT: %d)\n", g_module_id, type, iic_tx_fifo_cnt());
 #endif
 	encode_pkg(g_act, type, buf, len);
 	if (!iic_write(g_act, AVA2_P_COUNT + 1, block)) {
@@ -281,20 +281,6 @@ static int decode_pkg(uint8_t *p, struct mm_work *mw)
 			break;
 
 		polling();
-
-		memcpy(&tmp, data + 24, 4);
-		if (tmp) {
-			memcpy(&tmp, data, 4);
-			adjust_fan(tmp);
-			memcpy(&tmp, data + 4, 4);
-			if (set_voltage(tmp)) {
-				memcpy(&tmp, data + 8, 4);
-				freq[0] = tmp;
-				freq[1] = tmp;
-				freq[2] = tmp;
-				set_asic_freq(freq);
-			}
-		}
 
 		memcpy(&tmp, data + 12, 4);
 		gpio_led(tmp);
