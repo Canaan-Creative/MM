@@ -256,7 +256,7 @@ led_shift led_shift(
 /*input       */ .clk     (clk     ),
 /*input       */ .rst     (rst     ),
 /*input       */ .vld     (vld_r   ),
-/*input  [7:0]*/ .din     ({led_r[0], led_r[1], led_r[2], led_r[3], led_r[4], led_r[5], led_r[6], led_r[7]}),
+/*input  [7:0]*/ .din     (led_r   ),
 /*output      */ .done    (        ),
 
 /*output      */ .sft_shcp(sft_shcp),
