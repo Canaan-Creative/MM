@@ -30,10 +30,10 @@
 #include "hexdump.c"
 
 #define IDLE_TIME	5	/* Seconds */
-#define IDLE_TEMP	90	/* Degree (C) */
+#define IDLE_TEMP	70	/* Degree (C) */
 
-static uint8_t g_pkg[AVA2_P_COUNT+1];
-static uint8_t g_act[AVA2_P_COUNT+1];
+static uint8_t g_pkg[AVA2_P_COUNT];
+static uint8_t g_act[AVA2_P_COUNT];
 static uint8_t g_dna[8];
 static int g_module_id = AVA2_MODULE_BROADCAST;
 static int g_new_stratum = 0;
@@ -114,7 +114,7 @@ static void encode_pkg(uint8_t *p, int type, uint8_t *buf, unsigned int len)
 	uint16_t crc;
 	uint8_t *data;
 
-	memset(p, 0, AVA2_P_COUNT + 1);
+	memset(p, 0, AVA2_P_COUNT);
 
 	p[0] = AVA2_H1;
 	p[1] = AVA2_H2;
@@ -128,8 +128,8 @@ static void encode_pkg(uint8_t *p, int type, uint8_t *buf, unsigned int len)
 
 	switch(type) {
 	case AVA2_P_ACKDETECT:
-		memcpy(data, buf, len);
-		memcpy(data + len, g_dna, 8);
+		memcpy(data, g_dna, 8); /* MM_DNA */
+		memcpy(data + 8, buf, len); /* MM_VERSION */
 		break;
 	case AVA2_P_NONCE:
 	case AVA2_P_TEST_RET:
@@ -137,11 +137,9 @@ static void encode_pkg(uint8_t *p, int type, uint8_t *buf, unsigned int len)
 		break;
 	case AVA2_P_STATUS:
 		tmp = read_temp();
-		tmp |= tmp << 16;
 		memcpy(data + 0, &tmp, 4);
 
 		tmp = read_fan();
-		tmp |= tmp << 16;
 		memcpy(data + 4, &tmp, 4);
 
 		tmp = get_asic_freq();
@@ -155,17 +153,13 @@ static void encode_pkg(uint8_t *p, int type, uint8_t *buf, unsigned int len)
 		tmp = read_power_good();
 		memcpy(data + 24, &tmp, 4);
 		break;
-	case AVA2_P_ACKDISCOVER:
-		memcpy(data, g_dna, 8); /* MM_DNA */
-		memcpy(data + 8, buf, len); /* MM_VERSION */
-		break;
 	default:
 		break;
 	}
 
 	crc = crc16(data, AVA2_P_DATA_LEN);
-	p[AVA2_P_COUNT - 2] = crc & 0x00ff;
-	p[AVA2_P_COUNT - 1] = (crc & 0xff00) >> 8;
+	p[AVA2_P_COUNT - 3] = crc & 0x00ff;
+	p[AVA2_P_COUNT - 2] = (crc & 0xff00) >> 8;
 }
 
 uint32_t send_pkg(int type, uint8_t *buf, uint32_t len, int block)
@@ -174,7 +168,7 @@ uint32_t send_pkg(int type, uint8_t *buf, uint32_t len, int block)
 	debug32("%d-Send: %d, (CNT: %d)\n", g_module_id, type, iic_tx_fifo_cnt());
 #endif
 	encode_pkg(g_act, type, buf, len);
-	if (!iic_write(g_act, AVA2_P_COUNT + 1, block)) {
+	if (!iic_write(g_act, AVA2_P_COUNT, block)) {
 		iic_tx_reset();
 		return 0;
 	}
@@ -216,8 +210,8 @@ static int decode_pkg(uint8_t *p, struct mm_work *mw)
 #ifdef DEBUG_VERBOSE
 	debug32("%d-Decode: %d %d/%d\n", g_module_id, p[2], idx, cnt);
 #endif
-	expected_crc = (p[AVA2_P_COUNT - 1] & 0xff) |
-		((p[AVA2_P_COUNT - 2] & 0xff) << 8);
+	expected_crc = (p[AVA2_P_COUNT - 2] & 0xff) |
+		((p[AVA2_P_COUNT - 3] & 0xff) << 8);
 
 	actual_crc = crc16(data, AVA2_P_DATA_LEN);
 	if(expected_crc != actual_crc) {
@@ -229,16 +223,10 @@ static int decode_pkg(uint8_t *p, struct mm_work *mw)
 	timer_set(0, IDLE_TIME);
 	switch (p[2]) {
 	case AVA2_P_DETECT:
-		g_new_stratum = 0;
-		g_local_work = 0;
-		g_hw_work = 0;
-
-		gpio_led(0);
+	case AVA2_P_REQUIRE:
 		break;
 	case AVA2_P_STATIC:
 		g_new_stratum = 0;
-		g_local_work = 0;
-		g_hw_work = 0;
 
 		memcpy(&mw->coinbase_len, data, 4);
 		memcpy(&mw->nonce2_offset, data + 4, 4);
@@ -284,8 +272,6 @@ static int decode_pkg(uint8_t *p, struct mm_work *mw)
 		memcpy(&tmp, data + 12, 4);
 		gpio_led(tmp);
 		break;
-	case AVA2_P_REQUIRE:
-		break;
 	case AVA2_P_SET:
 		if (read_temp() >= IDLE_TEMP)
 			break;
@@ -326,7 +312,6 @@ static int decode_pkg(uint8_t *p, struct mm_work *mw)
 		if (g_module_id != tmp)
 			break;
 
-		gpio_led(1);
 		led_ctrl(LED_POSTON);
 		memcpy(&tmp, data + 4, 4);
 		debug32("V: %08x", tmp);
@@ -364,7 +349,6 @@ static int decode_pkg(uint8_t *p, struct mm_work *mw)
 		}
 
 		set_voltage(ASIC_0V);
-		gpio_led(0);
 		led_ctrl(LED_POSTOFF);
 		break;
 	default:
@@ -377,19 +361,19 @@ static int decode_pkg(uint8_t *p, struct mm_work *mw)
 static int read_result(struct mm_work *mw, struct result *ret)
 {
 	int n, i;
-	uint8_t *data, api_ret[4 * LM32_API_RX_BUFF_LEN];
+	uint8_t *data, api_ret[4 * LM32_API_RET_LEN];
 	uint32_t nonce2, nonce0, memo, job_id, pool_no, miner_id;
 	uint32_t ntime = 0, last_nonce0 = 0xbeafbeaf;
 	static uint32_t last_minerid = 0xff;
 	static uint8_t chip_id;
 
-	if (api_get_rx_cnt() < LM32_API_RX_BUFF_LEN)
+	if (api_get_rx_cnt() < LM32_API_RET_LEN)
 		return 0;
 
 	/* Read result out */
 	api_get_rx_fifo((uint32_t *)api_ret);
 
-	memcpy(&nonce0, api_ret + LM32_API_RX_BUFF_LEN * 4 - 4, 4);
+	memcpy(&nonce0, api_ret + LM32_API_RET_LEN * 4 - 4, 4);
 	if ((nonce0 & 0xffffff00) != 0xbeaf1200)
 		return 1;
 
@@ -403,7 +387,7 @@ static int read_result(struct mm_work *mw, struct result *ret)
 		chip_id++;
 
 	/* Handle the real nonce */
-	for (i = 0; i < LM32_API_RX_BUFF_LEN - 3; i++) {
+	for (i = 0; i < LM32_API_RET_LEN - 3; i++) {
 		memcpy(&nonce0, api_ret + 8 + i * 4, 4);
 		if (nonce0 == 0xbeafbeaf || nonce0 == last_nonce0)
 			continue;
@@ -416,20 +400,22 @@ static int read_result(struct mm_work *mw, struct result *ret)
 		job_id = memo & 0xffff0000;
 		ntime = (memo & 0xff00) >> 8;
 
-		n = test_nonce(mw, nonce2, nonce0, ntime);
-		if (n == NONCE_HW && job_id == mw->job_id) {
-			g_hw_work++;
-			continue;
+		if (job_id == mw->job_id) {
+			n = test_nonce(mw, nonce2, nonce0, ntime);
+
+			if (n == NONCE_HW) {
+				g_hw_work++;
+				continue;
+			}
 		}
 
-		if (n == NONCE_DIFF || job_id != mw->job_id) {
+		if (job_id != mw->job_id || n == NONCE_DIFF) {
 			data = ret_buf[ret_produce];
 			ret_produce = (ret_produce + 1) & RET_RINGBUFFER_MASK_RX;
 
 			pool_no = memo & 0xff;
 			memcpy(ret->pool_no, &pool_no, 4);
 			memcpy(ret->nonce2, api_ret + 4, 8);
-			nonce0 = nonce0 - 0x4000 + 0x180;
 			memcpy(ret->nonce, &nonce0, 4);
 			memcpy(ret->ntime, &ntime, 4);
 			miner_id |= chip_id << 16;
@@ -463,43 +449,34 @@ static int get_pkg(struct mm_work *mw)
 
 		count++;
 
-		if (count == (AVA2_P_COUNT + 1) / 4 ) {
+		if (count == AVA2_P_COUNT / 4) {
+			if (decode_pkg(g_pkg, mw))
+				return 1;
+
+			/* Here we send back PKG if necessary */
+			memcpy(&g_module_id, g_pkg + 5 + 28, 4);
+
+			switch (g_pkg[2]) {
+			case AVA2_P_DETECT:
+				if (g_module_id != AVA2_MODULE_BROADCAST)
+					break;
+
+				if (send_pkg(AVA2_P_ACKDETECT, (uint8_t *)MM_VERSION, MM_VERSION_LEN, 1)) {
+					debug32("ID: %d\n", g_module_id);
+					iic_addr_set(g_module_id);
+				}
+
+				break;
+			case AVA2_P_REQUIRE:
+				if (g_module_id == tmp)
+					send_pkg(AVA2_P_STATUS, NULL, 0, 0);
+				break;
+			default:
+				break;
+			}
+
 			start = 0;
 			count = 0;
-
-			if (decode_pkg(g_pkg, mw)) {
-#ifdef CFG_ENABLE_ACK
-				send_pkg(AVA2_P_NAK, NULL, 0, 0);
-#endif
-				return 1;
-			} else {
-				/* Here we send back PKG if necessary */
-#ifdef CFG_ENABLE_ACK
-				send_pkg(AVA2_P_ACK, NULL, 0, 0);
-#endif
-				switch (g_pkg[2]) {
-				case AVA2_P_DETECT:
-					memcpy(&tmp, g_pkg + 5 + 28, 4);
-					if (g_module_id == tmp)
-						send_pkg(AVA2_P_ACKDETECT, (uint8_t *)MM_VERSION, MM_VERSION_LEN, 1);
-					break;
-				case AVA2_P_REQUIRE:
-					memcpy(&tmp, g_pkg + 5 + 28, 4);
-					if (g_module_id == tmp)
-						send_pkg(AVA2_P_STATUS, NULL, 0, 0);
-					break;
-				case AVA2_P_DISCOVER:
-					if (g_module_id == AVA2_MODULE_BROADCAST)
-						if (send_pkg(AVA2_P_ACKDISCOVER, (uint8_t *)MM_VERSION, MM_VERSION_LEN, 1)) {
-							memcpy(&g_module_id, g_pkg + 5 + 28, 4);
-							debug32("ID: %d\n", g_module_id);
-							iic_addr_set(g_module_id);
-						}
-					break;
-				default:
-					break;
-				}
-			}
 		}
 	}
 
@@ -583,8 +560,10 @@ int main(int argv, char **argc)
 			adjust_fan(0x2ff);
 			set_voltage(ASIC_0V);
 
+			iic_addr_set(AVA2_MODULE_BROADCAST);
 			iic_rx_reset();
 			iic_tx_reset();
+
 			led_ctrl(LED_IDLE);
 		}
 

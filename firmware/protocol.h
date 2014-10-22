@@ -17,8 +17,8 @@
 #define AVA2_P_COINBASE_SIZE	(6 * 1024 + 32)
 #define AVA2_P_MERKLES_COUNT	30
 
-#define AVA2_P_COUNT	39
-#define AVA2_P_DATA_LEN		(AVA2_P_COUNT - 7)
+#define AVA2_P_COUNT	40
+#define AVA2_P_DATA_LEN 32
 
 #define AVA2_P_DETECT	10
 #define AVA2_P_STATIC	11
@@ -32,16 +32,10 @@
 #define AVA2_P_SET	19
 #define AVA2_P_TEST	20
 
-#define AVA2_P_ACK		21
-#define AVA2_P_NAK		22
 #define AVA2_P_NONCE		23
 #define AVA2_P_STATUS		24
 #define AVA2_P_ACKDETECT	25
 #define AVA2_P_TEST_RET		26
 
-/* Only for addressing */
 #define AVA2_MODULE_BROADCAST	0
-#define AVA2_P_DISCOVER		30
-#define AVA2_P_ACKDISCOVER	40
-
 #endif	/* _PROTOCOL_H_ */

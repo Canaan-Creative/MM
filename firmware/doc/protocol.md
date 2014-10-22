@@ -2,12 +2,12 @@
 Between cgminer and FPGA controller
 
 # Physical link
-Multiple FPGA controllers are daisy-chained together using TTL UART.
+Multiple FPGA controllers are daisy-chained together using IIC.
 
 # Packet structure
-Length: 39Bytes
+Length: 40Bytes
 
-Format: |2B:HEAD|1B:TYPE|1B:IDX|1B:CNT|32B:DATA|2B:CRC|
+Format: |2B:HEAD|1B:TYPE|1B:IDX|1B:CNT|32B:DATA|2B:CRC|1B:OPT|
 
 1. HEAD: 'A' 'V'
 2. TYPE: Please read this head file: [protocol.h](https://github.com/BitSyncom/mm/blob/master/firmware/protocol.h)

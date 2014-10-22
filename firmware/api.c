@@ -20,7 +20,8 @@
 
 static struct lm32_api *api = (struct lm32_api *)API_BASE;
 
-static uint32_t g_asic_freq[3];
+static uint32_t g_asic_freq[3] = {200, 200, 200};
+static uint32_t g_asic_freq_avg = 0;
 static uint32_t g_freq_array[][6] = {
 	{100, 1, 16, 1, 16, 4},
 	{170, 1, 27, 1, 27, 4},
@@ -151,7 +152,7 @@ static void api_set_tx_fifo(uint32_t * data)
 
 static inline void api_wait_done(uint32_t ch_num, uint32_t chip_num)
 {
-	while (api_get_rx_cnt() != (ch_num * chip_num * LM32_API_RX_BUFF_LEN))
+	while (api_get_rx_cnt() != (ch_num * chip_num * LM32_API_RET_LEN))
 		;
 }
 
@@ -179,7 +180,7 @@ static inline uint32_t api_gen_test_work(uint32_t i, uint32_t * data)
 static uint32_t api_verify_nonce(uint32_t ch_num, uint32_t chip_num, uint32_t verify_on, uint32_t target_nonce, uint8_t result[MINER_COUNT][ASIC_COUNT])
 {
 	uint32_t i, j;
-	uint32_t rx_data[LM32_API_RX_BUFF_LEN];
+	uint32_t rx_data[LM32_API_RET_LEN];
 	uint32_t pass_cal_num = 0;
 	static uint32_t last_minerid = 0xff;
 	static uint8_t chip_id;
@@ -280,7 +281,7 @@ uint32_t api_get_rx_cnt()
 void api_get_rx_fifo(uint32_t * data)
 {
 	int i;
-	for (i = 0; i < LM32_API_RX_BUFF_LEN; i++)
+	for (i = 0; i < LM32_API_RET_LEN; i++)
 		data[i] = readl(&api->rx);
 }
 
@@ -435,9 +436,11 @@ void set_asic_freq(uint32_t value[])
 
 		       g_freq_array[freq_index[2]][1], g_freq_array[freq_index[2]][2], g_freq_array[freq_index[2]][3],
 		       g_freq_array[freq_index[2]][4], g_freq_array[freq_index[2]][5]);
+
+	g_asic_freq_avg = (g_asic_freq[0] + g_asic_freq[1] * 4 + g_asic_freq[2] * 4) / 9;
 }
 
 uint32_t get_asic_freq()
 {
-	return (g_asic_freq[0] + g_asic_freq[1] * 4 + g_asic_freq[2] * 4) / 9;
+	return g_asic_freq_avg;
 }
