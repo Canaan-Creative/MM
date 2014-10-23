@@ -465,8 +465,8 @@ int main(int argv, char **argc)
 
 		unsigned int add_step = 1;
 		unsigned int pass_zone_num[3];
-		
-		ret = api_asic_test(m, c, 1, add_step, pass_zone_num);
+		int error_buf[MINER_COUNT][ASIC_COUNT];
+		ret = api_asic_test(m, c, 1, add_step, pass_zone_num, error_buf);
 		debug32("A.T: %d / %d = %d%%\n", all-ret, all, ((all-ret)*100/all));
 	}
 #endif

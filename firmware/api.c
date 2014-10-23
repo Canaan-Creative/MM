@@ -203,7 +203,7 @@ static inline unsigned int api_gen_test_work(unsigned int i, unsigned int * data
 	return tmp + 0x18000;
 }
 
-static inline unsigned int api_verify_nonce(unsigned int ch_num, unsigned int chip_num, unsigned int verify_on, unsigned int target_nonce)
+static inline unsigned int api_verify_nonce(unsigned int ch_num, unsigned int chip_num, unsigned int verify_on, unsigned int target_nonce, int error_buf[MINER_COUNT][ASIC_COUNT], int error_on)
 {
 	unsigned int i, j;
 	unsigned int rx_data[LM32_API_RX_BUFF_LEN];
@@ -220,9 +220,11 @@ static inline unsigned int api_verify_nonce(unsigned int ch_num, unsigned int ch
 			} else
 				chip_id++;
 
-			if (verify_on && (rx_data[2] == target_nonce))
+			if (verify_on && (rx_data[2] == target_nonce)){
 				pass_cal_num++;
-			else
+				if(error_on)
+					error_buf[i][j]--;
+			} else
 				if (verify_on)
 					debug32("channel id: %d,chip id: %d, TN:%08x, RX[0]:%08x, RX[1]:%08x, RX[2]:%08x, RX[3]:%08x\n", rx_data[10] & 0xff, chip_id, target_nonce, rx_data[0], rx_data[1], rx_data[2], rx_data[3]);
 		}
@@ -248,6 +250,7 @@ void api_change_cpm(unsigned int ch_num, unsigned int chip_num,
 {
 	unsigned int tx_data[23];
 	unsigned int i, k;
+	int error_buf[MINER_COUNT][ASIC_COUNT];
 
 	tx_data[20] = api_set_cpm(NR0, NF0, OD0, NB0, div0) | 0x40;
 	tx_data[21] = api_set_cpm(NR1, NF1, OD1, NB1, div1) | 0x40;
@@ -262,7 +265,7 @@ void api_change_cpm(unsigned int ch_num, unsigned int chip_num,
 
 	api_wait_done(ch_num, chip_num);
 
-	api_verify_nonce(ch_num, chip_num, 0, 0);
+	api_verify_nonce(ch_num, chip_num, 0, 0, error_buf, 0);
 	delay(1);
 }
 
@@ -272,7 +275,7 @@ void api_change_cpm(unsigned int ch_num, unsigned int chip_num,
 //cal_core_num = 248;
 //add_step = 16;
 //api_asic_test(ch_num, chip_num, cal_core_num, add_step, pass_zone_num);
-unsigned int api_asic_test(unsigned int ch_num, unsigned int chip_num, unsigned int cal_core_num, unsigned int add_step, unsigned int *pass_zone_num)
+unsigned int api_asic_test(unsigned int ch_num, unsigned int chip_num, unsigned int cal_core_num, unsigned int add_step, unsigned int *pass_zone_num, int error_buf[MINER_COUNT][ASIC_COUNT])
 {
 	unsigned int i, j, k;
 	unsigned int tx_data[23];
@@ -280,6 +283,10 @@ unsigned int api_asic_test(unsigned int ch_num, unsigned int chip_num, unsigned 
 	unsigned int pass_cal_num = 0;
 	unsigned int verify_on = 0;
 	unsigned int tmp;
+	for(i = 0; i < ch_num; i++)
+		for(j = 0; j < chip_num; j++)
+			error_buf[i][j] = cal_core_num;
+
 	pass_zone_num[0] = 0;
 	pass_zone_num[1] = 0;
 	pass_zone_num[2] = 0;
@@ -303,7 +310,7 @@ unsigned int api_asic_test(unsigned int ch_num, unsigned int chip_num, unsigned 
 
 		target_nonce = api_gen_test_work((j-2)%16, tx_data);
 		verify_on = j >= 2 ? 1 : 0;
-		tmp = api_verify_nonce(ch_num, chip_num, verify_on, target_nonce);
+		tmp = api_verify_nonce(ch_num, chip_num, verify_on, target_nonce, error_buf, 1);
 		pass_cal_num += tmp;
 
 		if(j % 16 < 28 * 4 - 4)
