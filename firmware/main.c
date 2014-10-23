@@ -324,17 +324,25 @@ static int decode_pkg(uint8_t *p, struct mm_work *mw)
 		{
 			int m = MINER_COUNT;
 			int c = ASIC_COUNT;
-			int i = 0;
-			int all = m * c;
+			int i = 0, j = 0;
+			int all = m * c * 4 * 16;
 			uint8_t txdat[20];
-			uint8_t result[MINER_COUNT][ASIC_COUNT];
+			uint32_t result[MINER_COUNT][ASIC_COUNT];
 
 			tmp = api_asic_test(m, c, all/m/c, 1, NULL, freq, result);
 
 			for (i = 0; i < MINER_COUNT; i++) {
 				txdat[0] = i;
-				memcpy(txdat + 1, result[i], ASIC_COUNT);
-				send_pkg(AVA2_P_TEST_RET, txdat, ASIC_COUNT + 1, 0);
+				debug32("Miner ID %03d: ", i);
+				for (j = 0; j < ASIC_COUNT; j++) {
+				    txdat[1 + j * ASIC_COUNT] = (result[i][j] >> 24) & 0xff;
+				    txdat[2 + j * ASIC_COUNT] = (result[i][j] >> 16) & 0xff;
+				    txdat[3 + j * ASIC_COUNT] = (result[i][j] >> 8) & 0xff;
+				    txdat[4 + j * ASIC_COUNT] = result[i][j] & 0xff;
+				    debug32("%04d ", result[i][j]);
+				}
+				debug32("\n");
+				send_pkg(AVA2_P_TEST_RET, txdat, ASIC_COUNT * 4 + 1, 0);
 			}
 			txdat[0] = (tmp >> 24) & 0xff;
 			txdat[1] = (tmp >> 16) & 0xff;
@@ -524,18 +532,27 @@ int main(int argv, char **argc)
 		int m = MINER_COUNT;
 		int c = ASIC_COUNT;
 		int all = m * c * (248 * 16);
+		uint32_t result[MINER_COUNT][ASIC_COUNT];
 
 		unsigned int add_step = 1;
-		unsigned int pass_zone_num[3];
+		uint32_t pass_zone_num[3];
+		int i, j;
 
 		adjust_fan(0);
 
 		freq[0] = freq[1] = freq[2] = 200;
-		ret = api_asic_test(m, c, all/m/c, add_step, pass_zone_num, freq, NULL);
+		ret = api_asic_test(m, c, all/m/c, add_step, pass_zone_num, freq, result);
 		debug32("DEBUG pass_zone_num %d/%d, %d/%d, %d/%d\n",
 				pass_zone_num[0], m*c*(28*4-4)*16,
 				pass_zone_num[1], m*c*(28*4)*16,
 				pass_zone_num[2], m*c*28*16);
+
+		for (i = 0; i < MINER_COUNT; i++) {
+		    debug32("Miner ID %03d: ", i);
+		    for (j = 0; j < ASIC_COUNT; j++)
+			debug32("%04d ", result[i][j]);
+		    debug32("\n");
+		}
 
 		debug32("A.T: %d / %d = %d%%\n", all-ret, all, ((all-ret)*100/all));
 		adjust_fan(0x2ff);

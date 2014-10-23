@@ -27,5 +27,5 @@ uint32_t get_asic_freq();
 
 uint32_t api_asic_test(uint32_t ch_num, uint32_t chip_num,
 		       uint32_t cal_core_num, uint32_t add_step,
-		       uint32_t *pass_zone_num, uint32_t freq[], uint8_t result[MINER_COUNT][ASIC_COUNT]);
+		       uint32_t *pass_zone_num, uint32_t freq[], uint32_t result[MINER_COUNT][ASIC_COUNT]);
 #endif	/* _API_H_ */

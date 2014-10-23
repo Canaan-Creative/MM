@@ -177,7 +177,7 @@ static inline uint32_t api_gen_test_work(uint32_t i, uint32_t * data)
 	return tmp + 0x18000;
 }
 
-static uint32_t api_verify_nonce(uint32_t ch_num, uint32_t chip_num, uint32_t verify_on, uint32_t target_nonce, uint8_t result[MINER_COUNT][ASIC_COUNT])
+static uint32_t api_verify_nonce(uint32_t ch_num, uint32_t chip_num, uint32_t verify_on, uint32_t target_nonce, uint32_t result[MINER_COUNT][ASIC_COUNT])
 {
 	uint32_t i, j;
 	uint32_t rx_data[LM32_API_RET_LEN];
@@ -185,9 +185,6 @@ static uint32_t api_verify_nonce(uint32_t ch_num, uint32_t chip_num, uint32_t ve
 	static uint32_t last_minerid = 0xff;
 	static uint8_t chip_id;
 	uint8_t channel_id;
-
-	if (result)
-		memset(result, 0, MINER_COUNT * ASIC_COUNT);
 
 	for (i = 0; i < ch_num; i++) {
 		for (j = 0; j < chip_num; j++) {
@@ -201,14 +198,13 @@ static uint32_t api_verify_nonce(uint32_t ch_num, uint32_t chip_num, uint32_t ve
 
 
 			if (verify_on && ((rx_data[2] == target_nonce) || (rx_data[3] == target_nonce))) {
-				if (result)
-					result[channel_id][chip_id] = 0;
 				pass_cal_num++;
 			} else {
-				if (verify_on)
+				if (verify_on) {
 					debug32("channel id: %d,chip id: %d, TN:%08x, RX[0]:%08x, RX[1]:%08x, RX[2]:%08x, RX[3]:%08x\n", channel_id, chip_id, target_nonce, rx_data[2], rx_data[1], rx_data[2], rx_data[3]);
-				if (result)
-					result[channel_id][chip_id]++;
+					if (result)
+					    result[channel_id][chip_id]++;
+				}
 			}
 		}
 	}
@@ -295,7 +291,7 @@ void api_get_rx_fifo(uint32_t * data)
  */
 uint32_t api_asic_test(uint32_t ch_num, uint32_t chip_num,
 		       uint32_t cal_core_num, uint32_t add_step,
-		       uint32_t *pass_zone_num, uint32_t freq[], uint8_t result[MINER_COUNT][ASIC_COUNT])
+		       uint32_t *pass_zone_num, uint32_t freq[], uint32_t result[MINER_COUNT][ASIC_COUNT])
 {
 	uint32_t i, j, k;
 	uint32_t tx_data[23];
@@ -311,6 +307,12 @@ uint32_t api_asic_test(uint32_t ch_num, uint32_t chip_num,
 	}
 
 	set_asic_freq(freq);
+
+	if (result) {
+		api_set_timeout(0x10);
+		memset(result, 0, MINER_COUNT * ASIC_COUNT * sizeof(uint32_t));
+	}
+
 
 	for (j = 0; j < cal_core_num + 2 * add_step; j += add_step) {
 		api_gen_test_work(j, tx_data);
