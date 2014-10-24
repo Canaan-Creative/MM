@@ -120,8 +120,9 @@ static void encode_pkg(uint8_t *p, int type, uint8_t *buf, unsigned int len)
 	p[1] = AVA2_H2;
 
 	p[2] = type;
-	p[3] = 1;
+	p[3] = 0;
 	p[4] = 1;
+	p[5] = 1;
 
 	data = p + 6;
 	memcpy(data + 28, &g_module_id, 4); /* Attach the module_id at end */
@@ -204,12 +205,13 @@ static int decode_pkg(uint8_t *p, struct mm_work *mw)
 
 	uint8_t *data = p + 6;
 
-	idx = p[3];
-	cnt = p[4];
+	idx = p[4];
+	cnt = p[5];
 
 #ifdef DEBUG_VERBOSE
 	debug32("%d-Decode: %d %d/%d\n", g_module_id, p[2], idx, cnt);
 #endif
+
 	expected_crc = (p[AVA2_P_COUNT - 1] & 0xff) |
 		((p[AVA2_P_COUNT - 2] & 0xff) << 8);
 
@@ -462,14 +464,13 @@ static int get_pkg(struct mm_work *mw)
 				return 1;
 
 			/* Here we send back PKG if necessary */
-			memcpy(&g_module_id, g_pkg + 6 + 28, 4);
-
 			switch (g_pkg[2]) {
 			case AVA2_P_DETECT:
 				if (g_module_id != AVA2_MODULE_BROADCAST)
 					break;
 
 				if (send_pkg(AVA2_P_ACKDETECT, (uint8_t *)MM_VERSION, MM_VERSION_LEN, 1)) {
+					memcpy(&g_module_id, g_pkg + 6 + 28, 4);
 					debug32("ID: %d\n", g_module_id);
 					iic_addr_set(g_module_id);
 				}
