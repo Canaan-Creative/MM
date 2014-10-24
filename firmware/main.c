@@ -67,40 +67,49 @@ void delay(unsigned int ms)
 	}
 }
 
-#define LED_OFF_ALL	0
-#define LED_ON_ALL	1
-#define LED_IDLE	2
-#define LED_BUSY	3
-#define LED_POSTON	4
-#define LED_POSTOFF	5
-#define LED_POWER	6
+#define LED_OFF_ALL		1
+#define LED_WARNING_ON		2
+#define LED_WARNING_OFF 	3
+#define LED_WARNING_BLINKING	4
+#define LED_ERROR_ON		5
+#define LED_ERROR_OFF		6
+#define LED_ERROR_BLINKING	7
+#define LED_POWER		8
 
 static inline void led_ctrl(int led_op)
 {
 	uint32_t value = get_front_led();
 
 	switch (led_op) {
-	case LED_OFF_ALL:
-		value = 0;
-		break;
-	case LED_IDLE:
+	case LED_WARNING_ON:
 		value &= 0xffffff0f;
 		value |= 0x10;
 		break;
-	case LED_BUSY:
-		value &= 0xff0000ff;
+	case LED_WARNING_OFF:
+		value &= 0xff0000ef;
 		value |= 0x444400;
 		break;
-	case LED_POSTON:
+	case LED_WARNING_BLINKING:
+		value &= 0xffffff0f;
+		value |= 0x30;
+		break;
+	case LED_ERROR_ON:
 		value &= 0xfffffff0;
 		value |= 0x1;
 		break;
-	case LED_POSTOFF:
+	case LED_ERROR_OFF:
 		value &= 0xfffffff0;
+		break;
+	case LED_ERROR_BLINKING:
+		value &= 0xfffffff0;
+		value |= 0x3;
 		break;
 	case LED_POWER:
 		value &= 0xffffffff;
 		value |= 0x11000000;
+		break;
+	case LED_OFF_ALL:
+		value = 0;
 		break;
 	default:
 		return;
@@ -314,7 +323,7 @@ static int decode_pkg(uint8_t *p, struct mm_work *mw)
 		if (g_module_id != tmp)
 			break;
 
-		led_ctrl(LED_POSTON);
+		led_ctrl(LED_ERROR_ON);
 		memcpy(&tmp, data + 4, 4);
 		debug32("V: %08x", tmp);
 		set_voltage(tmp);
@@ -359,7 +368,7 @@ static int decode_pkg(uint8_t *p, struct mm_work *mw)
 		}
 
 		set_voltage(ASIC_0V);
-		led_ctrl(LED_POSTOFF);
+		led_ctrl(LED_ERROR_OFF);
 		break;
 	default:
 		break;
@@ -561,7 +570,7 @@ int main(int argv, char **argc)
 	}
 #endif
 
-	led_ctrl(LED_IDLE);
+	led_ctrl(LED_WARNING_ON);
 	set_voltage(ASIC_0V);
 	g_new_stratum = 0;
 	while (1) {
@@ -582,16 +591,16 @@ int main(int argv, char **argc)
 			iic_rx_reset();
 			iic_tx_reset();
 
-			led_ctrl(LED_IDLE);
-
 			g_module_id = 0;
-			debug32("IDLE: %d\n", g_module_id);
+
+			led_ctrl(LED_OFF_ALL);
+			led_ctrl(LED_WARNING_ON);
 		}
 
 		if (!g_new_stratum)
 			continue;
 
-		led_ctrl(LED_BUSY);
+		led_ctrl(LED_WARNING_OFF);
 		if (api_get_tx_cnt() <= (23 * 8)) {
 			miner_gen_nonce2_work(&mm_work, mm_work.nonce2++, &work);
 			api_send_work(&work);
