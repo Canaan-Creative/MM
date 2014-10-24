@@ -123,7 +123,7 @@ static void encode_pkg(uint8_t *p, int type, uint8_t *buf, unsigned int len)
 	p[3] = 1;
 	p[4] = 1;
 
-	data = p + 5;
+	data = p + 6;
 	memcpy(data + 28, &g_module_id, 4); /* Attach the module_id at end */
 
 	switch(type) {
@@ -158,8 +158,8 @@ static void encode_pkg(uint8_t *p, int type, uint8_t *buf, unsigned int len)
 	}
 
 	crc = crc16(data, AVA2_P_DATA_LEN);
-	p[AVA2_P_COUNT - 3] = crc & 0x00ff;
-	p[AVA2_P_COUNT - 2] = (crc & 0xff00) >> 8;
+	p[AVA2_P_COUNT - 2] = crc & 0x00ff;
+	p[AVA2_P_COUNT - 1] = (crc & 0xff00) >> 8;
 }
 
 uint32_t send_pkg(int type, uint8_t *buf, uint32_t len, int block)
@@ -202,7 +202,7 @@ static int decode_pkg(uint8_t *p, struct mm_work *mw)
 	uint32_t tmp;
 	uint32_t freq[3];
 
-	uint8_t *data = p + 5;
+	uint8_t *data = p + 6;
 
 	idx = p[3];
 	cnt = p[4];
@@ -210,8 +210,8 @@ static int decode_pkg(uint8_t *p, struct mm_work *mw)
 #ifdef DEBUG_VERBOSE
 	debug32("%d-Decode: %d %d/%d\n", g_module_id, p[2], idx, cnt);
 #endif
-	expected_crc = (p[AVA2_P_COUNT - 2] & 0xff) |
-		((p[AVA2_P_COUNT - 3] & 0xff) << 8);
+	expected_crc = (p[AVA2_P_COUNT - 1] & 0xff) |
+		((p[AVA2_P_COUNT - 2] & 0xff) << 8);
 
 	actual_crc = crc16(data, AVA2_P_DATA_LEN);
 	if(expected_crc != actual_crc) {
@@ -462,7 +462,7 @@ static int get_pkg(struct mm_work *mw)
 				return 1;
 
 			/* Here we send back PKG if necessary */
-			memcpy(&g_module_id, g_pkg + 5 + 28, 4);
+			memcpy(&g_module_id, g_pkg + 6 + 28, 4);
 
 			switch (g_pkg[2]) {
 			case AVA2_P_DETECT:
@@ -582,6 +582,9 @@ int main(int argv, char **argc)
 			iic_tx_reset();
 
 			led_ctrl(LED_IDLE);
+
+			g_module_id = 0;
+			debug32("IDLE: %d\n", g_module_id);
 		}
 
 		if (!g_new_stratum)

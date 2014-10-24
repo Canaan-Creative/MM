@@ -7,7 +7,7 @@ Multiple FPGA controllers are daisy-chained together using IIC.
 # Packet structure
 Length: 40Bytes
 
-Format: |2B:HEAD|1B:TYPE|1B:IDX|1B:CNT|32B:DATA|2B:CRC|1B:OPT|
+Format: |2B:HEAD|1B:TYPE|1B:OPT|1B:IDX|1B:CNT|32B:DATA|2B:CRC|
 
 1. HEAD: 'A' 'V'
 2. TYPE: Please read this head file: [protocol.h](https://github.com/BitSyncom/mm/blob/master/firmware/protocol.h)
