@@ -201,7 +201,7 @@ static uint32_t api_verify_nonce(uint32_t ch_num, uint32_t chip_num, uint32_t ve
 				pass_cal_num++;
 			} else {
 				if (verify_on) {
-					debug32("channel id: %d,chip id: %d, TN:%08x, RX[0]:%08x, RX[1]:%08x, RX[2]:%08x, RX[3]:%08x\n", channel_id, chip_id, target_nonce, rx_data[2], rx_data[1], rx_data[2], rx_data[3]);
+					debug32("channel id: %d,chip id: %d, TN:%08x, RX[0]:%08x, RX[1]:%08x, RX[2]:%08x, RX[3]:%08x\n", channel_id, chip_id, target_nonce, rx_data[0], rx_data[1], rx_data[2], rx_data[3]);
 					if (result)
 					    result[channel_id][chip_id]++;
 				}
@@ -230,10 +230,12 @@ static void api_change_cpm(uint32_t ch_num, uint32_t chip_num,
 	uint32_t tx_data[23];
 	uint32_t i, k;
 
+	/* random numbers, keep different with nonce2 */
+	tx_data[18] = 0xa8bc6de9;
+	tx_data[19] = 0x35416784;
 	tx_data[20] = api_set_cpm(NR0, NF0, OD0, NB0, div0) | 0x40;
 	tx_data[21] = api_set_cpm(NR1, NF1, OD1, NB1, div1) | 0x40;
 	tx_data[22] = api_set_cpm(NR2, NF2, OD2, NB2, div2) | 0x40;
-
 	for (k = 0; k < ch_num; k++){
 		while((512 - api_get_tx_cnt()) < (chip_num * 23))
 			;
@@ -310,9 +312,9 @@ uint32_t api_asic_test(uint32_t ch_num, uint32_t chip_num,
 
 	if (result) {
 		api_set_timeout(0x10);
+		api_flush();
 		memset(result, 0, MINER_COUNT * ASIC_COUNT * sizeof(uint32_t));
 	}
-
 
 	for (j = 0; j < cal_core_num + 2 * add_step; j += add_step) {
 		api_gen_test_work(j, tx_data);
