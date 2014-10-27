@@ -196,12 +196,13 @@ static uint32_t api_verify_nonce(uint32_t ch_num, uint32_t chip_num, uint32_t ve
 			} else
 				chip_id++;
 
-
 			if (verify_on && ((rx_data[2] == target_nonce) || (rx_data[3] == target_nonce))) {
 				pass_cal_num++;
 			} else {
 				if (verify_on) {
+#ifdef DEBUG_VERBOSE
 					debug32("channel id: %d,chip id: %d, TN:%08x, RX[0]:%08x, RX[1]:%08x, RX[2]:%08x, RX[3]:%08x\n", channel_id, chip_id, target_nonce, rx_data[0], rx_data[1], rx_data[2], rx_data[3]);
+#endif
 					if (result)
 					    result[channel_id][chip_id]++;
 				}
@@ -291,7 +292,7 @@ void api_get_rx_fifo(uint32_t * data)
  * freq: worst -> best;
  * api_asic_test(ch_num, chip_num, cal_core_num, add_step, pass_zone_num, freq);
  */
-uint32_t api_asic_test(uint32_t ch_num, uint32_t chip_num,
+static uint32_t api_asic_test(uint32_t ch_num, uint32_t chip_num,
 		       uint32_t cal_core_num, uint32_t add_step,
 		       uint32_t *pass_zone_num, uint32_t freq[], uint32_t result[MINER_COUNT][ASIC_COUNT])
 {
@@ -448,3 +449,45 @@ uint32_t get_asic_freq()
 {
 	return g_asic_freq_avg;
 }
+
+extern uint32_t send_pkg(int type, uint8_t *buf, uint32_t len, int block);
+int api_asic_testcores(uint32_t cal_core_num, uint32_t freq[], uint32_t ret)
+{
+	int i = 0, j = 0;
+	uint8_t txdat[20];
+	uint32_t result[MINER_COUNT][ASIC_COUNT];
+	uint32_t tmp;
+	uint32_t all = MINER_COUNT * ASIC_COUNT * cal_core_num;
+
+	tmp = api_asic_test(MINER_COUNT, ASIC_COUNT, cal_core_num, 1, NULL, freq, result);
+
+	for (i = 0; i < MINER_COUNT; i++) {
+		txdat[0] = i;
+		debug32("%d: ", i);
+		for (j = 0; j < ASIC_COUNT; j++) {
+			txdat[1 + j * ASIC_COUNT] = (result[i][j] >> 24) & 0xff;
+			txdat[2 + j * ASIC_COUNT] = (result[i][j] >> 16) & 0xff;
+			txdat[3 + j * ASIC_COUNT] = (result[i][j] >> 8) & 0xff;
+			txdat[4 + j * ASIC_COUNT] = result[i][j] & 0xff;
+			debug32("%d ", result[i][j]);
+		}
+		debug32("\n");
+		if (ret)
+			send_pkg(AVA2_P_TEST_RET, txdat, ASIC_COUNT * 4 + 1, 0);
+	}
+	if (ret) {
+		txdat[0] = (tmp >> 24) & 0xff;
+		txdat[1] = (tmp >> 16) & 0xff;
+		txdat[2] = (tmp >> 8) & 0xff;
+		txdat[3] = tmp & 0xff;
+		txdat[4] = (all >> 24) & 0xff;
+		txdat[5] = (all >> 16) & 0xff;
+		txdat[6] = (all >> 8) & 0xff;
+		txdat[7] = all & 0xff;
+		send_pkg(AVA2_P_TEST_RET, txdat, 8, 0);
+	}
+
+	debug32("E/A: %d/%d\n", all - tmp, all);
+	return all - tmp;
+}
+
