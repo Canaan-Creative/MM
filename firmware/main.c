@@ -332,7 +332,7 @@ static int decode_pkg(uint8_t *p, struct mm_work *mw)
 		freq[0] = (tmp & 0x3ff00000) >> 20;
 		freq[1] = (tmp & 0xffc00) >> 10;
 		freq[2] = tmp & 0x3ff;
-		debug32(", F: %08x/%d-%d-%d\n", tmp, freq[0], freq[1], freq[2]);
+		debug32(" F: %08x(%d:%d:%d)\n", tmp, freq[0], freq[1], freq[2]);
 		api_asic_testcores(TEST_CORE_COUNT, freq, 1);
 		break;
 	default:
