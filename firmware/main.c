@@ -282,7 +282,8 @@ static int decode_pkg(uint8_t *p, struct mm_work *mw)
 		polling();
 
 		memcpy(&tmp, data + 12, 4);
-		gpio_led(tmp);
+		if (tmp)
+			led_ctrl(LED_ERROR_BLINKING);
 		break;
 	case AVA2_P_SET:
 		if (read_temp() >= IDLE_TEMP)
@@ -315,6 +316,8 @@ static int decode_pkg(uint8_t *p, struct mm_work *mw)
 		debug32(" N2: %08x(%08x-%08x|%d)\n", mw->nonce2, g_nonce2_offset, g_nonce2_range, g_module_id);
 #endif
 		g_new_stratum = 1;
+		if (read_power_good() != 0x1ff || !read_fan())
+			led_ctrl(LED_WARNING_BLINKING);
 		break;
 	case AVA2_P_TARGET:
 		memcpy(mw->target, data, AVA2_P_DATA_LEN);
@@ -504,10 +507,16 @@ int main(int argv, char **argc)
 	uint32_t freq[3] = {200, 200, 200};
 
 	set_voltage(ASIC_CORETEST_VOLT);
-	api_asic_testcores(TEST_CORE_COUNT, freq, 0);
+	if (api_asic_testcores(TEST_CORE_COUNT, freq, 0) >= 4*TEST_CORE_COUNT)
+		led_ctrl(LED_ERROR_ON);
 #endif
 
-	led_ctrl(LED_WARNING_ON);
+	if (read_temp() >= IDLE_TEMP ||
+	    (read_power_good() != 0x1ff) ||
+	    !read_fan())
+		led_ctrl(LED_WARNING_BLINKING);
+	else
+		led_ctrl(LED_WARNING_ON);
 	set_voltage(ASIC_0V);
 	g_new_stratum = 0;
 	while (1) {
@@ -532,7 +541,10 @@ int main(int argv, char **argc)
 
 			led_ctrl(LED_OFF_ALL);
 			led_ctrl(LED_POWER);
-			led_ctrl(LED_WARNING_ON);
+			if (read_temp() >= IDLE_TEMP) {
+				led_ctrl(LED_WARNING_BLINKING);
+			} else
+				led_ctrl(LED_WARNING_ON);
 			gpio_led(0xf);
 		}
 
@@ -540,6 +552,7 @@ int main(int argv, char **argc)
 			continue;
 
 		led_ctrl(LED_WARNING_OFF);
+		led_ctrl(LED_ERROR_OFF);
 		if (api_get_tx_cnt() <= (23 * 8)) {
 			miner_gen_nonce2_work(&mm_work, mm_work.nonce2++, &work);
 			api_send_work(&work);
