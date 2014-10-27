@@ -316,8 +316,6 @@ static int decode_pkg(uint8_t *p, struct mm_work *mw)
 		debug32(" N2: %08x(%08x-%08x|%d)\n", mw->nonce2, g_nonce2_offset, g_nonce2_range, g_module_id);
 #endif
 		g_new_stratum = 1;
-		if (!read_fan())
-			led_ctrl(LED_WARNING_BLINKING);
 		break;
 	case AVA2_P_TARGET:
 		memcpy(mw->target, data, AVA2_P_DATA_LEN);
@@ -549,8 +547,12 @@ int main(int argv, char **argc)
 		if (!g_new_stratum)
 			continue;
 
-		led_ctrl(LED_WARNING_OFF);
+		if (!read_fan())
+			led_ctrl(LED_WARNING_BLINKING);
+		else
+			led_ctrl(LED_WARNING_OFF);
 		led_ctrl(LED_ERROR_OFF);
+
 		if (api_get_tx_cnt() <= (23 * 8)) {
 			miner_gen_nonce2_work(&mm_work, mm_work.nonce2++, &work);
 			api_send_work(&work);
@@ -563,6 +565,7 @@ int main(int argv, char **argc)
 				api_send_work(&work);
 			}
 		}
+
 		read_result(&mm_work, &result);
 	}
 
