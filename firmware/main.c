@@ -316,7 +316,7 @@ static int decode_pkg(uint8_t *p, struct mm_work *mw)
 		debug32(" N2: %08x(%08x-%08x|%d)\n", mw->nonce2, g_nonce2_offset, g_nonce2_range, g_module_id);
 #endif
 		g_new_stratum = 1;
-		if (read_power_good() != 0x3ff || !read_fan())
+		if (!read_fan())
 			led_ctrl(LED_WARNING_BLINKING);
 		break;
 	case AVA2_P_TARGET:
@@ -476,7 +476,7 @@ int main(int argv, char **argc)
 	struct result result;
 	int i;
 
-	adjust_fan(0x2ff);		/* Set the fan to 50% */
+	adjust_fan(0x1ff);		/* Set the fan to 50% */
 
 	wdg_init(1);
 	wdg_feed((CPU_FREQUENCY / 1000) * 2); /* Configure the wdg to ~2 second, or it will reset FPGA */
@@ -511,12 +511,10 @@ int main(int argv, char **argc)
 		led_ctrl(LED_ERROR_ON);
 #endif
 
-	if (read_temp() >= IDLE_TEMP ||
-	    (read_power_good() != 0x3ff) ||
-	    !read_fan())
-		led_ctrl(LED_WARNING_BLINKING);
-	else
-		led_ctrl(LED_WARNING_ON);
+	if (read_power_good() != 0x3ff)
+		led_ctrl(LED_ERROR_ON);
+
+	led_ctrl(LED_WARNING_ON);
 	set_voltage(ASIC_0V);
 	g_new_stratum = 0;
 	while (1) {
@@ -530,7 +528,7 @@ int main(int argv, char **argc)
 			g_hw_work = 0;
 			ret_consume = ret_produce;
 
-			adjust_fan(0x2ff);
+			adjust_fan(0x1ff);
 			set_voltage(ASIC_0V);
 
 			iic_addr_set(AVA2_MODULE_BROADCAST);
@@ -541,9 +539,9 @@ int main(int argv, char **argc)
 
 			led_ctrl(LED_OFF_ALL);
 			led_ctrl(LED_POWER);
-			if (read_temp() >= IDLE_TEMP) {
+			if (read_temp() >= IDLE_TEMP)
 				led_ctrl(LED_WARNING_BLINKING);
-			} else
+			else
 				led_ctrl(LED_WARNING_ON);
 			gpio_led(0xf);
 		}
