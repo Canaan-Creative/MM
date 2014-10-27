@@ -336,8 +336,8 @@ static int decode_pkg(uint8_t *p, struct mm_work *mw)
 		freq[1] = (tmp & 0xffc00) >> 10;
 		freq[2] = tmp & 0x3ff;
 		debug32(" F: %08x(%d:%d:%d)\n", tmp, freq[0], freq[1], freq[2]);
-		api_asic_testcores(TEST_CORE_COUNT, freq, 1);
-		led_ctrl(LED_ERROR_OFF);
+		if (api_asic_testcores(TEST_CORE_COUNT, freq, 1) < 4 * TEST_CORE_COUNT)
+			led_ctrl(LED_ERROR_OFF);
 		break;
 	default:
 		break;
@@ -507,7 +507,7 @@ int main(int argv, char **argc)
 	uint32_t freq[3] = {200, 200, 200};
 
 	set_voltage(ASIC_CORETEST_VOLT);
-	if (api_asic_testcores(TEST_CORE_COUNT, freq, 0) >= 4*TEST_CORE_COUNT)
+	if (api_asic_testcores(TEST_CORE_COUNT, freq, 0) >= 4 * TEST_CORE_COUNT)
 		led_ctrl(LED_ERROR_ON);
 #endif
 
