@@ -334,6 +334,7 @@ static int decode_pkg(uint8_t *p, struct mm_work *mw)
 		freq[2] = tmp & 0x3ff;
 		debug32(" F: %08x(%d:%d:%d)\n", tmp, freq[0], freq[1], freq[2]);
 		api_asic_testcores(TEST_CORE_COUNT, freq, 1);
+		led_ctrl(LED_ERROR_OFF);
 		break;
 	default:
 		break;
@@ -530,7 +531,9 @@ int main(int argv, char **argc)
 			g_module_id = 0;
 
 			led_ctrl(LED_OFF_ALL);
+			led_ctrl(LED_POWER);
 			led_ctrl(LED_WARNING_ON);
+			gpio_led(0xf);
 		}
 
 		if (!g_new_stratum)
