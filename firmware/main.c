@@ -316,7 +316,7 @@ static int decode_pkg(uint8_t *p, struct mm_work *mw)
 		debug32(" N2: %08x(%08x-%08x|%d)\n", mw->nonce2, g_nonce2_offset, g_nonce2_range, g_module_id);
 #endif
 		g_new_stratum = 1;
-		if (read_power_good() != 0x1ff || !read_fan())
+		if (read_power_good() != 0x3ff || !read_fan())
 			led_ctrl(LED_WARNING_BLINKING);
 		break;
 	case AVA2_P_TARGET:
@@ -512,7 +512,7 @@ int main(int argv, char **argc)
 #endif
 
 	if (read_temp() >= IDLE_TEMP ||
-	    (read_power_good() != 0x1ff) ||
+	    (read_power_good() != 0x3ff) ||
 	    !read_fan())
 		led_ctrl(LED_WARNING_BLINKING);
 	else
