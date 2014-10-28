@@ -36,6 +36,7 @@
 static uint8_t g_pkg[AVA2_P_COUNT];
 static uint8_t g_act[AVA2_P_COUNT];
 static uint8_t g_dna[8];
+static uint8_t g_led_blinking = 0;
 static int g_module_id = AVA2_MODULE_BROADCAST;
 static int g_new_stratum = 0;
 static int g_local_work = 0;
@@ -75,7 +76,11 @@ void delay(unsigned int ms)
 #define LED_ERROR_ON		5
 #define LED_ERROR_OFF		6
 #define LED_ERROR_BLINKING	7
-#define LED_POWER		8
+#define LED_IDLE		8
+#define LED_PG1_ON		9
+#define LED_PG1_BLINKING	10
+#define LED_PG2_ON		11
+#define LED_PG2_BLINKING	12
 
 static inline void led_ctrl(int led_op)
 {
@@ -105,9 +110,24 @@ static inline void led_ctrl(int led_op)
 		value &= 0xfffffff0;
 		value |= 0x3;
 		break;
-	case LED_POWER:
-		value &= 0xffffffff;
-		value |= 0x11000000;
+	case LED_PG1_ON:
+		value &= 0xfeffffff;
+		value |= 0x1000000;
+		break;
+	case LED_PG1_BLINKING:
+		value &= 0xfeffffff;
+		value |= 0x3000000;
+		break;
+	case LED_PG2_ON:
+		value &= 0xefffffff;
+		value |= 0x10000000;
+		break;
+	case LED_PG2_BLINKING:
+		value &= 0xefffffff;
+		value |= 0x30000000;
+		break;
+	case LED_IDLE:
+		value &= 0xff0000ff;
 		break;
 	case LED_OFF_ALL:
 		value = 0;
@@ -276,14 +296,13 @@ static int decode_pkg(uint8_t *p, struct mm_work *mw)
 #ifdef DEBUG_VERBOSE
 		debug32("ID: %d-%d\n", g_module_id, tmp);
 #endif
-		if (g_module_id != tmp)
+		if (unlikely(g_module_id != tmp))
 			break;
 
 		polling();
 
-		memcpy(&tmp, data + 12, 4);
-		if (tmp)
-			led_ctrl(LED_ERROR_BLINKING);
+		memcpy(&tmp, data, 4);
+		g_led_blinking = tmp;
 		break;
 	case AVA2_P_SET:
 		if (read_temp() >= IDLE_TEMP)
@@ -468,6 +487,19 @@ static int get_pkg(struct mm_work *mw)
 	return 0;
 }
 
+static inline void led(void)
+{		/* LED */
+	if (!read_fan())
+		led_ctrl(LED_WARNING_BLINKING);
+	else
+		led_ctrl(LED_WARNING_OFF);
+
+	if (g_led_blinking)
+		led_ctrl(LED_ERROR_BLINKING);
+	else
+		led_ctrl(LED_ERROR_OFF);
+}
+
 int main(int argv, char **argc)
 {
 	struct work work;
@@ -498,7 +530,7 @@ int main(int argv, char **argc)
 #endif
 	timer_set(0, IDLE_TIME);
 	gpio_led(0xf);
-	led_ctrl(LED_POWER);
+	led_ctrl(LED_OFF_ALL);
 
 #if 1
 	/* Test part of ASIC cores */
@@ -509,8 +541,19 @@ int main(int argv, char **argc)
 		led_ctrl(LED_ERROR_ON);
 #endif
 
-	if (read_power_good() != 0x3ff)
+	i = read_power_good();
+	if (i == 0x1f || i == 0x3e0)
 		led_ctrl(LED_ERROR_ON);
+
+	if ((i & 0x1f) == 0x1f)
+		led_ctrl(LED_PG1_ON);
+	else
+		led_ctrl(LED_PG1_BLINKING);
+
+	if (((i >> 5) & 0x1f) == 0x1f)
+		led_ctrl(LED_PG2_ON);
+	else
+		led_ctrl(LED_PG2_BLINKING);
 
 	led_ctrl(LED_WARNING_ON);
 	set_voltage(ASIC_0V);
@@ -535,8 +578,7 @@ int main(int argv, char **argc)
 
 			g_module_id = 0;
 
-			led_ctrl(LED_OFF_ALL);
-			led_ctrl(LED_POWER);
+			led_ctrl(LED_IDLE);
 			if (read_temp() >= IDLE_TEMP)
 				led_ctrl(LED_WARNING_BLINKING);
 			else
@@ -547,11 +589,7 @@ int main(int argv, char **argc)
 		if (!g_new_stratum)
 			continue;
 
-		if (!read_fan())
-			led_ctrl(LED_WARNING_BLINKING);
-		else
-			led_ctrl(LED_WARNING_OFF);
-		led_ctrl(LED_ERROR_OFF);
+		led();
 
 		if (api_get_tx_cnt() <= (23 * 8)) {
 			miner_gen_nonce2_work(&mm_work, mm_work.nonce2++, &work);
