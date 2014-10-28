@@ -212,17 +212,13 @@ static uint32_t api_verify_nonce(uint32_t ch_num, uint32_t chip_num, uint32_t ve
 	return pass_cal_num;
 }
 
-static inline int api_flush()
+extern void delay(uint32_t ms);
+static inline void api_flush()
 {
-	while(1) {
-		while (api_get_rx_cnt())
-			readl(&api->rx);
-		if (api_get_tx_cnt() == 0 && api_get_rx_cnt() == 0)
-			return 0;
-	}
+	writel(0x2, &api->state);
+	delay(1);
 }
 
-extern void delay(uint32_t ms);
 static void api_change_cpm(uint32_t ch_num, uint32_t chip_num,
 		    uint32_t NR0, uint32_t NF0, uint32_t OD0, uint32_t NB0, uint32_t div0,
 		    uint32_t NR1, uint32_t NF1, uint32_t OD1, uint32_t NB1, uint32_t div1,
@@ -259,12 +255,6 @@ void api_initial(uint32_t ch_num, uint32_t chip_num, uint32_t spi_speed)
 void api_set_timeout(uint32_t timeout)
 {
 	writel(timeout, &api->timeout);
-}
-
-void api_set_flush()
-{
-	/* FIXME: hang the soc */
-	writel(0x2, &api->state);
 }
 
 uint32_t api_get_tx_cnt()

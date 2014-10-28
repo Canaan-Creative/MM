@@ -16,7 +16,6 @@ void api_initial(uint32_t ch_num, uint32_t chip_num, uint32_t spi_speed);
 uint32_t api_get_tx_cnt();
 uint32_t api_get_rx_cnt();
 
-void api_set_flush();
 void api_get_rx_fifo(uint32_t *data);
 void api_set_timeout(uint32_t timeout);
 
