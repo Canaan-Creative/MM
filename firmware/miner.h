@@ -45,7 +45,7 @@ struct result {
 struct mm_work {
 	uint32_t job_id;
 	size_t coinbase_len;
-	uint8_t coinbase[AVA2_P_COINBASE_SIZE];
+	uint8_t coinbase[AVA4_P_COINBASE_SIZE];
 
 	uint32_t nonce2;
 	int nonce2_offset;
@@ -53,7 +53,7 @@ struct mm_work {
 
 	int merkle_offset;
 	int nmerkles;
-	uint8_t merkles[AVA2_P_MERKLES_COUNT][32];
+	uint8_t merkles[AVA4_P_MERKLES_COUNT][32];
 
 	uint8_t header[128];
 

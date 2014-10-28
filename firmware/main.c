@@ -33,11 +33,11 @@
 #define IDLE_TEMP	70	/* Degree (C) */
 #define TEST_CORE_COUNT	64	/* 4 * 16 */
 
-static uint8_t g_pkg[AVA2_P_COUNT];
-static uint8_t g_act[AVA2_P_COUNT];
+static uint8_t g_pkg[AVA4_P_COUNT];
+static uint8_t g_act[AVA4_P_COUNT];
 static uint8_t g_dna[8];
 static uint8_t g_led_blinking = 0;
-static int g_module_id = AVA2_MODULE_BROADCAST;
+static int g_module_id = AVA4_MODULE_BROADCAST;
 static int g_new_stratum = 0;
 static int g_local_work = 0;
 static int g_hw_work = 0;
@@ -47,7 +47,7 @@ static struct mm_work mm_work;
 
 #define RET_RINGBUFFER_SIZE_RX 32
 #define RET_RINGBUFFER_MASK_RX (RET_RINGBUFFER_SIZE_RX-1)
-static uint8_t ret_buf[RET_RINGBUFFER_SIZE_RX][AVA2_P_DATA_LEN];
+static uint8_t ret_buf[RET_RINGBUFFER_SIZE_RX][AVA4_P_DATA_LEN];
 static volatile unsigned int ret_produce = 0;
 static volatile unsigned int ret_consume = 0;
 
@@ -144,10 +144,10 @@ static void encode_pkg(uint8_t *p, int type, uint8_t *buf, unsigned int len)
 	uint16_t crc;
 	uint8_t *data;
 
-	memset(p, 0, AVA2_P_COUNT);
+	memset(p, 0, AVA4_P_COUNT);
 
-	p[0] = AVA2_H1;
-	p[1] = AVA2_H2;
+	p[0] = AVA4_H1;
+	p[1] = AVA4_H2;
 
 	p[2] = type;
 	p[3] = 0;
@@ -158,15 +158,15 @@ static void encode_pkg(uint8_t *p, int type, uint8_t *buf, unsigned int len)
 	memcpy(data + 28, &g_module_id, 4); /* Attach the module_id at end */
 
 	switch(type) {
-	case AVA2_P_ACKDETECT:
+	case AVA4_P_ACKDETECT:
 		memcpy(data, g_dna, 8); /* MM_DNA */
 		memcpy(data + 8, buf, len); /* MM_VERSION */
 		break;
-	case AVA2_P_NONCE:
-	case AVA2_P_TEST_RET:
+	case AVA4_P_NONCE:
+	case AVA4_P_TEST_RET:
 		memcpy(data, buf, len);
 		break;
-	case AVA2_P_STATUS:
+	case AVA4_P_STATUS:
 		tmp = read_temp();
 		memcpy(data + 0, &tmp, 4);
 
@@ -188,9 +188,9 @@ static void encode_pkg(uint8_t *p, int type, uint8_t *buf, unsigned int len)
 		break;
 	}
 
-	crc = crc16(data, AVA2_P_DATA_LEN);
-	p[AVA2_P_COUNT - 2] = crc & 0x00ff;
-	p[AVA2_P_COUNT - 1] = (crc & 0xff00) >> 8;
+	crc = crc16(data, AVA4_P_DATA_LEN);
+	p[AVA4_P_COUNT - 2] = crc & 0x00ff;
+	p[AVA4_P_COUNT - 1] = (crc & 0xff00) >> 8;
 }
 
 uint32_t send_pkg(int type, uint8_t *buf, uint32_t len, int block)
@@ -199,7 +199,7 @@ uint32_t send_pkg(int type, uint8_t *buf, uint32_t len, int block)
 	debug32("%d-Send: %d, (CNT: %d)\n", g_module_id, type, iic_tx_fifo_cnt());
 #endif
 	encode_pkg(g_act, type, buf, len);
-	if (!iic_write(g_act, AVA2_P_COUNT, block)) {
+	if (!iic_write(g_act, AVA4_P_COUNT, block)) {
 		iic_tx_reset();
 		return 0;
 	}
@@ -212,7 +212,7 @@ static void polling()
 	uint8_t *data;
 
 	if (ret_consume == ret_produce) {
-		send_pkg(AVA2_P_STATUS, NULL, 0, 0);
+		send_pkg(AVA4_P_STATUS, NULL, 0, 0);
 
 		g_local_work = 0;
 		g_hw_work = 0;
@@ -221,7 +221,7 @@ static void polling()
 
 	data = ret_buf[ret_consume];
 	ret_consume = (ret_consume + 1) & RET_RINGBUFFER_MASK_RX;
-	send_pkg(AVA2_P_NONCE, data, AVA2_P_DATA_LEN - 4, 0);
+	send_pkg(AVA4_P_NONCE, data, AVA4_P_DATA_LEN - 4, 0);
 	return;
 }
 
@@ -242,10 +242,10 @@ static int decode_pkg(uint8_t *p, struct mm_work *mw)
 	debug32("%d-Decode: %d %d/%d\n", g_module_id, p[2], idx, cnt);
 #endif
 
-	expected_crc = (p[AVA2_P_COUNT - 1] & 0xff) |
-		((p[AVA2_P_COUNT - 2] & 0xff) << 8);
+	expected_crc = (p[AVA4_P_COUNT - 1] & 0xff) |
+		((p[AVA4_P_COUNT - 2] & 0xff) << 8);
 
-	actual_crc = crc16(data, AVA2_P_DATA_LEN);
+	actual_crc = crc16(data, AVA4_P_DATA_LEN);
 	if(expected_crc != actual_crc) {
 		debug32("PKG: CRC failed %d:(W %08x, R %08x)\n",
 			p[2], expected_crc, actual_crc);
@@ -254,10 +254,10 @@ static int decode_pkg(uint8_t *p, struct mm_work *mw)
 
 	timer_set(0, IDLE_TIME);
 	switch (p[2]) {
-	case AVA2_P_DETECT:
-	case AVA2_P_REQUIRE:
+	case AVA4_P_DETECT:
+	case AVA4_P_REQUIRE:
 		break;
-	case AVA2_P_STATIC:
+	case AVA4_P_STATIC:
 		g_new_stratum = 0;
 
 		memcpy(&mw->coinbase_len, data, 4);
@@ -276,22 +276,22 @@ static int decode_pkg(uint8_t *p, struct mm_work *mw)
 			mw->nmerkles,
 			mw->diff);
 		break;
-	case AVA2_P_JOB_ID:
+	case AVA4_P_JOB_ID:
 		memcpy((uint8_t *)&mw->job_id, data, 4);
 		debug32("[%d]J: %08x\n", g_module_id, mw->job_id);
 		break;
-	case AVA2_P_COINBASE:
+	case AVA4_P_COINBASE:
 		if (idx == 1)
 			memset(mw->coinbase, 0, sizeof(mw->coinbase));
-		memcpy(mw->coinbase + (idx - 1) * AVA2_P_DATA_LEN, data, AVA2_P_DATA_LEN);
+		memcpy(mw->coinbase + (idx - 1) * AVA4_P_DATA_LEN, data, AVA4_P_DATA_LEN);
 		break;
-	case AVA2_P_MERKLES:
-		memcpy(mw->merkles[idx - 1], data, AVA2_P_DATA_LEN);
+	case AVA4_P_MERKLES:
+		memcpy(mw->merkles[idx - 1], data, AVA4_P_DATA_LEN);
 		break;
-	case AVA2_P_HEADER:
-		memcpy(mw->header + (idx - 1) * AVA2_P_DATA_LEN, data, AVA2_P_DATA_LEN);
+	case AVA4_P_HEADER:
+		memcpy(mw->header + (idx - 1) * AVA4_P_DATA_LEN, data, AVA4_P_DATA_LEN);
 		break;
-	case AVA2_P_POLLING:
+	case AVA4_P_POLLING:
 		memcpy(&tmp, data + 28, 4);
 #ifdef DEBUG_VERBOSE
 		debug32("ID: %d-%d\n", g_module_id, tmp);
@@ -304,7 +304,7 @@ static int decode_pkg(uint8_t *p, struct mm_work *mw)
 		memcpy(&tmp, data, 4);
 		g_led_blinking = tmp;
 		break;
-	case AVA2_P_SET:
+	case AVA4_P_SET:
 		if (read_temp() >= IDLE_TEMP)
 			break;
 
@@ -336,10 +336,10 @@ static int decode_pkg(uint8_t *p, struct mm_work *mw)
 #endif
 		g_new_stratum = 1;
 		break;
-	case AVA2_P_TARGET:
-		memcpy(mw->target, data, AVA2_P_DATA_LEN);
+	case AVA4_P_TARGET:
+		memcpy(mw->target, data, AVA4_P_DATA_LEN);
 		break;
-	case AVA2_P_TEST:
+	case AVA4_P_TEST:
 		memcpy(&tmp, data + 28, 4);
 		if (g_module_id != tmp)
 			break;
@@ -446,34 +446,34 @@ static int get_pkg(struct mm_work *mw)
 
 		d = iic_read();
 		UNPACK32(d, g_pkg + count * 4);
-		if ((uint8_t) ((d) >> 24) == AVA2_H1 &&
-		    (uint8_t) ((d) >> 16) == AVA2_H2 && !start) {
+		if ((uint8_t) ((d) >> 24) == AVA4_H1 &&
+		    (uint8_t) ((d) >> 16) == AVA4_H2 && !start) {
 			start = 1;
 			count = 0;
 		}
 
 		count++;
 
-		if (count == AVA2_P_COUNT / 4) {
+		if (count == AVA4_P_COUNT / 4) {
 			if (decode_pkg(g_pkg, mw))
 				return 1;
 
 			/* Here we send back PKG if necessary */
 			switch (g_pkg[2]) {
-			case AVA2_P_DETECT:
-				if (g_module_id != AVA2_MODULE_BROADCAST)
+			case AVA4_P_DETECT:
+				if (g_module_id != AVA4_MODULE_BROADCAST)
 					break;
 
-				if (send_pkg(AVA2_P_ACKDETECT, (uint8_t *)MM_VERSION, MM_VERSION_LEN, 1)) {
+				if (send_pkg(AVA4_P_ACKDETECT, (uint8_t *)MM_VERSION, MM_VERSION_LEN, 1)) {
 					memcpy(&g_module_id, g_pkg + 6 + 28, 4);
 					debug32("ID: %d\n", g_module_id);
 					iic_addr_set(g_module_id);
 				}
 
 				break;
-			case AVA2_P_REQUIRE:
+			case AVA4_P_REQUIRE:
 				if (g_module_id == tmp)
-					send_pkg(AVA2_P_STATUS, NULL, 0, 0);
+					send_pkg(AVA4_P_STATUS, NULL, 0, 0);
 				break;
 			default:
 				break;
@@ -572,7 +572,7 @@ int main(int argv, char **argc)
 			adjust_fan(0x1ff);
 			set_voltage(ASIC_0V);
 
-			iic_addr_set(AVA2_MODULE_BROADCAST);
+			iic_addr_set(AVA4_MODULE_BROADCAST);
 			iic_rx_reset();
 			iic_tx_reset();
 
