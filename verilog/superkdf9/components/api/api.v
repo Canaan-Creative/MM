@@ -54,7 +54,7 @@ wire rst = RST_I | reg_rst;
 api_slave(
 // system clock and reset
 /*input            */ .clk         (clk               ),
-/*input            */ .rst         (rst               ),
+/*input            */ .rst         (RST_I             ),
 
 // wishbone interface signals
 /*input            */ .API_CYC_I   (API_CYC_I         ),//NC
