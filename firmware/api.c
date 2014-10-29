@@ -214,7 +214,13 @@ static uint32_t api_verify_nonce(uint32_t ch_num, uint32_t chip_num, uint32_t ve
 
 extern void delay(uint32_t ms);
 static inline void api_flush()
-{
+{	unsigned int tmp;
+	while(1){
+		tmp = readl(&api->state);
+		tmp = (tmp >> 13) & 0x7;
+		if(tmp != 1)
+			break;
+	}
 	writel(0x2, &api->state);
 	delay(1);
 }
