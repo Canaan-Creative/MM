@@ -20,7 +20,7 @@ parameter LED_BREATH = 4'b0101;
 
 parameter SPARK_WIH = 25;
 parameter SPARK_MAX = 25'h989680 * 3;//300ms
-parameter BLING_MAX = 25'h8;
+parameter BLING_MAX = 25'h1;
 
 parameter BREATH_MAX  = 25'h180000;// 1/60s
 
