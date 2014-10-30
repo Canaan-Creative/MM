@@ -69,10 +69,10 @@ else
         cd $DIRECTORY
         git checkout -b $GITBRANCH origin/$GITBRANCH
 
-        # /home/Xilinx/14.6/ISE_DS/ --> $(XILINX_ISE_DIR)
+        # /home/Xilinx/14.6/ISE_DS/ --> $XILINX_ISE_DIR
         # firmware/Makefile and synth/xilinx.mk
-        sed -i 's:/home/Xilinx/14.6/ISE_DS/:$(XILINX_ISE_DIR):g' firmware/Makefile
-        sed -i 's:/home/Xilinx/14.6/ISE_DS/:$(XILINX_ISE_DIR):g' synth/xilinx.mk
+        sed -i "s:/home/Xilinx/14.6/ISE_DS/:$XILINX_ISE_DIR:g" firmware/Makefile
+        sed -i "s:/home/Xilinx/14.6/ISE_DS/:$XILINX_ISE_DIR:g" synth/xilinx.mk
 
         # /opt/lm32 --> [$WORKDIR]/lm32
         # firmware/config.mk and firmware/toolchain/Makefile
