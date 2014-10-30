@@ -20,7 +20,8 @@ parameter LED_BREATH = 4'b0101;
 
 parameter SPARK_WIH = 25;
 parameter SPARK_MAX = 25'h989680 * 3;//300ms
-parameter BLING_MAX = 25'h1;
+parameter BLING_MAX_I2C = 25'h2;
+parameter BLING_MAX_API = 25'h5;
 
 parameter BREATH_MAX  = 25'h180000;// 1/60s
 
@@ -75,10 +76,10 @@ reg vld_r;
 wire [7:0] led_spark_cnt_max;
 assign led_spark_cnt_max[0] = led0_spark_cnt == SPARK_MAX;
 assign led_spark_cnt_max[1] = led1_spark_cnt == SPARK_MAX;
-assign led_spark_cnt_max[2] = led2 == LED_BLING ? led2_spark_cnt == BLING_MAX:led2_spark_cnt == SPARK_MAX;
-assign led_spark_cnt_max[3] = led3 == LED_BLING ? led3_spark_cnt == BLING_MAX:led3_spark_cnt == SPARK_MAX;
-assign led_spark_cnt_max[4] = led4 == LED_BLING ? led4_spark_cnt == BLING_MAX:led4_spark_cnt == SPARK_MAX;
-assign led_spark_cnt_max[5] = led5 == LED_BLING ? led5_spark_cnt == BLING_MAX:led5_spark_cnt == SPARK_MAX;
+assign led_spark_cnt_max[2] = led2 == LED_BLING ? led2_spark_cnt == BLING_MAX_I2C:led2_spark_cnt == SPARK_MAX;
+assign led_spark_cnt_max[3] = led3 == LED_BLING ? led3_spark_cnt == BLING_MAX_I2C:led3_spark_cnt == SPARK_MAX;
+assign led_spark_cnt_max[4] = led4 == LED_BLING ? led4_spark_cnt == BLING_MAX_API:led4_spark_cnt == SPARK_MAX;
+assign led_spark_cnt_max[5] = led5 == LED_BLING ? led5_spark_cnt == BLING_MAX_API:led5_spark_cnt == SPARK_MAX;
 assign led_spark_cnt_max[6] = led6_spark_cnt == SPARK_MAX;
 assign led_spark_cnt_max[7] = led7 == LED_BREATH ? led7_spark_cnt == BREATH_MAX : led7_spark_cnt == SPARK_MAX;
 
