@@ -156,34 +156,36 @@ static inline void api_wait_done(uint32_t ch_num, uint32_t chip_num)
 		;
 }
 
-static inline uint32_t api_gen_test_work(uint32_t i, uint32_t * data)
+static inline uint32_t api_gen_test_work(uint32_t i, uint32_t *data)
 {
-	uint32_t tmp = 0;
+	uint32_t tmp;
 	int j;
 
-	for (j = 0; j < 18; j++) {
+	for (j = 0; j < 18; j++)
 		data[j] = test_data[i%16][j];
-	}
 
 	tmp = data[0];
-        data[0] = data[0] ^ (i & 0xfffffff0);//nonce
+        data[0] = data[0] ^ (i & 0xfffffff0);	/* nonce */
 
-	data[18] = 0x0;//nonce2
-	data[19] = i;//nonce2
-	data[20] = 0x1;//cpm2
-	data[21] = 0x1;//cpm1
-	data[22] = 0x1;//cpm0
+	data[18] = 0x0;	/* nonce2 */
+	data[19] = i;	/* nonce2 */
+	data[20] = 0x1;	/* cpm2 */
+	data[21] = 0x1;	/* cpm1 */
+	data[22] = 0x1;	/* cpm0 */
 
 	return tmp + 0x18000;
 }
 
-static uint32_t api_verify_nonce(uint32_t ch_num, uint32_t chip_num, uint32_t verify_on, uint32_t target_nonce, uint32_t result[MINER_COUNT][ASIC_COUNT])
+static uint32_t api_verify_nonce(uint32_t ch_num, uint32_t chip_num,
+				 uint32_t verify_on, uint32_t target_nonce,
+				 uint32_t result[MINER_COUNT][ASIC_COUNT])
 {
+	static uint32_t last_minerid = 0xff;
+	static uint8_t chip_id;
+
 	uint32_t i, j;
 	uint32_t rx_data[LM32_API_RET_LEN];
 	uint32_t pass_cal_num = 0;
-	static uint32_t last_minerid = 0xff;
-	static uint8_t chip_id;
 	uint8_t channel_id;
 
 	for (i = 0; i < ch_num; i++) {
@@ -199,26 +201,25 @@ static uint32_t api_verify_nonce(uint32_t ch_num, uint32_t chip_num, uint32_t ve
 			if (verify_on && ((rx_data[2] == target_nonce) || (rx_data[3] == target_nonce))) {
 				pass_cal_num++;
 			} else {
-				if (verify_on) {
 #ifdef DEBUG_VERBOSE
-					debug32("channel id: %d,chip id: %d, TN:%08x, RX[0]:%08x, RX[1]:%08x, RX[2]:%08x, RX[3]:%08x\n", channel_id, chip_id, target_nonce, rx_data[0], rx_data[1], rx_data[2], rx_data[3]);
+				debug32("channel id: %d,chip id: %d, TN:%08x, RX[0]:%08x, RX[1]:%08x, RX[2]:%08x, RX[3]:%08x\n", channel_id, chip_id, target_nonce, rx_data[0], rx_data[1], rx_data[2], rx_data[3]);
 #endif
-					if (result)
-					    result[channel_id][chip_id]++;
-				}
+				if (verify_on && result)
+				    result[channel_id][chip_id]++;
 			}
 		}
 	}
+
 	return pass_cal_num;
 }
 
 extern void delay(uint32_t ms);
 static inline void api_flush()
 {	unsigned int tmp;
-	while(1){
+	while (1) {
 		tmp = readl(&api->state);
 		tmp = (tmp >> 13) & 0x7;
-		if(tmp != 1)
+		if (tmp != 1)
 			break;
 	}
 	writel(0x2, &api->state);
@@ -280,17 +281,9 @@ void api_get_rx_fifo(uint32_t * data)
 		data[i] = readl(&api->rx);
 }
 
-/*
- * when you want to know the health of a3222(within three diff zone), you may use this func like this:
- * cal_core_num = 248;
- * add_step = 16;
- * pass_zone_num: [0] for the best 4/9 core; [1] for the mid 4/9 core; [2] for the worst 1/9;
- * freq: worst -> best;
- * api_asic_test(ch_num, chip_num, cal_core_num, add_step, pass_zone_num, freq);
- */
 static uint32_t api_asic_test(uint32_t ch_num, uint32_t chip_num,
-		       uint32_t cal_core_num, uint32_t add_step,
-		       uint32_t *pass_zone_num, uint32_t freq[], uint32_t result[MINER_COUNT][ASIC_COUNT])
+			      uint32_t cal_core_num, uint32_t add_step,
+			      uint32_t result[MINER_COUNT][ASIC_COUNT])
 {
 	uint32_t i, j, k;
 	uint32_t tx_data[23];
@@ -298,14 +291,6 @@ static uint32_t api_asic_test(uint32_t ch_num, uint32_t chip_num,
 	uint32_t pass_cal_num = 0;
 	uint32_t verify_on = 0;
 	uint32_t tmp;
-
-	if (pass_zone_num) {
-		pass_zone_num[0] = 0;
-		pass_zone_num[1] = 0;
-		pass_zone_num[2] = 0;
-	}
-
-	set_asic_freq(freq);
 
 	if (result) {
 		api_set_timeout(0x10);
@@ -325,9 +310,17 @@ static uint32_t api_asic_test(uint32_t ch_num, uint32_t chip_num,
 		api_wait_done(ch_num, chip_num);
 
 		target_nonce = api_gen_test_work((j - 2 * add_step) % 16, tx_data);
-		verify_on = j >= 2 ? 1 : 0;
+		verify_on = (j >= 2 ? 1 : 0);
 		tmp = api_verify_nonce(ch_num, chip_num, verify_on, target_nonce, result);
 		pass_cal_num += tmp;
+
+#ifdef DEBUG_VERBOSE
+		uint32_t pass_zone_num[3] = {0, 0, 0};
+		if (pass_zone_num) {
+			pass_zone_num[0] = 0;
+			pass_zone_num[1] = 0;
+			pass_zone_num[2] = 0;
+		}
 
 		if (pass_zone_num && verify_on) {
 			if ((j - 2) < (28 * 4 - 4) * 16)
@@ -337,6 +330,7 @@ static uint32_t api_asic_test(uint32_t ch_num, uint32_t chip_num,
 			else
 				pass_zone_num[2] += tmp;
 		}
+#endif
 	}
 
 	return pass_cal_num;
@@ -447,7 +441,7 @@ uint32_t get_asic_freq()
 }
 
 extern uint32_t send_pkg(int type, uint8_t *buf, uint32_t len, int block);
-int api_asic_testcores(uint32_t cal_core_num, uint32_t freq[], uint32_t ret)
+int api_asic_testcores(uint32_t cal_core_num, uint32_t ret)
 {
 	int i = 0, j = 0;
 	uint8_t txdat[20];
@@ -455,7 +449,7 @@ int api_asic_testcores(uint32_t cal_core_num, uint32_t freq[], uint32_t ret)
 	uint32_t tmp;
 	uint32_t all = MINER_COUNT * ASIC_COUNT * cal_core_num;
 
-	tmp = api_asic_test(MINER_COUNT, ASIC_COUNT, cal_core_num, 1, NULL, freq, result);
+	tmp = api_asic_test(MINER_COUNT, ASIC_COUNT, cal_core_num, 1, result);
 
 	for (i = 0; i < MINER_COUNT; i++) {
 		txdat[0] = i;

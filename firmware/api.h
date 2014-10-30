@@ -24,5 +24,5 @@ int api_send_work(struct work *w);
 void set_asic_freq(uint32_t value[]);
 uint32_t get_asic_freq();
 
-int api_asic_testcores(uint32_t cal_core_num, uint32_t freq[], uint32_t ret);
+int api_asic_testcores(uint32_t cal_core_num, uint32_t ret);
 #endif	/* _API_H_ */

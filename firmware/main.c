@@ -30,7 +30,7 @@
 #include "hexdump.c"
 
 #define IDLE_TIME	5	/* Seconds */
-#define IDLE_TEMP	70	/* Degree (C) */
+#define IDLE_TEMP	65	/* Degree (C) */
 #define TEST_CORE_COUNT	64	/* 4 * 16 */
 
 static uint8_t g_pkg[AVA4_P_COUNT];
@@ -150,7 +150,6 @@ static void encode_pkg(uint8_t *p, int type, uint8_t *buf, unsigned int len)
 	p[1] = AVA4_H2;
 
 	p[2] = type;
-	p[3] = 0;
 	p[4] = 1;
 	p[5] = 1;
 
@@ -345,15 +344,19 @@ static int decode_pkg(uint8_t *p, struct mm_work *mw)
 			break;
 
 		led_ctrl(LED_ERROR_ON);
+
 		memcpy(&tmp, data + 4, 4);
 		debug32("V: %08x", tmp);
 		set_voltage(tmp);
+
 		memcpy(&tmp, data + 8, 4);
 		freq[0] = (tmp & 0x3ff00000) >> 20;
 		freq[1] = (tmp & 0xffc00) >> 10;
 		freq[2] = tmp & 0x3ff;
 		debug32(" F: %08x(%d:%d:%d)\n", tmp, freq[0], freq[1], freq[2]);
-		if (api_asic_testcores(TEST_CORE_COUNT, freq, 1) < 4 * TEST_CORE_COUNT)
+		set_asic_freq(freq);
+
+		if (api_asic_testcores(TEST_CORE_COUNT, 1) < 4 * TEST_CORE_COUNT)
 			led_ctrl(LED_ERROR_OFF);
 		break;
 	default:
@@ -529,7 +532,6 @@ int main(int argv, char **argc)
 	iic_test();
 #endif
 	timer_set(0, IDLE_TIME);
-	gpio_led(0xf);
 	led_ctrl(LED_OFF_ALL);
 
 #if 1
@@ -537,7 +539,8 @@ int main(int argv, char **argc)
 	uint32_t freq[3] = {200, 200, 200};
 
 	set_voltage(ASIC_CORETEST_VOLT);
-	if (api_asic_testcores(TEST_CORE_COUNT, freq, 0) >= 4 * TEST_CORE_COUNT)
+	set_asic_freq(freq);
+	if (api_asic_testcores(TEST_CORE_COUNT, 0) >= 4 * TEST_CORE_COUNT)
 		led_ctrl(LED_ERROR_ON);
 #endif
 
@@ -567,6 +570,7 @@ int main(int argv, char **argc)
 			g_new_stratum = 0;
 			g_local_work = 0;
 			g_hw_work = 0;
+			g_module_id = AVA4_MODULE_BROADCAST;
 			ret_consume = ret_produce;
 
 			adjust_fan(0x1ff);
@@ -576,14 +580,11 @@ int main(int argv, char **argc)
 			iic_rx_reset();
 			iic_tx_reset();
 
-			g_module_id = 0;
-
 			led_ctrl(LED_IDLE);
 			if (read_temp() >= IDLE_TEMP)
 				led_ctrl(LED_WARNING_BLINKING);
 			else
 				led_ctrl(LED_WARNING_ON);
-			gpio_led(0xf);
 		}
 
 		if (!g_new_stratum)
