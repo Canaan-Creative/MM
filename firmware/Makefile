@@ -13,6 +13,10 @@ GIT_STATUS:=$(shell ([ -z "`git status -s -uno`" ] && echo 0) || echo +)
 
 CFLAGS += -DMM_VERSION='"401410-$(GIT_VERSION)$(GIT_STATUS)"'
 
+ifeq ($(DEBUG),1)
+	CFLAGS += -DDEBUG
+endif
+
 -include config.mk
 # ----- Customer ----------------------------------------------------------
 INCLUDES   = -I. -Isdk -Iminilibc
