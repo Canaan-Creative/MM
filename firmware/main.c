@@ -358,6 +358,8 @@ static int decode_pkg(uint8_t *p, struct mm_work *mw)
 
 		if (api_asic_testcores(TEST_CORE_COUNT, 1) < 4 * TEST_CORE_COUNT)
 			led_ctrl(LED_ERROR_OFF);
+
+		set_voltage(ASIC_0V);
 		break;
 	default:
 		break;
