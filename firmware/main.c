@@ -29,7 +29,7 @@
 
 #include "hexdump.c"
 
-#define IDLE_TIME	5	/* Seconds */
+#define IDLE_TIME	3	/* Seconds */
 #define IDLE_TEMP	65	/* Degree (C) */
 #define TEST_CORE_COUNT	64	/* 4 * 16 */
 
