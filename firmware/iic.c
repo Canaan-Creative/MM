@@ -20,7 +20,6 @@ static unsigned int rx_buf[IIC_RINGBUFFER_SIZE_RX];
 static volatile unsigned int rx_produce;
 static volatile unsigned int rx_consume;
 
-#define IIC_PACKSIZE	40
 static struct lm32_iic *iic = (struct lm32_iic *)IIC_BASE;
 static struct lm32_dna *dna = (struct lm32_dna *)DNA_BASE;
 
@@ -195,6 +194,8 @@ void iic_tx_reset(void)
 }
 
 #ifdef DEBUG_IIC_TEST
+#define IIC_PACKSIZE	40
+
 #define IIC_ADDR 	0
 #define IIC_LOOP 	1
 void iic_test(void)
