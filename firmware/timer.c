@@ -90,7 +90,6 @@ void timer1_isr(void)
 }
 
 /* GPIO */
-#ifdef DEBUG_VERBOSE
 void gpio_led(uint8_t led)
 {
 	uint32_t value;
@@ -100,7 +99,6 @@ void gpio_led(uint8_t led)
 
 	writel(value, &gpio->reg);
 }
-#endif
 
 extern void delay(unsigned int ms);
 void gpio_reset_asic()

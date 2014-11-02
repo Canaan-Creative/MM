@@ -23,8 +23,6 @@ int read_power_good();
 
 int clko_init(uint32_t value);
 
-#ifdef DEBUG_VERBOSE
 void gpio_led(uint8_t value);
-#endif
 
 #endif	/* __TIMER_H__ */

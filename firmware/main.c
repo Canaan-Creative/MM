@@ -473,6 +473,7 @@ static int get_pkg(struct mm_work *mw)
 					memcpy(&g_module_id, g_pkg + 6 + 28, 4);
 					debug32("ID: %d\n", g_module_id);
 					iic_addr_set(g_module_id);
+					gpio_led(g_module_id);
 				}
 
 				break;
