@@ -522,6 +522,7 @@ int main(int argv, char **argc)
 
 	iic_init();
 	iic_addr_set(g_module_id);
+	gpio_led(g_module_id);
 
 	api_initial(MINER_COUNT, ASIC_COUNT, SPI_SPEED);
 
@@ -573,13 +574,15 @@ int main(int argv, char **argc)
 			g_new_stratum = 0;
 			g_local_work = 0;
 			g_hw_work = 0;
-			g_module_id = AVA4_MODULE_BROADCAST;
 			ret_consume = ret_produce;
 
 			adjust_fan(0x1ff);
 			set_voltage(ASIC_0V);
 
-			iic_addr_set(AVA4_MODULE_BROADCAST);
+			g_module_id = AVA4_MODULE_BROADCAST;
+			gpio_led(g_module_id);
+
+			iic_addr_set(g_module_id);
 			iic_rx_reset();
 			iic_tx_reset();
 
