@@ -565,9 +565,10 @@ int main(int argv, char **argc)
 	set_voltage(ASIC_0V);
 	g_new_stratum = 0;
 	while (1) {
+		wdg_feed((CPU_FREQUENCY / 1000) * 2);
+
 		get_pkg(&mm_work);
 
-		wdg_feed((CPU_FREQUENCY / 1000) * 2);
 		if ((!timer_read(0) && g_new_stratum) ||
 		    read_temp() >= IDLE_TEMP) {
 			g_new_stratum = 0;
