@@ -514,7 +514,6 @@ int main(int argv, char **argc)
 
 	adjust_fan(0x1ff);		/* Set the fan to 50% */
 
-	wdg_init(1);
 	wdg_feed((CPU_FREQUENCY / 1000) * 2); /* Configure the wdg to ~2 second, or it will reset FPGA */
 
 	irq_setmask(0);

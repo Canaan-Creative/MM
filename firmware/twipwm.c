@@ -85,7 +85,7 @@ void wdg_init(int enable)
 
 void wdg_feed(uint32_t value)
 {
-	writel(((value & 0x3ffffff) << 1), &tp->wdg);
+	writel(((value & 0x3ffffff) << 1) | 1, &tp->wdg);
 }
 
 void reset()
