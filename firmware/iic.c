@@ -109,6 +109,9 @@ uint32_t iic_write(uint8_t *data, uint16_t len_byte, int block)
 	uint32_t len_word, tmp, i, j = 0;
 	uint32_t *pdat = (uint32_t *)data;
 
+	tmp = readl(&iic->ctrl);
+	writel((tmp & (LM32_IIC_CR_RSTOP | LM32_IIC_CR_RERR)), &iic->ctrl);
+
 	len_word = len_byte >> 2;
 	for (i = 0; i < len_word; i++)
 		writel(pdat[i], &iic->tx);
@@ -128,7 +131,7 @@ uint32_t iic_write(uint8_t *data, uint16_t len_byte, int block)
 	writel((tmp & (LM32_IIC_CR_RSTOP | LM32_IIC_CR_RERR)), &iic->ctrl);
 
 	if (tmp & LM32_IIC_CR_RERR) {
-		debug32("D: IIC_CR_RERR\n");
+		debug32("D: IIC CR error\n");
 		return 0;
 	}
 
