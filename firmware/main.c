@@ -35,7 +35,7 @@
 
 static uint8_t g_pkg[AVA4_P_COUNT];
 static uint8_t g_act[AVA4_P_COUNT];
-static uint8_t g_dna[8];
+static uint8_t g_dna[AVA4_MM_DNA_LEN];
 static uint8_t g_led_blinking = 0;
 static int g_module_id = AVA4_MODULE_BROADCAST;
 static int g_new_stratum = 0;
@@ -158,8 +158,8 @@ static void encode_pkg(uint8_t *p, int type, uint8_t *buf, unsigned int len)
 
 	switch(type) {
 	case AVA4_P_ACKDETECT:
-		memcpy(data, g_dna, 8); /* MM_DNA */
-		memcpy(data + 8, buf, len); /* MM_VERSION */
+		memcpy(data, g_dna, AVA4_MM_DNA_LEN); /* MM_DNA */
+		memcpy(data + AVA4_MM_DNA_LEN, buf, len); /* MM_VERSION */
 		break;
 	case AVA4_P_NONCE:
 	case AVA4_P_TEST_RET:
@@ -469,7 +469,7 @@ static int get_pkg(struct mm_work *mw)
 				if (g_module_id != AVA4_MODULE_BROADCAST)
 					break;
 
-				if (send_pkg(AVA4_P_ACKDETECT, (uint8_t *)MM_VERSION, MM_VERSION_LEN, 1)) {
+				if (send_pkg(AVA4_P_ACKDETECT, (uint8_t *)MM_VERSION, AVA4_MM_VER_LEN, 1)) {
 					memcpy(&g_module_id, g_pkg + 6 + 28, 4);
 					debug32("ID: %d\n", g_module_id);
 					iic_addr_set(g_module_id);

@@ -10,7 +10,8 @@
 #define _PROTOCOL_H_
 
 /* Avalon4 protocol package type */
-#define MM_VERSION_LEN	15
+#define AVA4_MM_VER_LEN	15
+#define AVA4_MM_DNA_LEN	8
 #define AVA4_H1	'A'
 #define AVA4_H2	'V'
 
