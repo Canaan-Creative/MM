@@ -11,9 +11,11 @@
 #include "intr.h"
 #include "system_config.h"
 
-#include "uart.h"
 #include "iic.h"
 #include "timer.h"
+#ifdef DEBUG
+#include "uart.h"
+#endif
 
 void isr(void)
 {
@@ -24,12 +26,14 @@ void isr(void)
 	if (irqs & IRQ_IIC)
 		iic_isr();
 
-	if (irqs & IRQ_UART)
-		uart_isr();
-
 	if (irqs & IRQ_TIMER0)
 		timer0_isr();
 
 	if (irqs & IRQ_TIMER1)
 		timer1_isr();
+
+#ifdef DEBUG
+	if (irqs & IRQ_UART)
+		uart_isr();
+#endif
 }

@@ -13,10 +13,6 @@ GIT_STATUS:=$(shell ([ -z "`git status -s -uno`" ] && echo 0) || echo +)
 
 CFLAGS += -DMM_VERSION='"401410-$(GIT_VERSION)$(GIT_STATUS)"'
 
-ifeq ($(DEBUG),1)
-	CFLAGS += -DDEBUG
-endif
-
 -include config.mk
 # ----- Customer ----------------------------------------------------------
 INCLUDES   = -I. -Isdk -Iminilibc
@@ -24,8 +20,7 @@ LDFLAGS    += -nostartfiles -nodefaultlibs -nostdlib -Wl,--gc-sections -Wl,-T,li
 LDLIBS     += -Bminilibc -lminilibc -lgcc
 
 SSRCS      = sdk/crt0ram.S sdk/intr.c
-CSRCS      = main.c uart.c sha256.c twipwm.c miner.c crc16.c shifter.c timer.c iic.c api.c
-OBJS       := $(addsuffix .o,$(basename $(CSRCS) $(SSRCS)))
+CSRCS      = main.c sha256.c twipwm.c miner.c crc16.c shifter.c timer.c iic.c api.c
 
 BATCHFILE	:= $(shell mktemp)
 HARDWARE_NAME	= mm
@@ -34,6 +29,12 @@ PRJ_NAME	= mm
 isedir  ?= /home/Xilinx/14.6/ISE_DS/
 xil_env ?= . $(isedir)/settings$(shell getconf LONG_BIT).sh &>/dev/null
 
+ifeq ($(DEBUG),1)
+	CFLAGS += -DDEBUG
+	CSRCS  += uart.c
+endif
+
+OBJS       := $(addsuffix .o,$(basename $(CSRCS) $(SSRCS)))
 
 .PHONY: all clean distclean load reflash
 

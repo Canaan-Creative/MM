@@ -16,7 +16,6 @@
 #include "defines.h"
 #include "io.h"
 #include "intr.h"
-#include "uart.h"
 #include "iic.h"
 #include "miner.h"
 #include "sha256.h"

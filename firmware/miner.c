@@ -13,7 +13,6 @@
 #include "system_config.h"
 #include "defines.h"
 #include "io.h"
-#include "uart.h"
 #include "miner.h"
 #include "sha256.h"
 #include "twipwm.h"
