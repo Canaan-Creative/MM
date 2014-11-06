@@ -47,4 +47,5 @@ CPU_CONFIG = -mmultiply-enabled -mbarrel-shift-enabled
 CPPFLAGS   += -std=gnu99 -Os -ffunction-sections -ffreestanding \
 		-Wall -Werror \
 		-Wstrict-prototypes \
+		-Wold-style-declaration -Wold-style-definition \
 		$(CPU_CONFIG) $(INCLUDES)

@@ -101,7 +101,7 @@ void gpio_led(uint8_t led)
 }
 
 extern void delay(unsigned int ms);
-void gpio_reset_asic()
+void gpio_reset_asic(void)
 {
 	uint32_t tmp;
 
@@ -118,7 +118,7 @@ void gpio_reset_asic()
 	delay(100);
 }
 
-int read_power_good()
+int read_power_good(void)
 {
 	return (readl(&gpio->reg)) >> 16 & 0x3ff;
 }

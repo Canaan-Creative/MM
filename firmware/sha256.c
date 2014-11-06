@@ -15,7 +15,7 @@
 
 static struct lm32_sha256 *lm_sha256 = (struct lm32_sha256 *)SHA256_BASE;
 
-void sha256_init()
+void sha256_init(void)
 {
 	writel(LM32_SHA256_CMD_RST, &lm_sha256->cmd);
 	writel(LM32_SHA256_CMD_INIT, &lm_sha256->cmd);
