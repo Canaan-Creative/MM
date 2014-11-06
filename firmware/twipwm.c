@@ -48,17 +48,7 @@ static void twi_stop(void)
 		;
 }
 
-void twi_write_2byte(uint16_t buf, uint8_t addr)
-{
-	twi_start();
-	twi_write(addr << 1); /* slave addr */
-	twi_write(0x00);	/* register addr */
-	twi_write(buf);
-	twi_write(buf >> 8);
-	twi_stop();
-}
-
-uint16_t twi_read_2byte(uint8_t addr)
+static uint16_t twi_read_2byte(uint8_t addr)
 {
 	uint32_t tmp;
 	twi_start();
@@ -88,12 +78,7 @@ void wdg_feed(uint32_t value)
 	writel(((value & 0x7fffffff) << 1) | 1, &tp->wdg);
 }
 
-void reset()
-{
-	wdg_feed(8);
-}
-
-uint32_t read_fan()
+uint32_t read_fan(void)
 {
 	return readl(&tp->fan0) * 30;
 }
@@ -114,7 +99,7 @@ void adjust_fan(uint32_t pwm)
 	write_pwm(value);
 }
 
-uint16_t read_temp()
+uint16_t read_temp(void)
 {
 	return (twi_read_2byte(LM32_TWI_REG_TEMP1) >> 4) / 16;
 }

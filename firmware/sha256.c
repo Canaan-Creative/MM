@@ -113,7 +113,7 @@ void sha256(const uint8_t *input, unsigned int count, uint8_t *state)
 	sha256_final(state);
 }
 
-static void sha256_double()
+static void sha256_double(void)
 {
 	writel(LM32_SHA256_CMD_DBL, &lm_sha256->cmd);
 	while (!(readl(&lm_sha256->cmd) & LM32_SHA256_CMD_DONE))

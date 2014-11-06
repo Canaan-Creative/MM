@@ -17,11 +17,10 @@ void write_pwm(uint8_t value);
 void wdg_init(int enable);
 void wdg_feed(uint32_t value);
 
-uint32_t read_fan();
+uint32_t read_fan(void);
 
-uint16_t read_temp();
+uint16_t read_temp(void);
 
 void adjust_fan(uint32_t pwm);
-void reset();
 
 #endif	/* _TWI_H_ */

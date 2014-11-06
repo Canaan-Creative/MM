@@ -206,7 +206,7 @@ uint32_t send_pkg(int type, uint8_t *buf, uint32_t len, int block)
 	return len;
 }
 
-static void polling()
+static void polling(void)
 {
 	uint8_t *data;
 
@@ -505,6 +505,7 @@ static inline void led(void)
 	else
 		led_ctrl(LED_ERROR_OFF);
 }
+
 
 int main(int argv, char **argc)
 {

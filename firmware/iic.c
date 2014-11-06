@@ -143,7 +143,7 @@ int iic_read_nonblock(void)
 	return (rx_consume != rx_produce);
 }
 
-uint32_t iic_read()
+uint32_t iic_read(void)
 {
 	uint32_t d;
 
