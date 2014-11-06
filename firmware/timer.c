@@ -7,9 +7,10 @@
  */
 
 #include "system_config.h"
+#include "defines.h"
+#include "intr.h"
 #include "io.h"
 #include "timer.h"
-#include "intr.h"
 
 static struct lm32_timer *tim = (struct lm32_timer *)TIMER_BASE;
 static struct lm32_gpio *gpio = (struct lm32_gpio *)GPIO_BASE;
@@ -60,7 +61,7 @@ uint32_t timer_read(unsigned char timer)
 	return tmp;
 }
 
-void timer_int_clean(unsigned char timer)
+static void timer_int_clean(unsigned char timer)
 {
 	unsigned int tmp;
 	if (timer == 0) {
@@ -100,7 +101,6 @@ void gpio_led(uint8_t led)
 	writel(value, &gpio->reg);
 }
 
-extern void delay(unsigned int ms);
 void gpio_reset_asic(void)
 {
 	uint32_t tmp;

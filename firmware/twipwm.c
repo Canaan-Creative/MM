@@ -11,6 +11,7 @@
 #include "system_config.h"
 #include "defines.h"
 #include "io.h"
+#include "twipwm.h"
 
 static struct lm32_twipwm *tp = (struct lm32_twipwm *)TWIPWM_BASE;
 
@@ -63,14 +64,9 @@ static uint16_t twi_read_2byte(uint8_t addr)
 	return (tmp & 0xffff);
 }
 
-void write_pwm(uint32_t value)
+static void write_pwm(uint32_t value)
 {
 	writel(value, &tp->pwm);
-}
-
-void wdg_init(int enable)
-{
-	writel(enable, &tp->wdg);
 }
 
 void wdg_feed(uint32_t value)

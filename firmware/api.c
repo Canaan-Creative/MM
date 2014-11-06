@@ -213,7 +213,6 @@ static uint32_t api_verify_nonce(uint32_t ch_num, uint32_t chip_num,
 	return pass_cal_num;
 }
 
-extern void delay(uint32_t ms);
 static inline void api_flush(void)
 {	unsigned int tmp;
 	while (1) {
@@ -440,7 +439,6 @@ uint32_t get_asic_freq(void)
 	return g_asic_freq_avg;
 }
 
-extern uint32_t send_pkg(int type, uint8_t *buf, uint32_t len, int block);
 int api_asic_testcores(uint32_t cal_core_num, uint32_t ret)
 {
 	int i = 0, j = 0;

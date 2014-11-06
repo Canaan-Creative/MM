@@ -295,7 +295,7 @@ static int decode_pkg(uint8_t *p, struct mm_work *mw)
 #ifdef DEBUG_VERBOSE
 		debug32("ID: %d-%d\n", g_module_id, tmp);
 #endif
-		if (unlikely(g_module_id != tmp))
+		if (g_module_id != tmp)
 			break;
 
 		polling();

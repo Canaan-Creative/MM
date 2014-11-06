@@ -13,6 +13,7 @@
 #include "defines.h"
 #include "intr.h"
 #include "io.h"
+#include "iic.h"
 
 #define IIC_RINGBUFFER_SIZE_RX 128
 #define IIC_RINGBUFFER_MASK_RX (IIC_RINGBUFFER_SIZE_RX-1)

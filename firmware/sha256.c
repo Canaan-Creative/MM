@@ -83,7 +83,7 @@ void sha256_update(const uint8_t *input, unsigned int count)
 	}
 }
 
-void sha256_precalc_final(uint8_t *state)
+static void sha256_precalc_final(uint8_t *state)
 {
 	int i;
 	uint32_t tmp;

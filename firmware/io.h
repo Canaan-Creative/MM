@@ -31,9 +31,6 @@
 #define writew(b,addr) (*(volatile unsigned short *)(addr)) = (b)
 #define writel(b,addr) (*(volatile unsigned int *)(addr)) = (b)
 
-#define likely(x)	(x)
-#define unlikely(x)	(x)
-
 #define ARRAY_SIZE(x)	(sizeof(x) / sizeof((x)[0]))
 
 #endif /* _IO_H_ */

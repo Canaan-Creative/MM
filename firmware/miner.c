@@ -194,7 +194,7 @@ void miner_gen_nonce2_work(struct mm_work *mw, uint32_t nonce2, struct work *wor
 	work->memo = mw->job_id | mw->pool_no;
 }
 
-int fulltest(const unsigned char *hash, const unsigned char *target)
+static int fulltest(const unsigned char *hash, const unsigned char *target)
 {
 	uint32_t *hash32 = (uint32_t *)hash;
 	uint32_t *target32 = (uint32_t *)target;

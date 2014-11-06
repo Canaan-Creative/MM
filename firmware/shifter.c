@@ -7,12 +7,12 @@
  */
 
 #include "system_config.h"
+#include "defines.h"
 #include "io.h"
 #include "shifter.h"
 #include "timer.h"
 
 /* NOTICE: Always delay 100ms after set voltage */
-extern void delay(unsigned int ms);
 #define VOLTAGE_DELAY	100
 
 static struct lm32_shifter *sft0 = (struct lm32_shifter *)SHIFTER_BASE0;
@@ -79,12 +79,12 @@ uint32_t set_voltage(uint32_t value)
 	return (g_voltage != ASIC_0V);
 }
 
-uint32_t get_voltage()
+uint32_t get_voltage(void)
 {
 	return g_voltage;
 }
 
-uint32_t get_front_led()
+uint32_t get_front_led(void)
 {
 	return g_led;
 }
