@@ -149,7 +149,7 @@ static void encode_pkg(uint8_t *p, int type, uint8_t *buf, unsigned int len)
 	p[1] = AVA4_H2;
 
 	p[2] = type;
-	/* FIXME: DNA? p[3] = g_dna[AVA4_MM_DNA_LEN-1]; */
+	p[3] = g_dna[AVA4_MM_DNA_LEN-1];
 	p[4] = 1;
 	p[5] = 1;
 
