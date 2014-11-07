@@ -227,9 +227,10 @@ static int decode_pkg(uint8_t *p, struct mm_work *mw)
 {
 	unsigned int expected_crc;
 	unsigned int actual_crc;
-	int idx, cnt;
+	int idx, cnt, poweron = 0;
 	uint32_t tmp;
 	uint32_t freq[3];
+	static uint32_t freq_value;
 
 	uint8_t *data = p + 6;
 
@@ -315,8 +316,12 @@ static int decode_pkg(uint8_t *p, struct mm_work *mw)
 #ifdef DEBUG_VERBOSE
 		debug32(" V: %08x", tmp);
 #endif
-		if (set_voltage(tmp)) {
-			memcpy(&tmp, data + 8, 4);
+		poweron = set_voltage(tmp);
+
+		memcpy(&tmp, data + 8, 4);
+		if (poweron || tmp != freq_value) {
+			freq_value = tmp;
+
 			freq[0] = (tmp & 0x3ff00000) >> 20;
 			freq[1] = (tmp & 0xffc00) >> 10;
 			freq[2] = tmp & 0x3ff;

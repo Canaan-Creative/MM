@@ -109,13 +109,13 @@ void gpio_reset_asic(void)
 
 	tmp = readl(&gpio->reg);
 	writel(tmp | 0xc, &gpio->reg);
-	delay(100);
+	delay(10);
 
 	writel(tmp & 0xfffffff3, &gpio->reg);
-	delay(100);
+	delay(10);
 
 	writel(tmp | 0xc, &gpio->reg);
-	delay(100);
+	delay(10);
 }
 
 int read_power_good(void)
