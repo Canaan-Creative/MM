@@ -87,8 +87,7 @@ void adjust_fan(uint32_t pwm)
 		return;
 
 	value = pwm;
-	if (value < 0)
-		value = 0;
+
 	if (value > 0x3ff)
 		value = 0x3ff;
 

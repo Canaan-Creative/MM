@@ -153,8 +153,6 @@ static void encode_pkg(uint8_t *p, int type, uint8_t *buf, unsigned int len)
 	p[5] = 1;
 
 	data = p + 6;
-	memcpy(data + 28, &g_module_id, 4); /* Attach the module_id at end */
-
 	switch(type) {
 	case AVA4_P_ACKDETECT:
 		memcpy(data, g_dna, AVA4_MM_DNA_LEN); /* MM_DNA */
@@ -219,7 +217,7 @@ static void polling(void)
 
 	data = ret_buf[ret_consume];
 	ret_consume = (ret_consume + 1) & RET_RINGBUFFER_MASK_RX;
-	send_pkg(AVA4_P_NONCE, data, AVA4_P_DATA_LEN - 4, 0);
+	send_pkg(AVA4_P_NONCE, data, AVA4_P_DATA_LEN, 0);
 	return;
 }
 
@@ -256,6 +254,7 @@ static int decode_pkg(uint8_t *p, struct mm_work *mw)
 	case AVA4_P_DETECT:
 	case AVA4_P_REQUIRE:
 		break;
+
 	case AVA4_P_STATIC:
 		g_new_stratum = 0;
 
@@ -290,18 +289,8 @@ static int decode_pkg(uint8_t *p, struct mm_work *mw)
 	case AVA4_P_HEADER:
 		memcpy(mw->header + (idx - 1) * AVA4_P_DATA_LEN, data, AVA4_P_DATA_LEN);
 		break;
-	case AVA4_P_POLLING:
-		memcpy(&tmp, data + 28, 4);
-#ifdef DEBUG_VERBOSE
-		debug32("ID: %d-%d\n", g_module_id, tmp);
-#endif
-		if (g_module_id != tmp)
-			break;
-
-		polling();
-
-		memcpy(&tmp, data, 4);
-		g_led_blinking = tmp;
+	case AVA4_P_TARGET:
+		memcpy(mw->target, data, AVA4_P_DATA_LEN);
 		break;
 	case AVA4_P_SET:
 		if (read_temp() >= IDLE_TEMP)
@@ -339,14 +328,14 @@ static int decode_pkg(uint8_t *p, struct mm_work *mw)
 #endif
 		g_new_stratum = 1;
 		break;
-	case AVA4_P_TARGET:
-		memcpy(mw->target, data, AVA4_P_DATA_LEN);
+
+	case AVA4_P_POLLING:
+		polling();
+
+		memcpy(&tmp, data, 4);
+		g_led_blinking = tmp;
 		break;
 	case AVA4_P_TEST:
-		memcpy(&tmp, data + 28, 4);
-		if (g_module_id != tmp)
-			break;
-
 		led_ctrl(LED_ERROR_ON);
 
 		memcpy(&tmp, data + 4, 4);
@@ -446,7 +435,7 @@ static int get_pkg(struct mm_work *mw)
 {
 	static int start = 0, count = 0;
 
-	uint32_t d, tmp;
+	uint32_t d;
 
 	while (1) {
 		if (!iic_read_nonblock() && !start)
@@ -478,11 +467,9 @@ static int get_pkg(struct mm_work *mw)
 					iic_addr_set(g_module_id);
 					gpio_led(g_module_id);
 				}
-
 				break;
 			case AVA4_P_REQUIRE:
-				if (g_module_id == tmp)
-					send_pkg(AVA4_P_STATUS, NULL, 0, 0);
+				send_pkg(AVA4_P_STATUS, NULL, 0, 0);
 				break;
 			default:
 				break;
