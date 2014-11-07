@@ -593,7 +593,7 @@ int main(int argv, char **argc)
 
 		led();
 
-		if (api_get_tx_cnt() <= 23 * 5) {
+		if (api_get_tx_cnt() <= 23 * 10) {
 			miner_gen_nonce2_work(&mm_work, mm_work.nonce2++, &work);
 			api_send_work(&work);
 
