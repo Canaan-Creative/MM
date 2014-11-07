@@ -117,24 +117,51 @@ assign PWM = pwm_cnt <= reg_pwm ;
 //-----------------------------------------------------
 reg wdg_en ;
 reg [30:0] wdg_cnt ;
+reg [7:0] WATCH_DOG_f;
+wire WATCH_DOG_tmp;
 
-always @ ( posedge CLK_I or posedge RST_I ) begin
-	if( RST_I )
+always @ (posedge CLK_I) begin
+	WATCH_DOG_f <= {WATCH_DOG_f[6:0], WATCH_DOG_tmp};
+end
+
+always @ ( posedge CLK_I) begin
+	if(WATCH_DOG_tmp)
 		wdg_en <= 1'b0 ;
 	else if( wdg_wr_en )
 		wdg_en <= TWI_DAT_I[0] ;
 end
 
-always @ ( posedge CLK_I or posedge RST_I ) begin
-	if( RST_I )
-		wdg_cnt <= 31'b0 ;
-	else if( wdg_wr_en && (wdg_en || TWI_DAT_I[0]) )
+always @ ( posedge CLK_I) begin
+	if(wdg_wr_en && TWI_DAT_I[0])
 		wdg_cnt <= TWI_DAT_I[31:1] ;
 	else if( |wdg_cnt )
 		wdg_cnt <= wdg_cnt - 1 ;
 end
 
-assign WATCH_DOG = wdg_en && ((wdg_cnt >= 1) && (wdg_cnt <= 10)) ;
+assign WATCH_DOG_tmp = wdg_en && ~|wdg_cnt;
+assign WATCH_DOG = |WATCH_DOG_f;
+
+`ifdef CHIPSCOPE
+wire [35:0] CONTROL;
+wire [79:0] trig = {
+WATCH_DOG_tmp,//74
+WATCH_DOG_f[7:0],//73:66
+wdg_cnt[30:0],//65:35
+wdg_en,//34
+wdg_wr_en,//33
+WATCH_DOG,//32
+TWI_DAT_I[31:0]//31:0
+};
+ila ila(
+/*inout [35 : 0]*/ .CONTROL(CONTROL),
+/*input         */ .CLK    (CLK_I),
+/*input [79 : 0]*/ .TRIG0  (trig)
+);
+
+icon icon(
+/*inout [35 : 0]*/ .CONTROL0(CONTROL)
+);
+`endif
 
 //-----------------------------------------------------
 // SHIFT
@@ -421,7 +448,7 @@ always @ ( posedge CLK_I ) begin
 end
 
 assign TWI_DAT_O = i2cr_rd_en_r ? {24'b0,reg_i2cr}     :
-		   wdg_rd_en_r  ? {5'b0,wdg_cnt,wdg_en}:
+		   wdg_rd_en_r  ? {wdg_cnt,wdg_en}     :
 		   sft_rd_en_r  ? reg_sft              :
 		   fan0_rd_en_r ? {6'b0,reg_fan0}      :
 		   fan1_rd_en_r ? {6'b0,reg_fan1}      :
