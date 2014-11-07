@@ -213,8 +213,7 @@ static uint32_t api_verify_nonce(uint32_t ch_num, uint32_t chip_num,
 	return pass_cal_num;
 }
 
-extern void delay(uint32_t ms);
-static inline void api_flush()
+static inline void api_flush(void)
 {	unsigned int tmp;
 	while (1) {
 		tmp = readl(&api->state);
@@ -264,12 +263,12 @@ void api_set_timeout(uint32_t timeout)
 	writel(timeout, &api->timeout);
 }
 
-uint32_t api_get_tx_cnt()
+uint32_t api_get_tx_cnt(void)
 {
 	return (readl(&api->state) >> 2) & 0x3ff;
 }
 
-uint32_t api_get_rx_cnt()
+uint32_t api_get_rx_cnt(void)
 {
 	return (readl(&api->state) >> 20) & 0x3ff;
 }
@@ -408,7 +407,7 @@ void set_asic_freq(uint32_t value[])
 
 	/* The timeout value:
 	 * 2^32÷(0.1GHz×1000000000×3968÷65)×100000000 = 0x4318c63 */
-	api_set_timeout(ASIC_TIMEOUT_100M / max_freq * 50);
+	api_set_timeout((ASIC_TIMEOUT_100M / max_freq) * 90);
 	api_flush();
 
 	for (j = 0; j < 3; j++) {
@@ -435,12 +434,11 @@ void set_asic_freq(uint32_t value[])
 	g_asic_freq_avg = (g_asic_freq[0] + g_asic_freq[1] * 4 + g_asic_freq[2] * 4) / 9;
 }
 
-uint32_t get_asic_freq()
+uint32_t get_asic_freq(void)
 {
 	return g_asic_freq_avg;
 }
 
-extern uint32_t send_pkg(int type, uint8_t *buf, uint32_t len, int block);
 int api_asic_testcores(uint32_t cal_core_num, uint32_t ret)
 {
 	int i = 0, j = 0;

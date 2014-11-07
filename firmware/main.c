@@ -16,7 +16,6 @@
 #include "defines.h"
 #include "io.h"
 #include "intr.h"
-#include "uart.h"
 #include "iic.h"
 #include "miner.h"
 #include "sha256.h"
@@ -206,7 +205,7 @@ uint32_t send_pkg(int type, uint8_t *buf, uint32_t len, int block)
 	return len;
 }
 
-static void polling()
+static void polling(void)
 {
 	uint8_t *data;
 
@@ -295,7 +294,7 @@ static int decode_pkg(uint8_t *p, struct mm_work *mw)
 #ifdef DEBUG_VERBOSE
 		debug32("ID: %d-%d\n", g_module_id, tmp);
 #endif
-		if (unlikely(g_module_id != tmp))
+		if (g_module_id != tmp)
 			break;
 
 		polling();
@@ -403,7 +402,6 @@ static int read_result(struct mm_work *mw, struct result *ret)
 			continue;
 
 		last_nonce0 = nonce0;
-		g_local_work++;
 
 		memcpy(&nonce2, api_ret + 4, 4);
 		memcpy(&memo, api_ret, 4);
@@ -411,8 +409,9 @@ static int read_result(struct mm_work *mw, struct result *ret)
 		ntime = (memo & 0xff00) >> 8;
 
 		if (job_id == mw->job_id) {
-			n = test_nonce(mw, nonce2, nonce0, ntime);
+			g_local_work++;
 
+			n = test_nonce(mw, nonce2, nonce0, ntime);
 			if (n == NONCE_HW) {
 				g_hw_work++;
 				continue;
@@ -435,7 +434,6 @@ static int read_result(struct mm_work *mw, struct result *ret)
 			memcpy(data + 20, &job_id, 4); /* Attach the job_id */
 		}
 	}
-
 	return 1;
 }
 
@@ -505,6 +503,7 @@ static inline void led(void)
 	else
 		led_ctrl(LED_ERROR_OFF);
 }
+
 
 int main(int argv, char **argc)
 {
@@ -594,7 +593,7 @@ int main(int argv, char **argc)
 
 		led();
 
-		if (api_get_tx_cnt() <= (23 * 8)) {
+		if (api_get_tx_cnt() <= 23 * 5) {
 			miner_gen_nonce2_work(&mm_work, mm_work.nonce2++, &work);
 			api_send_work(&work);
 

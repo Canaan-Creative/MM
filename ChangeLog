@@ -1,4 +1,7 @@
-Version 20140122
-* First working stable release
+Version 401410-223a1c50
+* Update idle timeout from 5s to 3s
+* Display ID on controller LEDs for debug
+* Fix the automatic module detect
+* Disable watch dog
+* IDLE check when both (new stratum) and (module id) was configured
 * Direct using stratum message. generate works inside FPGA
-* Documents: http://downloads.canaan-creative.com/software/mm/MM_SOC_Specification.pdf

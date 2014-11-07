@@ -13,6 +13,7 @@
 #include "defines.h"
 #include "intr.h"
 #include "io.h"
+#include "iic.h"
 
 #define IIC_RINGBUFFER_SIZE_RX 128
 #define IIC_RINGBUFFER_MASK_RX (IIC_RINGBUFFER_SIZE_RX-1)
@@ -143,7 +144,7 @@ int iic_read_nonblock(void)
 	return (rx_consume != rx_produce);
 }
 
-uint32_t iic_read()
+uint32_t iic_read(void)
 {
 	uint32_t d;
 
