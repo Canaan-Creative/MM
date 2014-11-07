@@ -149,12 +149,14 @@ static void encode_pkg(uint8_t *p, int type, uint8_t *buf, unsigned int len)
 	p[1] = AVA4_H2;
 
 	p[2] = type;
+	/* FIXME: DNA? p[3] = g_dna[AVA4_MM_DNA_LEN-1]; */
 	p[4] = 1;
 	p[5] = 1;
 
 	data = p + 6;
 	switch(type) {
 	case AVA4_P_ACKDETECT:
+		p[3] = 0;
 		memcpy(data, g_dna, AVA4_MM_DNA_LEN); /* MM_DNA */
 		memcpy(data + AVA4_MM_DNA_LEN, buf, len); /* MM_VERSION */
 		break;
@@ -293,9 +295,6 @@ static int decode_pkg(uint8_t *p, struct mm_work *mw)
 		memcpy(mw->target, data, AVA4_P_DATA_LEN);
 		break;
 	case AVA4_P_SET:
-		if (read_temp() >= IDLE_TEMP)
-			break;
-
 		memcpy(&tmp, data, 4);
 #ifdef DEBUG_VERBOSE
 		debug32("F: %08x", tmp);
@@ -326,6 +325,11 @@ static int decode_pkg(uint8_t *p, struct mm_work *mw)
 #ifdef DEBUG_VERBOSE
 		debug32(" N2: %08x(%08x-%08x|%d)\n", mw->nonce2, g_nonce2_offset, g_nonce2_range, g_module_id);
 #endif
+		break;
+	case AVA4_P_FINISH:
+		if (read_temp() >= IDLE_TEMP)
+			break;
+
 		g_new_stratum = 1;
 		break;
 
@@ -514,11 +518,11 @@ int main(int argv, char **argc)
 
 	api_initial(MINER_COUNT, ASIC_COUNT, SPI_SPEED);
 
-	debug32("%d:MM-%s,%dC\n", g_module_id, MM_VERSION, read_temp());
+	debug32("%d:MM-%s,%dC %dRPM\n", g_module_id, MM_VERSION, read_temp(), read_fan());
 
 	/* Dump the FPGA DNA */
 	iic_dna_read(g_dna);
-	hexdump(g_dna, 8);
+	hexdump(g_dna, AVA4_MM_DNA_LEN);
 #ifdef DEBUG_IIC_TEST
 	extern void iic_test(void);
 	iic_test();
