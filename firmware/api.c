@@ -407,7 +407,7 @@ void set_asic_freq(uint32_t value[])
 
 	/* The timeout value:
 	 * 2^32÷(0.1GHz×1000000000×3968÷65)×100000000 = 0x4318c63 */
-	api_set_timeout((ASIC_TIMEOUT_100M / max_freq) * 95);
+	api_set_timeout((ASIC_TIMEOUT_100M / max_freq) * 90);
 	api_flush();
 
 	for (j = 0; j < 3; j++) {
