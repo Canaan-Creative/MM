@@ -562,6 +562,8 @@ int main(int argv, char **argc)
 	set_voltage(ASIC_0V);
 	g_new_stratum = 0;
 	while (1) {
+		wdg_feed(CPU_FREQUENCY * IDLE_TIME);
+
 		get_pkg(&mm_work);
 
 		if ((!timer_read(0) && (g_new_stratum || g_module_id)) ||
