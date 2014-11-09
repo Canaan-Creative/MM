@@ -340,8 +340,8 @@ static int decode_pkg(uint8_t *p, struct mm_work *mw)
 		g_led_blinking = tmp;
 
 		memcpy(&tmp, data + 4, 4);
-		if (tmp)
-			adjust_fan(tmp);
+		if (tmp & 0x80000000)
+			adjust_fan(tmp & 0x7fffffff);
 		break;
 	case AVA4_P_TEST:
 		led_ctrl(LED_ERROR_ON);
