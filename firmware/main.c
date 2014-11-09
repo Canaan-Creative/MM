@@ -295,15 +295,8 @@ static inline int decode_pkg(uint8_t *p, struct mm_work *mw)
 		memcpy(mw->target, data, AVA4_P_DATA_LEN);
 		break;
 	case AVA4_P_SET:
-		memcpy(&tmp, data, 4);
-#ifdef DEBUG_VERBOSE
-		debug32("F: %08x", tmp);
-#endif
-		adjust_fan(tmp);
 		memcpy(&tmp, data + 4, 4);
-#ifdef DEBUG_VERBOSE
-		debug32(" V: %08x", tmp);
-#endif
+		debug32("V: %08x,", tmp);
 		poweron = set_voltage(tmp);
 
 		memcpy(&tmp, data + 8, 4);
@@ -313,18 +306,14 @@ static inline int decode_pkg(uint8_t *p, struct mm_work *mw)
 			freq[0] = (tmp & 0x3ff00000) >> 20;
 			freq[1] = (tmp & 0xffc00) >> 10;
 			freq[2] = tmp & 0x3ff;
-#ifdef DEBUG_VERBOSE
-			debug32(" F: %08x", tmp);
-#endif
+			debug32("F: %d|%08x,", poweron, tmp);
 			set_asic_freq(freq);
 		}
 
 		memcpy(&g_nonce2_offset, data + 12, 4);
 		memcpy(&g_nonce2_range, data + 16, 4);
 		mw->nonce2 = g_nonce2_offset + (g_nonce2_range / AVA4_DEFAULT_MODULES) * g_module_id;
-#ifdef DEBUG_VERBOSE
-		debug32(" N2: %08x(%08x-%08x|%d)\n", mw->nonce2, g_nonce2_offset, g_nonce2_range, g_module_id);
-#endif
+		debug32("[%d] N2: %08x(%08x-%08x)\n", g_module_id, mw->nonce2, g_nonce2_offset, g_nonce2_range);
 		break;
 	case AVA4_P_FINISH:
 		if (read_temp() >= IDLE_TEMP)
