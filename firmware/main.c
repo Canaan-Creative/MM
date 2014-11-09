@@ -205,7 +205,7 @@ uint32_t send_pkg(int type, uint8_t *buf, uint32_t len, int block)
 	return len;
 }
 
-static void polling(void)
+static inline void polling(void)
 {
 	uint8_t *data;
 
@@ -223,7 +223,7 @@ static void polling(void)
 	return;
 }
 
-static int decode_pkg(uint8_t *p, struct mm_work *mw)
+static inline int decode_pkg(uint8_t *p, struct mm_work *mw)
 {
 	unsigned int expected_crc;
 	unsigned int actual_crc;
