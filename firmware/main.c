@@ -32,6 +32,12 @@
 #define IDLE_TEMP	65	/* Degree (C) */
 #define TEST_CORE_COUNT	64	/* 4 * 16 */
 
+#define FAN_00		0x3ff
+#define FAN_10		0x399
+#define FAN_20		0x333
+#define FAN_50		0x1ff
+#define FAN_100		0x000
+
 static uint8_t g_pkg[AVA4_P_COUNT];
 static uint8_t g_act[AVA4_P_COUNT];
 static uint8_t g_dna[AVA4_MM_DNA_LEN];
@@ -334,6 +340,7 @@ static inline int decode_pkg(uint8_t *p, struct mm_work *mw)
 		break;
 	case AVA4_P_TEST:
 		led_ctrl(LED_ERROR_ON);
+		adjust_fan(FAN_50);
 
 		memcpy(&tmp, data + 4, 4);
 		debug32("V: %08x", tmp);
@@ -350,6 +357,7 @@ static inline int decode_pkg(uint8_t *p, struct mm_work *mw)
 			led_ctrl(LED_ERROR_OFF);
 
 		set_voltage(ASIC_0V);
+		adjust_fan(FAN_10);
 		break;
 	default:
 		break;
@@ -500,7 +508,7 @@ int main(int argv, char **argc)
 	struct result result;
 	int i;
 
-	adjust_fan(0x1ff);		/* Set the fan to 50% */
+	adjust_fan(FAN_10);
 
 	irq_setmask(0);
 	irq_enable(1);
@@ -562,7 +570,7 @@ int main(int argv, char **argc)
 			g_hw_work = 0;
 			ret_consume = ret_produce;
 
-			adjust_fan(0x1ff);
+			adjust_fan(FAN_10);
 			set_voltage(ASIC_0V);
 
 			g_module_id = AVA4_MODULE_BROADCAST;
