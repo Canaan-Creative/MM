@@ -607,7 +607,7 @@ int main(int argv, char **argc)
 			miner_gen_nonce2_work(&mm_work, mm_work.nonce2++, &work);
 			api_send_work(&work);
 
-			for (i = 1; i <= g_ntime_offset; i++) {
+			for (i = 1; i < g_ntime_offset; i++) {
 				roll_work(&work, 1); /* Roll the same work */
 				work.memo &= 0xffff00ff;
 				work.memo |= i << 8;
