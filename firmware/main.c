@@ -305,7 +305,7 @@ static inline int decode_pkg(uint8_t *p, struct mm_work *mw)
 		memcpy(&tmp, data, 4);
 		debug32("N: %08x,", tmp);
 		if (tmp & 0x80000000)
-			g_ntime_offset = tmp;
+			g_ntime_offset = (tmp & 0x7fffffff);
 
 		memcpy(&tmp, data + 4, 4);
 		debug32("V: %08x,", tmp);
@@ -602,7 +602,7 @@ int main(int argv, char **argc)
 			miner_gen_nonce2_work(&mm_work, mm_work.nonce2++, &work);
 			api_send_work(&work);
 
-			for (i = 1; i < g_ntime_offset; i++) {
+			for (i = 1; i <= g_ntime_offset; i++) {
 				roll_work(&work, 1); /* Roll the same work */
 				work.memo &= 0xffff00ff;
 				work.memo |= i << 8;
