@@ -3,6 +3,16 @@ MM - Miner Manager
 
 Miner Manager is a bitcoin task generator firmware that fit FPGA and faster mining machine
 
+Downloads
+=========
+* Avalon4 MM firmware: http://downloads.canaan-creative.com/software/avalon4/mm/
+* Avalon3 MM firmware: http://downloads.canaan-creative.com/software/avalon3/mm/
+* Avalon2 MM firmware: http://downloads.canaan-creative.com/software/avalon2/mm/
+
+Datasheet
+=========
+* http://downloads.canaan-creative.com/software/mm/
+
 Main objectives
 =============
 * It is using stratum protocol
