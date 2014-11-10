@@ -574,6 +574,11 @@ int main(int argv, char **argc)
 			g_new_stratum = 0;
 			g_local_work = 0;
 			g_hw_work = 0;
+			g_ntime_offset = ASIC_COUNT;
+
+			g_nonce2_offset = 0;
+			g_nonce2_range = 0xffffffff;
+
 			ret_consume = ret_produce;
 
 			adjust_fan(FAN_10);
