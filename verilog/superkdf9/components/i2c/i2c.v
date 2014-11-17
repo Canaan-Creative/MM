@@ -27,7 +27,10 @@ output                ram_sel   ,//0: iram, 1: dram
 output                ram_wr    ,
 output [15:0]         ram_addr  ,
 output [31:0]         ram_dat_wr,
-input  [31:0]         ram_dat_rd 
+input  [31:0]         ram_dat_rd,
+
+output        led_iic_wr,
+output        led_iic_rd 
 );
 
 assign I2C_RTY_O = 1'b0;
@@ -214,7 +217,10 @@ i2c_phy i2c_phy(
 
 /*input          */ .empty     (empty        ),
 /*output reg     */ .pop       (tx_rd_en     ),
-/*input  [31:0]  */ .din       (rbt_enable ? tx_dat : tx_dout      )
+/*input  [31:0]  */ .din       (rbt_enable ? tx_dat : tx_dout      ),
+
+/*output         */ .led_iic_wr(led_iic_wr),
+/*output         */ .led_iic_rd(led_iic_rd) 
 );
 
 i2c_fifo tx_fifo(

@@ -13,6 +13,7 @@
 #include "defines.h"
 #include "intr.h"
 #include "io.h"
+#include "uart.h"
 
 
 #define UART_RINGBUFFER_SIZE_RX 1024

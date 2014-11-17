@@ -9,18 +9,20 @@
 #ifndef _API_H_
 #define _API_H_
 
-void api_initial(unsigned int ch_num, unsigned int chip_num, unsigned int spi_speed);
+#include <stdint.h>
 
-unsigned int api_get_tx_cnt();
-unsigned int api_get_rx_cnt();
+void api_initial(uint32_t ch_num, uint32_t chip_num, uint32_t spi_speed);
 
-void api_get_rx_fifo(unsigned int *data);
-void api_set_timeout(unsigned int timeout);
+uint32_t api_get_tx_cnt(void);
+uint32_t api_get_rx_cnt(void);
+
+void api_get_rx_fifo(uint32_t *data);
+void api_set_timeout(uint32_t timeout);
 
 int api_send_work(struct work *w);
 
-void set_asic_freq(uint32_t value);
-uint32_t get_asic_freq();
+void set_asic_freq(uint32_t value[]);
+uint32_t get_asic_freq(void);
 
-unsigned int api_asic_test(unsigned int ch_num, unsigned int chip_num, unsigned int cal_core_num, unsigned int add_step, unsigned int *pass_zone_num, int error_buf[MINER_COUNT][ASIC_COUNT]);
+int api_asic_testcores(uint32_t cal_core_num, uint32_t ret);
 #endif	/* _API_H_ */

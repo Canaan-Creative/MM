@@ -7,12 +7,12 @@
  */
 
 #include "system_config.h"
+#include "defines.h"
 #include "io.h"
 #include "shifter.h"
 #include "timer.h"
 
 /* NOTICE: Always delay 100ms after set voltage */
-extern void delay(unsigned int ms);
 #define VOLTAGE_DELAY	100
 
 static struct lm32_shifter *sft0 = (struct lm32_shifter *)SHIFTER_BASE0;
@@ -20,6 +20,7 @@ static struct lm32_shifter *sft1 = (struct lm32_shifter *)SHIFTER_BASE1;
 static struct lm32_shifter *sft2 = (struct lm32_shifter *)SHIFTER_BASE2;
 
 static uint32_t g_voltage = ASIC_0V;
+static int32_t g_led = 0;
 
 static void shift_done(struct lm32_shifter *s)
 {
@@ -30,7 +31,7 @@ static void shift_done(struct lm32_shifter *s)
 		tmp = readl(&s->reg) & 0x8;
 }
 
-static void shift_update(struct lm32_shifter *s, uint32_t value)
+static void shift_update(struct lm32_shifter *s, uint32_t value, int poweron)
 {
 	int i;
 
@@ -60,40 +61,48 @@ static void shift_update(struct lm32_shifter *s, uint32_t value)
 
 	/* Output enable, low active  */
 	writel(0x3, &s->reg);
-	delay(VOLTAGE_DELAY);
+	if (poweron)
+		delay(VOLTAGE_DELAY);
 }
 
 uint32_t set_voltage(uint32_t value)
 {
+	uint32_t ret = 0, poweron = 0;
+
 	if (g_voltage == value)
-		return 0;
+		return ret;
+
+	if (g_voltage == ASIC_0V)
+		poweron = 1;
+
+	shift_update(sft0, value, poweron);
+	shift_update(sft1, value, poweron);
+
+	if (g_voltage == ASIC_0V) {
+		gpio_reset_asic();
+		ret = 1;
+	}
 
 	g_voltage = value;
 
-	shift_update(sft0, g_voltage);
-	shift_update(sft1, g_voltage);
-	if (g_voltage != ASIC_0V)
-		gpio_reset_asic();
-
-	return (g_voltage != ASIC_0V);
+	return ret;
 }
 
-uint32_t get_voltage()
+uint32_t get_voltage(void)
 {
 	return g_voltage;
 }
 
-void front_led(uint8_t data)
+uint32_t get_front_led(void)
 {
-	static uint32_t value = 0;
+	return g_led;
+}
 
-	if (value) {
-		while (!(readl(&sft2->reg) & 0x8))
-			;
+void set_front_led(uint32_t value)
+{
+	if (g_led == value)
+		return;
 
-		writel(0x8, &sft2->reg);
-	} else
-		value = 1;
-
-	writel((data << 8) | 0x1, &sft2->reg);
+	g_led = value;
+	writel(value, &sft2->reg);
 }

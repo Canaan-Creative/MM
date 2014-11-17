@@ -21,7 +21,10 @@ input  [9:0]          rx_fifo_data_count,
 output reg [`API_NUM-1:0] load          ,
 output                sck               ,
 output                mosi              ,
-input  [`API_NUM-1:0] miso
+input  [`API_NUM-1:0] miso              ,
+
+output                led_get_nonce_l   ,
+output                led_get_nonce_h    
 );
 parameter RX_FIFO_DEPTH = 512;//words
 parameter WORK_LEN = 736/32;//words
@@ -129,6 +132,9 @@ end
 assign rx_fifo_wr_en = miso_vld && (work_cnt < RX_BLOCK_LEN) && (cur_state == WORK);
 wire [5:0] ch_cnt_sub1 = ch_cnt - 6'b1;
 assign rx_fifo_din = (work_cnt == (RX_BLOCK_LEN-1)) ? {miso_dat[31:16], 8'h12, 2'b0, ch_cnt_sub1} : miso_dat;
+
+assign led_get_nonce_l = rx_fifo_wr_en && (work_cnt == 2) && (miso_dat != 32'hbeafbeaf) && (ch_cnt_sub1 <= 4);
+assign led_get_nonce_h = rx_fifo_wr_en && (work_cnt == 2) && (miso_dat != 32'hbeafbeaf) && (ch_cnt_sub1 > 4);
 
 always @ (posedge clk) begin
 	if(rst)

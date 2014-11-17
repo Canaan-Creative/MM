@@ -13,6 +13,7 @@
 #include "defines.h"
 #include "intr.h"
 #include "io.h"
+#include "iic.h"
 
 #define IIC_RINGBUFFER_SIZE_RX 128
 #define IIC_RINGBUFFER_MASK_RX (IIC_RINGBUFFER_SIZE_RX-1)
@@ -20,7 +21,6 @@ static unsigned int rx_buf[IIC_RINGBUFFER_SIZE_RX];
 static volatile unsigned int rx_produce;
 static volatile unsigned int rx_consume;
 
-#define IIC_PACKSIZE	40
 static struct lm32_iic *iic = (struct lm32_iic *)IIC_BASE;
 static struct lm32_dna *dna = (struct lm32_dna *)DNA_BASE;
 
@@ -100,10 +100,18 @@ void iic_dna_read(uint8_t *dnadat)
 	}
 }
 
+uint32_t iic_tx_fifo_cnt(void)
+{
+	return (readl(&iic->ctrl) & 0x3fe00) >> 9;
+}
+
 uint32_t iic_write(uint8_t *data, uint16_t len_byte, int block)
 {
 	uint32_t len_word, tmp, i, j = 0;
 	uint32_t *pdat = (uint32_t *)data;
+
+	tmp = readl(&iic->ctrl);
+	writel((tmp & (LM32_IIC_CR_RSTOP | LM32_IIC_CR_RERR)), &iic->ctrl);
 
 	len_word = len_byte >> 2;
 	for (i = 0; i < len_word; i++)
@@ -117,14 +125,14 @@ uint32_t iic_write(uint8_t *data, uint16_t len_byte, int block)
 		tmp = readl(&iic->ctrl);
 
 		if (++j > 0xfffff) {
-			debug32("D: IIC write timeout\n");
+			debug32("D: IIC write timeout: %d\n", iic_tx_fifo_cnt());
 			return 0;
 		}
 	}
 	writel((tmp & (LM32_IIC_CR_RSTOP | LM32_IIC_CR_RERR)), &iic->ctrl);
 
 	if (tmp & LM32_IIC_CR_RERR) {
-		debug32("D: IIC_CR_RERR\n");
+		debug32("D: IIC CR error\n");
 		return 0;
 	}
 
@@ -136,7 +144,7 @@ int iic_read_nonblock(void)
 	return (rx_consume != rx_produce);
 }
 
-uint32_t iic_read()
+uint32_t iic_read(void)
 {
 	uint32_t d;
 
@@ -190,6 +198,8 @@ void iic_tx_reset(void)
 }
 
 #ifdef DEBUG_IIC_TEST
+#define IIC_PACKSIZE	40
+
 #define IIC_ADDR 	0
 #define IIC_LOOP 	1
 void iic_test(void)

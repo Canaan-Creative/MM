@@ -12,7 +12,7 @@
 #define AVA4_DEFAULT_MODULES	4
 
 #define ASIC_FREQUENCY		200 /* MHz */
-#define ASIC_CORETEST_VOLT	0x8100 /* 0.7V */
+#define ASIC_CORETEST_VOLT	0xce00 /* 0.7875V */
 #define ASIC_0V			0x8f00
 #define ASIC_TIMEOUT_100M	0x4113e98
 #define MINER_COUNT		10
@@ -103,7 +103,7 @@ struct lm32_sha256 {
 
 
 /* API */
-#define LM32_API_RX_BUFF_LEN	11
+#define LM32_API_RET_LEN	11
 struct lm32_api {
 	volatile unsigned int tx;
 	volatile unsigned int rx;

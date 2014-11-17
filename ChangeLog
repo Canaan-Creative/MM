@@ -1,4 +1,29 @@
-Version 20140122
-* First working stable release
+Version: 401410-c6ba5180 [20141109]
+* Big Code cleanup, Update MM protocol.
+* Update timeout value to 90% the theory value.
+* Fix the hashrate couning.
+* Fix watchdog issue. enable watchdog.
+* Remove g_module_id check since we use I2C
+* Move adjust fan in polling package.
+* Update MM idle default fan speed to 10%
+
+Version: 401410-fe698050 [20141105]
+* Disable PULLUP on IIC pins, Now 6 Avalon4-1T works fine with IIC serial connection
+* Sync with cgminer defines on MM protocol
+* Update change log README
+* 20141104[edit]
+
+Version 401410-223a1c50 [20141104]
+* Update idle timeout from 5s to 3s
+* Display ID on controller LEDs for debug
+* Fix the automatic module detect
+* Disable watch dog
+* IDLE check when both (new stratum) and (module id) was configured
 * Direct using stratum message. generate works inside FPGA
-* Documents: http://downloads.canaan-creative.com/software/mm/MM_SOC_Specification.pdf
+
+Version 20141031
+* The front led display
+* Power after testing
+
+Version 20141030
+* First version of Avalon4 firmware

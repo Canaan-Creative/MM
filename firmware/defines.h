@@ -9,7 +9,7 @@
 #ifndef _DEFINES_H_
 #define _DEFINES_H_
 
-#define DEBUG
+#include <stdint.h>
 
 #ifdef DEBUG
 void hexdump(const uint8_t *p, unsigned int len);
@@ -25,5 +25,7 @@ char printf_buf32[32];
 #define hexdump(x, y)
 #endif
 
+void delay(unsigned int ms);
+uint32_t send_pkg(int type, uint8_t *buf, uint32_t len, int block);
 
 #endif	/* _DEFINES_H_ */

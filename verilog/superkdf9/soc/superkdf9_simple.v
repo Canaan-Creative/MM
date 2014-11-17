@@ -347,6 +347,8 @@ endmodule
 `include "../components/twi/twi.v"
 `include "../components/twi/shift.v"
 `include "../components/twi/twi_core.v"
+`include "../components/twi/led_ctrl.v"
+`include "../components/twi/led_shift.v"
 
 `include "../components/i2c/i2c.v"
 `include "../components/i2c/i2c_phy.v"
@@ -359,6 +361,7 @@ endmodule
 `include "../components/api/api_phy.v"
 `include "../components/api/api_timer.v"
 
+`include "../components/mboot/mboot.v"
 `ifdef UART_PRO_EN
 `include "../components/uart_pro/async_receiver.v"
 `include "../components/uart_pro/async_transmitter.v"
@@ -420,7 +423,20 @@ module mm (
 , SFTC_SHCP
 , SFTC_DS
 
+, MBOOT_SCL    
+, MBOOT_CS     
+, MBOOT_MOSI   
+, MBOOT_HOLD_N 
+, MBOOT_WP_N   
+, MBOOT_MISO   
+
 );
+output MBOOT_SCL    ;
+output MBOOT_CS     ;
+output MBOOT_MOSI   ;
+output MBOOT_HOLD_N ;
+output MBOOT_WP_N   ;
+input  MBOOT_MISO   ;
 
 output [`API_NUM-1:0] API_LOAD ;
 output [`API_NUM-1:0] API_SCK  ;
@@ -652,6 +668,12 @@ wire        twiTWI_en;
 wire        TWI_SCL_O ;
 wire        TWI_SDA_OEN ;
 
+wire [31:0] mbootMBOOT_DAT_O;
+wire        mbootMBOOT_ACK_O;
+wire        mbootMBOOT_ERR_O;
+wire        mbootMBOOT_RTY_O;
+wire        mbootMBOOT_en;
+
 input       FAN_IN0 ;
 input       FAN_IN1 ;
 // Enable the FT232 and HUB
@@ -730,6 +752,7 @@ uart_debugUART_en ? {4{uart_debugUART_DAT_O[7:0]}} :
 shaSHA_en ? shaSHA_DAT_O :
 alinkALINK_en ? alinkALINK_DAT_O :
 twiTWI_en ? twiTWI_DAT_O :
+mbootMBOOT_en ? mbootMBOOT_DAT_O :
 i2cI2C_en ? i2cI2C_DAT_O :
 0;
 assign SHAREDBUS_ERR_O = SHAREDBUS_CYC_I & !(
@@ -740,6 +763,7 @@ assign SHAREDBUS_ERR_O = SHAREDBUS_CYC_I & !(
 (!shaSHA_ERR_O & shaSHA_en ) |
 (!alinkALINK_ERR_O & alinkALINK_en ) |
 (!twiTWI_ERR_O & twiTWI_en ) |
+(!mbootMBOOT_ERR_O & mbootMBOOT_en ) |
 (!i2cI2C_ERR_O & i2cI2C_en ) |
 0);
 assign SHAREDBUS_ACK_O =
@@ -750,6 +774,7 @@ uart_debugUART_en ? uart_debugUART_ACK_O :
 shaSHA_en ? shaSHA_ACK_O :
 alinkALINK_en ? alinkALINK_ACK_O :
 twiTWI_en ? twiTWI_ACK_O :
+mbootMBOOT_en ? mbootMBOOT_ACK_O :
 i2cI2C_en ? i2cI2C_ACK_O :
 0;
 assign SHAREDBUS_RTY_O =
@@ -760,6 +785,7 @@ uart_debugUART_en ? uart_debugUART_RTY_O :
 shaSHA_en ? shaSHA_RTY_O :
 alinkALINK_en ? alinkALINK_RTY_O :
 twiTWI_en ? twiTWI_RTY_O :
+mbootMBOOT_en ? mbootMBOOT_RTY_O :
 i2cI2C_en ? i2cI2C_RTY_O :
 0;
 
@@ -902,6 +928,8 @@ assign uartUART_en = (SHAREDBUS_ADR_I[31:4] == 28'b1000000000000000000000010000)
 wire uartSOUT_w ;
 assign uartSOUT     = uartSOUT_w ? 1'bz : 1'b0;
 
+wire led_iic_wr, led_iic_rd, led_get_nonce_l, led_get_nonce_h;
+
 `ifdef UART_EN
 uart_core
 #(
@@ -987,9 +1015,10 @@ i2c i2c_slv(
 /*output           */ .ram_wr    (ram_wr                     ),
 /*output [15:0]    */ .ram_addr  (ram_addr                   ),
 /*output [31:0]    */ .ram_dat_wr(ram_dat_wr                 ),
-/*input  [31:0]    */ .ram_dat_rd(ram_dat_rd                 )
+/*input  [31:0]    */ .ram_dat_rd(ram_dat_rd                 ),
 
-
+/*output           */ .led_iic_wr(led_iic_wr),
+/*output           */ .led_iic_rd(led_iic_rd) 
 );
 
 wire [31:0] spiSPI_DAT_I;
@@ -1187,7 +1216,10 @@ api api(
 /*output [`API_NUM-1:0]*/ .load (API_LOAD   ),
 /*output               */ .sck  (api_sck_w  ),
 /*output               */ .mosi (api_mosi_w ),
-/*input  [`API_NUM-1:0]*/ .miso (API_MISO   ) 
+/*input  [`API_NUM-1:0]*/ .miso (API_MISO   ),
+
+/*output               */ .led_get_nonce_l(led_get_nonce_l),
+/*output               */ .led_get_nonce_h(led_get_nonce_h) 
 );
 
 
@@ -1241,8 +1273,38 @@ twi u_twi(
 /*output        */ .TIME1_INT   (TIME1_INT                   ) ,
 /*output        */ .GPIO_OUT    (gpioPIO_OUT                 ) ,
 /*input  [7:0]  */ .GPIO_IN     (gpioPIO_IN                  ) ,
-/*output        */ .clk25m_on   (clk25m_on                   )
+/*output        */ .clk25m_on   (clk25m_on                   ) ,
+
+/*input  [3:0]  */ .led_bling   ({led_iic_rd, led_iic_wr, led_get_nonce_l, led_get_nonce_l})
 ) ;
+
+
+assign mbootMBOOT_en = (SHAREDBUS_ADR_I[31:6] == 26'b10000000000000000000100000);
+mboot mboot(
+/*input            */ .CLK_I       (clk_i                          ),
+/*input            */ .RST_I       (sys_reset                      ),
+
+/*input            */ .MBOOT_CYC_I (SHAREDBUS_CYC_I & mbootMBOOT_en),//NC
+/*input            */ .MBOOT_STB_I (SHAREDBUS_STB_I & mbootMBOOT_en),
+/*input            */ .MBOOT_WE_I  (SHAREDBUS_WE_I                 ),
+/*input            */ .MBOOT_LOCK_I(SHAREDBUS_LOCK_I               ),//NC
+/*input  [2:0]     */ .MBOOT_CTI_I (SHAREDBUS_CTI_I                ),//NC
+/*input  [1:0]     */ .MBOOT_BTE_I (SHAREDBUS_BTE_I                ),//NC
+/*input  [5:0]     */ .MBOOT_ADR_I (SHAREDBUS_ADR_I[5:0]           ),
+/*input  [31:0]    */ .MBOOT_DAT_I (SHAREDBUS_DAT_I[31:0]          ),
+/*input  [3:0]     */ .MBOOT_SEL_I (SHAREDBUS_SEL_I                ),
+/*output reg       */ .MBOOT_ACK_O (mbootMBOOT_ACK_O               ),
+/*output           */ .MBOOT_ERR_O (mbootMBOOT_ERR_O               ),//const 0
+/*output           */ .MBOOT_RTY_O (mbootMBOOT_RTY_O               ),//const 0
+/*output reg [31:0]*/ .MBOOT_DAT_O (mbootMBOOT_DAT_O               ),
+
+/*output reg       */ .MBOOT_SCL   (MBOOT_SCL                      ),
+/*output reg       */ .MBOOT_CS    (MBOOT_CS                       ),
+/*output reg       */ .MBOOT_MOSI  (MBOOT_MOSI                     ),
+/*output reg       */ .MBOOT_HOLD_N(MBOOT_HOLD_N                   ),
+/*output reg       */ .MBOOT_WP_N  (MBOOT_WP_N                     ),
+/*input            */ .MBOOT_MISO  (MBOOT_MISO                     )
+);
 
 assign superkdf9interrupt_n[3] = !uartINTR ;
 assign superkdf9interrupt_n[1] = !spiSPI_INT_O ;

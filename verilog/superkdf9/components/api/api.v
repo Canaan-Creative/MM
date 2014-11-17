@@ -20,7 +20,10 @@ output [31:0]         API_DAT_O ,
 output [`API_NUM-1:0] load      ,
 output                sck       ,
 output                mosi      ,
-input  [`API_NUM-1:0] miso
+input  [`API_NUM-1:0] miso      ,
+
+output                led_get_nonce_l,
+output                led_get_nonce_h 
 );
 parameter WORK_LEN = 736/32;
 parameter RX_FIFO_DEPTH = 512;
@@ -115,7 +118,10 @@ api_ctrl #(.WORK_LEN(WORK_LEN), .RX_FIFO_DEPTH(RX_FIFO_DEPTH)) api_ctrl(
 /*output [`API_NUM-1:0]*/ .load              (load              ),
 /*output               */ .sck               (sck               ),
 /*output               */ .mosi              (mosi              ),
-/*input  [`API_NUM-1:0]*/ .miso              (miso              )
+/*input  [`API_NUM-1:0]*/ .miso              (miso              ),
+
+/*output               */ .led_get_nonce_l   (led_get_nonce_l   ),
+/*output               */ .led_get_nonce_h   (led_get_nonce_h   ) 
 );
 
 //512words

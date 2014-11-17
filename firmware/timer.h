@@ -18,10 +18,11 @@ void timer_mask_clean(unsigned char timer);
 void timer_set(unsigned char timer, unsigned char load);
 uint32_t timer_read(unsigned char timer);
 
-void gpio_led(uint8_t value);
-void gpio_reset_asic();
-int read_power_good();
+void gpio_reset_asic(void);
+int read_power_good(void);
 
 int clko_init(uint32_t value);
+
+void gpio_led(uint8_t value);
 
 #endif	/* __TIMER_H__ */

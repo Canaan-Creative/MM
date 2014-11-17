@@ -47,7 +47,9 @@ module twi(
 
     output [15:0]  GPIO_OUT    ,
     input  [15:0]  GPIO_IN     ,
-    output         clk25m_on
+    output         clk25m_on   ,
+
+    input [3:0] led_bling
 );
 
 assign TWI_ERR_O = 1'b0 ;
@@ -75,6 +77,7 @@ wire gpio_wr_en  = TWI_STB_I & TWI_WE_I  & ( TWI_ADR_I == `GPIO) & ~TWI_ACK_O ;
 wire clko_wr_en  = TWI_STB_I & TWI_WE_I  & ( TWI_ADR_I == `CLKO) & ~TWI_ACK_O ;
 wire sftb_wr_en  = TWI_STB_I & TWI_WE_I  & ( TWI_ADR_I == `SFTB) & ~TWI_ACK_O ;
 wire sftc_wr_en  = TWI_STB_I & TWI_WE_I  & ( TWI_ADR_I == `SFTC) & ~TWI_ACK_O ;
+wire brea_wr_en  = TWI_STB_I & TWI_WE_I  & ( TWI_ADR_I == `BREA) & ~TWI_ACK_O ;
 
 wire i2cr_rd_en  = TWI_STB_I & ~TWI_WE_I  & ( TWI_ADR_I == `I2CR) & ~TWI_ACK_O ;
 wire i2rd_rd_en  = TWI_STB_I & ~TWI_WE_I  & ( TWI_ADR_I == `I2RD) & ~TWI_ACK_O ;
@@ -86,6 +89,7 @@ wire time_rd_en  = TWI_STB_I & ~TWI_WE_I  & ( TWI_ADR_I == `TIME) & ~TWI_ACK_O ;
 wire gpio_rd_en  = TWI_STB_I & ~TWI_WE_I  & ( TWI_ADR_I == `GPIO) & ~TWI_ACK_O ;
 wire sftb_rd_en  = TWI_STB_I & ~TWI_WE_I  & ( TWI_ADR_I == `SFTB) & ~TWI_ACK_O ;
 wire sftc_rd_en  = TWI_STB_I & ~TWI_WE_I  & ( TWI_ADR_I == `SFTC) & ~TWI_ACK_O ;
+wire brea_rd_en  = TWI_STB_I & ~TWI_WE_I  & ( TWI_ADR_I == `BREA) & ~TWI_ACK_O ;
 
 //-----------------------------------------------------
 // PWM
@@ -112,25 +116,52 @@ assign PWM = pwm_cnt <= reg_pwm ;
 // WDG
 //-----------------------------------------------------
 reg wdg_en ;
-reg [25:0] wdg_cnt ;
+reg [30:0] wdg_cnt ;
+reg [7:0] WATCH_DOG_f;
+wire WATCH_DOG_tmp;
 
-always @ ( posedge CLK_I or posedge RST_I ) begin
-	if( RST_I )
+always @ (posedge CLK_I) begin
+	WATCH_DOG_f <= {WATCH_DOG_f[6:0], WATCH_DOG_tmp};
+end
+
+always @ ( posedge CLK_I) begin
+	if(WATCH_DOG_tmp)
 		wdg_en <= 1'b0 ;
 	else if( wdg_wr_en )
 		wdg_en <= TWI_DAT_I[0] ;
 end
 
-always @ ( posedge CLK_I or posedge RST_I ) begin
-	if( RST_I )
-		wdg_cnt <= 26'b0 ;
-	else if( wdg_wr_en && (wdg_en || TWI_DAT_I[0]) )
-		wdg_cnt <= TWI_DAT_I[26:1] ;
+always @ ( posedge CLK_I) begin
+	if(wdg_wr_en && TWI_DAT_I[0])
+		wdg_cnt <= TWI_DAT_I[31:1] ;
 	else if( |wdg_cnt )
 		wdg_cnt <= wdg_cnt - 1 ;
 end
 
-assign WATCH_DOG = wdg_en && (wdg_cnt == 1 || wdg_cnt == 2) ;
+assign WATCH_DOG_tmp = wdg_en && ~|wdg_cnt;
+assign WATCH_DOG = |WATCH_DOG_f;
+
+`ifdef CHIPSCOPE
+wire [35:0] CONTROL;
+wire [79:0] trig = {
+WATCH_DOG_tmp,//74
+WATCH_DOG_f[7:0],//73:66
+wdg_cnt[30:0],//65:35
+wdg_en,//34
+wdg_wr_en,//33
+WATCH_DOG,//32
+TWI_DAT_I[31:0]//31:0
+};
+ila ila(
+/*inout [35 : 0]*/ .CONTROL(CONTROL),
+/*input         */ .CLK    (CLK_I),
+/*input [79 : 0]*/ .TRIG0  (trig)
+);
+
+icon icon(
+/*inout [35 : 0]*/ .CONTROL0(CONTROL)
+);
+`endif
 
 //-----------------------------------------------------
 // SHIFT
@@ -197,34 +228,37 @@ shift u_shift_b(
 /*output      */ .sft_oe_n (SFTB_OE_N       )
 );
 
-wire sftc_done ;
-reg sftc_done_r ;
-wire [31:0] reg_sftc = {28'b0,sftc_done_r,3'b0} ;
+reg [31:0] reg_sftc;
+reg sftc_wr_en_f;
+always @ ( posedge CLK_I )
+	sftc_wr_en_f <= sftc_wr_en;
+
 always @ ( posedge CLK_I or posedge RST_I ) begin
 	if( RST_I )
-		sftc_done_r <= 1'b0 ;
-	else if( sftc_wr_en && TWI_DAT_I[4])
-		sftc_done_r <= 1'b0 ;
-	else if( sftc_done )
-		sftc_done_r <= 1'b1 ;
+		reg_sftc <= 32'h0;
+	else if( sftc_wr_en )
+		reg_sftc <= TWI_DAT_I[31:0];
 end
 
-shift u_shift_c(
+reg [7:0] reg_brea;
+always @ ( posedge CLK_I or posedge RST_I ) begin
+	if( RST_I )
+		reg_brea <= 200;
+	else if( brea_wr_en )
+		reg_brea <= TWI_DAT_I[7:0];
+end
+
+led_ctrl u_shift_c(
 /*input       */ .clk      (CLK_I           ) ,
 /*input       */ .rst      (RST_I           ) ,
-/*input       */ .vld      (sftc_wr_en      ) ,
-/*input  [1:0]*/ .cmd      (TWI_DAT_I[1:0]  ) ,
-/*input       */ .cmd_oen  (TWI_DAT_I[2]    ) ,
-/*input  [7:0]*/ .din      (TWI_DAT_I[15:8] ) ,
-/*output      */ .done     (sftc_done       ) ,
+/*input       */ .vld      (sftc_wr_en_f    ) ,
+/*input [31:0]*/ .reg_din  (reg_sftc        ) ,
+/*input  [7:0]*/ .reg_breath(reg_brea       ) ,
 
+/*input  [3:0]*/ .led_bling(led_bling       ) ,
 /*output      */ .sft_shcp (SFTC_SHCP       ) ,
-/*output      */ .sft_ds   (SFTC_DS         ) ,
-/*output      */ .sft_stcp (                ) ,
-/*output      */ .sft_mr_n (                ) ,
-/*output      */ .sft_oe_n (                )
+/*output      */ .sft_ds   (SFTC_DS         )  
 );
-
 
 //-----------------------------------------------------
 // fan speed
@@ -396,6 +430,7 @@ reg time_rd_en_r ;
 reg gpio_rd_en_r ;
 reg sftb_rd_en_r ;
 reg sftc_rd_en_r ;
+reg brea_rd_en_r ;
 
 wire [7:0] reg_i2cr ;
 wire [7:0] reg_i2rd ;
@@ -409,10 +444,11 @@ always @ ( posedge CLK_I ) begin
 	gpio_rd_en_r <= gpio_rd_en ;
 	sftb_rd_en_r <= sftb_rd_en ;
 	sftc_rd_en_r <= sftc_rd_en ;
+	brea_rd_en_r <= brea_rd_en ;
 end
 
 assign TWI_DAT_O = i2cr_rd_en_r ? {24'b0,reg_i2cr}     :
-		   wdg_rd_en_r  ? {5'b0,wdg_cnt,wdg_en}:
+		   wdg_rd_en_r  ? {wdg_cnt,wdg_en}     :
 		   sft_rd_en_r  ? reg_sft              :
 		   fan0_rd_en_r ? {6'b0,reg_fan0}      :
 		   fan1_rd_en_r ? {6'b0,reg_fan1}      :
@@ -420,6 +456,7 @@ assign TWI_DAT_O = i2cr_rd_en_r ? {24'b0,reg_i2cr}     :
 		   gpio_rd_en_r ? reg_gpio             :
 		   sftb_rd_en_r ? reg_sftb             :
 		   sftc_rd_en_r ? reg_sftc             :
+		   brea_rd_en_r ? reg_brea             :
 		   {24'b0,reg_i2rd} ;
 
 twi_core twi_core (
