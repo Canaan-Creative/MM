@@ -48,6 +48,7 @@ static int g_local_work = 0;
 static int g_hw_work = 0;
 static uint32_t g_nonce2_offset = 0;
 static uint32_t g_nonce2_range = 0xffffffff;
+static int g_ntime_offset = ASIC_COUNT;
 static struct mm_work mm_work;
 
 #define RET_RINGBUFFER_SIZE_RX 32
@@ -301,6 +302,11 @@ static inline int decode_pkg(uint8_t *p, struct mm_work *mw)
 		memcpy(mw->target, data, AVA4_P_DATA_LEN);
 		break;
 	case AVA4_P_SET:
+		memcpy(&tmp, data, 4);
+		debug32("N: %08x,", tmp);
+		if (tmp & 0x80000000)
+			g_ntime_offset = (tmp & 0x7fffffff);
+
 		memcpy(&tmp, data + 4, 4);
 		debug32("V: %08x,", tmp);
 		poweron = set_voltage(tmp);
@@ -568,6 +574,11 @@ int main(int argv, char **argc)
 			g_new_stratum = 0;
 			g_local_work = 0;
 			g_hw_work = 0;
+			g_ntime_offset = ASIC_COUNT;
+
+			g_nonce2_offset = 0;
+			g_nonce2_range = 0xffffffff;
+
 			ret_consume = ret_produce;
 
 			adjust_fan(FAN_10);
@@ -596,7 +607,7 @@ int main(int argv, char **argc)
 			miner_gen_nonce2_work(&mm_work, mm_work.nonce2++, &work);
 			api_send_work(&work);
 
-			for (i = 1; i < ASIC_COUNT; i++) {
+			for (i = 1; i < g_ntime_offset; i++) {
 				roll_work(&work, 1); /* Roll the same work */
 				work.memo &= 0xffff00ff;
 				work.memo |= i << 8;
