@@ -32,6 +32,9 @@
 #define AVA4_P_HEADER	0x15
 #define AVA4_P_TARGET	0x16
 
+/* Broadcast with block iic_write*/
+#define AVA4_P_RW       0x17
+
 /* Broadcase or with I2C address */
 #define AVA4_P_SET	0x20
 #define AVA4_P_FINISH	0x21
@@ -46,6 +49,7 @@
 #define AVA4_P_STATUS		0x41
 #define AVA4_P_NONCE		0x42
 #define AVA4_P_TEST_RET		0x43
+#define AVA4_P_ACKRW		0x44
 
 #define AVA4_MODULE_BROADCAST	0
 #endif	/* _PROTOCOL_H_ */

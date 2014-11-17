@@ -144,7 +144,7 @@ static inline void led_ctrl(int led_op)
 	set_front_led(value);
 }
 
-static void encode_pkg(uint8_t *p, int type, uint8_t *buf, unsigned int len)
+static void encode_pkg(uint8_t *p, int type, int opt, uint8_t *buf, unsigned int len)
 {
 	uint32_t tmp;
 	uint16_t crc;
@@ -156,19 +156,19 @@ static void encode_pkg(uint8_t *p, int type, uint8_t *buf, unsigned int len)
 	p[1] = AVA4_H2;
 
 	p[2] = type;
-	p[3] = g_dna[AVA4_MM_DNA_LEN-1];
+	p[3] = opt;
 	p[4] = 1;
 	p[5] = 1;
 
 	data = p + 6;
 	switch(type) {
 	case AVA4_P_ACKDETECT:
-		p[3] = 0;
 		memcpy(data, g_dna, AVA4_MM_DNA_LEN); /* MM_DNA */
 		memcpy(data + AVA4_MM_DNA_LEN, buf, len); /* MM_VERSION */
 		break;
 	case AVA4_P_NONCE:
 	case AVA4_P_TEST_RET:
+	case AVA4_P_ACKRW:
 		memcpy(data, buf, len);
 		break;
 	case AVA4_P_STATUS:
@@ -198,12 +198,12 @@ static void encode_pkg(uint8_t *p, int type, uint8_t *buf, unsigned int len)
 	p[AVA4_P_COUNT - 1] = (crc & 0xff00) >> 8;
 }
 
-uint32_t send_pkg(int type, uint8_t *buf, uint32_t len, int block)
+uint32_t send_pkg(int type, int opt, uint8_t *buf, uint32_t len, int block)
 {
 #ifdef DEBUG_VERBOSE
 	debug32("%d-Send: %d, (CNT: %d)\n", g_module_id, type, iic_tx_fifo_cnt());
 #endif
-	encode_pkg(g_act, type, buf, len);
+	encode_pkg(g_act, type, opt, buf, len);
 	if (!iic_write(g_act, AVA4_P_COUNT, block)) {
 		iic_tx_reset();
 		return 0;
@@ -217,7 +217,7 @@ static inline void polling(void)
 	uint8_t *data;
 
 	if (ret_consume == ret_produce) {
-		send_pkg(AVA4_P_STATUS, NULL, 0, 0);
+		send_pkg(AVA4_P_STATUS, g_dna[AVA4_MM_DNA_LEN-1], NULL, 0, 0);
 
 		g_local_work = 0;
 		g_hw_work = 0;
@@ -226,21 +226,41 @@ static inline void polling(void)
 
 	data = ret_buf[ret_consume];
 	ret_consume = (ret_consume + 1) & RET_RINGBUFFER_MASK_RX;
-	send_pkg(AVA4_P_NONCE, data, AVA4_P_DATA_LEN, 0);
+	send_pkg(AVA4_P_NONCE, g_dna[AVA4_MM_DNA_LEN-1], data, AVA4_P_DATA_LEN, 0);
 	return;
+}
+
+static inline void mm_read(uint32_t addr, uint8_t len)
+{
+	if (len > 28)
+		len = 28;
+
+	gpio_led(len);
+	send_pkg(AVA4_P_ACKRW, (len & 2), (uint8_t *)"RD", 2, 0);
+}
+
+static inline void mm_write(uint32_t addr, uint8_t *data, uint8_t len)
+{
+	if (len > 28)
+		len = 28;
+
+	hexdump(data, len);
+	gpio_led(len);
+	send_pkg(AVA4_P_ACKRW, 0x80 | 2, (uint8_t *)"WR", 2, 0);
 }
 
 static inline int decode_pkg(uint8_t *p, struct mm_work *mw)
 {
 	unsigned int expected_crc;
 	unsigned int actual_crc;
-	int idx, cnt, poweron = 0;
+	int opt, idx, cnt, poweron = 0;
 	uint32_t tmp;
 	uint32_t freq[3];
 	static uint32_t freq_value;
 
 	uint8_t *data = p + 6;
 
+	opt = p[3];
 	idx = p[4];
 	cnt = p[5];
 
@@ -365,6 +385,17 @@ static inline int decode_pkg(uint8_t *p, struct mm_work *mw)
 		set_voltage(ASIC_0V);
 		adjust_fan(FAN_10);
 		break;
+	case AVA4_P_RW:
+		/* 0-read, 1-write */
+		memcpy(&tmp, data, 4);
+		if (opt >> 7) {
+			debug32("Write addr: 0x%x, size = %d\n", tmp, ((opt & 0x7f) - 4));
+			mm_write(tmp, data + 4, (opt & 0x7f) - 4);
+		} else {
+			debug32("Read addr: 0x%x, size = %d\n", tmp, ((opt & 0x7f) - 4));
+			mm_read(tmp, (opt & 0x7f) - 4);
+		}
+		break;
 	default:
 		break;
 	}
@@ -472,7 +503,7 @@ static int get_pkg(struct mm_work *mw)
 				if (g_module_id != AVA4_MODULE_BROADCAST)
 					break;
 
-				if (send_pkg(AVA4_P_ACKDETECT, (uint8_t *)MM_VERSION, AVA4_MM_VER_LEN, 1)) {
+				if (send_pkg(AVA4_P_ACKDETECT, 0, (uint8_t *)MM_VERSION, AVA4_MM_VER_LEN, 1)) {
 					memcpy(&g_module_id, g_pkg + 6 + 28, 4);
 					debug32("ID: %d\n", g_module_id);
 					iic_addr_set(g_module_id);
@@ -480,7 +511,7 @@ static int get_pkg(struct mm_work *mw)
 				}
 				break;
 			case AVA4_P_REQUIRE:
-				send_pkg(AVA4_P_STATUS, NULL, 0, 0);
+				send_pkg(AVA4_P_STATUS, g_dna[AVA4_MM_DNA_LEN-1], NULL, 0, 0);
 				break;
 			default:
 				break;

@@ -461,7 +461,7 @@ int api_asic_testcores(uint32_t cal_core_num, uint32_t ret)
 		}
 		debug32("\n");
 		if (ret)
-			send_pkg(AVA4_P_TEST_RET, txdat, ASIC_COUNT * 4 + 1, 0);
+			send_pkg(AVA4_P_TEST_RET, 0, txdat, ASIC_COUNT * 4 + 1, 0);
 	}
 	if (ret) {
 		txdat[0] = (tmp >> 24) & 0xff;
@@ -472,7 +472,7 @@ int api_asic_testcores(uint32_t cal_core_num, uint32_t ret)
 		txdat[5] = (all >> 16) & 0xff;
 		txdat[6] = (all >> 8) & 0xff;
 		txdat[7] = all & 0xff;
-		send_pkg(AVA4_P_TEST_RET, txdat, 8, 0);
+		send_pkg(AVA4_P_TEST_RET, 0, txdat, 8, 0);
 	}
 
 	debug32("E/A: %d/%d\n", all - tmp, all);

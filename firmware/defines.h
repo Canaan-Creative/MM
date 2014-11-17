@@ -26,6 +26,6 @@ char printf_buf32[32];
 #endif
 
 void delay(unsigned int ms);
-uint32_t send_pkg(int type, uint8_t *buf, uint32_t len, int block);
+uint32_t send_pkg(int type, int opt, uint8_t *buf, uint32_t len, int block);
 
 #endif	/* _DEFINES_H_ */
