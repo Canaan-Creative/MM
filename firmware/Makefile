@@ -11,8 +11,6 @@ BIN_DIR:=$(shell date +%Y-%m-%d)
 GIT_VERSION:=$(shell git rev-parse HEAD | cut -c 1-7)
 GIT_STATUS:=$(shell ([ -z "`git status -s -uno`" ] && echo 0) || echo +)
 
-CFLAGS += -DMM_VERSION='"401411-$(GIT_VERSION)$(GIT_STATUS)"'
-
 -include config.mk
 # ----- Customer ----------------------------------------------------------
 INCLUDES   = -I. -Isdk -Iminilibc
@@ -28,6 +26,12 @@ PRJ_NAME	= mm
 
 isedir  ?= /home/Xilinx/14.6/ISE_DS/
 xil_env ?= . $(isedir)/settings$(shell getconf LONG_BIT).sh &>/dev/null
+
+ifeq ($(MM41),1)
+CFLAGS += -DMM_VERSION='"411411-$(GIT_VERSION)$(GIT_STATUS)"' -DMM41
+else
+CFLAGS += -DMM_VERSION='"401411-$(GIT_VERSION)$(GIT_STATUS)"'
+endif
 
 ifeq ($(DEBUG),1)
 	CFLAGS += -DDEBUG
