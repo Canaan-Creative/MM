@@ -83,10 +83,11 @@ void delay(unsigned int ms)
 #define LED_ERROR_OFF		6
 #define LED_ERROR_BLINKING	7
 #define LED_IDLE		8
-#define LED_PG1_ON		9
-#define LED_PG1_BLINKING	10
-#define LED_PG2_ON		11
-#define LED_PG2_BLINKING	12
+#define LED_BUSY		9
+#define LED_PG1_ON		10
+#define LED_PG1_BLINKING	11
+#define LED_PG2_ON		12
+#define LED_PG2_BLINKING	13
 
 static inline void led_ctrl(int led_op)
 {
@@ -98,8 +99,7 @@ static inline void led_ctrl(int led_op)
 		value |= 0x10;
 		break;
 	case LED_WARNING_OFF:
-		value &= 0xff0000ef;
-		value |= 0x444400;
+		value &= 0xffffff0f;
 		break;
 	case LED_WARNING_BLINKING:
 		value &= 0xffffff0f;
@@ -131,6 +131,10 @@ static inline void led_ctrl(int led_op)
 	case LED_PG2_BLINKING:
 		value &= 0xefffffff;
 		value |= 0x30000000;
+		break;
+	case LED_BUSY:
+		value &= 0xff0000ff;
+		value |= 0x444400;
 		break;
 	case LED_IDLE:
 		value &= 0xff0000ff;
@@ -495,7 +499,9 @@ static int get_pkg(struct mm_work *mw)
 }
 
 static inline void led(void)
-{		/* LED */
+{
+	led_ctrl(LED_BUSY);
+
 	if (!read_fan())
 		led_ctrl(LED_WARNING_BLINKING);
 	else
