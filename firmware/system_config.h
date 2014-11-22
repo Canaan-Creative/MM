@@ -9,7 +9,7 @@
 #ifndef _SYSTEM_CONFIG_H_
 #define _SYSTEM_CONFIG_H_
 
-#define AVA4_DEFAULT_MODULES	4
+#define AVA4_DEFAULT_MODULES	64
 
 #ifdef MM41
 	#define ASIC_CORETEST_VOLT	0xa100 /* 0.7875V */
