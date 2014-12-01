@@ -567,7 +567,11 @@ int main(int argv, char **argc)
 	else
 		led_ctrl(LED_PG2_BLINKING);
 
-	led_ctrl(LED_WARNING_ON);
+	if (!read_fan())
+		led_ctrl(LED_WARNING_BLINKING);
+	else
+		led_ctrl(LED_WARNING_ON);
+
 	set_voltage(ASIC_0V);
 	g_new_stratum = 0;
 	while (1) {
