@@ -352,6 +352,12 @@ static inline int decode_pkg(uint8_t *p, struct mm_work *mw)
 		led_ctrl(LED_ERROR_ON);
 		adjust_fan(FAN_50);
 
+		memcpy(&tmp, data, 4);
+		debug32("FULL: %08x", tmp);
+		test_core_count = tmp;
+		if (!test_core_count)
+			test_core_count = TEST_CORE_COUNT;
+
 		memcpy(&tmp, data + 4, 4);
 		debug32("V: %08x", tmp);
 		set_voltage(tmp);
