@@ -29,6 +29,7 @@
 #include "hexdump.c"
 
 #define IDLE_TIME	3	/* Seconds */
+#define TEST_TIME	15	/* Seconds */
 #define IDLE_TEMP	65	/* Degree (C) */
 #define TEST_CORE_COUNT	64	/* 4 * 16 */
 
@@ -236,12 +237,13 @@ static inline void polling(void)
 
 static inline int decode_pkg(uint8_t *p, struct mm_work *mw)
 {
+	static uint32_t freq_value;
 	unsigned int expected_crc;
 	unsigned int actual_crc;
 	int idx, cnt, poweron = 0;
 	uint32_t tmp;
 	uint32_t freq[3];
-	static uint32_t freq_value;
+	uint32_t test_core_count;
 
 	uint8_t *data = p + 6;
 
@@ -351,6 +353,7 @@ static inline int decode_pkg(uint8_t *p, struct mm_work *mw)
 	case AVA4_P_TEST:
 		led_ctrl(LED_ERROR_ON);
 		adjust_fan(FAN_50);
+		wdg_feed(CPU_FREQUENCY * TEST_TIME);
 
 		memcpy(&tmp, data, 4);
 		debug32("FULL: %08x", tmp);
@@ -369,11 +372,12 @@ static inline int decode_pkg(uint8_t *p, struct mm_work *mw)
 		debug32(" F: %08x(%d:%d:%d)\n", tmp, freq[0], freq[1], freq[2]);
 		set_asic_freq(freq);
 
-		if (api_asic_testcores(TEST_CORE_COUNT, 1) < 4 * TEST_CORE_COUNT)
+		if (api_asic_testcores(test_core_count, 1) < 4 * test_core_count)
 			led_ctrl(LED_ERROR_OFF);
 
 		set_voltage(ASIC_0V);
 		adjust_fan(FAN_10);
+		wdg_feed(CPU_FREQUENCY * IDLE_TIME);
 		break;
 	default:
 		break;
