@@ -9,11 +9,17 @@
 #ifndef _SYSTEM_CONFIG_H_
 #define _SYSTEM_CONFIG_H_
 
-#define AVA4_DEFAULT_MODULES	4
+#define AVA4_DEFAULT_MODULES	64
+
+#ifdef MM41
+	#define ASIC_CORETEST_VOLT	0xa100 /* 0.7875V */
+	#define ASIC_0V			0xff00
+#else
+	#define ASIC_CORETEST_VOLT	0xce00 /* 0.7875V */
+	#define ASIC_0V			0x8f00
+#endif
 
 #define ASIC_FREQUENCY		200 /* MHz */
-#define ASIC_CORETEST_VOLT	0xce00 /* 0.7875V */
-#define ASIC_0V			0x8f00
 #define ASIC_TIMEOUT_100M	0x4113e98
 #define MINER_COUNT		10
 #define ASIC_COUNT		4

@@ -30,16 +30,16 @@ static inline uint32_t encode_voltage_ncp5392p(uint32_t v)
 {
 	if (v == 0)
 		return 0xff00;
-	else
-		return rev8(((0x59 - (v - 5000) / 125) & 0xff) << 1 | 1) << 8;
+
+	return rev8(((0x59 - (v - 5000) / 125) & 0xff) << 1 | 1) << 8;
 }
 
 static inline uint32_t decode_voltage_ncp5392p(uint32_t v)
 {
 	if (v == 0xff00)
 		return 0;
-	else
-		return (0x59 - (rev8(v >> 8) >> 1)) * 125 + 5000;
+
+	return (0x59 - (rev8(v >> 8) >> 1)) * 125 + 5000;
 }
 
 int main()
