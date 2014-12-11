@@ -96,5 +96,23 @@ void adjust_fan(uint32_t pwm)
 
 uint16_t read_temp(void)
 {
-	return (twi_read_2byte(LM32_TWI_REG_TEMP1) >> 4) / 16;
+	static uint16_t temp[10];
+	int i;
+	uint32_t sum = 0;
+	uint16_t min;
+	uint16_t max;
+
+	memcpy(temp, temp + 1, 9 * sizeof(uint16_t));
+	temp[9] = (twi_read_2byte(LM32_TWI_REG_TEMP1) >> 4) / 16;
+	min = max = temp[9];
+
+	for(i = 0; i < 10; i++)
+	{
+		if(max < temp[i])
+			max = temp[i];
+		if(min > temp[i])
+			min = temp[i];
+		sum = sum + temp[i];
+	}
+	return (uint16_t)((sum - max - min) / 8);
 }

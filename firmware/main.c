@@ -308,6 +308,8 @@ static inline int decode_pkg(uint8_t *p, struct mm_work *mw)
 		memcpy(mw->target, data, AVA4_P_DATA_LEN);
 		break;
 	case AVA4_P_SET:
+		if (read_temp() >= IDLE_TEMP)
+			break;
 		memcpy(&tmp, data, 4);
 		debug32("N: %08x,", tmp);
 		if (tmp & 0x80000000)
@@ -599,23 +601,26 @@ int main(int argv, char **argc)
 			g_nonce2_offset = 0;
 			g_nonce2_range = 0xffffffff;
 
-			ret_consume = ret_produce;
-
-			adjust_fan(FAN_10);
 			set_voltage(ASIC_0V);
-
-			g_module_id = AVA4_MODULE_BROADCAST;
-			gpio_led(g_module_id);
-
-			iic_addr_set(g_module_id);
-			iic_rx_reset();
-			iic_tx_reset();
-
 			led_ctrl(LED_IDLE);
-			if (read_temp() >= IDLE_TEMP)
+
+			if (read_temp() >= IDLE_TEMP) {
+				adjust_fan(FAN_100);
 				led_ctrl(LED_WARNING_BLINKING);
-			else
+			} else {
+				ret_consume = ret_produce;
+
+				adjust_fan(FAN_10);
+
+				g_module_id = AVA4_MODULE_BROADCAST;
+				gpio_led(g_module_id);
+
+				iic_addr_set(g_module_id);
 				led_ctrl(LED_WARNING_ON);
+
+				iic_rx_reset();
+				iic_tx_reset();
+			}
 		}
 
 		if (!g_new_stratum)
