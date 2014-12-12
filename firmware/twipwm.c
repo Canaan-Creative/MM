@@ -106,8 +106,7 @@ uint16_t read_temp(void)
 	temp[9] = (twi_read_2byte(LM32_TWI_REG_TEMP1) >> 4) / 16;
 	min = max = temp[9];
 
-	for(i = 0; i < 10; i++)
-	{
+	for(i = 0; i < 10; i++) {
 		if(max < temp[i])
 			max = temp[i];
 		if(min > temp[i])

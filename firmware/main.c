@@ -598,28 +598,26 @@ int main(int argv, char **argc)
 			g_hw_work = 0;
 			g_ntime_offset = ASIC_COUNT;
 
-			g_nonce2_offset = 0;
-			g_nonce2_range = 0xffffffff;
-
 			set_voltage(ASIC_0V);
-			led_ctrl(LED_IDLE);
 
 			if (read_temp() >= IDLE_TEMP) {
 				adjust_fan(FAN_100);
 				led_ctrl(LED_WARNING_BLINKING);
 			} else {
-				ret_consume = ret_produce;
-
 				adjust_fan(FAN_10);
 
+				g_nonce2_offset = 0;
+				g_nonce2_range = 0xffffffff;
 				g_module_id = AVA4_MODULE_BROADCAST;
-				gpio_led(g_module_id);
 
 				iic_addr_set(g_module_id);
-				led_ctrl(LED_WARNING_ON);
-
 				iic_rx_reset();
 				iic_tx_reset();
+
+				ret_consume = ret_produce;
+
+				led_ctrl(LED_IDLE);
+				gpio_led(g_module_id);
 			}
 		}
 
