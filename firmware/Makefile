@@ -23,6 +23,7 @@ CSRCS      = main.c sha256.c twipwm.c miner.c crc16.c shifter.c timer.c iic.c ap
 BATCHFILE	:= $(shell mktemp)
 HARDWARE_NAME	= mm
 PRJ_NAME	= mm
+MBOOT		?= 1
 
 isedir  ?= /home/Xilinx/14.6/ISE_DS/
 xil_env ?= . $(isedir)/settings$(shell getconf LONG_BIT).sh &>/dev/null
@@ -36,6 +37,10 @@ endif
 ifeq ($(DEBUG),1)
 	CFLAGS += -DDEBUG
 	CSRCS  += uart.c
+endif
+
+ifeq ($(MBOOT), 1)
+CFLAGS += -DMBOOT
 endif
 
 OBJS       := $(addsuffix .o,$(basename $(CSRCS) $(SSRCS)))
