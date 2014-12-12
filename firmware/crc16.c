@@ -45,3 +45,14 @@ unsigned short crc16(const unsigned char *buffer, int len)
 	
 	return crc;
 }
+
+unsigned short mboot_crc16(unsigned short crc_init, const unsigned char *buffer, int len)                         
+{                                                                                                                 
+        unsigned short crc;                                                                                       
+                                                                                                                  
+        crc = crc_init;                                                                                           
+        while(len-- > 0)                                                                                          
+            crc = crc16_table[((crc >> 8) ^ (*buffer++)) & 0xFF] ^ (crc << 8);                                    
+                                                                                                                  
+        return crc;                                                                                               
+}

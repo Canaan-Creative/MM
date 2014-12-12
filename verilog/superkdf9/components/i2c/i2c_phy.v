@@ -17,6 +17,10 @@ input         empty   ,
 output reg    pop     ,
 input  [31:0] din     ,
 
+output reg [6:0] addr_r,
+output [7:0] byte_buf,
+output reg   byte_done,
+
 output        led_iic_wr,
 output        led_iic_rd 
 );
@@ -37,6 +41,18 @@ wire get_8bit = &bit_cnt && i2c_neg;
 reg acki_f;
 reg i2c_start_r;
 reg addr_ack;
+reg [5:0] i2c_neg_dly_cnt;
+wire i2c_neg_dly = i2c_neg_dly_cnt == 'd62;
+always @ (posedge clk) begin
+	if(rst)
+		i2c_neg_dly_cnt <= 'b0;
+	else if(i2c_neg && (cur_state == ACKO || cur_state == AACKO))
+		i2c_neg_dly_cnt <= 'b1;
+	else if(|i2c_neg_dly_cnt && i2c_neg_dly_cnt < 'd62)
+		i2c_neg_dly_cnt <= i2c_neg_dly_cnt + 'b1;
+	else
+		i2c_neg_dly_cnt <= 'b0;
+end
 
 assign sda_pin = sda_o ? 1'bz : 1'b0;
 
@@ -96,11 +112,11 @@ always @ (*) begin
 			nxt_state = ACKI;
 		else if(i2c_stop || !addr_ack || i2c_start)
 			nxt_state = IDLE;
-	ACKO :  if(i2c_neg)
+	ACKO :  if(i2c_neg_dly)
 			nxt_state = DWR;
-	AACKO:  if(i2c_neg && rw_flg)
+	AACKO:  if(i2c_neg_dly && rw_flg)
 			nxt_state = DRD;
-		else if(i2c_neg)
+		else if(i2c_neg_dly)
 			nxt_state = DWR;
 	ACKI :  if(i2c_neg && ~acki_f)
 			nxt_state = DRD;
@@ -135,6 +151,13 @@ always @ (posedge clk) begin
 end
 
 always @ (posedge clk) begin
+	if(cur_state == DWR && nxt_state == ACKO)
+		byte_done <= 1'b1;
+	else
+		byte_done <= 1'b0;
+end
+
+always @ (posedge clk) begin
 	if(rst)
 		i2c_start_r <= 1'b0;
 	else if(i2c_start)
@@ -153,14 +176,20 @@ always @ (posedge clk) begin
 		acki_f <= sda;
 end
 
+wire this_my_addr = (sda_buf[7:1] == reg_addr) || (sda_buf[7:1] == 7'b1000000) || (sda_buf[7:1] == 7'b1000001) || (~|sda_buf[7:1]);
+always @ (posedge clk) begin
+	if(cur_state == ADDR && nxt_state == AACKO)
+		addr_r <= sda_buf[7:1];
+end
+
 always @ (posedge clk) begin
 	if(rst || cur_state == IDLE)
 		sda_o <= 1'b1;
 	else if(cur_state == ADDR && nxt_state == AACKO)
-		sda_o <= ~(((~sda_buf[0] && ~full) || (sda_buf[0] && ~empty)) && (sda_buf[7:1] == reg_addr || ~|sda_buf[7:1]));
-	else if(cur_state == ACKO && i2c_neg)
+		sda_o <= ~(((~sda_buf[0] && ~full) || (sda_buf[0] && ~empty)) && this_my_addr);
+	else if(cur_state == ACKO && i2c_neg_dly)
 		sda_o <= 1'b1;
-	else if(cur_state == AACKO && i2c_neg && addr_ack)
+	else if(cur_state == AACKO && i2c_neg_dly && addr_ack)
 		sda_o <= rw_flg ? sda_buf[31] : 1'b1;
 	else if(cur_state == DRD && nxt_state == DRD && i2c_neg)
 		sda_o <= sda_buf[31];
@@ -170,7 +199,7 @@ always @ (posedge clk) begin
 		sda_o <= acki_f ? 1'b1 : sda_buf[31];
 	else if(cur_state == DWR && nxt_state == ACKO)
 		sda_o <= 1'b0;
-	else if(cur_state == ACKO && i2c_neg)
+	else if(cur_state == ACKO && i2c_neg_dly)
 		sda_o <= 1'b1;
 end
 
@@ -178,7 +207,7 @@ always @ (posedge clk) begin
 	if(rst || nxt_state == IDLE)
 		addr_ack <= 1'b0;
 	else if(cur_state == ADDR && nxt_state == AACKO)
-		addr_ack <= ((~sda_buf[0] && ~full) || (sda_buf[0] && ~empty)) && (sda_buf[7:1] == reg_addr || ~|sda_buf[7:1]);
+		addr_ack <= ((~sda_buf[0] && ~full) || (sda_buf[0] && ~empty)) && this_my_addr;
 end
 
 //-----------------------------------------------------
@@ -220,6 +249,8 @@ always @ (posedge clk) begin
 	else if((cur_state == DWR || cur_state == ADDR) && i2c_pos)
 		sda_buf <= {sda_buf[30:0], sda};
 end
+
+assign byte_buf = sda_buf[7:0];
 
 always @ (posedge clk) begin
 	if(rst)

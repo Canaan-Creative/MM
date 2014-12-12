@@ -353,6 +353,7 @@ endmodule
 `include "../components/i2c/i2c.v"
 `include "../components/i2c/i2c_phy.v"
 `include "../components/i2c/reboot.v"
+`include "../components/i2c/brg_shift.v"
 
 `include "../components/api/api_define.v"
 `include "../components/api/api.v"
@@ -673,6 +674,11 @@ wire        mbootMBOOT_ACK_O;
 wire        mbootMBOOT_ERR_O;
 wire        mbootMBOOT_RTY_O;
 wire        mbootMBOOT_en;
+
+wire brg_en;
+wire brg_cs;
+wire brg_sck;                                                                                            
+wire brg_mosi;
 
 input       FAN_IN0 ;
 input       FAN_IN1 ;
@@ -1018,7 +1024,13 @@ i2c i2c_slv(
 /*input  [31:0]    */ .ram_dat_rd(ram_dat_rd                 ),
 
 /*output           */ .led_iic_wr(led_iic_wr),
-/*output           */ .led_iic_rd(led_iic_rd) 
+/*output           */ .led_iic_rd(led_iic_rd),
+
+/*output           */ .brg_en  (brg_en  ),
+/*output           */ .brg_cs  (brg_cs  ),
+/*output           */ .brg_sck (brg_sck ),                                                                                            
+/*output           */ .brg_mosi(brg_mosi) 
+ 
 );
 
 wire [31:0] spiSPI_DAT_I;
@@ -1298,21 +1310,27 @@ mboot mboot(
 /*output           */ .MBOOT_RTY_O (mbootMBOOT_RTY_O               ),//const 0
 /*output reg [31:0]*/ .MBOOT_DAT_O (mbootMBOOT_DAT_O               ),
 
-/*output reg       */ .MBOOT_SCL   (MBOOT_SCL                      ),
-/*output reg       */ .MBOOT_CS    (MBOOT_CS                       ),
-/*output reg       */ .MBOOT_MOSI  (MBOOT_MOSI                     ),
-/*output reg       */ .MBOOT_HOLD_N(MBOOT_HOLD_N                   ),
-/*output reg       */ .MBOOT_WP_N  (MBOOT_WP_N                     ),
+/*output reg       */ .MBOOT_SCL   (MBOOT_SCL_w                    ),
+/*output reg       */ .MBOOT_CS    (MBOOT_CS_w                     ),
+/*output reg       */ .MBOOT_MOSI  (MBOOT_MOSI_w                   ),
+/*output reg       */ .MBOOT_HOLD_N(MBOOT_HOLD_N_w                 ),
+/*output reg       */ .MBOOT_WP_N  (MBOOT_WP_N_w                   ),
 /*input            */ .MBOOT_MISO  (MBOOT_MISO                     )
 );
 
-assign superkdf9interrupt_n[3] = !uartINTR ;
-assign superkdf9interrupt_n[1] = !spiSPI_INT_O ;
-assign superkdf9interrupt_n[0] = !gpioIRQ_O ;
-assign superkdf9interrupt_n[4] = !uart_debugINTR ;
-assign superkdf9interrupt_n[2] = !int_i2c;
-assign superkdf9interrupt_n[5] = !TIME0_INT;
-assign superkdf9interrupt_n[6] = !TIME1_INT;
+assign MBOOT_SCL    = brg_en ? brg_sck  : MBOOT_SCL_w    ;
+assign MBOOT_CS     = brg_en ? brg_cs   : MBOOT_CS_w     ;
+assign MBOOT_MOSI   = brg_en ? brg_mosi : MBOOT_MOSI_w   ;
+assign MBOOT_HOLD_N = brg_en ? 1'b1     : MBOOT_HOLD_N_w ;
+assign MBOOT_WP_N   = brg_en ? 1'b1     : MBOOT_WP_N_w   ;
+
+assign superkdf9interrupt_n[3] = brg_en || !uartINTR ;
+assign superkdf9interrupt_n[1] = brg_en || !spiSPI_INT_O ;
+assign superkdf9interrupt_n[0] = brg_en || !gpioIRQ_O ;
+assign superkdf9interrupt_n[4] = brg_en || !uart_debugINTR ;
+assign superkdf9interrupt_n[2] = brg_en || !int_i2c;
+assign superkdf9interrupt_n[5] = brg_en || !TIME0_INT;
+assign superkdf9interrupt_n[6] = brg_en || !TIME1_INT;
 assign superkdf9interrupt_n[7] = 1;
 assign superkdf9interrupt_n[8] = 1;
 assign superkdf9interrupt_n[9] = 1;

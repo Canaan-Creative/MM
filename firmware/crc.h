@@ -19,5 +19,5 @@
 #define _CRC_H_
 
 unsigned short crc16(const unsigned char *buffer, int len);
-
+unsigned short mboot_crc16(unsigned short crc_init, const unsigned char *buffer, int len);
 #endif	/* _CRC_H_ */

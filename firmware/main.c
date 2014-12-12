@@ -525,12 +525,14 @@ static inline void led(void)
 		led_ctrl(LED_ERROR_OFF);
 }
 
+#include "mboot.c"
 
 int main(int argv, char **argc)
 {
 	struct work work;
 	struct result result;
 	int i;
+	mboot();
 
 	adjust_fan(FAN_10);
 

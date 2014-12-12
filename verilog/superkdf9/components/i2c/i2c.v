@@ -30,7 +30,12 @@ output [31:0]         ram_dat_wr,
 input  [31:0]         ram_dat_rd,
 
 output        led_iic_wr,
-output        led_iic_rd 
+output        led_iic_rd,
+
+output        brg_en,
+output        brg_cs,
+output        brg_sck,
+output        brg_mosi
 );
 
 assign I2C_RTY_O = 1'b0;
@@ -65,6 +70,10 @@ wire          rx_wr_en     ;
 wire          rx_rd_en     = i2c_rx_rd_en;
 wire [31 : 0] rx_dout      ;
 wire [8 : 0]  rx_data_count;
+
+wire [6:0] addr_r;
+wire [7:0] byte_buf;
+wire       byte_done;
 
 wire          full         = rbt_enable ? 1'b0 : (rx_data_count + PKG_LEN >= 256);
 wire          empty        = rbt_enable ? 1'b0 : (tx_data_count < PKG_LEN);
@@ -219,8 +228,61 @@ i2c_phy i2c_phy(
 /*output reg     */ .pop       (tx_rd_en     ),
 /*input  [31:0]  */ .din       (rbt_enable ? tx_dat : tx_dout      ),
 
+/*output reg [6:0]*/.addr_r    (addr_r),
+/*output [7:0] */ .byte_buf    (byte_buf),
+/*output       */ .byte_done   (byte_done),
+
 /*output         */ .led_iic_wr(led_iic_wr),
 /*output         */ .led_iic_rd(led_iic_rd) 
+);
+
+wire [35:0] icon_ctrl_0;
+wire [255:0] trig0 = {
+addr_r[6:0],//19:13
+byte_done,//12
+byte_buf[7:0],//11:4
+brg_en,//3
+brg_cs,//2
+brg_sck,//1
+brg_mosi//0
+} ;
+icon icon_test(.CONTROL0(icon_ctrl_0));
+ila ila_test(.CONTROL(icon_ctrl_0), .CLK(CLK_I), .TRIG0(trig0)
+);
+
+
+reg brg_cs_r = 1'b1;
+assign brg_cs = brg_cs_r;
+reg brg_en_r = 1'b0;
+assign brg_en = brg_en_r;
+
+always @ (posedge CLK_I) begin
+	if(rst)
+		brg_en_r <= 1'b0;
+	else if(addr_r == 7'b1000000 && byte_done && byte_buf == 8'h02)
+		brg_en_r <= 1'b1;
+	else if(addr_r == 7'b1000000 && byte_done && byte_buf == 8'h03)
+		brg_en_r <= 1'b0;
+end
+
+always @ (posedge CLK_I) begin
+	if(rst)
+		brg_cs_r <= 1'b1;
+	else if(addr_r == 7'b1000000 && byte_done && byte_buf == 8'h00)
+		brg_cs_r <= 1'b0;
+	else if(addr_r == 7'b1000000 && byte_done && byte_buf == 8'h01)
+		brg_cs_r <= 1'b1;
+end
+
+brg_shift brg_shift(
+/*input       */ .clk     (CLK_I),
+/*input       */ .rst     (rst),
+/*input       */ .vld     (addr_r == 7'b1000001 && byte_done),
+/*input  [7:0]*/ .din     ({byte_buf[0],byte_buf[1],byte_buf[2],byte_buf[3],byte_buf[4],byte_buf[5],byte_buf[6],byte_buf[7]}),
+/*output      */ .done    (),
+
+/*output      */ .brg_sck (brg_sck),
+/*output      */ .brg_mosi(brg_mosi)
 );
 
 i2c_fifo tx_fifo(
@@ -239,7 +301,7 @@ i2c_fifo rx_fifo(
 /*input          */ .clk       (CLK_I        ),
 /*input          */ .srst      (rx_rst       ),
 /*input  [31 : 0]*/ .din       (rx_din       ),
-/*input          */ .wr_en     (rx_wr_en     ),
+/*input          */ .wr_en     (rx_wr_en && ~brg_en    ),
 /*input          */ .rd_en     (rx_rd_en     ),
 /*output [31 : 0]*/ .dout      (rx_dout      ),
 /*output         */ .full      (             ),
