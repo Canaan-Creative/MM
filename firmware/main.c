@@ -512,12 +512,17 @@ static int get_pkg(struct mm_work *mw)
 
 static inline void led(void)
 {
-	led_ctrl(LED_BUSY);
-
-	if (!read_fan())
-		led_ctrl(LED_WARNING_BLINKING);
+	if (g_new_stratum)
+		led_ctrl(LED_BUSY);
 	else
+		led_ctrl(LED_IDLE);
+
+	if (!read_fan() || read_temp() >= IDLE_TEMP)
+		led_ctrl(LED_WARNING_BLINKING);
+	else if (g_new_stratum)
 		led_ctrl(LED_WARNING_OFF);
+	else
+		led_ctrl(LED_WARNING_ON);
 
 	if (g_led_blinking)
 		led_ctrl(LED_ERROR_BLINKING);
@@ -585,8 +590,6 @@ int main(int argv, char **argc)
 	else
 		led_ctrl(LED_PG2_BLINKING);
 
-	led_ctrl(LED_WARNING_ON);
-
 	set_voltage(ASIC_0V);
 	g_new_stratum = 0;
 	while (1) {
@@ -605,7 +608,6 @@ int main(int argv, char **argc)
 
 			if (read_temp() >= IDLE_TEMP) {
 				adjust_fan(FAN_100);
-				led_ctrl(LED_WARNING_BLINKING);
 			} else {
 				adjust_fan(FAN_10);
 
@@ -619,18 +621,14 @@ int main(int argv, char **argc)
 
 				ret_consume = ret_produce;
 
-				led_ctrl(LED_IDLE);
 				gpio_led(g_module_id);
 			}
 		}
 
-		if (!read_fan())
-			led_ctrl(LED_WARNING_BLINKING);
+		led();
 
 		if (!g_new_stratum)
 			continue;
-
-		led();
 
 		if (api_get_tx_cnt() <= 23 * 10) {
 			miner_gen_nonce2_work(&mm_work, mm_work.nonce2++, &work);
