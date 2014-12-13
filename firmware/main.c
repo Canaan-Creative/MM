@@ -554,7 +554,7 @@ int main(int argv, char **argc)
 
 	api_initial(MINER_COUNT, ASIC_COUNT, SPI_SPEED);
 
-	debug32("%d:MM-%s,%dC\n", g_module_id, MM_VERSION, read_temp());
+	debug32("%d:%s\n", g_module_id, MM_VERSION);
 
 	/* Dump the FPGA DNA */
 	iic_dna_read(g_dna);
