@@ -8,7 +8,7 @@
 #
 
 BIN_DIR:=$(shell date +%Y-%m-%d)
-GIT_VERSION:=$(shell git rev-parse HEAD | cut -c 1-7)
+GIT_VERSION:=$(shell git rev-parse HEAD | cut -c 1-6)
 GIT_STATUS:=$(shell ([ -z "`git status -s -uno`" ] && echo 0) || echo +)
 
 -include config.mk
@@ -29,9 +29,9 @@ isedir  ?= /home/Xilinx/14.6/ISE_DS/
 xil_env ?= . $(isedir)/settings$(shell getconf LONG_BIT).sh &>/dev/null
 
 ifeq ($(MM41),1)
-CFLAGS += -DMM_VERSION='"411412-$(GIT_VERSION)$(GIT_STATUS)"' -DMM41
+CFLAGS += -DMM_VERSION='"411412-$(GIT_VERSION)$(MBOOT)$(GIT_STATUS)"' -DMM41
 else
-CFLAGS += -DMM_VERSION='"401412-$(GIT_VERSION)$(GIT_STATUS)"'
+CFLAGS += -DMM_VERSION='"401412-$(GIT_VERSION)$(MBOOT)$(GIT_STATUS)"'
 endif
 
 ifeq ($(DEBUG),1)
