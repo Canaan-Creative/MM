@@ -549,7 +549,7 @@ int main(int argv, char **argc)
 
 	api_initial(MINER_COUNT, ASIC_COUNT, SPI_SPEED);
 
-	debug32("%d:MM-%s,%dC %dRPM\n", g_module_id, MM_VERSION, read_temp(), read_fan());
+	debug32("%d:MM-%s,%dC\n", g_module_id, MM_VERSION, read_temp());
 
 	/* Dump the FPGA DNA */
 	iic_dna_read(g_dna);
@@ -585,10 +585,7 @@ int main(int argv, char **argc)
 	else
 		led_ctrl(LED_PG2_BLINKING);
 
-	if (!read_fan())
-		led_ctrl(LED_WARNING_BLINKING);
-	else
-		led_ctrl(LED_WARNING_ON);
+	led_ctrl(LED_WARNING_ON);
 
 	set_voltage(ASIC_0V);
 	g_new_stratum = 0;
@@ -626,6 +623,9 @@ int main(int argv, char **argc)
 				gpio_led(g_module_id);
 			}
 		}
+
+		if (!read_fan())
+			led_ctrl(LED_WARNING_BLINKING);
 
 		if (!g_new_stratum)
 			continue;
