@@ -429,9 +429,8 @@ static int read_result(struct mm_work *mw, struct result *ret)
 		job_id = memo & 0xffff0000;
 		ntime = (memo & 0xff00) >> 8;
 
+		g_local_work++;
 		if (job_id == mw->job_id) {
-			g_local_work++;
-
 			n = test_nonce(mw, nonce2, nonce0, ntime);
 			if (n == NONCE_HW) {
 				g_hw_work++;
