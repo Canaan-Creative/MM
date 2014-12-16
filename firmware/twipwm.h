@@ -14,6 +14,6 @@ void wdg_feed(uint32_t value);
 void adjust_fan(uint32_t pwm);
 
 uint32_t read_fan(void);
-uint16_t read_temp(void);
+int16_t read_temp(void);
 
 #endif	/* _TWI_H_ */
