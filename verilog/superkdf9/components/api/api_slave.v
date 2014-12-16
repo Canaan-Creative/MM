@@ -24,7 +24,7 @@ output reg [31:0] txfifo_din  ,
 
 input  [9 :0]     rxcnt       ,
 input             rxempty     ,
-input  [9 :0]     txcnt       ,
+input  [10:0]     txcnt       ,
 output            reg_flush   ,
 input             txfull      ,
 
@@ -90,7 +90,7 @@ end
 //-----------------------------------------------------
 reg [3:0] reg_flush_r ;
 wire [31:0] rd_state = {2'h0, rxcnt[9:0], 3'b0, rxempty,
-			reg_state, 1'b0, txcnt[9:0], reg_flush, txfull};
+			reg_state, txcnt[10:0], reg_flush, txfull};
 
 always @ ( posedge clk ) begin
 	if( api_state_wr_en )

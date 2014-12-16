@@ -31,19 +31,17 @@ parameter WORK_LEN = 736/32;//words
 parameter RX_BLOCK_LEN = 11;//words
 parameter MAX_CHIP_IN_CH = 5;//words
 
-parameter IDLE = 2'd0;
+parameter WAIT = 2'd0;
 parameter WORK = 2'd1;
 parameter NOP  = 2'd2;
-parameter DONE = 2'd3;
 
 reg [1:0] cur_state;
 reg [1:0] nxt_state;
 wire timeout_busy;
-wire timer_start = cur_state == IDLE && nxt_state != IDLE;
+wire timer_start = cur_state != WORK && nxt_state == WORK;
 reg [5:0] ch_cnt;
 reg [7:0] word_cnt;
 reg mosi_vld;
-reg miso_vld_r;
 wire miso_vld;
 reg [3:0] load_nop_cnt;
 assign tx_fifo_rd_en = mosi_vld && cur_state == WORK;
@@ -53,7 +51,7 @@ assign reg_state = {1'b0, cur_state};
 
 always @ (posedge clk) begin
 	if(rst)
-		cur_state <= IDLE;
+		cur_state <= WAIT;
 	else
 		cur_state <= nxt_state;
 end
@@ -61,19 +59,14 @@ end
 always @ (*) begin
 	nxt_state = cur_state;
 	case(cur_state)
-	IDLE:   if(~tx_fifo_empty && ~rx_fifo_full)
+	WAIT:   if(~timeout_busy && ~tx_fifo_empty && ~rx_fifo_full)
 			nxt_state = WORK;
 	WORK:	if(word_cnt == reg_word_num)
 			nxt_state = NOP;
-	NOP:	if(ch_cnt == reg_ch_num && &load_nop_cnt)
-			nxt_state = DONE;
-		else if(~tx_fifo_empty && ~rx_fifo_full && ch_cnt < reg_ch_num && &load_nop_cnt)
-			nxt_state = WORK;
-	DONE:	if(~timeout_busy && miso_vld_r)
-			nxt_state = IDLE;
+	NOP :   if(&load_nop_cnt)
+			nxt_state = WAIT;
 	endcase
 end
-
 always @ (posedge clk) begin
 	if(rst)
 		word_cnt <= 8'b0;
@@ -90,19 +83,8 @@ always @ (posedge clk) begin
 		mosi_vld <= 1'b1;
 	else if(cur_state == WORK && miso_vld && word_cnt < (reg_word_num - 1))
 		mosi_vld <= 1'b1;
-	else if(cur_state != DONE && nxt_state == DONE)
-		mosi_vld <= 1'b1;//for load
 	else
 		mosi_vld <= 1'b0;
-end
-
-always @ (posedge clk) begin
-	if(rst)
-		miso_vld_r <= 1'b0;
-	else if(miso_vld && cur_state == DONE)
-		miso_vld_r <= 1'b1;
-	else if(cur_state == IDLE)
-		miso_vld_r <= 1'b0;
 end
 
 always @ (posedge clk) begin
@@ -131,26 +113,33 @@ end
 
 assign rx_fifo_wr_en = miso_vld && (work_cnt < RX_BLOCK_LEN) && (cur_state == WORK);
 wire [5:0] ch_cnt_sub1 = ch_cnt - 6'b1;
-assign rx_fifo_din = (work_cnt == (RX_BLOCK_LEN-1)) ? {miso_dat[31:16], 8'h12, 2'b0, ch_cnt_sub1} : miso_dat;
+wire [3:0] miner_id =   load == `API_NUM'b1111111110 ? 4'd0 :
+			load == `API_NUM'b1111111101 ? 4'd1 :
+			load == `API_NUM'b1111111011 ? 4'd2 :
+			load == `API_NUM'b1111110111 ? 4'd3 :
+			load == `API_NUM'b1111101111 ? 4'd4 :
+			load == `API_NUM'b1111011111 ? 4'd5 :
+			load == `API_NUM'b1110111111 ? 4'd6 :
+			load == `API_NUM'b1101111111 ? 4'd7 :
+			load == `API_NUM'b1011111111 ? 4'd8 :
+			load == `API_NUM'b0111111111 ? 4'd9 : 4'd10;
+
+assign rx_fifo_din = (work_cnt == (RX_BLOCK_LEN-1)) ? {miso_dat[31:16], 8'h12, 4'b0, miner_id} : miso_dat;
 
 assign led_get_nonce_l = rx_fifo_wr_en && (work_cnt == 2) && (miso_dat != 32'hbeafbeaf) && (ch_cnt_sub1 <= 4);
 assign led_get_nonce_h = rx_fifo_wr_en && (work_cnt == 2) && (miso_dat != 32'hbeafbeaf) && (ch_cnt_sub1 > 4);
 
 always @ (posedge clk) begin
 	if(rst)
-		load <= {`API_NUM{1'b1}};
-	else if(cur_state == IDLE && nxt_state != IDLE)
 		load <= {`API_NUM{1'b1}} ^ `API_NUM'b1;
-	else if(cur_state == NOP && nxt_state == WORK)
-		load <= {load[`API_NUM-2:0], 1'b1};
-	else if(cur_state == NOP && nxt_state == DONE)
-		load <= {`API_NUM{1'b1}};
+	else if(cur_state == NOP && nxt_state == WAIT)
+		load <= {load[`API_NUM-2:0], load[`API_NUM-1]};
 end
 
 always @ (posedge clk) begin
 	if(rst)
 		ch_cnt <= 6'b0;
-	else if(nxt_state == IDLE)
+	else if(cur_state == WAIT && nxt_state == WORK && ch_cnt == reg_ch_num)
 		ch_cnt <= 6'b0;
 	else if(cur_state != WORK && nxt_state == WORK)
 		ch_cnt <= 6'b1 + ch_cnt;
@@ -184,4 +173,37 @@ api_phy api_phy(
 /*input          */ .miso        (miso_w      )
 );
 
+//-----------------------------------------------
+//ila
+//-----------------------------------------------
+/*
+reg [31:0] tx_cnt;
+reg [31:0] sec;
+always @ (posedge clk) begin
+	if(sec != 1000000000)
+		sec <= sec + 1;
+	else
+		sec <= 0;
+end
+
+always @ (posedge clk) begin
+	if(sec == 0)
+		tx_cnt <= 0;
+	else if(cur_state == WAIT && ~timeout_busy && tx_fifo_empty && ~rx_fifo_full)
+		tx_cnt <= tx_cnt + 1;
+end
+
+wire [35:0] icon_ctrl_0;
+wire [255:0] trig0 = {
+sec,//69:38
+cur_state,//37:36
+nxt_state,//35:34
+rx_fifo_full,//33
+tx_fifo_empty,//32
+tx_cnt[31:0] //
+} ;
+icon icon_test(.CONTROL0(icon_ctrl_0));
+ila ila_test(.CONTROL(icon_ctrl_0), .CLK(clk), .TRIG0(trig0)
+);
+*/
 endmodule

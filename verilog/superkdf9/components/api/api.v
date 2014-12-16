@@ -40,7 +40,7 @@ wire                tx_fifo_wr_en     ;
 wire                tx_fifo_rd_en     ;
 wire [31 : 0]       tx_fifo_dout      ;
 wire                tx_fifo_full      ;
-wire [9  : 0]       tx_fifo_data_count;
+wire [10 : 0]       tx_fifo_data_count;
 wire                tx_fifo_empty = tx_fifo_data_count < reg_word_num;
 
 wire [31 : 0]       rx_fifo_din       ;
@@ -79,7 +79,7 @@ api_slave(
 
 /*input  [9 :0]    */ .rxcnt       (rx_fifo_data_count),
 /*input            */ .rxempty     (rx_fifo_empty     ),
-/*input  [9:0]     */ .txcnt       (tx_fifo_data_count),
+/*input  [10:0]    */ .txcnt       (tx_fifo_data_count),
 /*output           */ .reg_flush   (reg_rst           ),
 /*input            */ .txfull      (tx_fifo_full      ),
 
@@ -124,8 +124,8 @@ api_ctrl #(.WORK_LEN(WORK_LEN), .RX_FIFO_DEPTH(RX_FIFO_DEPTH)) api_ctrl(
 /*output               */ .led_get_nonce_h   (led_get_nonce_h   ) 
 );
 
-//512words
-fifo512 tx_fifo(
+//1024words
+fifo1024 tx_fifo(
 /*input          */ .clk       (clk               ),
 /*input          */ .srst      (rst               ),
 /*input  [31 : 0]*/ .din       (tx_fifo_din       ),
@@ -134,7 +134,7 @@ fifo512 tx_fifo(
 /*output [31 : 0]*/ .dout      (tx_fifo_dout      ),
 /*output         */ .full      (tx_fifo_full      ),
 /*output         */ .empty     (                  ),
-/*output [9  : 0]*/ .data_count(tx_fifo_data_count)
+/*output [10 : 0]*/ .data_count(tx_fifo_data_count)
 ) ;                                       
 
 //512words
