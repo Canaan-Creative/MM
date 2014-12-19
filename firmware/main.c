@@ -28,17 +28,6 @@
 
 #include "hexdump.c"
 
-#define IDLE_TIME	3	/* Seconds */
-#define TEST_TIME	15	/* Seconds */
-#define IDLE_TEMP	65	/* Degree (C) */
-#define TEST_CORE_COUNT	64	/* 4 * 16 */
-
-#define FAN_00		0x3ff
-#define FAN_10		0x399
-#define FAN_20		0x333
-#define FAN_50		0x1ff
-#define FAN_100		0x000
-
 static uint8_t g_pkg[AVA4_P_COUNT];
 static uint8_t g_act[AVA4_P_COUNT];
 static uint8_t g_dna[AVA4_MM_DNA_LEN];
@@ -577,6 +566,7 @@ int main(int argv, char **argc)
 	iic_test();
 #endif
 	timer_set(0, IDLE_TIME);
+	timer_set(1, 0);
 	led_ctrl(LED_OFF_ALL);
 
 #if 1

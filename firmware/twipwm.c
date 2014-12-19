@@ -12,6 +12,7 @@
 #include "defines.h"
 #include "io.h"
 #include "twipwm.h"
+#include "timer.h"
 
 static struct lm32_twipwm *tp = (struct lm32_twipwm *)TWIPWM_BASE;
 
@@ -97,21 +98,29 @@ void adjust_fan(uint32_t pwm)
 int16_t read_temp(void)
 {
 	static int16_t temp[10];
+	static int16_t last;
 	int i;
 	int32_t sum = 0;
 	int16_t min;
 	int16_t max;
 
+	if (timer_read(1))
+		return last;
+
+	timer_set(1, TEMP_TIME);
+
 	memcpy(temp, temp + 1, 9 * sizeof(int16_t));
 	temp[9] = (twi_read_2byte(LM32_TWI_REG_TEMP1) >> 4) / 16;
 	min = max = temp[9];
 
-	for(i = 0; i < 10; i++) {
+	for (i = 0; i < 10; i++) {
 		if(max < temp[i])
 			max = temp[i];
 		if(min > temp[i])
 			min = temp[i];
 		sum = sum + temp[i];
 	}
-	return (int16_t)((sum - max - min) / 8);
+
+	last = (int16_t)((sum - max - min) / 8);
+	return last;
 }
