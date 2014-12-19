@@ -94,6 +94,16 @@ load: $(HARDWARE_NAME).bit
 	$(xil_env) && impact -batch $(BATCHFILE)
 	@rm -f $(BATCHFILE)
 
+erase:
+	echo setmode -bs	>> $(BATCHFILE)
+	echo setcable -p auto	>> $(BATCHFILE)
+	echo identify		>> $(BATCHFILE)
+	echo attachFlash -p 1 -spi W25Q80BV		>> $(BATCHFILE)
+	echo erase -p 1 -o -spionly			>> $(BATCHFILE)
+	echo exit		>> $(BATCHFILE)
+	$(xil_env) && impact -batch $(BATCHFILE)
+	@rm -f $(BATCHFILE)
+
 $(HARDWARE_NAME).mcs: $(HARDWARE_NAME).bit
 	cp $^ ../synth
 	make -C ../synth $@
