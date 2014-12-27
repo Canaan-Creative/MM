@@ -231,25 +231,38 @@ static void api_change_cpm(uint32_t ch_num, uint32_t chip_num,
 		    uint32_t NR2, uint32_t NF2, uint32_t OD2, uint32_t NB2, uint32_t div2)
 {
 	uint32_t tx_data[23];
-	uint32_t i, k;
+	uint32_t i, k, j;
 
-	/* random numbers, keep different with nonce2 */
-	tx_data[18] = 0xa8bc6de9;
-	tx_data[19] = 0x35416784;
-	tx_data[20] = api_set_cpm(NR0, NF0, OD0, NB0, div0) | 0x40;
-	tx_data[21] = api_set_cpm(NR1, NF1, OD1, NB1, div1) | 0x40;
-	tx_data[22] = api_set_cpm(NR2, NF2, OD2, NB2, div2) | 0x40;
-	for (k = 0; k < ch_num; k++){
-		while((512 - api_get_tx_cnt()) < (chip_num * 23))
-			;
-		for(i = 0; i < chip_num; i++)
-			api_set_tx_fifo(tx_data);
+	for(j = 0; j < 3; j++){
+		/* random numbers, keep different with nonce2 */
+		tx_data[18] = 0xa8bc6de9 + j;
+		tx_data[19] = 0x35416784 + j;
+		if(j == 0){
+			tx_data[20] = api_set_cpm(NR0, NF0, OD0, NB0, div0) | 0x40;
+			tx_data[21] = 1;//api_set_cpm(NR1, NF1, OD1, NB1, div1) | 0x40;
+			tx_data[22] = 1;//api_set_cpm(NR2, NF2, OD2, NB2, div2) | 0x40;
+		}else if(j == 1){
+			tx_data[20] = 1;//api_set_cpm(NR0, NF0, OD0, NB0, div0) | 0x40;
+			tx_data[21] = api_set_cpm(NR1, NF1, OD1, NB1, div1) | 0x40;
+			tx_data[22] = 1;//api_set_cpm(NR2, NF2, OD2, NB2, div2) | 0x40;
+		}else if(j == 2){
+			tx_data[20] = 1;//api_set_cpm(NR0, NF0, OD0, NB0, div0) | 0x40;
+			tx_data[21] = 1;//api_set_cpm(NR1, NF1, OD1, NB1, div1) | 0x40;
+			tx_data[22] = api_set_cpm(NR2, NF2, OD2, NB2, div2) | 0x40;
+		}
+
+		for (k = 0; k < ch_num; k++){
+			while((512 - api_get_tx_cnt()) < (chip_num * 23))
+				;
+			for(i = 0; i < chip_num; i++)
+				api_set_tx_fifo(tx_data);
+		}
+
+		api_wait_done(ch_num, chip_num);
+
+		api_verify_nonce(ch_num, chip_num, 0, 0, NULL);
+		delay(1);
 	}
-
-	api_wait_done(ch_num, chip_num);
-
-	api_verify_nonce(ch_num, chip_num, 0, 0, NULL);
-	delay(1);
 }
 
 void api_initial(uint32_t ch_num, uint32_t chip_num, uint32_t spi_speed)
