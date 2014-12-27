@@ -36,8 +36,8 @@
 #define MINER_COUNT		10
 #define ASIC_COUNT		4
 
-#define SPI_SPEED		(0x4)
-#define CPU_FREQUENCY		(100 * 1000 * 1000) /* 50Mhz */
+#define SPI_SPEED		(0x2)
+#define CPU_FREQUENCY		(50 * 1000 * 1000) /* 50Mhz */
 #define UART_BAUD_RATE          (115200)
 
 /* Interrupt
