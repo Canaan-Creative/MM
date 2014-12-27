@@ -28,21 +28,11 @@
 
 #include "hexdump.c"
 
-#define IDLE_TIME	3	/* Seconds */
-#define TEST_TIME	15	/* Seconds */
-#define IDLE_TEMP	65	/* Degree (C) */
-#define TEST_CORE_COUNT	64	/* 4 * 16 */
-
-#define FAN_00		0x3ff
-#define FAN_10		0x399
-#define FAN_20		0x333
-#define FAN_50		0x1ff
-#define FAN_100		0x000
-
 static uint8_t g_pkg[AVA4_P_COUNT];
 static uint8_t g_act[AVA4_P_COUNT];
 static uint8_t g_dna[AVA4_MM_DNA_LEN];
 static uint8_t g_led_blinking = 0;
+static uint8_t g_postfailed = 0;
 static int g_module_id = AVA4_MODULE_BROADCAST;
 static int g_new_stratum = 0;
 static int g_local_work = 0;
@@ -353,7 +343,6 @@ static inline int decode_pkg(uint8_t *p, struct mm_work *mw)
 			adjust_fan(tmp & 0x7fffffff);
 		break;
 	case AVA4_P_TEST:
-		led_ctrl(LED_ERROR_ON);
 		adjust_fan(FAN_50);
 		wdg_feed(CPU_FREQUENCY * TEST_TIME);
 
@@ -375,7 +364,9 @@ static inline int decode_pkg(uint8_t *p, struct mm_work *mw)
 		set_asic_freq(freq);
 
 		if (api_asic_testcores(test_core_count, 1) < 4 * test_core_count)
-			led_ctrl(LED_ERROR_OFF);
+			g_postfailed &= 0xfe;
+		else
+			g_postfailed |= 1;
 
 		set_voltage(ASIC_0V);
 		adjust_fan(FAN_10);
@@ -429,9 +420,8 @@ static int read_result(struct mm_work *mw, struct result *ret)
 		job_id = memo & 0xffff0000;
 		ntime = (memo & 0xff00) >> 8;
 
+		g_local_work++;
 		if (job_id == mw->job_id) {
-			g_local_work++;
-
 			n = test_nonce(mw, nonce2, nonce0, ntime);
 			if (n == NONCE_HW) {
 				g_hw_work++;
@@ -526,8 +516,20 @@ static inline void led(void)
 
 	if (g_led_blinking)
 		led_ctrl(LED_ERROR_BLINKING);
+	else if (g_postfailed & 1)
+		led_ctrl(LED_ERROR_ON);
 	else
 		led_ctrl(LED_ERROR_OFF);
+
+	if (g_postfailed & 2)
+		led_ctrl(LED_PG1_ON);
+	else
+		led_ctrl(LED_PG1_BLINKING);
+
+	if (g_postfailed & 4)
+		led_ctrl(LED_PG2_ON);
+	else
+		led_ctrl(LED_PG2_BLINKING);
 }
 
 #ifdef MBOOT
@@ -564,6 +566,7 @@ int main(int argv, char **argc)
 	iic_test();
 #endif
 	timer_set(0, IDLE_TIME);
+	timer_set(1, 0);
 	led_ctrl(LED_OFF_ALL);
 
 #if 1
@@ -573,22 +576,22 @@ int main(int argv, char **argc)
 	set_voltage(ASIC_CORETEST_VOLT);
 	set_asic_freq(freq);
 	if (api_asic_testcores(TEST_CORE_COUNT, 0) >= 4 * TEST_CORE_COUNT)
-		led_ctrl(LED_ERROR_ON);
+		g_postfailed |= 1;
 #endif
 
 	i = read_power_good();
 	if (i == 0x1f || i == 0x3e0)
-		led_ctrl(LED_ERROR_ON);
+		g_postfailed |= 1;
 
 	if ((i & 0x1f) == 0x1f)
-		led_ctrl(LED_PG1_ON);
+		g_postfailed |= 2;
 	else
-		led_ctrl(LED_PG1_BLINKING);
+		g_postfailed &= 0xfd;
 
 	if (((i >> 5) & 0x1f) == 0x1f)
-		led_ctrl(LED_PG2_ON);
+		g_postfailed |= 4;
 	else
-		led_ctrl(LED_PG2_BLINKING);
+		g_postfailed &= 0xfb;
 
 	set_voltage(ASIC_0V);
 	g_new_stratum = 0;

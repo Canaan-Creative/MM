@@ -9,6 +9,18 @@
 #ifndef _SYSTEM_CONFIG_H_
 #define _SYSTEM_CONFIG_H_
 
+#define IDLE_TIME	3	/* Seconds */
+#define TEMP_TIME	1	/* Seconds */
+#define TEST_TIME	15	/* Seconds */
+#define IDLE_TEMP	65	/* Degree (C) */
+#define TEST_CORE_COUNT	64	/* 4 * 16 */
+
+#define FAN_00		0x3ff
+#define FAN_10		0x399
+#define FAN_20		0x333
+#define FAN_50		0x1ff
+#define FAN_100		0x000
+
 #define AVA4_DEFAULT_MODULES	64
 
 #ifdef MM41
