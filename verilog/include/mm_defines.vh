@@ -2,8 +2,8 @@
 `define MM_DEFINES_INCLUDED
 
 
-`define MM_CLK_IN_MHZ	100
-`define MM_CLK_1S_CNT	27'h5f5e100
+`define MM_CLK_IN_MHZ	50
+`define MM_CLK_1S_CNT	(27'h5f5e100/2)
 
 `define endian_swap(a) {a[7:0], a[15:8], a[23:16], a[31:24]}
 
