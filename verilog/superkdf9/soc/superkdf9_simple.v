@@ -1287,7 +1287,7 @@ twi u_twi(
 /*input  [7:0]  */ .GPIO_IN     (gpioPIO_IN                  ) ,
 /*output        */ .clk25m_on   (clk25m_on                   ) ,
 
-/*input  [3:0]  */ .led_bling   ({led_iic_rd, led_iic_wr, led_get_nonce_l, led_get_nonce_l})
+/*input  [3:0]  */ .led_bling   ({led_get_nonce_h, led_get_nonce_l, led_iic_rd, led_iic_wr})
 ) ;
 
 

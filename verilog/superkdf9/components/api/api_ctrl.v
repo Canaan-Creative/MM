@@ -112,7 +112,6 @@ end
 
 
 assign rx_fifo_wr_en = miso_vld && (work_cnt < RX_BLOCK_LEN) && (cur_state == WORK);
-wire [5:0] ch_cnt_sub1 = ch_cnt - 6'b1;
 wire [3:0] miner_id =   load == `API_NUM'b1111111110 ? 4'd0 :
 			load == `API_NUM'b1111111101 ? 4'd1 :
 			load == `API_NUM'b1111111011 ? 4'd2 :
@@ -126,8 +125,28 @@ wire [3:0] miner_id =   load == `API_NUM'b1111111110 ? 4'd0 :
 
 assign rx_fifo_din = (work_cnt == (RX_BLOCK_LEN-1)) ? {miso_dat[31:16], 8'h12, 4'b0, miner_id} : miso_dat;
 
-assign led_get_nonce_l = rx_fifo_wr_en && (work_cnt == 2) && (miso_dat != 32'hbeafbeaf) && (ch_cnt_sub1 <= 4);
-assign led_get_nonce_h = rx_fifo_wr_en && (work_cnt == 2) && (miso_dat != 32'hbeafbeaf) && (ch_cnt_sub1 > 4);
+reg led_get_nonce_l_r;
+always @ (posedge clk) begin
+	if(rst)
+		led_get_nonce_l_r <= 1'b0;
+	else if(rx_fifo_wr_en && (work_cnt == 2) && (miner_id <= 4))
+		led_get_nonce_l_r <= 1'b1;
+	else if(led_get_nonce_l)
+		led_get_nonce_l_r <= 1'b0;
+end
+
+reg led_get_nonce_h_r;
+always @ (posedge clk) begin
+	if(rst)
+		led_get_nonce_h_r <= 1'b0;
+	else if(rx_fifo_wr_en && (work_cnt == 2) && (miner_id > 4))
+		led_get_nonce_h_r <= 1'b1;
+	else if(led_get_nonce_h)
+		led_get_nonce_h_r <= 1'b0;
+end
+
+assign led_get_nonce_l = led_get_nonce_l_r && rx_fifo_wr_en && (work_cnt == RX_BLOCK_LEN - 2) && (miso_dat == 32'hbeafbeaf) && (miner_id <= 4);
+assign led_get_nonce_h = led_get_nonce_h_r && rx_fifo_wr_en && (work_cnt == RX_BLOCK_LEN - 2) && (miso_dat == 32'hbeafbeaf) && (miner_id > 4);
 
 always @ (posedge clk) begin
 	if(rst)

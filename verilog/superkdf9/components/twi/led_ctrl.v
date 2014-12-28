@@ -16,14 +16,11 @@ parameter LED_ON     = 4'b0001;
 parameter LED_SPARK  = 4'b0010;
 parameter LED_SPARK1 = 4'b0011;
 parameter LED_BLING  = 4'b0100;
-parameter LED_BREATH = 4'b0101;
 
 parameter SPARK_WIH = 25;
-parameter SPARK_MAX = 25'h989680 * 3;//300ms
-parameter BLING_MAX_I2C = 25'h2;
-parameter BLING_MAX_API = 25'h5;
-
-parameter BREATH_MAX  = 25'h180000;// 1/60s
+parameter SPARK_MAX = (25'h989680 * 3) / 2;//300ms
+parameter BLING_MAX_I2C = 25'h3;
+parameter BLING_MAX_API = 25'h10;
 
 reg [SPARK_WIH-1:0] led0_spark_cnt;
 reg [SPARK_WIH-1:0] led1_spark_cnt;
@@ -81,15 +78,13 @@ assign led_spark_cnt_max[3] = led3 == LED_BLING ? led3_spark_cnt == BLING_MAX_I2
 assign led_spark_cnt_max[4] = led4 == LED_BLING ? led4_spark_cnt == BLING_MAX_API:led4_spark_cnt == SPARK_MAX;
 assign led_spark_cnt_max[5] = led5 == LED_BLING ? led5_spark_cnt == BLING_MAX_API:led5_spark_cnt == SPARK_MAX;
 assign led_spark_cnt_max[6] = led6_spark_cnt == SPARK_MAX;
-assign led_spark_cnt_max[7] = led7 == LED_BREATH ? led7_spark_cnt == BREATH_MAX : led7_spark_cnt == SPARK_MAX;
+assign led_spark_cnt_max[7] = led7_spark_cnt == SPARK_MAX;
 
 reg [7:0] led_r;
 wire led7_w, led6_w, led5_w, led4_w, led3_w, led2_w, led1_w, led0_w;
 wire [7:0] led_tmp;
 assign led_tmp[6:0] = led_r[6:0] ^ led_spark_cnt_max[6:0];
-assign led_tmp[7] =     (led7 == LED_BREATH && (~led7_breath_flg))? (led7_breath_cnt >= led7_breath_round_cnt):
-			(led7 == LED_BREATH                      )? (led7_breath_cnt < led7_breath_round_cnt) :
-                        (led_r[7] ^ led_spark_cnt_max[7]);
+assign led_tmp[7] = led_r[7] ^ led_spark_cnt_max[7];
 
 always @ (posedge clk) begin
 	if(rst)
@@ -242,11 +237,11 @@ always @ (posedge clk) begin
                 led7_spark_cnt <= 0;
        else if(vld && (led7 == LED_OFF || led7 == LED_ON))                                                       
                 led7_spark_cnt <= 0;                                                                              
-	else if(vld && (led7 == LED_SPARK || (led7 == LED_SPARK1 && led7_change) || (led7 == LED_BREATH && led7_change)))
+	else if(vld && (led7 == LED_SPARK || (led7 == LED_SPARK1 && led7_change)))
                 led7_spark_cnt <= 1;                                                                              
         else if(led_spark_cnt_max[7] && led7 == LED_SPARK)
                 led7_spark_cnt <= 0;
-        else if(led_spark_cnt_max[7] && (led7 == LED_SPARK1 || led7 == LED_BREATH))
+        else if(led_spark_cnt_max[7] && (led7 == LED_SPARK1))
                 led7_spark_cnt <= 1;
         else if(|led7_spark_cnt)
                 led7_spark_cnt <= led7_spark_cnt + 1;
