@@ -507,12 +507,15 @@ static inline void led(void)
 	else
 		led_ctrl(LED_IDLE);
 
+	/* warn level(high to low) : fan/temp -> stratum */
 	if (!read_fan() || read_temp() >= IDLE_TEMP)
 		led_ctrl(LED_WARNING_BLINKING);
 	else if (g_new_stratum)
 		led_ctrl(LED_WARNING_OFF);
 	else
-		led_ctrl(LED_WARNING_ON);
+		/* g_new_stratum == 0 and timeout */
+		if (!timer_read(0))
+			led_ctrl(LED_WARNING_ON);
 
 	if (g_led_blinking)
 		led_ctrl(LED_ERROR_BLINKING);
