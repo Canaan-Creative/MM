@@ -16,8 +16,6 @@
 #include "io.h"
 #include "api.h"
 
-#include "api_test_data.c"	/* The test data array */
-
 static struct lm32_api *api = (struct lm32_api *)API_BASE;
 
 static uint32_t g_asic_freq[3] = {200, 200, 200};
@@ -161,8 +159,10 @@ static inline uint32_t api_gen_test_work(uint32_t i, uint32_t *data)
 	uint32_t tmp;
 	int j;
 
-	for (j = 0; j < 18; j++)
-		data[j] = test_data[i%16][j];
+	for (j = 0; j < 18; j++){
+		writel((i%16) * 18 + j, &api->ram);
+		data[j] = readl(&api->ram);
+	}
 
 	tmp = data[0];
         data[0] = data[0] ^ (i & 0xfffffff0);	/* nonce */
@@ -198,7 +198,7 @@ static uint32_t api_verify_nonce(uint32_t ch_num, uint32_t chip_num,
 			} else
 				chip_id++;
 
-			if (verify_on && ((rx_data[2] == target_nonce) || (rx_data[3] == target_nonce))) {
+			if (verify_on && ((rx_data[2] == target_nonce) || (rx_data[3] == target_nonce) || (rx_data[4] == target_nonce))) {
 				pass_cal_num++;
 			} else {
 #ifdef DEBUG_VERBOSE

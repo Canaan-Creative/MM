@@ -43,6 +43,7 @@ parameter API_RXFIFO  = 6'h04;
 parameter API_STATE   = 6'h08;
 parameter API_TIMEOUT = 6'h0c;
 parameter API_SCK     = 6'h10;
+parameter API_RAM     = 6'h14;
 
 //-----------------------------------------------------
 // WB bus ACK
@@ -77,6 +78,8 @@ wire api_timeout_rd_en = API_STB_I & ~API_WE_I & ( API_ADR_I == API_TIMEOUT ) & 
 wire api_sck_wr_en = API_STB_I & API_WE_I  & ( API_ADR_I == API_SCK ) & ~API_ACK_O ;
 wire api_sck_rd_en = API_STB_I & ~API_WE_I & ( API_ADR_I == API_SCK ) & ~API_ACK_O ;
 
+wire api_ram_wr_en = API_STB_I & API_WE_I  & ( API_ADR_I == API_RAM ) & ~API_ACK_O ;
+wire api_ram_rd_en = API_STB_I & ~API_WE_I  & ( API_ADR_I == API_RAM ) & ~API_ACK_O ;
 //-----------------------------------------------------
 // Register.txfifo
 //-----------------------------------------------------
@@ -113,6 +116,24 @@ always @ ( posedge clk ) begin
 	if( api_sck_wr_en     ) reg_word_num[7:0] <= API_DAT_I[31:24];
 end
 
+//-----------------------------------------------------
+// RAM
+//-----------------------------------------------------
+
+reg [8:0] tram_addr;                                                                                              
+wire [31:0] tram_dout;
+
+always @ (posedge clk) begin                                                                                    
+        if(api_ram_wr_en)
+                tram_addr <= API_DAT_I[8:0];                                                                    
+end
+
+test_data test_data(
+/*input          */ .clka (clk),
+/*input  [8 : 0] */ .addra(tram_addr),
+/*output [31 : 0]*/ .douta(tram_dout)
+);
+
 
 //-----------------------------------------------------
 // WB read
@@ -125,9 +146,19 @@ always @ ( posedge clk ) begin
 		api_rxfifo_rd_en : API_DAT_O <= rxempty ? 32'h12345678 : rd_rxfifo ;
 		api_timeout_rd_en: API_DAT_O <= {4'b0, reg_timeout[27:0]};
 		api_sck_rd_en    : API_DAT_O <= {reg_word_num[7:0], 2'b0,reg_ch_num[5:0], 8'h0, reg_sck[7:0]};
+		api_ram_rd_en    : API_DAT_O <= tram_dout;
 		default: API_DAT_O <= 32'hdeaddead ; 
 	endcase
 end
+
+
+endmodule
+
+module test_data(
+input           clka ,
+input  [8 : 0]  addra,
+output [31 : 0] douta 
+);
 
 endmodule
 
