@@ -239,7 +239,9 @@ ifneq ($(part),$(old_part))
   old_part := none
  endif
  $(info Old part is $(old_part), target is $(part), we need to clean first!)
+ $(shell mv test_data.ngc test_data.ngc_keep)
  $(shell rm -rf $(junk) *.ngc)
+ $(shell mv test_data.ngc_keep test_data.ngc)
 endif
 
 # vim: set ts=8 sw=8 fdm=marker : 
