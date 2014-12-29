@@ -35,6 +35,8 @@
 /* Broadcase or with I2C address */
 #define AVA4_P_SET	0x20
 #define AVA4_P_FINISH	0x21
+#define AVA4_P_SET_VOLT	0x22
+#define AVA4_P_SET_FREQ	0x23
 
 /* Have to send with I2C address */
 #define AVA4_P_POLLING	0x30
@@ -46,6 +48,8 @@
 #define AVA4_P_STATUS		0x41
 #define AVA4_P_NONCE		0x42
 #define AVA4_P_TEST_RET		0x43
+#define AVA4_P_STATUS_LW	0x44
+#define AVA4_P_STATUS_HW	0x45
 
 #define AVA4_MODULE_BROADCAST	0
 #endif	/* _PROTOCOL_H_ */
