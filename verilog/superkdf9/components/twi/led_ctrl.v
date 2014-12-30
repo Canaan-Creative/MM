@@ -19,8 +19,8 @@ parameter LED_BLING  = 4'b0100;
 
 parameter SPARK_WIH = 25;
 parameter SPARK_MAX = (25'h989680 * 3) / 2;//300ms
-parameter BLING_MAX_I2C = 25'h3;
-parameter BLING_MAX_API = 25'h10;
+parameter BLING_MAX_I2C = 25'h2;
+parameter BLING_MAX_API = 25'h6;
 
 reg [SPARK_WIH-1:0] led0_spark_cnt;
 reg [SPARK_WIH-1:0] led1_spark_cnt;

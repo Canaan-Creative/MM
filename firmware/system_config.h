@@ -129,6 +129,7 @@ struct lm32_api {
 	volatile unsigned int timeout;
 	volatile unsigned int sck;
 	volatile unsigned int ram;
+	volatile unsigned int lw;
 };
 
 /* TWI PWM */

@@ -17,6 +17,8 @@ input  [31:0]         tx_fifo_dout      ,
 output                rx_fifo_wr_en     ,
 output [31:0]         rx_fifo_din       ,
 input  [9:0]          rx_fifo_data_count,
+output [3:0]          miner_id          ,
+output reg [4:0]      work_cnt          ,
 
 output reg [`API_NUM-1:0] load          ,
 output                sck               ,
@@ -98,7 +100,6 @@ always @ (posedge clk) begin
 		load_nop_cnt <= 4'b0;
 end
 
-reg [4:0] work_cnt;
 always @ (posedge clk) begin
 	if(rst)
 		work_cnt <= 5'b0;
@@ -112,7 +113,7 @@ end
 
 
 assign rx_fifo_wr_en = miso_vld && (work_cnt < RX_BLOCK_LEN) && (cur_state == WORK);
-wire [3:0] miner_id =   load == `API_NUM'b1111111110 ? 4'd0 :
+assign     miner_id =   load == `API_NUM'b1111111110 ? 4'd0 :
 			load == `API_NUM'b1111111101 ? 4'd1 :
 			load == `API_NUM'b1111111011 ? 4'd2 :
 			load == `API_NUM'b1111110111 ? 4'd3 :
@@ -192,37 +193,4 @@ api_phy api_phy(
 /*input          */ .miso        (miso_w      )
 );
 
-//-----------------------------------------------
-//ila
-//-----------------------------------------------
-/*
-reg [31:0] tx_cnt;
-reg [31:0] sec;
-always @ (posedge clk) begin
-	if(sec != 1000000000)
-		sec <= sec + 1;
-	else
-		sec <= 0;
-end
-
-always @ (posedge clk) begin
-	if(sec == 0)
-		tx_cnt <= 0;
-	else if(cur_state == WAIT && ~timeout_busy && tx_fifo_empty && ~rx_fifo_full)
-		tx_cnt <= tx_cnt + 1;
-end
-
-wire [35:0] icon_ctrl_0;
-wire [255:0] trig0 = {
-sec,//69:38
-cur_state,//37:36
-nxt_state,//35:34
-rx_fifo_full,//33
-tx_fifo_empty,//32
-tx_cnt[31:0] //
-} ;
-icon icon_test(.CONTROL0(icon_ctrl_0));
-ila ila_test(.CONTROL(icon_ctrl_0), .CLK(clk), .TRIG0(trig0)
-);
-*/
 endmodule
