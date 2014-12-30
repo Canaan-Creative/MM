@@ -22,6 +22,7 @@ void api_set_timeout(uint32_t timeout);
 int api_send_work(struct work *w);
 
 void set_asic_freq(uint32_t value[]);
+void set_asic_freq_i(uint32_t cpm[]);
 uint32_t get_asic_freq(void);
 
 int api_asic_testcores(uint32_t cal_core_num, uint32_t ret);

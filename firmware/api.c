@@ -20,6 +20,7 @@ static struct lm32_api *api = (struct lm32_api *)API_BASE;
 
 static uint32_t g_asic_freq[3] = {200, 200, 200};
 static uint32_t g_asic_freq_avg = 0;
+#ifndef MM41
 static uint32_t g_freq_array[][6] = {
 	{100, 1, 16, 1, 16, 4},
 	{170, 1, 27, 1, 27, 4},
@@ -122,9 +123,10 @@ static uint32_t api_set_cpm(uint32_t NR, uint32_t NF, uint32_t OD, uint32_t NB, 
 	if(div == 64 ) div_loc = 6;
 	if(div == 128) div_loc = 7;
 
-	return 0x7 | (div_loc << 7) | (1 << 10) |
+	return 0x47 | (div_loc << 7) | (1 << 10) |
 		(NR_sub << 11) | (NF_sub << 15) | (OD_sub << 21) | (NB_sub << 25);
 }
+#endif
 
 static inline void api_set_num(uint32_t ch_num, uint32_t chip_num)
 {
@@ -214,15 +216,12 @@ static uint32_t api_verify_nonce(uint32_t ch_num, uint32_t chip_num,
 }
 
 static inline void api_flush(void)
-{	
+{
 	writel(0x2, &api->state);
 	delay(1);
 }
 
-static void api_change_cpm(uint32_t ch_num, uint32_t chip_num,
-		    uint32_t NR0, uint32_t NF0, uint32_t OD0, uint32_t NB0, uint32_t div0,
-		    uint32_t NR1, uint32_t NF1, uint32_t OD1, uint32_t NB1, uint32_t div1,
-		    uint32_t NR2, uint32_t NF2, uint32_t OD2, uint32_t NB2, uint32_t div2)
+static void api_change_cpm(uint32_t ch_num, uint32_t chip_num, uint32_t cpm1, uint32_t cpm2, uint32_t cpm3)
 {
 	uint32_t tx_data[23];
 	uint32_t i, k, j;
@@ -232,17 +231,17 @@ static void api_change_cpm(uint32_t ch_num, uint32_t chip_num,
 		tx_data[18] = 0xa8bc6de9 + j;
 		tx_data[19] = 0x35416784 + j;
 		if(j == 0){
-			tx_data[20] = api_set_cpm(NR0, NF0, OD0, NB0, div0) | 0x40;
+			tx_data[20] = cpm1;
 			tx_data[21] = 1;
 			tx_data[22] = 1;
 		}else if(j == 1){
 			tx_data[20] = 1;
-			tx_data[21] = api_set_cpm(NR1, NF1, OD1, NB1, div1) | 0x40;
+			tx_data[21] = cpm2;
 			tx_data[22] = 1;
 		}else if(j == 2){
 			tx_data[20] = 1;
 			tx_data[21] = 1;
-			tx_data[22] = api_set_cpm(NR2, NF2, OD2, NB2, div2) | 0x40;
+			tx_data[22] = cpm3;
 		}
 
 		for (k = 0; k < ch_num; k++){
@@ -318,13 +317,8 @@ static uint32_t api_asic_test(uint32_t ch_num, uint32_t chip_num,
 
 #ifdef DEBUG_VERBOSE
 		uint32_t pass_zone_num[3] = {0, 0, 0};
-		if (pass_zone_num) {
-			pass_zone_num[0] = 0;
-			pass_zone_num[1] = 0;
-			pass_zone_num[2] = 0;
-		}
 
-		if (pass_zone_num && verify_on) {
+		if (verify_on) {
 			if ((j - 2) < (28 * 4 - 4) * 16)
 				pass_zone_num[0] += tmp;
 			else if ((j - 2) < (28 * 4 - 4 + 28 * 4) * 16)
@@ -394,9 +388,9 @@ int api_send_work(struct work *w)
 	return 0;
 }
 
-void set_asic_freq(uint32_t value[])
+static inline void set_asic_timeout(uint32_t value[])
 {
-	int i, j, freq_index[3];
+	int i;
 	uint32_t max_freq = 0;
 
 	for (i = 0; i < 3; i++)
@@ -413,6 +407,17 @@ void set_asic_freq(uint32_t value[])
 	api_set_timeout((ASIC_TIMEOUT_100M / max_freq) * 100 / 28);
 	api_flush();
 
+	g_asic_freq_avg = (g_asic_freq[0] + g_asic_freq[1] * 4 + g_asic_freq[2] * 4) / 9;
+}
+
+void set_asic_freq(uint32_t value[])
+{
+#ifndef MM41
+	int i, j, freq_index[3];
+	uint32_t cpm1, cpm2, cpm3;
+
+	set_asic_timeout(value);
+
 	for (j = 0; j < 3; j++) {
 		i = 0;
 		while (g_freq_array[i][0] != 1000) {
@@ -424,17 +429,34 @@ void set_asic_freq(uint32_t value[])
 		freq_index[j] = i;
 	}
 
-	api_change_cpm(MINER_COUNT, ASIC_COUNT,
-		       g_freq_array[freq_index[0]][1], g_freq_array[freq_index[0]][2], g_freq_array[freq_index[0]][3],
-		       g_freq_array[freq_index[0]][4], g_freq_array[freq_index[0]][5],
+	cpm1 = api_set_cpm(g_freq_array[freq_index[0]][1],
+			g_freq_array[freq_index[0]][2],
+			g_freq_array[freq_index[0]][3],
+			g_freq_array[freq_index[0]][4],
+			g_freq_array[freq_index[0]][5]);
 
-		       g_freq_array[freq_index[1]][1], g_freq_array[freq_index[1]][2], g_freq_array[freq_index[1]][3],
-		       g_freq_array[freq_index[1]][4], g_freq_array[freq_index[1]][5],
+	cpm2 = api_set_cpm(g_freq_array[freq_index[1]][1],
+			g_freq_array[freq_index[1]][2],
+			g_freq_array[freq_index[1]][3],
+			g_freq_array[freq_index[1]][4],
+			g_freq_array[freq_index[1]][5]);
 
-		       g_freq_array[freq_index[2]][1], g_freq_array[freq_index[2]][2], g_freq_array[freq_index[2]][3],
-		       g_freq_array[freq_index[2]][4], g_freq_array[freq_index[2]][5]);
+	cpm3 = api_set_cpm(g_freq_array[freq_index[2]][1],
+			g_freq_array[freq_index[2]][2],
+			g_freq_array[freq_index[2]][3],
+			g_freq_array[freq_index[2]][4],
+			g_freq_array[freq_index[2]][5]);
 
-	g_asic_freq_avg = (g_asic_freq[0] + g_asic_freq[1] * 4 + g_asic_freq[2] * 4) / 9;
+	api_change_cpm(MINER_COUNT, ASIC_COUNT, cpm1, cpm2, cpm3);
+#else
+	set_asic_timeout(value);
+#endif
+}
+
+/* Must call set_asic_freq first, Call from AVA4_P_SET_FREQ, Only for MM-4.1 */
+void set_asic_freq_i(uint32_t cpm[])
+{
+	api_change_cpm(MINER_COUNT, ASIC_COUNT, cpm[1], cpm[2], cpm[3]);
 }
 
 uint32_t get_asic_freq(void)

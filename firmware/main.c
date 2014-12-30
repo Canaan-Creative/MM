@@ -232,7 +232,7 @@ static inline int decode_pkg(uint8_t *p, struct mm_work *mw)
 	unsigned int actual_crc;
 	int idx, cnt, poweron = 0;
 	uint32_t tmp;
-	uint32_t freq[3];
+	uint32_t freq[3], cpm[3];
 	uint32_t test_core_count;
 
 	uint8_t *data = p + 6;
@@ -324,6 +324,13 @@ static inline int decode_pkg(uint8_t *p, struct mm_work *mw)
 		memcpy(&g_nonce2_range, data + 16, 4);
 		mw->nonce2 = g_nonce2_offset + (g_nonce2_range / AVA4_DEFAULT_MODULES) * g_module_id;
 		debug32("[%d] N2: %08x(%08x-%08x)\n", g_module_id, mw->nonce2, g_nonce2_offset, g_nonce2_range);
+		break;
+	case AVA4_P_SET_FREQ:
+		memcpy(&cpm[0], data, 4);
+		memcpy(&cpm[1], data + 4, 4);
+		memcpy(&cpm[2], data + 8, 4);
+		set_asic_freq_i(cpm);
+		debug32("CPM: %08x-%08x-%08x\n", cpm[0], cpm[1], cpm[2]);
 		break;
 	case AVA4_P_FINISH:
 		if (read_temp() >= IDLE_TEMP)
