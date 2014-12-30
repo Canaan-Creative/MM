@@ -34,6 +34,11 @@ output reg [7:0]  reg_sck     ,
 output reg [5:0]  reg_ch_num  ,
 output reg [7:0]  reg_word_num,
 
+input             rx_fifo_wr_en,
+input  [31:0]     rx_fifo_din  ,
+input  [3:0]      miner_id     ,
+input  [4:0]      work_cnt     ,
+
 output            rxfifo_pop  ,
 input  [31:0]     rxfifo_dout   
 );
@@ -44,6 +49,7 @@ parameter API_STATE   = 6'h08;
 parameter API_TIMEOUT = 6'h0c;
 parameter API_SCK     = 6'h10;
 parameter API_RAM     = 6'h14;
+parameter API_LM      = 6'h18;//local work
 
 //-----------------------------------------------------
 // WB bus ACK
@@ -80,6 +86,10 @@ wire api_sck_rd_en = API_STB_I & ~API_WE_I & ( API_ADR_I == API_SCK ) & ~API_ACK
 
 wire api_ram_wr_en = API_STB_I & API_WE_I  & ( API_ADR_I == API_RAM ) & ~API_ACK_O ;
 wire api_ram_rd_en = API_STB_I & ~API_WE_I  & ( API_ADR_I == API_RAM ) & ~API_ACK_O ;
+
+wire api_lw_wr_en = API_STB_I & API_WE_I  & ( API_ADR_I == API_LM ) & ~API_ACK_O ;
+wire api_lw_rd_en = API_STB_I & ~API_WE_I  & ( API_ADR_I == API_LM ) & ~API_ACK_O ;
+
 //-----------------------------------------------------
 // Register.txfifo
 //-----------------------------------------------------
@@ -134,6 +144,75 @@ test_data test_data(
 /*output [31 : 0]*/ .douta(tram_dout)
 );
 
+//-----------------------------------------------------
+// Local Work
+//-----------------------------------------------------
+reg [23:0] lw0;
+reg [23:0] lw1;
+reg [23:0] lw2;
+reg [23:0] lw3;
+reg [23:0] lw4;
+reg [23:0] lw5;
+reg [23:0] lw6;
+reg [23:0] lw7;
+reg [23:0] lw8;
+reg [23:0] lw9;
+
+reg [23:0] reg_lw;
+always @ (posedge clk) begin
+	if(api_lw_wr_en)
+		reg_lw <= API_DAT_I[3:0] == 0 ? lw0 :
+			  API_DAT_I[3:0] == 1 ? lw1 :
+			  API_DAT_I[3:0] == 2 ? lw2 :
+			  API_DAT_I[3:0] == 3 ? lw3 :
+			  API_DAT_I[3:0] == 4 ? lw4 :
+			  API_DAT_I[3:0] == 5 ? lw5 :
+			  API_DAT_I[3:0] == 6 ? lw6 :
+			  API_DAT_I[3:0] == 7 ? lw7 :
+			  API_DAT_I[3:0] == 8 ? lw8 : lw9;
+end
+
+reg [31:0] rx_fifo_din_r;
+wire lw_vld_data = rx_fifo_wr_en && (work_cnt > 1) && (work_cnt < 10);
+wire lw_vld = lw_vld_data && (rx_fifo_din != 32'hbeafbeaf) && (rx_fifo_din != rx_fifo_din_r);
+always @ (posedge clk) begin
+	if(lw_vld_data)
+		rx_fifo_din_r <= rx_fifo_din;
+end
+
+wire overflow = &lw0 || &lw1 || &lw2 || &lw3 || &lw4 || &lw5 || &lw6 || &lw7 || &lw8 || &lw9;
+
+always @ (posedge clk) begin
+        if((api_lw_wr_en && API_DAT_I[3:0] == 0) || overflow) lw0 <= 0;
+	else if(lw_vld && miner_id == 4'd0) lw0 <= lw0 + 24'b1;
+
+        if((api_lw_wr_en && API_DAT_I[3:0] == 1) || overflow) lw1 <= 0;
+        else if(lw_vld && miner_id == 4'd1) lw1 <= lw1 + 24'b1;
+
+        if((api_lw_wr_en && API_DAT_I[3:0] == 2) || overflow) lw2 <= 0;
+        else if(lw_vld && miner_id == 4'd2) lw2 <= lw2 + 24'b1;
+
+        if((api_lw_wr_en && API_DAT_I[3:0] == 3) || overflow) lw3 <= 0;
+        else if(lw_vld && miner_id == 4'd3) lw3 <= lw3 + 24'b1;
+
+        if((api_lw_wr_en && API_DAT_I[3:0] == 4) || overflow) lw4 <= 0;
+        else if(lw_vld && miner_id == 4'd4) lw4 <= lw4 + 24'b1;
+
+        if((api_lw_wr_en && API_DAT_I[3:0] == 5) || overflow) lw5 <= 0;
+        else if(lw_vld && miner_id == 4'd5) lw5 <= lw5 + 24'b1;
+
+        if((api_lw_wr_en && API_DAT_I[3:0] == 6) || overflow) lw6 <= 0;
+        else if(lw_vld && miner_id == 4'd6) lw6 <= lw6 + 24'b1;
+
+        if((api_lw_wr_en && API_DAT_I[3:0] == 7) || overflow) lw7 <= 0;
+        else if(lw_vld && miner_id == 4'd7) lw7 <= lw7 + 24'b1;
+
+        if((api_lw_wr_en && API_DAT_I[3:0] == 8) || overflow) lw8 <= 0;
+        else if(lw_vld && miner_id == 4'd8) lw8 <= lw8 + 24'b1;
+
+        if((api_lw_wr_en && API_DAT_I[3:0] == 9) || overflow) lw9 <= 0;
+        else if(lw_vld && miner_id == 4'd9) lw9 <= lw9 + 24'b1;
+end
 
 //-----------------------------------------------------
 // WB read
@@ -147,6 +226,7 @@ always @ ( posedge clk ) begin
 		api_timeout_rd_en: API_DAT_O <= {4'b0, reg_timeout[27:0]};
 		api_sck_rd_en    : API_DAT_O <= {reg_word_num[7:0], 2'b0,reg_ch_num[5:0], 8'h0, reg_sck[7:0]};
 		api_ram_rd_en    : API_DAT_O <= tram_dout;
+		api_lw_rd_en     : API_DAT_O <= {8'b0, reg_lw};
 		default: API_DAT_O <= 32'hdeaddead ; 
 	endcase
 end
