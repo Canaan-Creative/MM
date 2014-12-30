@@ -104,6 +104,7 @@ uint32_t set_voltage(uint32_t value)
 /* Must call set_voltage first(record g_voltage), Call from AVA4_P_SET_VOLT, Only for MM-4.1 */
 uint32_t set_voltage_i(uint32_t value[])
 {
+#ifdef MM41
 	uint32_t ret;
 	uint8_t i, diff = 0, ch1 = 0, ch2 = 0;
 	int poweron = 0;
@@ -139,6 +140,9 @@ uint32_t set_voltage_i(uint32_t value[])
 	}
 
 	return ret;
+#else
+	return 0;
+#endif
 }
 
 uint32_t get_voltage(void)

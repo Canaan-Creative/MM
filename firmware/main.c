@@ -298,6 +298,7 @@ static inline int decode_pkg(uint8_t *p, struct mm_work *mw)
 		memcpy(mw->target, data, AVA4_P_DATA_LEN);
 		break;
 	case AVA4_P_SET:
+		/* Chagne voltage and freq in P_SET_VOLT / P_SET_FREQ */
 		if (read_temp() >= IDLE_TEMP)
 			break;
 		memcpy(&tmp, data, 4);
@@ -371,6 +372,9 @@ static inline int decode_pkg(uint8_t *p, struct mm_work *mw)
 		memcpy(&tmp, data + 4, 4);
 		debug32("V: %08x", tmp);
 		set_voltage(tmp);
+		for (i = 0; i < 10; i++)
+			val[i] = tmp;
+		set_voltage_i(val);
 
 		memcpy(&tmp, data + 8, 4);
 		val[0] = (tmp & 0x3ff00000) >> 20;
@@ -385,6 +389,9 @@ static inline int decode_pkg(uint8_t *p, struct mm_work *mw)
 			g_postfailed |= 1;
 
 		set_voltage(ASIC_0V);
+		for (i = 0; i < 10; i++)
+			val[i] = ASIC_0V;
+		set_voltage_i(val);
 		adjust_fan(FAN_10);
 		wdg_feed(CPU_FREQUENCY * IDLE_TIME);
 		break;
@@ -560,6 +567,8 @@ int main(int argv, char **argc)
 	struct work work;
 	struct result result;
 	int i;
+	uint32_t val[10];
+
 #ifdef MBOOT
 	mboot();
 #endif
@@ -593,6 +602,10 @@ int main(int argv, char **argc)
 	uint32_t freq[3] = {200, 200, 200};
 
 	set_voltage(ASIC_CORETEST_VOLT);
+	for (i = 0; i < 10; i++) {
+		val[i] = ASIC_CORETEST_VOLT;
+	}
+	set_voltage_i(val);
 	set_asic_freq(freq);
 	if (api_asic_testcores(TEST_CORE_COUNT, 0) >= 4 * TEST_CORE_COUNT)
 		g_postfailed |= 1;
@@ -613,6 +626,10 @@ int main(int argv, char **argc)
 		g_postfailed &= 0xfb;
 
 	set_voltage(ASIC_0V);
+	for (i = 0; i < 10; i++) {
+		val[i] = ASIC_0V;
+	}
+	set_voltage_i(val);
 	g_new_stratum = 0;
 	while (1) {
 		wdg_feed(CPU_FREQUENCY * IDLE_TIME);
@@ -627,6 +644,10 @@ int main(int argv, char **argc)
 			g_ntime_offset = ASIC_COUNT;
 
 			set_voltage(ASIC_0V);
+			for (i = 0; i < 10; i++) {
+				val[i] = ASIC_0V;
+			}
+			set_voltage_i(val);
 
 			if (read_temp() >= IDLE_TEMP) {
 				adjust_fan(FAN_100);
