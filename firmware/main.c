@@ -383,6 +383,11 @@ static inline int decode_pkg(uint8_t *p, struct mm_work *mw)
 		debug32(" F: %08x(%d:%d:%d)\n", tmp, val[0], val[1], val[2]);
 		set_asic_freq(val);
 
+		memcpy(&val[0], data + 12, 4);
+		memcpy(&val[1], data + 16, 4);
+		memcpy(&val[2], data + 20, 4);
+		set_asic_freq_i(val);
+
 		if (api_asic_testcores(test_core_count, 1) < 4 * test_core_count)
 			g_postfailed &= 0xfe;
 		else
@@ -600,6 +605,7 @@ int main(int argv, char **argc)
 #if 1
 	/* Test part of ASIC cores */
 	uint32_t freq[3] = {200, 200, 200};
+	uint32_t cpm[3] = {0x1e0784c7, 0x1e0784c7, 0x1e0784c7};
 
 	set_voltage(ASIC_CORETEST_VOLT);
 	for (i = 0; i < 10; i++) {
@@ -607,6 +613,7 @@ int main(int argv, char **argc)
 	}
 	set_voltage_i(val);
 	set_asic_freq(freq);
+	set_asic_freq_i(cpm);
 	if (api_asic_testcores(TEST_CORE_COUNT, 0) >= 4 * TEST_CORE_COUNT)
 		g_postfailed |= 1;
 #endif
