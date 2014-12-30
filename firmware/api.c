@@ -456,7 +456,9 @@ void set_asic_freq(uint32_t value[])
 /* Must call set_asic_freq first, Call from AVA4_P_SET_FREQ, Only for MM-4.1 */
 void set_asic_freq_i(uint32_t cpm[])
 {
+#ifdef MM41
 	api_change_cpm(MINER_COUNT, ASIC_COUNT, cpm[1], cpm[2], cpm[3]);
+#endif
 }
 
 uint32_t get_asic_freq(void)

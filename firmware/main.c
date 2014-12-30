@@ -614,6 +614,7 @@ int main(int argv, char **argc)
 	set_voltage_i(val);
 	set_asic_freq(freq);
 	set_asic_freq_i(cpm);
+	gpio_reset_asic();
 	if (api_asic_testcores(TEST_CORE_COUNT, 0) >= 4 * TEST_CORE_COUNT)
 		g_postfailed |= 1;
 #endif

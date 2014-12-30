@@ -106,7 +106,7 @@ uint32_t set_voltage_i(uint32_t value[])
 {
 #ifdef MM41
 	uint32_t ret;
-	uint8_t i, diff = 0, ch1 = 0, ch2 = 0;
+	uint8_t i, diff = 0, ch1 = 0, ch2 = 0, reset = 1;
 	int poweron = 0;
 
 	for (i = 0; i < 10; i++) {
@@ -121,6 +121,8 @@ uint32_t set_voltage_i(uint32_t value[])
 
 		if (g_voltage_i[i] == ASIC_0V)
 			poweron = 1;
+		else
+			reset = 0;
 	}
 
 	if (!diff)
@@ -132,9 +134,7 @@ uint32_t set_voltage_i(uint32_t value[])
 	if (ch2)
 		shift_update(sft1, g_voltage_i + 5, poweron);
 
-	if ((g_voltage_i[0] == ASIC_0V) && (g_voltage_i[1] == ASIC_0V) &&
-		(g_voltage_i[2] == ASIC_0V) && (g_voltage_i[3] == ASIC_0V) &&
-		(g_voltage_i[4] == ASIC_0V)) {
+	if (reset) {
 		gpio_reset_asic();
 		ret = 1;
 	}
