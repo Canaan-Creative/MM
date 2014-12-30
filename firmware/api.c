@@ -20,7 +20,7 @@ static struct lm32_api *api = (struct lm32_api *)API_BASE;
 
 static uint32_t g_asic_freq[3] = {200, 200, 200};
 static uint32_t g_asic_freq_avg = 0;
-#ifndef MM41
+#ifdef MM40
 static uint32_t g_freq_array[][6] = {
 	{100, 1, 16, 1, 16, 4},
 	{170, 1, 27, 1, 27, 4},
@@ -410,9 +410,10 @@ static inline void set_asic_timeout(uint32_t value[])
 	g_asic_freq_avg = (g_asic_freq[0] + g_asic_freq[1] * 4 + g_asic_freq[2] * 4) / 9;
 }
 
+/* 1 -> 4 -> 4 */
 void set_asic_freq(uint32_t value[])
 {
-#ifndef MM41
+#ifdef MM40
 	int i, j, freq_index[3];
 	uint32_t cpm1, cpm2, cpm3;
 
@@ -457,7 +458,18 @@ void set_asic_freq(uint32_t value[])
 void set_asic_freq_i(uint32_t cpm[])
 {
 #ifdef MM41
-	api_change_cpm(MINER_COUNT, ASIC_COUNT, cpm[1], cpm[2], cpm[3]);
+	static uint32_t lastcpm[3];
+
+	if ((lastcpm[0] == cpm[0]) &&
+	    (lastcpm[1] == cpm[1]) &&
+	    (lastcpm[2] == cpm[2]))
+		return;
+
+	lastcpm[0] = cpm[0];
+	lastcpm[1] = cpm[1];
+	lastcpm[2] = cpm[2];
+
+	api_change_cpm(MINER_COUNT, ASIC_COUNT, cpm[0], cpm[1], cpm[2]);
 #endif
 }
 

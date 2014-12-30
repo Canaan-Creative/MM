@@ -70,7 +70,7 @@ static void shift_update(struct lm32_shifter *s, uint32_t value[], int poweron)
 
 uint32_t set_voltage(uint32_t value)
 {
-#ifndef MM41
+#ifdef MM40
 	uint32_t ret = 0;
 	int poweron = 0;
 	uint8_t i;

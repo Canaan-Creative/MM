@@ -298,7 +298,7 @@ static inline int decode_pkg(uint8_t *p, struct mm_work *mw)
 		memcpy(mw->target, data, AVA4_P_DATA_LEN);
 		break;
 	case AVA4_P_SET:
-		/* Chagne voltage and freq in P_SET_VOLT / P_SET_FREQ */
+		/* Chagne voltage and freq in P_SET_VOLT / P_SET_FREQ (>= MM-4.1) */
 		if (read_temp() >= IDLE_TEMP)
 			break;
 		memcpy(&tmp, data, 4);
@@ -336,9 +336,9 @@ static inline int decode_pkg(uint8_t *p, struct mm_work *mw)
 		set_voltage_i(val);
 		break;
 	case AVA4_P_SET_FREQ:
-		memcpy(&val[0], data, 4);
+		memcpy(&val[2], data, 4);
 		memcpy(&val[1], data + 4, 4);
-		memcpy(&val[2], data + 8, 4);
+		memcpy(&val[0], data + 8, 4);
 		set_asic_freq_i(val);
 		debug32("CPM: %08x-%08x-%08x\n", val[0], val[1], val[2]);
 		break;
