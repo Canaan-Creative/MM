@@ -36,7 +36,9 @@ static uint8_t g_postfailed = 0;
 static int g_module_id = AVA4_MODULE_BROADCAST;
 static int g_new_stratum = 0;
 static int g_local_work = 0;
+static int g_local_work_i[MINER_COUNT];
 static int g_hw_work = 0;
+static int g_hw_work_i[MINER_COUNT];
 static uint32_t g_nonce2_offset = 0;
 static uint32_t g_nonce2_range = 0xffffffff;
 static int g_ntime_offset = ASIC_COUNT;
@@ -143,7 +145,8 @@ static void encode_pkg(uint8_t *p, int type, uint8_t *buf, unsigned int len)
 {
 	uint32_t tmp;
 	uint16_t crc;
-	uint8_t *data;
+	uint8_t *data, i;
+	uint32_t val[MINER_COUNT];
 
 	memset(p, 0, AVA4_P_COUNT);
 
@@ -156,7 +159,7 @@ static void encode_pkg(uint8_t *p, int type, uint8_t *buf, unsigned int len)
 	p[5] = 1;
 
 	data = p + 6;
-	switch(type) {
+	switch (type) {
 	case AVA4_P_ACKDETECT:
 		p[3] = 0;
 		memcpy(data, g_dna, AVA4_MM_DNA_LEN); /* MM_DNA */
@@ -178,11 +181,34 @@ static void encode_pkg(uint8_t *p, int type, uint8_t *buf, unsigned int len)
 		tmp = get_voltage();
 		memcpy(data + 12, &tmp, 4);
 
+		api_get_lw(val);
+		for (i = 0; i < MINER_COUNT; i++) {
+			g_local_work_i[i] += val[i];
+			g_local_work += val[i];
+		}
 		memcpy(data + 16, &g_local_work, 4);
 		memcpy(data + 20, &g_hw_work, 4);
 
 		tmp = read_power_good();
 		memcpy(data + 24, &tmp, 4);
+		break;
+	case AVA4_P_STATUS_LW:
+		for (i = 0; i < MINER_COUNT; i++) {
+			data[i * 3] = (g_local_work_i[i] >> 16) & 0xff;
+			data[i * 3 + 1] = (g_local_work_i[i] >> 8) & 0xff;
+			data[i * 3 + 2] = g_local_work_i[i] & 0xff;
+
+			g_local_work_i[i] = 0;
+		}
+		break;
+	case AVA4_P_STATUS_HW:
+		for (i = 0; i < MINER_COUNT; i++) {
+			data[i * 3] = (g_hw_work_i[i] >> 16) & 0xff;
+			data[i * 3 + 1] = (g_hw_work_i[i] >> 8) & 0xff;
+			data[i * 3 + 2] = g_hw_work_i[i] & 0xff;
+
+			g_hw_work_i[i] = 0;
+		}
 		break;
 	default:
 		break;
@@ -209,13 +235,27 @@ uint32_t send_pkg(int type, uint8_t *buf, uint32_t len, int block)
 
 static inline void polling(void)
 {
+	static uint8_t i;
 	uint8_t *data;
 
 	if (ret_consume == ret_produce) {
-		send_pkg(AVA4_P_STATUS, NULL, 0, 0);
-
-		g_local_work = 0;
-		g_hw_work = 0;
+		switch (i % 3) {
+		case 0:
+			send_pkg(AVA4_P_STATUS, NULL, 0, 0);
+			g_local_work = 0;
+			g_hw_work = 0;
+			break;
+		case 1:
+			send_pkg(AVA4_P_STATUS_LW, NULL, 0, 0);
+			break;
+		case 2:
+			send_pkg(AVA4_P_STATUS_HW, NULL, 0, 0);
+			break;
+		default:
+			break;
+		}
+		i++;
+		i = i % 3;
 		return;
 	}
 
@@ -232,7 +272,7 @@ static inline int decode_pkg(uint8_t *p, struct mm_work *mw)
 	unsigned int actual_crc;
 	int idx, cnt, poweron = 0;
 	uint32_t tmp;
-	uint32_t val[10], i;
+	uint32_t val[MINER_COUNT], i;
 	uint32_t test_core_count;
 
 	uint8_t *data = p + 6;
@@ -328,7 +368,7 @@ static inline int decode_pkg(uint8_t *p, struct mm_work *mw)
 		break;
 	case AVA4_P_SET_VOLT:
 		debug32("VOL:");
-		for (i = 0; i < 10; i++) {
+		for (i = 0; i < MINER_COUNT; i++) {
 			val[i] = data[i * 2] << 8 | data[i * 2 + 1];
 			debug32(" %08x", val[i]);
 		}
@@ -372,7 +412,7 @@ static inline int decode_pkg(uint8_t *p, struct mm_work *mw)
 		memcpy(&tmp, data + 4, 4);
 		debug32("V: %08x", tmp);
 		set_voltage(tmp);
-		for (i = 0; i < 10; i++)
+		for (i = 0; i < MINER_COUNT; i++)
 			val[i] = tmp;
 		set_voltage_i(val);
 
@@ -394,7 +434,7 @@ static inline int decode_pkg(uint8_t *p, struct mm_work *mw)
 			g_postfailed |= 1;
 
 		set_voltage(ASIC_0V);
-		for (i = 0; i < 10; i++)
+		for (i = 0; i < MINER_COUNT; i++)
 			val[i] = ASIC_0V;
 		set_voltage_i(val);
 		adjust_fan(FAN_10);
@@ -448,11 +488,11 @@ static int read_result(struct mm_work *mw, struct result *ret)
 		job_id = memo & 0xffff0000;
 		ntime = (memo & 0xff00) >> 8;
 
-		g_local_work++;
 		if (job_id == mw->job_id) {
 			n = test_nonce(mw, nonce2, nonce0, ntime);
 			if (n == NONCE_HW) {
 				g_hw_work++;
+				g_hw_work_i[miner_id]++;
 				continue;
 			}
 		}
@@ -572,7 +612,7 @@ int main(int argv, char **argc)
 	struct work work;
 	struct result result;
 	int i;
-	uint32_t val[10];
+	uint32_t val[MINER_COUNT];
 
 #ifdef MBOOT
 	mboot();
@@ -608,7 +648,7 @@ int main(int argv, char **argc)
 	uint32_t cpm[3] = {0x1e0784c7, 0x1e0784c7, 0x1e0784c7};
 
 	set_voltage(ASIC_CORETEST_VOLT);
-	for (i = 0; i < 10; i++) {
+	for (i = 0; i < MINER_COUNT; i++) {
 		val[i] = ASIC_CORETEST_VOLT;
 	}
 	set_voltage_i(val);
@@ -634,8 +674,10 @@ int main(int argv, char **argc)
 		g_postfailed &= 0xfb;
 
 	set_voltage(ASIC_0V);
-	for (i = 0; i < 10; i++) {
+	for (i = 0; i < MINER_COUNT; i++) {
 		val[i] = ASIC_0V;
+		g_hw_work_i[i] = 0;
+		g_local_work_i[i] = 0;
 	}
 	set_voltage_i(val);
 	g_new_stratum = 0;
@@ -652,8 +694,9 @@ int main(int argv, char **argc)
 			g_ntime_offset = ASIC_COUNT;
 
 			set_voltage(ASIC_0V);
-			for (i = 0; i < 10; i++) {
+			for (i = 0; i < MINER_COUNT; i++) {
 				val[i] = ASIC_0V;
+				g_hw_work_i[i] = 0;
 			}
 			set_voltage_i(val);
 
@@ -681,7 +724,7 @@ int main(int argv, char **argc)
 		if (!g_new_stratum)
 			continue;
 
-		if (api_get_tx_cnt() <= 23 * 10) {
+		if (api_get_tx_cnt() <= 23 * MINER_COUNT) {
 			miner_gen_nonce2_work(&mm_work, mm_work.nonce2++, &work);
 			api_send_work(&work);
 

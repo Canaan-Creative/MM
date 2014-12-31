@@ -26,4 +26,5 @@ void set_asic_freq_i(uint32_t cpm[]);
 uint32_t get_asic_freq(void);
 
 int api_asic_testcores(uint32_t cal_core_num, uint32_t ret);
+void api_get_lw(uint32_t *buf);
 #endif	/* _API_H_ */

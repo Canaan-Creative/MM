@@ -20,7 +20,7 @@ static struct lm32_shifter *sft1 = (struct lm32_shifter *)SHIFTER_BASE1;
 static struct lm32_shifter *sft2 = (struct lm32_shifter *)SHIFTER_BASE2;
 
 static uint32_t g_voltage = ASIC_0V;
-static uint32_t g_voltage_i[10];
+static uint32_t g_voltage_i[MINER_COUNT];
 static int32_t g_led = 0;
 
 static void shift_done(struct lm32_shifter *s)
@@ -81,7 +81,7 @@ uint32_t set_voltage(uint32_t value)
 	if (g_voltage == ASIC_0V)
 		poweron = 1;
 
-	for (i = 0; i < 10; i++)
+	for (i = 0; i < MINER_COUNT; i++)
 		g_voltage_i[i] = value;
 
 	shift_update(sft0, g_voltage_i, poweron);
@@ -109,7 +109,7 @@ uint32_t set_voltage_i(uint32_t value[])
 	uint8_t i, diff = 0, ch1 = 0, ch2 = 0, reset = 1;
 	int poweron = 0;
 
-	for (i = 0; i < 10; i++) {
+	for (i = 0; i < MINER_COUNT; i++) {
 		if (g_voltage_i[i] != value[i]) {
 			g_voltage_i[i] = value[i];
 			diff = 1;

@@ -518,3 +518,13 @@ int api_asic_testcores(uint32_t cal_core_num, uint32_t ret)
 	return all - tmp;
 }
 
+void api_get_lw(uint32_t *buf)
+{
+	int i;
+
+	for (i = 0; i < MINER_COUNT; i++) {
+		writel(i, &api->lw);
+		buf[i] = readl(&api->lw);
+	}
+}
+
