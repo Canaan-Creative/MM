@@ -35,10 +35,10 @@ static uint8_t g_led_blinking = 0;
 static uint8_t g_postfailed = 0;
 static int g_module_id = AVA4_MODULE_BROADCAST;
 static int g_new_stratum = 0;
-static int g_local_work = 0;
-static int g_local_work_i[MINER_COUNT];
-static int g_hw_work = 0;
-static int g_hw_work_i[MINER_COUNT];
+static uint32_t g_local_work = 0;
+static uint32_t g_local_work_i[MINER_COUNT];
+static uint32_t g_hw_work = 0;
+static uint32_t g_hw_work_i[MINER_COUNT];
 static uint32_t g_nonce2_offset = 0;
 static uint32_t g_nonce2_range = 0xffffffff;
 static int g_ntime_offset = ASIC_COUNT;
@@ -146,7 +146,6 @@ static void encode_pkg(uint8_t *p, int type, uint8_t *buf, unsigned int len)
 	uint32_t tmp;
 	uint16_t crc;
 	uint8_t *data, i;
-	uint32_t val[MINER_COUNT];
 
 	memset(p, 0, AVA4_P_COUNT);
 
