@@ -747,6 +747,7 @@ int main(int argv, char **argc)
 
 		read_result(&mm_work, &result);
 
+		memset(val, 0, sizeof(uint32_t) * MINER_COUNT);
 		api_get_lw(val);
 		for (i = 0; i < MINER_COUNT; i++) {
 			g_local_work_i[i] += val[i];
