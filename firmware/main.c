@@ -181,11 +181,6 @@ static void encode_pkg(uint8_t *p, int type, uint8_t *buf, unsigned int len)
 		tmp = get_voltage();
 		memcpy(data + 12, &tmp, 4);
 
-		api_get_lw(val);
-		for (i = 0; i < MINER_COUNT; i++) {
-			g_local_work_i[i] += val[i];
-			g_local_work += val[i];
-		}
 		memcpy(data + 16, &g_local_work, 4);
 		memcpy(data + 20, &g_hw_work, 4);
 
@@ -738,6 +733,12 @@ int main(int argv, char **argc)
 		}
 
 		read_result(&mm_work, &result);
+
+		api_get_lw(val);
+		for (i = 0; i < MINER_COUNT; i++) {
+			g_local_work_i[i] += val[i];
+			g_local_work += val[i];
+		}
 	}
 
 	return 0;
