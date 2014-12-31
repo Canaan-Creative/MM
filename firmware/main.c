@@ -262,9 +262,11 @@ static inline void polling(void)
 static inline int decode_pkg(uint8_t *p, struct mm_work *mw)
 {
 	static uint32_t freq_value;
+	static uint32_t lastcpm[3];
+	static int poweron;
 	unsigned int expected_crc;
 	unsigned int actual_crc;
-	int idx, cnt, poweron = 0;
+	int idx, cnt;
 	uint32_t tmp;
 	uint32_t val[MINER_COUNT], i;
 	uint32_t test_core_count;
@@ -373,8 +375,17 @@ static inline int decode_pkg(uint8_t *p, struct mm_work *mw)
 		memcpy(&val[2], data, 4);
 		memcpy(&val[1], data + 4, 4);
 		memcpy(&val[0], data + 8, 4);
-		set_asic_freq_i(val);
-		debug32("CPM: %08x-%08x-%08x\n", val[0], val[1], val[2]);
+
+		if (poweron || !((lastcpm[0] == val[0]) &&
+				(lastcpm[1] == val[1]) &&
+				(lastcpm[2] == val[2]))) {
+			lastcpm[0] = val[0];
+			lastcpm[1] = val[1];
+			lastcpm[2] = val[2];
+
+			debug32("CPM: %08x-%08x-%08x\n", val[0], val[1], val[2]);
+			set_asic_freq_i(val);
+		}
 		break;
 	case AVA4_P_FINISH:
 		if (read_temp() >= IDLE_TEMP)

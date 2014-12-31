@@ -458,17 +458,6 @@ void set_asic_freq(uint32_t value[])
 void set_asic_freq_i(uint32_t cpm[])
 {
 #ifdef MM41
-	static uint32_t lastcpm[3];
-
-	if ((lastcpm[0] == cpm[0]) &&
-	    (lastcpm[1] == cpm[1]) &&
-	    (lastcpm[2] == cpm[2]))
-		return;
-
-	lastcpm[0] = cpm[0];
-	lastcpm[1] = cpm[1];
-	lastcpm[2] = cpm[2];
-
 	api_change_cpm(MINER_COUNT, ASIC_COUNT, cpm[0], cpm[1], cpm[2]);
 #endif
 }

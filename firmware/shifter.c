@@ -96,8 +96,16 @@ uint32_t set_voltage(uint32_t value)
 
 	return ret;
 #else
+	uint32_t ret = 0;
+
+	if (g_voltage == value)
+		return 0;
+
+	if (g_voltage == ASIC_0V)
+		ret = 1;
+
 	g_voltage = value;
-	return 0;
+	return ret;
 #endif
 }
 
