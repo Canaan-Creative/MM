@@ -43,6 +43,7 @@ static uint32_t g_nonce2_offset = 0;
 static uint32_t g_nonce2_range = 0xffffffff;
 static int g_ntime_offset = ASIC_COUNT;
 static struct mm_work mm_work;
+static uint32_t glastcpm[3];
 
 #define RET_RINGBUFFER_SIZE_RX 32
 #define RET_RINGBUFFER_MASK_RX (RET_RINGBUFFER_SIZE_RX-1)
@@ -262,7 +263,6 @@ static inline void polling(void)
 static inline int decode_pkg(uint8_t *p, struct mm_work *mw)
 {
 	static uint32_t freq_value;
-	static uint32_t lastcpm[3];
 	static int poweron;
 	unsigned int expected_crc;
 	unsigned int actual_crc;
@@ -376,12 +376,12 @@ static inline int decode_pkg(uint8_t *p, struct mm_work *mw)
 		memcpy(&val[1], data + 4, 4);
 		memcpy(&val[0], data + 8, 4);
 
-		if (poweron || !((lastcpm[0] == val[0]) &&
-				(lastcpm[1] == val[1]) &&
-				(lastcpm[2] == val[2]))) {
-			lastcpm[0] = val[0];
-			lastcpm[1] = val[1];
-			lastcpm[2] = val[2];
+		if (!((glastcpm[0] == val[0]) &&
+				(glastcpm[1] == val[1]) &&
+				(glastcpm[2] == val[2]))) {
+			glastcpm[0] = val[0];
+			glastcpm[1] = val[1];
+			glastcpm[2] = val[2];
 
 			debug32("CPM: %08x-%08x-%08x\n", val[0], val[1], val[2]);
 			set_asic_freq_i(val);
@@ -442,6 +442,7 @@ static inline int decode_pkg(uint8_t *p, struct mm_work *mw)
 		for (i = 0; i < MINER_COUNT; i++)
 			val[i] = ASIC_0V;
 		set_voltage_i(val);
+		glastcpm[0] = glastcpm[1] = glastcpm[2] = 0;
 		adjust_fan(FAN_10);
 		wdg_feed(CPU_FREQUENCY * IDLE_TIME);
 		break;
@@ -685,6 +686,7 @@ int main(int argv, char **argc)
 		g_local_work_i[i] = 0;
 	}
 	set_voltage_i(val);
+	glastcpm[0] = glastcpm[1] = glastcpm[2] = 0;
 	g_new_stratum = 0;
 	while (1) {
 		wdg_feed(CPU_FREQUENCY * IDLE_TIME);
@@ -704,6 +706,7 @@ int main(int argv, char **argc)
 				g_hw_work_i[i] = 0;
 			}
 			set_voltage_i(val);
+			glastcpm[0] = glastcpm[1] = glastcpm[2] = 0;
 
 			if (read_temp() >= IDLE_TEMP) {
 				adjust_fan(FAN_100);
