@@ -24,8 +24,7 @@ input  [`API_NUM-1:0] miso           ,
 
 output                led_get_nonce_l,
 output                led_get_nonce_h,
-output                api_idle_on    ,
-output                api_idle_off 
+output                api_idle 
 );
 parameter WORK_LEN = 736/32;
 parameter RX_FIFO_DEPTH = 512;
@@ -137,14 +136,7 @@ api_ctrl #(.WORK_LEN(WORK_LEN), .RX_FIFO_DEPTH(RX_FIFO_DEPTH)) api_ctrl(
 /*output               */ .led_get_nonce_h   (led_get_nonce_h   ) 
 );
 
-wire empty_idle = reg_state == 3'b0 && tx_fifo_empty && ~timeout_busy;
-reg empty_idle_f;
-always @ (posedge clk) begin
-	empty_idle_f <= empty_idle;
-end
-
-assign api_idle_on = empty_idle && ~empty_idle_f;
-assign api_idle_off = ~empty_idle && empty_idle_f;
+wire api_idle = reg_state == 3'b0 && tx_fifo_empty && ~timeout_busy;
 
 //1024words
 fifo1024 tx_fifo(

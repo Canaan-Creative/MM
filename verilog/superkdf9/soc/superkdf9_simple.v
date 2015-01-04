@@ -1202,7 +1202,7 @@ assign alinkALINK_en = (SHAREDBUS_ADR_I[31:6] == 26'b10000000000000000000010100)
 
 wire api_sck_w;
 wire api_mosi_w;
-wire api_idle_on, api_idle_off;
+wire api_idle;
 assign API_SCK = {`API_NUM{api_sck_w}};
 assign API_MOSI = {`API_NUM{api_mosi_w}};
 
@@ -1233,8 +1233,7 @@ api api(
 
 /*output               */ .led_get_nonce_l(led_get_nonce_l),
 /*output               */ .led_get_nonce_h(led_get_nonce_h),
-/*output               */ .api_idle_on(api_idle_on),
-/*output               */ .api_idle_off(api_idle_off)
+/*output               */ .api_idle       (api_idle       )
 );
 
 
@@ -1291,8 +1290,7 @@ twi u_twi(
 /*output        */ .clk25m_on   (clk25m_on                   ) ,
 
 /*input  [3:0]  */ .led_bling   ({led_get_nonce_h, led_get_nonce_l, led_iic_rd, led_iic_wr}),
-/*input         */ .api_idle_on (api_idle_on                 ) ,
-/*input         */ .api_idle_off(api_idle_off                )
+/*input         */ .api_idle    (api_idle                    )
 ) ;
 
 

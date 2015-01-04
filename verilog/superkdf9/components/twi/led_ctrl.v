@@ -88,12 +88,25 @@ wire [7:0] led_tmp;
 assign led_tmp[6:0] = led_r[6:0] ^ led_spark_cnt_max[6:0];
 assign led_tmp[7] = led_r[7] ^ led_spark_cnt_max[7];
 
+reg led1_3_f;
+reg api_idle_f;
+always @ (posedge clk) begin
+	led1_3_f <= led1[3];
+end
+
+always @ (posedge clk) begin
+	api_idle_f <= api_idle;
+end
+
+wire api_idle_on  = (api_idle && led1[3] && ~led1_3_f) || (led1[3] && led1_3_f && ~api_idle_f && api_idle);
+wire api_idle_off = (~led1[3] && led1_3_f) || (led1[3] && led1_3_f && api_idle_f && ~api_idle);
+
 always @ (posedge clk) begin
 	if(rst)
 		led_r <= 8'h0;
-	else if(api_idle_on && led1[3])
+	else if(api_idle_on)
 		led_r <= {led7_w, led6_w, led5_w, led4_w, led3_w, led2_w, 1'b1, led0_w};
-	else if(api_idle_off && led1[3])
+	else if(api_idle_off)
 		led_r <= {led7_w, led6_w, led5_w, led4_w, led3_w, led2_w, 1'b0, led0_w};
 	else if(vld)
 		led_r <= {led7_w, led6_w, led5_w, led4_w, led3_w, led2_w, led1_w, led0_w};
@@ -104,7 +117,7 @@ end
 always @ (posedge clk) begin
 	if(rst)
 		vld_r <= 1'b0;
-	else if(vld || (|led_spark_cnt_max) || (api_idle_on & led1[3]) || (api_idle_off & led1[3]))
+	else if(vld || (|led_spark_cnt_max) || api_idle_on || api_idle_off)
 		vld_r <= 1'b1;
 	else
 		vld_r <= 1'b0;

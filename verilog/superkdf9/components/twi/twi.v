@@ -50,8 +50,7 @@ module twi(
     output         clk25m_on   ,
 
     input  [3:0]   led_bling   ,
-    input          api_idle_on ,
-    input          api_idle_off 
+    input          api_idle    
 );
 
 assign TWI_ERR_O = 1'b0 ;
@@ -229,17 +228,16 @@ always @ ( posedge CLK_I or posedge RST_I ) begin
 end
 
 led_ctrl u_shift_c(
-/*input       */ .clk         (CLK_I           ) ,
-/*input       */ .rst         (RST_I           ) ,
-/*input       */ .vld         (sftc_wr_en_f    ) ,
-/*input [31:0]*/ .reg_din     (reg_sftc        ) ,
-/*input  [7:0]*/ .reg_breath  (reg_brea        ) ,
+/*input       */ .clk        (CLK_I       ) ,
+/*input       */ .rst        (RST_I       ) ,
+/*input       */ .vld        (sftc_wr_en_f) ,
+/*input [31:0]*/ .reg_din    (reg_sftc    ) ,
+/*input  [7:0]*/ .reg_breath (reg_brea    ) ,
 
-/*input  [3:0]*/ .led_bling   (led_bling       ) ,
-/*input       */ .api_idle_on (api_idle_on     ) ,
-/*input       */ .api_idle_off(api_idle_off    ) ,
-/*output      */ .sft_shcp    (SFTC_SHCP       ) ,
-/*output      */ .sft_ds      (SFTC_DS         )  
+/*input  [3:0]*/ .led_bling  (led_bling   ) ,
+/*input       */ .api_idle   (api_idle    ) ,
+/*output      */ .sft_shcp   (SFTC_SHCP   ) ,
+/*output      */ .sft_ds     (SFTC_DS     )  
 );
 
 //-----------------------------------------------------
