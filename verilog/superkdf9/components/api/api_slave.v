@@ -174,7 +174,7 @@ end
 
 reg [31:0] rx_fifo_din_r;
 wire lw_vld_data = rx_fifo_wr_en && (work_cnt > 1) && (work_cnt < 10);
-wire lw_vld = lw_vld_data && (rx_fifo_din != 32'hbeafbeaf) && (rx_fifo_din != rx_fifo_din_r);
+wire lw_vld = lw_vld_data && (rx_fifo_din != 32'hbeafbeaf) && (rx_fifo_din != rx_fifo_din_r) && (|rx_fifo_din) && (|(~rx_fifo_din));
 always @ (posedge clk) begin
 	if(lw_vld_data)
 		rx_fifo_din_r <= rx_fifo_din;

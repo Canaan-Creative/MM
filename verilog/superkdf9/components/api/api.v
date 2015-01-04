@@ -1,29 +1,31 @@
 `include "api_define.v"
 module api(
-input                 CLK_I     ,
-input                 RST_I     ,
+input                 CLK_I          ,
+input                 RST_I          ,
 
-input                 API_CYC_I ,//NC
-input                 API_STB_I ,
-input                 API_WE_I  ,
-input                 API_LOCK_I,//NC
-input  [2:0]          API_CTI_I ,//NC
-input  [1:0]          API_BTE_I ,//NC
-input  [5:0]          API_ADR_I ,
-input  [31:0]         API_DAT_I ,
-input  [3:0]          API_SEL_I ,
-output                API_ACK_O ,
-output                API_ERR_O ,//const 0
-output                API_RTY_O ,//const 0
-output [31:0]         API_DAT_O ,
+input                 API_CYC_I      ,//NC
+input                 API_STB_I      ,
+input                 API_WE_I       ,
+input                 API_LOCK_I     ,//NC
+input  [2:0]          API_CTI_I      ,//NC
+input  [1:0]          API_BTE_I      ,//NC
+input  [5:0]          API_ADR_I      ,
+input  [31:0]         API_DAT_I      ,
+input  [3:0]          API_SEL_I      ,
+output                API_ACK_O      ,
+output                API_ERR_O      ,//const 0
+output                API_RTY_O      ,//const 0
+output [31:0]         API_DAT_O      ,
 
-output [`API_NUM-1:0] load      ,
-output                sck       ,
-output                mosi      ,
-input  [`API_NUM-1:0] miso      ,
+output [`API_NUM-1:0] load           ,
+output                sck            ,
+output                mosi           ,
+input  [`API_NUM-1:0] miso           ,
 
 output                led_get_nonce_l,
-output                led_get_nonce_h 
+output                led_get_nonce_h,
+output                api_idle_on    ,
+output                api_idle_off 
 );
 parameter WORK_LEN = 736/32;
 parameter RX_FIFO_DEPTH = 512;
@@ -134,6 +136,14 @@ api_ctrl #(.WORK_LEN(WORK_LEN), .RX_FIFO_DEPTH(RX_FIFO_DEPTH)) api_ctrl(
 /*output               */ .led_get_nonce_h   (led_get_nonce_h   ) 
 );
 
+wire empty_idle;
+reg empty_idle_f;
+always @ (posedge clk) begin
+	empty_idle_f <= empty_idle;
+end
+
+assign api_idle_on = empty_idle && ~empty_idle_f;
+assign api_idle_off = ~empty_idle && empty_idle_f;
 
 //1024words
 fifo1024 tx_fifo(
@@ -144,7 +154,7 @@ fifo1024 tx_fifo(
 /*input          */ .rd_en     (tx_fifo_rd_en     ),
 /*output [31 : 0]*/ .dout      (tx_fifo_dout      ),
 /*output         */ .full      (tx_fifo_full      ),
-/*output         */ .empty     (                  ),
+/*output         */ .empty     (empty_idle        ),
 /*output [10 : 0]*/ .data_count(tx_fifo_data_count)
 ) ;                                       
 
@@ -160,18 +170,5 @@ fifo512 rx_fifo(
 /*output         */ .empty     (rx_fifo_empty     ),
 /*output [9  : 0]*/ .data_count(rx_fifo_data_count)
 );
-/*
-wire [35:0] icon_ctrl_0;
-wire [255:0] trig0 = {
-miso,//6:5
-mosi,//4
-sck,//3
-load,//2:1
-API_CYC_I
-} ;
-icon icon_test(.CONTROL0(icon_ctrl_0));
-ila ila_test(.CONTROL(icon_ctrl_0), .CLK(clk), .TRIG0(trig0)
-);
-*/
 
 endmodule

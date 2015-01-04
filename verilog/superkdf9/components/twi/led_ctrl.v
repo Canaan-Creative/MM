@@ -1,13 +1,15 @@
 module led_ctrl(
-input         clk       ,
-input         rst       ,
-input         vld       ,
-input  [31:0] reg_din   ,//stable
-input  [7:0]  reg_breath,
+input         clk         ,
+input         rst         ,
+input         vld         ,
+input  [31:0] reg_din     ,//stable
+input  [7:0]  reg_breath  ,
 
-input  [3:0]  led_bling ,
+input  [3:0]  led_bling   ,
+input         api_idle_on ,
+input         api_idle_off,
 
-output        sft_shcp  ,
+output        sft_shcp    ,
 output        sft_ds     
 );
 
@@ -89,6 +91,10 @@ assign led_tmp[7] = led_r[7] ^ led_spark_cnt_max[7];
 always @ (posedge clk) begin
 	if(rst)
 		led_r <= 8'h0;
+	else if(api_idle_on && led1[3])
+		led_r <= {led7_w, led6_w, led5_w, led4_w, led3_w, led2_w, 1'b1, led0_w};
+	else if(api_idle_off && led1[3])
+		led_r <= {led7_w, led6_w, led5_w, led4_w, led3_w, led2_w, 1'b0, led0_w};
 	else if(vld)
 		led_r <= {led7_w, led6_w, led5_w, led4_w, led3_w, led2_w, led1_w, led0_w};
 	else if(|led_spark_cnt_max)
@@ -98,7 +104,7 @@ end
 always @ (posedge clk) begin
 	if(rst)
 		vld_r <= 1'b0;
-	else if(vld || (|led_spark_cnt_max))
+	else if(vld || (|led_spark_cnt_max) || (api_idle_on & led1[3]) || (api_idle_off & led1[3]))
 		vld_r <= 1'b1;
 	else
 		vld_r <= 1'b0;

@@ -221,6 +221,14 @@ static inline void api_flush(void)
 	delay(1);
 }
 
+static void api_get_lw(uint32_t *lw_buf){
+	int i;
+	for(i = 0; i < 10; i++){
+		writel(i, &api->lw);
+		lw_buf[i] = readl(&api->lw);
+	}
+}
+
 static void api_change_cpm(uint32_t ch_num, uint32_t chip_num, uint32_t cpm1, uint32_t cpm2, uint32_t cpm3)
 {
 	uint32_t tx_data[23];
