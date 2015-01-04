@@ -9,6 +9,7 @@ input  [27:0]         reg_timeout       ,
 input  [7:0]          reg_sck           ,
 input  [5:0]          reg_ch_num        ,
 input  [7:0]          reg_word_num      ,
+output                timeout_busy      ,
 
 input                 tx_fifo_empty     ,
 output                tx_fifo_rd_en     ,
@@ -39,7 +40,6 @@ parameter NOP  = 2'd2;
 
 reg [1:0] cur_state;
 reg [1:0] nxt_state;
-wire timeout_busy;
 wire timer_start = cur_state != WORK && nxt_state == WORK;
 reg [5:0] ch_cnt;
 reg [7:0] word_cnt;

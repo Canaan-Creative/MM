@@ -116,6 +116,7 @@ api_ctrl #(.WORK_LEN(WORK_LEN), .RX_FIFO_DEPTH(RX_FIFO_DEPTH)) api_ctrl(
 /*input  [7:0]         */ .reg_sck           (reg_sck           ),
 /*input  reg [5:0]     */ .reg_ch_num        (reg_ch_num        ),
 /*input  reg [7:0]     */ .reg_word_num      (reg_word_num      ),
+/*output               */ .timeout_busy      (timeout_busy      ),
 
 /*input                */ .tx_fifo_empty     (tx_fifo_empty     ),
 /*output               */ .tx_fifo_rd_en     (tx_fifo_rd_en     ),
@@ -136,7 +137,7 @@ api_ctrl #(.WORK_LEN(WORK_LEN), .RX_FIFO_DEPTH(RX_FIFO_DEPTH)) api_ctrl(
 /*output               */ .led_get_nonce_h   (led_get_nonce_h   ) 
 );
 
-wire empty_idle;
+wire empty_idle = reg_state == 3'b0 && tx_fifo_empty && ~timeout_busy;
 reg empty_idle_f;
 always @ (posedge clk) begin
 	empty_idle_f <= empty_idle;
@@ -154,7 +155,7 @@ fifo1024 tx_fifo(
 /*input          */ .rd_en     (tx_fifo_rd_en     ),
 /*output [31 : 0]*/ .dout      (tx_fifo_dout      ),
 /*output         */ .full      (tx_fifo_full      ),
-/*output         */ .empty     (empty_idle        ),
+/*output         */ .empty     (                  ),
 /*output [10 : 0]*/ .data_count(tx_fifo_data_count)
 ) ;                                       
 
