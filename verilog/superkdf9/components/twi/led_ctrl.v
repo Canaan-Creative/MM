@@ -6,8 +6,7 @@ input  [31:0] reg_din     ,//stable
 input  [7:0]  reg_breath  ,
 
 input  [3:0]  led_bling   ,
-input         api_idle_on ,
-input         api_idle_off,
+input         api_idle    ,
 
 output        sft_shcp    ,
 output        sft_ds     
