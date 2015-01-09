@@ -323,6 +323,23 @@ assign WBM1_ERR_I = (selected == 2'd2 ? WBS_ERR_O : 0);
 assign WBM1_RTY_I = (selected == 2'd2 ? WBS_RTY_O : 0);
 
 endmodule
+
+`define MM_50M
+
+`ifdef MM_50M
+`define MM_CLK_IN_MHZ   50
+`define MM_CLK_1S_CNT   (27'h5f5e100/2)
+`define MM_CLK_PROD     40
+`define MM_CLK_MUL      2
+`define MM_CLK_DIV      2
+`else
+`define MM_CLK_IN_MHZ   100
+`define MM_CLK_1S_CNT   27'h5f5e100
+`define MM_CLK_PROD     40
+`define MM_CLK_MUL      4
+`define MM_CLK_DIV      4
+`endif
+
 `include "../components/lm32_top/lm32_functions.v" // for clogb2_v1
 `include "../components/lm32_top/lm32_include.v" // for {IROM,DRAM}_ADDR_WIDTH
 `include "../components/lm32_top/lm32_include_all.v"

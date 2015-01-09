@@ -48,11 +48,11 @@ ODDR2 ODDR2_inst3 (
 );
 
 DCM_CLKGEN #( // {{{
-	.CLKFXDV_DIVIDE(2), // CLKFXDV divide value (2, 4, 8, 16, 32)
+	.CLKFXDV_DIVIDE(`MM_CLK_DIV), // CLKFXDV divide value (2, 4, 8, 16, 32)
 	.CLKFX_DIVIDE(1), // Divide value - D - (1-256)
 	.CLKFX_MD_MAX(0.0), // Specify maximum M/D ratio for timing anlysis
-	.CLKFX_MULTIPLY(2), // Multiply value - M - (2-256)
-	.CLKIN_PERIOD(40), // Input clock period specified in nS
+	.CLKFX_MULTIPLY(`MM_CLK_MUL), // Multiply value - M - (2-256)
+	.CLKIN_PERIOD(`MM_CLK_PROD), // Input clock period specified in nS
 	.SPREAD_SPECTRUM("NONE"), // Spread Spectrum mode "NONE", "CENTER_LOW_SPREAD", "CENTER_HIGH_SPREAD",
 	// "VIDEO_LINK_M0", "VIDEO_LINK_M1" or "VIDEO_LINK_M2"
 	.STARTUP_WAIT("FALSE") // Delay config DONE until DCM_CLKGEN LOCKED (TRUE/FALSE)
