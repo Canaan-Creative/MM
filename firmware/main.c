@@ -264,6 +264,7 @@ static inline int decode_pkg(uint8_t *p, struct mm_work *mw)
 {
 	static uint32_t freq_value;
 	static int poweron;
+	static uint8_t errcnt;
 	unsigned int expected_crc;
 	unsigned int actual_crc;
 	int idx, cnt;
@@ -287,9 +288,15 @@ static inline int decode_pkg(uint8_t *p, struct mm_work *mw)
 	if(expected_crc != actual_crc) {
 		debug32("PKG: CRC failed %d:(W %08x, R %08x)\n",
 			p[2], expected_crc, actual_crc);
+
+		if (errcnt++ >= 3) {
+			errcnt = 0;
+			iic_rx_reset();
+		}
 		return 1;
 	}
 
+	errcnt = 0;
 	timer_set(0, IDLE_TIME);
 	switch (p[2]) {
 	case AVA4_P_DETECT:
