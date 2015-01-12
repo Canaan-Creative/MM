@@ -42,7 +42,8 @@ reg acki_f;
 reg i2c_start_r;
 reg addr_ack;
 reg [5:0] i2c_neg_dly_cnt;
-wire i2c_neg_dly = i2c_neg_dly_cnt == 'd62;
+
+wire i2c_neg_dly = i2c_neg_dly_cnt == `MM_IIC_NEGEDGE_DLY;
 always @ (posedge clk) begin
 	if(rst)
 		i2c_neg_dly_cnt <= 'b0;

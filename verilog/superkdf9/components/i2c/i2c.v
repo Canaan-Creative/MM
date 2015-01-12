@@ -236,6 +236,21 @@ i2c_phy i2c_phy(
 /*output         */ .led_iic_rd(led_iic_rd) 
 );
 
+wire [35:0] icon_ctrl_0;
+wire [255:0] trig0 = {
+addr_r[6:0],//19:13
+byte_done,//12
+byte_buf[7:0],//11:4
+brg_en,//3
+brg_cs,//2
+brg_sck,//1
+brg_mosi//0
+} ;
+icon icon_test(.CONTROL0(icon_ctrl_0));
+ila ila_test(.CONTROL(icon_ctrl_0), .CLK(CLK_I), .TRIG0(trig0)
+);
+
+
 reg brg_cs_r = 1'b1;
 assign brg_cs = brg_cs_r;
 reg brg_en_r = 1'b0;
