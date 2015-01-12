@@ -453,6 +453,9 @@ static inline int decode_pkg(uint8_t *p, struct mm_work *mw)
 		adjust_fan(FAN_10);
 		wdg_feed(CPU_FREQUENCY * IDLE_TIME);
 		break;
+	case AVA4_P_RSTMMTX:
+		iic_tx_reset();
+		break;
 	default:
 		break;
 	}
