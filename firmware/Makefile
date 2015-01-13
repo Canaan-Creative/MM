@@ -47,7 +47,7 @@ else
 BIN_DIR:=$(DATE)/$(NOMBOOTBINDIR)
 endif
 
-MD5FILES := $(shell find bin/$(BIN_DIR) -maxdepth 1 -type f)
+MD5FILES := mm.bit  mm.elf  mm.hexdump  mm.mcs  mm.objdump
 OBJS       := $(addsuffix .o,$(basename $(CSRCS) $(SSRCS)))
 
 .PHONY: all clean distclean load reflash
