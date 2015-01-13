@@ -7,7 +7,7 @@
 # For details see the UNLICENSE file at the root of the source tree.
 #
 
-BIN_DIR:=$(shell date +%Y-%m-%d)
+DATE:=$(shell date +%Y-%m-%d)
 GIT_VERSION:=$(shell git rev-parse HEAD | cut -c 1-6)
 GIT_STATUS:=$(shell ([ -z "`git status -s -uno`" ] && echo 0) || echo +)
 
@@ -24,6 +24,7 @@ BATCHFILE	:= $(shell mktemp)
 HARDWARE_NAME	= mm
 PRJ_NAME	= mm
 MBOOT		?= 1
+NOMBOOTBINDIR    = mm-no-mboot
 
 isedir  ?= /home/Xilinx/14.6/ISE_DS/
 xil_env ?= . $(isedir)/settings$(shell getconf LONG_BIT).sh &>/dev/null
@@ -41,8 +42,12 @@ endif
 
 ifeq ($(MBOOT), 1)
 CFLAGS += -DMBOOT
+BIN_DIR:=$(DATE)
+else
+BIN_DIR:=$(DATE)/$(NOMBOOTBINDIR)
 endif
 
+MD5FILES := $(shell find bin/$(BIN_DIR) -maxdepth 1 -type f)
 OBJS       := $(addsuffix .o,$(basename $(CSRCS) $(SSRCS)))
 
 .PHONY: all clean distclean load reflash
@@ -51,7 +56,7 @@ OBJS       := $(addsuffix .o,$(basename $(CSRCS) $(SSRCS)))
 all: $(PRJ_NAME).objdump $(PRJ_NAME).hexdump $(HARDWARE_NAME).bit $(HARDWARE_NAME).mcs
 	mkdir -p bin/${BIN_DIR}
 	cp $(PRJ_NAME).elf $^ bin/${BIN_DIR}
-	cd bin/${BIN_DIR} && md5sum -b * > md5sums
+	cd bin/${BIN_DIR} && md5sum -b $(notdir $(MD5FILES)) > md5sums
 
 $(PRJ_NAME).objdump: $(PRJ_NAME).elf
 	$(CROSS)objdump -D $^ > $@

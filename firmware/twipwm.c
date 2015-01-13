@@ -103,6 +103,8 @@ int16_t read_temp(void)
 	int32_t sum = 0;
 	int16_t min;
 	int16_t max;
+	int16_t neg = 1;
+	uint16_t hex_tmp;
 
 	if (timer_read(1))
 		return last;
@@ -110,7 +112,12 @@ int16_t read_temp(void)
 	timer_set(1, TEMP_TIME);
 
 	memcpy(temp, temp + 1, 9 * sizeof(int16_t));
-	temp[9] = (twi_read_2byte(LM32_TWI_REG_TEMP1) >> 4) / 16;
+	hex_tmp = twi_read_2byte(LM32_TWI_REG_TEMP1) >> 4;
+	if (hex_tmp > 0x7ff) {
+		hex_tmp = ((~(hex_tmp & 0x7ff)) & 0x7ff) + 1;
+		neg = -1;
+	}
+	temp[9] = (hex_tmp / 16) * neg;
 	min = max = temp[9];
 
 	for (i = 0; i < 10; i++) {
