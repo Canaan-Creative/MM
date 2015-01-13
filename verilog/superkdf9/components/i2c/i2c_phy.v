@@ -37,13 +37,13 @@ wire i2c_pos   = ~scl_r && scl;
 wire i2c_neg   = scl_r && ~scl;
 reg [31:0] sda_buf;
 reg rw_flg;
-wire get_8bit = &bit_cnt && i2c_neg;
+reg [5:0] i2c_neg_dly_cnt;
+wire i2c_neg_dly = i2c_neg_dly_cnt == `MM_IIC_NEGEDGE_DLY;
+wire get_8bit = &bit_cnt && i2c_neg_dly;
 reg acki_f;
 reg i2c_start_r;
 reg addr_ack;
-reg [5:0] i2c_neg_dly_cnt;
 
-wire i2c_neg_dly = i2c_neg_dly_cnt == `MM_IIC_NEGEDGE_DLY;
 always @ (posedge clk) begin
 	if(rst)
 		i2c_neg_dly_cnt <= 'b0;
