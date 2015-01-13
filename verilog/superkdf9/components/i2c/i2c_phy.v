@@ -212,8 +212,6 @@ always @ (posedge clk) begin
 		addr_r <= sda_buf[7:1];
 end
 
-
-
 always @ (posedge clk) begin
 	if(rst || cur_state == IDLE)
 		sda_o <= 1'b1;
@@ -320,4 +318,27 @@ always @ (posedge clk) begin
 		reg_rerr <= 1'b0;
 end
 
+//ila
+/*
+wire [35 : 0] control;
+wire [79:0] trig0 = {
+i2c_start,
+i2c_stop,
+i2c_pos,
+i2c_neg,
+scl_pin,
+sda_pin,
+scl,
+sda,
+cur_state[2:0],//
+full,
+empty
+};
+ila ila(
+.CONTROL(control),
+.CLK    (clk),
+.TRIG0  (trig0) 
+);
+icon icon(control);
+*/
 endmodule
