@@ -332,7 +332,7 @@ endmodule
 `define MM_CLK_PROD     40
 `define MM_CLK_MUL      2
 `define MM_CLK_DIV      2
-`define MM_IIC_GLITCH   6
+`define MM_IIC_GLITCH   4
 `define MM_IIC_NEGEDGE_DLY      (62 - `MM_IIC_GLITCH)
 `else
 `define MM_CLK_IN_MHZ   100
@@ -340,7 +340,7 @@ endmodule
 `define MM_CLK_PROD     40
 `define MM_CLK_MUL      4
 `define MM_CLK_DIV      4
-`define MM_IIC_GLITCH   12
+`define MM_IIC_GLITCH   8
 `define MM_IIC_NEGEDGE_DLY      (62 - `MM_IIC_GLITCH)
 `endif
 

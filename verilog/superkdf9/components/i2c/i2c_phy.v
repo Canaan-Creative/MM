@@ -63,17 +63,17 @@ always @ (posedge clk) begin
 end
 
 always @ (posedge clk) begin
-	if(&scl_f[`MM_IIC_GLITCH - 1:2])
+	if(&scl_f[`MM_IIC_GLITCH - 1:1])
 		scl <= 1'b1;
-	else if(~|scl_f[`MM_IIC_GLITCH - 1:2])
+	else if(~|scl_f[`MM_IIC_GLITCH - 1:1])
 		scl <= 1'b0;
 	scl_r <= scl;
 end
 
 always @ (posedge clk) begin
-	if(&sda_f[`MM_IIC_GLITCH - 1:2])
+	if(&sda_f[`MM_IIC_GLITCH - 1:1])
                 sda <= 1'b1;
-        else if(~|sda_f[`MM_IIC_GLITCH - 1:2])
+        else if(~|sda_f[`MM_IIC_GLITCH - 1:1])
                 sda <= 1'b0;
 	sda_r <= sda;
 end
