@@ -37,12 +37,13 @@ wire i2c_pos   = ~scl_r && scl;
 wire i2c_neg   = scl_r && ~scl;
 reg [31:0] sda_buf;
 reg rw_flg;
-reg [5:0] i2c_neg_dly_cnt;
-wire i2c_neg_dly = i2c_neg_dly_cnt == `MM_IIC_NEGEDGE_DLY;
+wire get_8bit = &bit_cnt && i2c_neg;
 reg acki_f;
 reg i2c_start_r;
 reg addr_ack;
+reg [5:0] i2c_neg_dly_cnt;
 
+wire i2c_neg_dly = i2c_neg_dly_cnt == `MM_IIC_NEGEDGE_DLY;
 always @ (posedge clk) begin
 	if(rst)
 		i2c_neg_dly_cnt <= 'b0;
@@ -100,15 +101,15 @@ always @ (*) begin
 	case(cur_state)
 	IDLE :  if(i2c_start_r && i2c_neg)
 			nxt_state = ADDR;
-	ADDR :  if(&bit_cnt && i2c_neg)
+	ADDR :  if(get_8bit)
 			nxt_state = AACKO;
-	DWR  :  if(&bit_cnt && i2c_neg)
+	DWR  :  if(get_8bit)
 			nxt_state = ACKO;
 		else if(i2c_start || !addr_ack || i2c_stop)
 			nxt_state = IDLE;
 	DRD  :  if(i2c_pos && sda != sda_o)
 			nxt_state = IDLE;
-		else if(&bit_cnt && i2c_neg_dly)
+		else if(get_8bit)
 			nxt_state = ACKI;
 		else if(i2c_stop || !addr_ack || i2c_start)
 			nxt_state = IDLE;
@@ -137,9 +138,7 @@ always @ (posedge clk) begin
 		bit_cnt <= 3'b0;
 	else if(cur_state == IDLE)
 		bit_cnt <= 3'b0;
-	else if((cur_state == ADDR || cur_state == DWR) && i2c_neg)
-		bit_cnt <= 3'b1 + bit_cnt;
-	else if((cur_state == DRD) && i2c_neg_dly)
+	else if((cur_state == ADDR || cur_state == DWR || cur_state == DRD) && i2c_neg)
 		bit_cnt <= 3'b1 + bit_cnt;
 end
 
