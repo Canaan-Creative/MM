@@ -335,7 +335,7 @@ endmodule
 `define MM_IIC_GLITCH   4
 `define MM_IIC_NEGEDGE_DLY      (62 - `MM_IIC_GLITCH)
 `define MM_IIC_POSEDGE_DLY  15
-`define MM_IIC_RD_DLY   13
+`define MM_IIC_RD_DLY   (13 - `MM_IIC_GLITCH)
 `else
 `define MM_CLK_IN_MHZ   100
 `define MM_CLK_1S_CNT   27'h5f5e100
@@ -345,7 +345,7 @@ endmodule
 `define MM_IIC_GLITCH   8
 `define MM_IIC_NEGEDGE_DLY      (62 - `MM_IIC_GLITCH)
 `define MM_IIC_POSEDGE_DLY  30
-`define MM_IIC_RD_DLY   26
+`define MM_IIC_RD_DLY   (26 - `MM_IIC_GLITCH)
 `endif
 
 `include "../components/lm32_top/lm32_functions.v" // for clogb2_v1
