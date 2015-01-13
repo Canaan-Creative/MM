@@ -333,7 +333,7 @@ endmodule
 `define MM_CLK_MUL      2
 `define MM_CLK_DIV      2
 `define MM_IIC_GLITCH   6
-`define MM_IIC_NEGEDGE_DLY      (62/2 - `MM_IIC_GLITCH)
+`define MM_IIC_NEGEDGE_DLY      (62 - `MM_IIC_GLITCH)
 `else
 `define MM_CLK_IN_MHZ   100
 `define MM_CLK_1S_CNT   27'h5f5e100
