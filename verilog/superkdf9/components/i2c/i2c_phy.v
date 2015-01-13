@@ -25,8 +25,8 @@ output        led_iic_wr,
 output        led_iic_rd 
 );
 
-reg [3:0] scl_f;
-reg [3:0] sda_f;
+reg [`MM_IIC_GLITCH - 1:0] scl_f;
+reg [`MM_IIC_GLITCH - 1:0] sda_f;
 reg scl, scl_r;
 reg sda, sda_r, sda_o;
 reg [2:0] bit_cnt;
@@ -58,22 +58,22 @@ end
 assign sda_pin = sda_o ? 1'bz : 1'b0;
 
 always @ (posedge clk) begin
-	scl_f <= {scl_f[2:0], scl_pin};
-	sda_f <= {sda_f[2:0], sda_pin};
+	scl_f <= {scl_f[`MM_IIC_GLITCH - 2:0], scl_pin};
+	sda_f <= {sda_f[`MM_IIC_GLITCH - 2:0], sda_pin};
 end
 
 always @ (posedge clk) begin
-	if(scl_f == 4'b1111)
+	if(&scl_f[`MM_IIC_GLITCH - 1:2])
 		scl <= 1'b1;
-	else if(scl_f == 4'b0000)
+	else if(~|scl_f[`MM_IIC_GLITCH - 1:2])
 		scl <= 1'b0;
 	scl_r <= scl;
 end
 
 always @ (posedge clk) begin
-	if(sda_f == 4'b1111)
+	if(&sda_f[`MM_IIC_GLITCH - 1:2])
                 sda <= 1'b1;
-        else if(sda_f == 4'b0000)
+        else if(~|sda_f[`MM_IIC_GLITCH - 1:2])
                 sda <= 1'b0;
 	sda_r <= sda;
 end
