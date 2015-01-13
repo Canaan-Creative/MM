@@ -332,16 +332,16 @@ endmodule
 `define MM_CLK_PROD     40
 `define MM_CLK_MUL      2
 `define MM_CLK_DIV      2
-`define MM_IIC_NEGEDGE_DLY      (62/2)
-`define MM_IIC_GLITCH   16
+`define MM_IIC_GLITCH   6
+`define MM_IIC_NEGEDGE_DLY      (62/2 - `MM_IIC_GLITCH)
 `else
 `define MM_CLK_IN_MHZ   100
 `define MM_CLK_1S_CNT   27'h5f5e100
 `define MM_CLK_PROD     40
 `define MM_CLK_MUL      4
 `define MM_CLK_DIV      4
-`define MM_IIC_NEGEDGE_DLY      62
-`define MM_IIC_GLITCH   32
+`define MM_IIC_GLITCH   12
+`define MM_IIC_NEGEDGE_DLY      (62 - `MM_IIC_GLITCH)
 `endif
 
 `include "../components/lm32_top/lm32_functions.v" // for clogb2_v1

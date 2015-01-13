@@ -39,7 +39,6 @@ reg [31:0] sda_buf;
 reg rw_flg;
 reg [5:0] i2c_neg_dly_cnt;
 wire i2c_neg_dly = i2c_neg_dly_cnt == `MM_IIC_NEGEDGE_DLY;
-wire get_8bit = &bit_cnt && i2c_neg_dly;
 reg acki_f;
 reg i2c_start_r;
 reg addr_ack;
@@ -101,15 +100,15 @@ always @ (*) begin
 	case(cur_state)
 	IDLE :  if(i2c_start_r && i2c_neg)
 			nxt_state = ADDR;
-	ADDR :  if(get_8bit)
+	ADDR :  if(&bit_cnt && i2c_neg)
 			nxt_state = AACKO;
-	DWR  :  if(get_8bit)
+	DWR  :  if(&bit_cnt && i2c_neg)
 			nxt_state = ACKO;
 		else if(i2c_start || !addr_ack || i2c_stop)
 			nxt_state = IDLE;
 	DRD  :  if(i2c_pos && sda != sda_o)
 			nxt_state = IDLE;
-		else if(get_8bit)
+		else if(&bit_cnt && i2c_neg_dly)
 			nxt_state = ACKI;
 		else if(i2c_stop || !addr_ack || i2c_start)
 			nxt_state = IDLE;
