@@ -41,6 +41,7 @@ wire get_8bit = &bit_cnt && i2c_neg;
 reg acki_f;
 reg i2c_start_r;
 reg addr_ack;
+//negedge delay
 reg [5:0] i2c_neg_dly_cnt;
 
 wire i2c_neg_dly = i2c_neg_dly_cnt == `MM_IIC_NEGEDGE_DLY;
@@ -49,10 +50,24 @@ always @ (posedge clk) begin
 		i2c_neg_dly_cnt <= 'b0;
 	else if(i2c_neg && (cur_state == ACKO || cur_state == AACKO))
 		i2c_neg_dly_cnt <= 'b1;
-	else if(|i2c_neg_dly_cnt && i2c_neg_dly_cnt < 'd62)
+	else if(|i2c_neg_dly_cnt && i2c_neg_dly_cnt < `MM_IIC_NEGEDGE_DLY)
 		i2c_neg_dly_cnt <= i2c_neg_dly_cnt + 'b1;
 	else
 		i2c_neg_dly_cnt <= 'b0;
+end
+
+//posedge delay
+reg [5:0] i2c_pos_dly_cnt;
+wire i2c_pos_dly = i2c_pos_dly_cnt == `MM_IIC_POSEDGE_DLY;
+always @ (posedge clk) begin
+	if(rst)
+		i2c_pos_dly_cnt <= 'b0;
+	else if(i2c_pos && (cur_state == DWR || cur_state == ADDR))
+		i2c_pos_dly_cnt <= 'b1;
+	else if(|i2c_pos_dly_cnt && i2c_pos_dly_cnt < `MM_IIC_POSEDGE_DLY)
+		i2c_pos_dly_cnt <= i2c_pos_dly_cnt + 'b1;
+	else
+		i2c_pos_dly_cnt <= 'b0;
 end
 
 assign sda_pin = sda_o ? 1'bz : 1'b0;
@@ -247,7 +262,7 @@ always @ (posedge clk) begin
 		sda_buf <= din;
 	else if(cur_state == DRD && i2c_pos)
 		sda_buf <= {sda_buf[30:0], 1'b0};
-	else if((cur_state == DWR || cur_state == ADDR) && i2c_pos)
+	else if((cur_state == DWR || cur_state == ADDR) && i2c_pos_dly)
 		sda_buf <= {sda_buf[30:0], sda};
 end
 
