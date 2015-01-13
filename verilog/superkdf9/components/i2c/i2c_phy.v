@@ -137,7 +137,9 @@ always @ (posedge clk) begin
 		bit_cnt <= 3'b0;
 	else if(cur_state == IDLE)
 		bit_cnt <= 3'b0;
-	else if((cur_state == ADDR || cur_state == DWR || cur_state == DRD) && i2c_neg)
+	else if((cur_state == ADDR || cur_state == DWR) && i2c_neg)
+		bit_cnt <= 3'b1 + bit_cnt;
+	else if((cur_state == DRD) && i2c_neg_dly)
 		bit_cnt <= 3'b1 + bit_cnt;
 end
 
