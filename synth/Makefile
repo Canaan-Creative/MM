@@ -29,8 +29,6 @@ vfiles_nodir := \
 	superkdf9/components/uart_core/txmitt.v\
 	superkdf9/components/uart_core/rxcver_fifo.v\
 	superkdf9/components/uart_core/modem.v\
-	superkdf9/components/gpio/tpio.v\
-	superkdf9/components/gpio/gpio.v\
 	superkdf9/soc/superkdf9.v\
 	superkdf9/soc/superkdf9_simple.v 
 

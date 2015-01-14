@@ -51,13 +51,13 @@ always @ (posedge clk) begin
 	else if(i2c_neg && (cur_state == ACKO || cur_state == AACKO))
 		i2c_neg_dly_cnt <= 'b1;
 	else if(|i2c_neg_dly_cnt && i2c_neg_dly_cnt < `MM_IIC_NEGEDGE_DLY)
-		i2c_neg_dly_cnt <= i2c_neg_dly_cnt + 'b1;
+		i2c_neg_dly_cnt <= i2c_neg_dly_cnt + 6'b1;
 	else
 		i2c_neg_dly_cnt <= 'b0;
 end
 
 //posedge delay
-reg [5:0] i2c_pos_dly_cnt;
+reg [4:0] i2c_pos_dly_cnt;
 wire i2c_pos_dly = i2c_pos_dly_cnt == `MM_IIC_POSEDGE_DLY;
 always @ (posedge clk) begin
 	if(rst)
@@ -65,13 +65,13 @@ always @ (posedge clk) begin
 	else if(i2c_pos && (cur_state == DWR || cur_state == ADDR))
 		i2c_pos_dly_cnt <= 'b1;
 	else if(|i2c_pos_dly_cnt && i2c_pos_dly_cnt < `MM_IIC_POSEDGE_DLY)
-		i2c_pos_dly_cnt <= i2c_pos_dly_cnt + 'b1;
+		i2c_pos_dly_cnt <= i2c_pos_dly_cnt + 5'b1;
 	else
 		i2c_pos_dly_cnt <= 'b0;
 end
 
 //read last bit neg delay
-reg [5:0] i2c_rd_dly_cnt;
+reg [3:0] i2c_rd_dly_cnt;
 wire i2c_rd_dly = i2c_rd_dly_cnt == `MM_IIC_RD_DLY;
 always @ (posedge clk) begin
 	if(rst)
@@ -79,7 +79,7 @@ always @ (posedge clk) begin
 	else if(cur_state == DRD && nxt_state != DRD)
 		i2c_rd_dly_cnt <= 'b1;
 	else if(|i2c_rd_dly_cnt && i2c_rd_dly_cnt < `MM_IIC_RD_DLY)
-		i2c_rd_dly_cnt <= i2c_rd_dly_cnt + 'b1;
+		i2c_rd_dly_cnt <= i2c_rd_dly_cnt + 4'b1;
 	else
 		i2c_rd_dly_cnt <= 'b0;
 end

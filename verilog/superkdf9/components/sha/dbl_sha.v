@@ -33,15 +33,15 @@ end
 
 always @ ( posedge clk or posedge rst ) begin
 	if( rst )
-		cnt <= 'b0 ;
+		cnt <= 4'b0 ;
 	else if( start )
-		cnt <= cnt + 'b1 ;
+		cnt <= cnt + 4'b1 ;
 end
 
 always @ ( posedge clk ) begin
 	if( done )
 		hash_r <= hash ;
-	else if( start && cnt != 7 )
+	else if( start && cnt != 4'd7 )
 		hash_r <= hash_r << 32 ;
 	else if( start )//cnt == 15
 		hash_r <= 256'h80000000_00000000_00000000_00000000_00000000_00000000_00000000_00000100 ;

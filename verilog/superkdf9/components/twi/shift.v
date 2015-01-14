@@ -16,12 +16,10 @@ output       done     ,
 output       sft_shcp ,
 output       sft_ds   ,
 output       sft_stcp ,
-output       sft_mr_n ,
-output       sft_oe_n 
+output reg   sft_mr_n ,
+output reg   sft_oe_n 
 );
 
-reg sft_mr_n ;
-reg sft_oe_n ;
 always @ ( posedge clk or posedge rst ) begin
 	if( rst )
 		sft_mr_n <= 1'b1 ;
@@ -44,11 +42,11 @@ end
 reg [5:0] shcp_cnt ;
 always @ ( posedge clk ) begin
 	if( rst )
-		shcp_cnt <= 0 ;
+		shcp_cnt <= 6'b0 ;
 	else if( vld && cmd == 2'b01 )
-		shcp_cnt <= 1 ;
+		shcp_cnt <= 6'b1 ;
 	else if( |shcp_cnt )
-		shcp_cnt <= shcp_cnt + 1 ;
+		shcp_cnt <= shcp_cnt + 6'b1 ;
 end
 
 assign sft_shcp = shcp_cnt[2] ;
@@ -70,17 +68,17 @@ assign sft_ds = (vld&&cmd==2'b01) ? din[0] : data[0] ;
 reg [5:0] stcp_cnt ;
 always @ ( posedge clk ) begin
 	if( rst )
-		stcp_cnt <= 0 ;
+		stcp_cnt <= 6'b0 ;
 	else if( vld && cmd == 2'b10 )
-		stcp_cnt <= 1 ;
+		stcp_cnt <= 6'b1 ;
 	else if( |stcp_cnt )
-		stcp_cnt <= stcp_cnt + 1 ;
+		stcp_cnt <= stcp_cnt + 6'b1 ;
 end
 assign sft_stcp = stcp_cnt[2] ;
 
 //--------------------------------------------------
 // done
 //--------------------------------------------------
-assign done = (stcp_cnt == 63) || (shcp_cnt == 63) ;
+assign done = (stcp_cnt == 6'd63) || (shcp_cnt == 6'd63) ;
 
 endmodule

@@ -100,7 +100,6 @@ output wire [255:0] hash
         reg     [31:0]  Wt,Kt ;
         reg     [31:0]  A,B,C,D,E,F,G,H ;
 
-        reg             busy ;
         
         wire [31:0] f1_EFG_32,f2_ABC_32,f3_A_32,f4_E_32,f5_W1_32,f6_W14_32,T1_32,T2_32 ;
         wire [31:0] next_Wt,next_E,next_A ;
@@ -129,7 +128,7 @@ output wire [255:0] hash
 
         assign hash = {A,B,C,D,E,F,G,H} ;
 
-        assign round_plus_1 = round + 1 ;
+        assign round_plus_1 = round + 7'b1 ;
 
 always @ ( posedge clk ) begin
 	if( init ) begin
@@ -160,7 +159,6 @@ end
                 if (rst)
                 begin
                         round <= 'd0 ;
-                        busy <= 'b0 ;
 
                         W0  <= 'b0 ;
                         W1  <= 'b0 ;
@@ -202,7 +200,6 @@ end
                                 if( vld ) begin
                                         W0 <= din ;
                                         Wt <= din ;
-                                        busy <= 'b1 ;
                                         round <= round_plus_1 ;
                                 end
                         'd1:
@@ -492,12 +489,10 @@ end
                                         G <= F + H6 ;
                                         H <= G + H7 ;
                                         round <= 'd0 ;
-                                        busy <= 'b0 ;
                                 end
                         default:
                                 begin
                                         round <= 'd0 ;
-                                        busy <= 'b0 ;
                                 end
                         endcase
                 end     

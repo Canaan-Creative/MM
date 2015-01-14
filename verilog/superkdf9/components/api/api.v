@@ -48,7 +48,6 @@ wire [31 : 0]       rx_fifo_din       ;
 wire                rx_fifo_wr_en     ;
 wire                rx_fifo_rd_en     ;
 wire [31 : 0]       rx_fifo_dout      ;
-wire                rx_fifo_full      ;
 wire                rx_fifo_empty     ;
 wire [9  : 0]       rx_fifo_data_count;
 
@@ -58,7 +57,7 @@ wire rst = RST_I | reg_rst;
 wire [3:0] miner_id;
 wire [4:0] work_cnt;
 
-api_slave(
+api_slave api_slave(
 // system clock and reset
 /*input            */ .clk         (clk               ),
 /*input            */ .rst         (RST_I             ),
@@ -136,7 +135,7 @@ api_ctrl #(.WORK_LEN(WORK_LEN), .RX_FIFO_DEPTH(RX_FIFO_DEPTH)) api_ctrl(
 /*output               */ .led_get_nonce_h   (led_get_nonce_h   ) 
 );
 
-wire api_idle = reg_state == 3'b0 && tx_fifo_empty && ~timeout_busy;
+assign api_idle = reg_state == 3'b0 && tx_fifo_empty && ~timeout_busy;
 
 //1024words
 fifo1024 tx_fifo(
@@ -159,7 +158,7 @@ fifo512 rx_fifo(
 /*input          */ .wr_en     (rx_fifo_wr_en     ),
 /*input          */ .rd_en     (rx_fifo_rd_en     ),
 /*output [31 : 0]*/ .dout      (rx_fifo_dout      ),
-/*output         */ .full      (rx_fifo_full      ),
+/*output         */ .full      (                  ),
 /*output         */ .empty     (rx_fifo_empty     ),
 /*output [9  : 0]*/ .data_count(rx_fifo_data_count)
 );

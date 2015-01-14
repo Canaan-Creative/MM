@@ -11,11 +11,11 @@ output       brg_mosi
 reg [4:0] shcp_cnt ;
 always @ ( posedge clk ) begin
         if( rst )
-                shcp_cnt <= 0 ;
+                shcp_cnt <= 5'b0 ;
         else if( vld )
-                shcp_cnt <= 1 ;
+                shcp_cnt <= 5'b1 ;
         else if( |shcp_cnt )
-                shcp_cnt <= shcp_cnt + 1 ;
+                shcp_cnt <= shcp_cnt + 5'b1 ;
 end
 
 assign brg_sck = shcp_cnt[1] ;
@@ -30,7 +30,7 @@ end
 
 assign brg_mosi = vld ? din[0] : data[0] ;
 
-assign done = shcp_cnt == 31 ;
+assign done = shcp_cnt == 5'd31 ;
 
 endmodule
 

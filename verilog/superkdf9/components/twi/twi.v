@@ -41,7 +41,6 @@ module twi(
     output         SFTC_DS      ,
 
     input          FAN_IN0     ,
-    input          FAN_IN1     ,
     output         TIME0_INT   ,
     output         TIME1_INT   ,
 
@@ -136,7 +135,7 @@ always @ ( posedge CLK_I) begin
 	if(wdg_wr_en && TWI_DAT_I[0])
 		wdg_cnt <= TWI_DAT_I[31:1] ;
 	else if( |wdg_cnt )
-		wdg_cnt <= wdg_cnt - 1 ;
+		wdg_cnt <= wdg_cnt - 31'b1 ;
 end
 
 assign WATCH_DOG_tmp = wdg_en && ~|wdg_cnt;
@@ -247,43 +246,29 @@ reg [26:0] sec_cnt ;//1m
 reg [26:0] fan_cnt0 ;
 reg [26:0] fan_cnt1 ;
 reg [26:0] reg_fan0 ;
-reg [26:0] reg_fan1 ;
 reg [2:0] fan0_f ;
-reg [2:0] fan1_f ;
 wire fan0_neg = ~fan0_f[1] && fan0_f[2] ;
-wire fan1_neg = ~fan1_f[1] && fan1_f[2] ;
 always @ ( posedge CLK_I ) begin
 	fan0_f <= {fan0_f[1:0],FAN_IN0} ;
-	fan1_f <= {fan1_f[1:0],FAN_IN1} ;
 end
 
 always @ ( posedge CLK_I or posedge RST_I ) begin
 	if( RST_I )
-		sec_cnt <= 'b0 ;
+		sec_cnt <= 27'b0 ;
 	else if( sec_cnt == `MM_CLK_1S_CNT )
-		sec_cnt <= 'b0 ;
+		sec_cnt <= 27'b0 ;
 	else
-		sec_cnt <= 'b1 + sec_cnt ;
+		sec_cnt <= 27'b1 + sec_cnt ;
 end
 
 always @ ( posedge CLK_I or posedge RST_I ) begin
 	if( RST_I )
-		fan_cnt0 <= 'b0 ;
+		fan_cnt0 <= 27'b0 ;
 	else if( sec_cnt == `MM_CLK_1S_CNT ) begin
-		fan_cnt0 <= 'b0 ;
+		fan_cnt0 <= 27'b0 ;
 		reg_fan0 <= fan_cnt0 ;
 	end else if( fan0_neg )
-		fan_cnt0 <= fan_cnt0 + 'b1 ;
-end
-
-always @ ( posedge CLK_I or posedge RST_I ) begin
-	if( RST_I )
-		fan_cnt1 <= 'b0 ;
-	else if( sec_cnt == `MM_CLK_1S_CNT ) begin
-		fan_cnt1 <= 'b0 ;
-		reg_fan1 <= fan_cnt1 ;
-	end else if( fan1_neg )
-		fan_cnt1 <= fan_cnt1 + 'b1 ;
+		fan_cnt0 <= fan_cnt0 + 27'b1 ;
 end
 
 //-----------------------------------------------------
@@ -430,8 +415,8 @@ end
 assign TWI_DAT_O = i2cr_rd_en_r ? {24'b0,reg_i2cr}     :
 		   wdg_rd_en_r  ? {wdg_cnt,wdg_en}     :
 		   sft_rd_en_r  ? reg_sft              :
-		   fan0_rd_en_r ? {6'b0,reg_fan0}      :
-		   fan1_rd_en_r ? {6'b0,reg_fan1}      :
+		   fan0_rd_en_r ? {5'b0,reg_fan0}      :
+		   fan1_rd_en_r ? 32'b0                :
 		   time_rd_en_r ? reg_tim              :
 		   gpio_rd_en_r ? reg_gpio             :
 		   sftb_rd_en_r ? reg_sftb             :

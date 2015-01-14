@@ -14,7 +14,7 @@ input  [3:0]      MBOOT_SEL_I ,
 output reg        MBOOT_ACK_O ,
 output            MBOOT_ERR_O ,//const 0
 output            MBOOT_RTY_O ,//const 0
-output reg [31:0] MBOOT_DAT_O ,
+output reg [18:0] MBOOT_DAT_O ,
 
 output reg        MBOOT_SCL   ,
 output reg        MBOOT_CS    ,
@@ -83,8 +83,8 @@ ICAP_SPARTAN6 ICAP_SPARTAN6(
 );
 
 always @ (posedge CLK_I) begin
-	MBOOT_DAT_O <=  flash_rd_en ? {24'h123456, 2'b0, MBOOT_MISO, MBOOT_SCL, MBOOT_CS, MBOOT_MOSI, MBOOT_HOLD_N, MBOOT_WP_N}:
-			icapo_rd_en ? {13'b0, ICAP_CLK, ICAP_CE, ICAP_WRITE, ICAP_I[15:0]}: {15'b0, ICAP_BUSY, ICAP_O[15:0]};
+	MBOOT_DAT_O <=  flash_rd_en ? {13'h0, MBOOT_MISO, MBOOT_SCL, MBOOT_CS, MBOOT_MOSI, MBOOT_HOLD_N, MBOOT_WP_N}:
+			icapo_rd_en ? {ICAP_CLK, ICAP_CE, ICAP_WRITE, ICAP_I[15:0]}: {2'b0, ICAP_BUSY, ICAP_O[15:0]};
 end
 /*
 wire [35 : 0] CONTROL;

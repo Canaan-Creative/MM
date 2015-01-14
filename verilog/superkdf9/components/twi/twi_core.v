@@ -30,7 +30,6 @@ reg [3:0] byte_cnt ;
 
 reg [7:0] i2wd_r ;
 reg [7:0] i2rd_r ;
-assign i2wd = i2wd_r ;
 assign i2rd = rd_buf ;
 
 reg en_r , init_r ;

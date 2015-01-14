@@ -176,17 +176,6 @@ always @ (posedge CLK_I) begin
 		tx_wr_en <= 1'b0;
 end
 
-reg reg_rbt_start;
-always @ (posedge CLK_I) begin
-	if(rst)
-		reg_rbt_start <= 1'b0;
-	else if(i2c_ctrl_wr_en && I2C_DAT_I[26])
-		reg_rbt_start <= 1'b1;
-	else
-		reg_rbt_start <= 1'b0;
-end
-
-
 reg [3:0] reg_dna;
 wire dna_dout;
 
@@ -301,30 +290,10 @@ DNA_PORT dna_port(
 .READ  (reg_dna[2]),
 .SHIFT (reg_dna[3]) 
 );
-`define REBOOT_EN
-`ifdef REBOOT_EN
-reboot reboot(
-/*input        */ .clk          (CLK_I                ),
-/*input        */ .reg_rbt_start(reg_rbt_start        ),//only one pose
-/*input        */ .i2c_wr_stop  (reg_wstop            ),
-/*input        */ .i2c_rd_stop  (reg_rstop || reg_rerr),
-/*input        */ .rx_vld       (rx_wr_en             ),
-/*input  [31:0]*/ .rx_dat       (rx_din               ),
-/*input        */ .tx_vld       (tx_rd_en             ),
-/*output [31:0]*/ .tx_dat       (tx_dat               ),
-/*output reg   */ .rbt_enable   (rbt_enable           ),
-/*output reg   */ .ram_sel      (ram_sel              ),//0: iram, 1: dram
-/*output       */ .ram_wr       (ram_wr               ),
-/*output [15:0]*/ .ram_addr     (ram_addr             ),
-/*output [31:0]*/ .ram_dat_wr   (ram_dat_wr           ),
-/*input  [31:0]*/ .ram_dat_rd   (ram_dat_rd           ) 
-);
-`else
 assign tx_dat     = 0;
 assign rbt_enable = 0;
 assign ram_sel    = 0;//0: iram, 1: dram
 assign ram_wr     = 0;
 assign ram_addr   = 0;
 assign ram_dat_wr = 0;
-`endif
 endmodule
