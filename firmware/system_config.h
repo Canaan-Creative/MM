@@ -63,6 +63,7 @@
 #define SHIFTER_BASE2		(0x80000630) /* Front LED controller */
 #define IIC_BASE		(0x80000700)
 #define DNA_BASE		(0x80000710)
+#define RBT_BASE		(0x80000714)
 
 /* UART */
 #define LM32_UART_IER_RBRI	(1 << 0)
@@ -205,6 +206,10 @@ struct lm32_iic {
 
 struct lm32_dna {
 	volatile unsigned dna;	/*DNA*/
+};
+
+struct lm32_rbt {
+	volatile unsigned rbt;	/*reboot*/
 };
 
 #endif /* _SYSTEM_CONFIG_H_ */

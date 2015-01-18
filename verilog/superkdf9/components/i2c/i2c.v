@@ -84,6 +84,7 @@ parameter I2C_ADDR = 6'h04;
 parameter I2C_TX   = 6'h08;
 parameter I2C_RX   = 6'h0c;
 parameter I2C_DNA  = 6'h10;
+parameter I2C_RBT  = 6'h14;//reboot
 
 always @ (posedge CLK_I or posedge RST_I) begin
         if(RST_I)
@@ -106,6 +107,9 @@ assign i2c_rx_rd_en   = I2C_STB_I & ~I2C_WE_I & (I2C_ADR_I == I2C_RX) & ~I2C_ACK
 
 assign i2c_dna_wr_en   = I2C_STB_I & I2C_WE_I & (I2C_ADR_I == I2C_DNA) & ~I2C_ACK_O;
 assign i2c_dna_rd_en   = I2C_STB_I & ~I2C_WE_I & (I2C_ADR_I == I2C_DNA) & ~I2C_ACK_O;
+
+assign i2c_rbt_wr_en   = I2C_STB_I & I2C_WE_I & (I2C_ADR_I == I2C_RBT) & ~I2C_ACK_O;
+assign i2c_rbt_rd_en   = I2C_STB_I & ~I2C_WE_I & (I2C_ADR_I == I2C_RBT) & ~I2C_ACK_O;
 
 always @ (posedge CLK_I) begin
         if( i2c_ctrl_wr_en ) begin
@@ -178,6 +182,7 @@ end
 
 reg [3:0] reg_dna;
 wire dna_dout;
+reg reg_download_done;
 
 always @ (posedge CLK_I) begin
 	if(RST_I)
@@ -194,6 +199,7 @@ always @ (posedge CLK_I) begin
 		i2c_addr_rd_en  : I2C_DAT_O <= {25'b0, reg_addr};
 		i2c_rx_rd_en    : I2C_DAT_O <= rx_dout;
 		i2c_dna_rd_en   : I2C_DAT_O <= {dna_dout, reg_dna[3:0]};
+		i2c_rbt_rd_en   : I2C_DAT_O <= {31'b0, reg_download_done};
                 default: I2C_DAT_O <= 32'hdeaddead ;
         endcase
 end
@@ -246,6 +252,15 @@ always @ (posedge CLK_I) begin
 		brg_cs_r <= 1'b0;
 	else if(addr_r == 7'b1000000 && byte_done && byte_buf == 8'h01)
 		brg_cs_r <= 1'b1;
+end
+
+always @ (posedge CLK_I) begin
+        if(rst)
+                reg_download_done <= 1'b0;
+        else if(addr_r == 7'b1000000 && byte_done && byte_buf == 8'h04)
+                reg_download_done <= 1'b1;
+	else if(I2C_DAT_I[0] && i2c_rbt_wr_en)
+                reg_download_done <= 1'b0;
 end
 
 brg_shift brg_shift(

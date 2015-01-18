@@ -1,3 +1,11 @@
+#include <stdint.h>
+
+#include "minilibc.h"
+#include "system_config.h"
+#include "defines.h"
+#include "intr.h"
+#include "io.h"
+
 int mboot_disable(void);
 int mboot_enable(void);
 unsigned char mboot_bit(int bit);
@@ -13,6 +21,7 @@ int mboot_spi_erase_64kB_Block(unsigned int addr, unsigned char *buf);
 int mboot_spi_write_enable(void);
 int mboot_spi_cp(unsigned int mboot_file0_addr_start, unsigned int mboot_file0_blocknum, unsigned int mboot_file1_addr_start);
 
+static struct lm32_rbt *rbt = (struct lm32_rbt *)RBT_BASE;
 volatile unsigned int *mboot_flash = (unsigned int *)0x80000800;
 
 int mboot_disable(void){
@@ -138,6 +147,7 @@ int icap_enable(void);
 int icap_disenable(void);
 int icap_write_16bit(unsigned int data_o);
 int icap_mboot_start(unsigned int mboot_file0_addr_start, unsigned int mboot_file1_addr_start);
+int run_rbt(void);
 int mboot(void);
 int icap_wait_busy(void);
 
@@ -224,6 +234,15 @@ unsigned short mboot_mcs1_verify(void){
 	}
 	debug32("This is File0, MCS1 is Empty!");
 
+	return 0;
+}
+
+int run_rbt(void){
+	unsigned int tmp;
+	tmp = readl(&rbt->rbt);
+	if(tmp == 0x1){
+		icap_mboot_start(0x0, 0x0);
+	}
 	return 0;
 }
 
