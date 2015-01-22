@@ -85,14 +85,20 @@ int mboot_spi_read(int byte_num, unsigned int addr, unsigned char *buf){
 }
 
 int mboot_spi_write(int byte_num, unsigned int addr, unsigned char *buf){
-	mboot_spi_op(0x02, byte_num, addr, buf);
-	mboot_spi_wait_busy();
+	if(addr >= 0x040000 && addr < 0x080000){
+		mboot_spi_op(0x02, byte_num, addr, buf);
+		mboot_spi_wait_busy();
+	} else
+		return 1;
 	return 0;
 }
 
 int mboot_spi_erase_64kB_Block(unsigned int addr, unsigned char *buf){
-	mboot_spi_op(0xd8, 4, addr, buf);
-	mboot_spi_wait_busy();
+	if(addr >= 0x040000 && addr < 0x080000){
+		mboot_spi_op(0xd8, 4, addr, buf);
+		mboot_spi_wait_busy();
+	} else
+		return 1;
         return 0;
 }
 
