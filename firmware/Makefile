@@ -113,6 +113,7 @@ $(HARDWARE_NAME).mcs: $(HARDWARE_NAME).bit
 	cp $^ ../synth
 	make -C ../synth $@
 	cp ../synth/$@ $@
+	./mm_add_bootloader; rm $@ -f; mv mmout.mcs $@
 
 $(HARDWARE_NAME).bit: $(PRJ_NAME).elf ../synth/$(HARDWARE_NAME).bit ../synth/$(HARDWARE_NAME)_bd.bmm
 	$(xil_env) && data2mem -bm ../synth/$(HARDWARE_NAME)_bd.bmm -bd $(PRJ_NAME).elf -bt ../synth/$(HARDWARE_NAME).bit -o b $@

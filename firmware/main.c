@@ -619,9 +619,7 @@ static inline void led(void)
 		led_ctrl(LED_PG2_BLINKING);
 }
 
-#ifdef MBOOT
 #include "mboot.c"
-#endif
 
 int main(int argv, char **argc)
 {
@@ -629,10 +627,6 @@ int main(int argv, char **argc)
 	struct result result;
 	int i;
 	uint32_t val[MINER_COUNT];
-
-#ifdef MBOOT
-	mboot();
-#endif
 
 	adjust_fan(FAN_10);
 
@@ -699,6 +693,7 @@ int main(int argv, char **argc)
 	glastcpm[0] = glastcpm[1] = glastcpm[2] = 0;
 	g_new_stratum = 0;
 	while (1) {
+		run_rbt();
 		wdg_feed(CPU_FREQUENCY * IDLE_TIME);
 
 		get_pkg(&mm_work);
