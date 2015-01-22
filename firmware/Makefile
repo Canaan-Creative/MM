@@ -8,7 +8,7 @@
 #
 
 DATE:=$(shell date +%Y-%m-%d)
-GIT_VERSION:=$(shell git rev-parse HEAD | cut -c 1-6)
+GIT_VERSION:=$(shell git rev-parse HEAD | cut -c 1-7)
 GIT_STATUS:=$(shell ([ -z "`git status -s -uno`" ] && echo 0) || echo +)
 
 -include config.mk
@@ -23,16 +23,14 @@ CSRCS      = main.c sha256.c twipwm.c miner.c crc16.c shifter.c timer.c iic.c ap
 BATCHFILE	:= $(shell mktemp)
 HARDWARE_NAME	= mm
 PRJ_NAME	= mm
-MBOOT		?= 1
-NOMBOOTBINDIR    = mm-no-mboot
 
 isedir  ?= /home/Xilinx/14.6/ISE_DS/
 xil_env ?= . $(isedir)/settings$(shell getconf LONG_BIT).sh &>/dev/null
 
 ifeq ($(MM41),1)
-CFLAGS += -DMM_VERSION='"411501-$(GIT_VERSION)$(MBOOT)$(GIT_STATUS)"' -DMM41
+CFLAGS += -DMM_VERSION='"411501-$(GIT_VERSION)$(GIT_STATUS)"' -DMM41
 else
-CFLAGS += -DMM_VERSION='"401501-$(GIT_VERSION)$(MBOOT)$(GIT_STATUS)"' -DMM40
+CFLAGS += -DMM_VERSION='"401501-$(GIT_VERSION)$(GIT_STATUS)"' -DMM40
 endif
 
 ifeq ($(DEBUG),1)
@@ -40,12 +38,7 @@ ifeq ($(DEBUG),1)
 	CSRCS  += uart.c
 endif
 
-ifeq ($(MBOOT), 1)
-CFLAGS += -DMBOOT
 BIN_DIR:=$(DATE)
-else
-BIN_DIR:=$(DATE)/$(NOMBOOTBINDIR)
-endif
 
 MD5FILES := mm.bit  mm.elf  mm.hexdump  mm.mcs  mm.objdump
 OBJS       := $(addsuffix .o,$(basename $(CSRCS) $(SSRCS)))
