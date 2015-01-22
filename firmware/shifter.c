@@ -70,32 +70,6 @@ static void shift_update(struct lm32_shifter *s, uint32_t value[], int poweron)
 
 uint32_t set_voltage(uint32_t value)
 {
-#ifdef MM40
-	uint32_t ret = 0;
-	int poweron = 0;
-	uint8_t i;
-
-	if (g_voltage == value)
-		return 0;
-
-	if (g_voltage == ASIC_0V)
-		poweron = 1;
-
-	for (i = 0; i < MINER_COUNT; i++)
-		g_voltage_i[i] = value;
-
-	shift_update(sft0, g_voltage_i, poweron);
-	shift_update(sft1, g_voltage_i + 5, poweron);
-
-	if (g_voltage == ASIC_0V) {
-		gpio_reset_asic();
-		ret = 1;
-	}
-
-	g_voltage = value;
-
-	return ret;
-#else
 	uint32_t ret = 0;
 
 	if (g_voltage == value)
@@ -106,13 +80,11 @@ uint32_t set_voltage(uint32_t value)
 
 	g_voltage = value;
 	return ret;
-#endif
 }
 
 /* Must call set_voltage first(record g_voltage), Call from AVA4_P_SET_VOLT, Only for MM-4.1 */
 uint32_t set_voltage_i(uint32_t value[])
 {
-#ifdef MM41
 	uint32_t ret;
 	uint8_t i, diff = 0, ch1 = 0, ch2 = 0, reset = 1;
 	int poweron = 0;
@@ -148,9 +120,6 @@ uint32_t set_voltage_i(uint32_t value[])
 	}
 
 	return ret;
-#else
-	return 0;
-#endif
 }
 
 uint32_t get_voltage(void)
