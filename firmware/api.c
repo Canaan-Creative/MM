@@ -309,7 +309,7 @@ void set_asic_freq(uint32_t value[])
 	set_asic_timeout(value);
 }
 
-/* Must call set_asic_freq first, Call from AVA4_P_SET_FREQ, Only for MM-4.1 */
+/* Must call set_asic_freq first, Call from AVA4_P_SET_FREQ */
 void set_asic_freq_i(uint32_t cpm[])
 {
 	api_change_cpm(MINER_COUNT, ASIC_COUNT, cpm[0], cpm[1], cpm[2]);
