@@ -82,15 +82,20 @@ uint32_t set_voltage(uint32_t value)
 	return ret;
 }
 
-/* Must call set_voltage first(record g_voltage), Call from AVA4_P_SET_VOLT, Only for MM-4.1 */
+/* Must call set_voltage first(record g_voltage), Call from AVA4_P_SET_VOLT */
 uint32_t set_voltage_i(uint32_t value[])
 {
 	uint32_t ret;
-	uint8_t i, diff = 0, ch1 = 0, ch2 = 0, reset = 1;
+	uint8_t i, diff = 0, ch1 = 0, ch2 = 0, allpoweron = 1;
 	int poweron = 0;
 
 	for (i = 0; i < MINER_COUNT; i++) {
 		if (g_voltage_i[i] != value[i]) {
+			if (g_voltage_i[i] == ASIC_0V)
+				poweron = 1;
+			else
+				allpoweron = 0;
+
 			g_voltage_i[i] = value[i];
 			diff = 1;
 			if (i < 5)
@@ -98,11 +103,6 @@ uint32_t set_voltage_i(uint32_t value[])
 			else
 				ch2 = 1;
 		}
-
-		if (g_voltage_i[i] == ASIC_0V)
-			poweron = 1;
-		else
-			reset = 0;
 	}
 
 	if (!diff)
@@ -114,7 +114,7 @@ uint32_t set_voltage_i(uint32_t value[])
 	if (ch2)
 		shift_update(sft1, g_voltage_i + 5, poweron);
 
-	if (reset) {
+	if (allpoweron) {
 		gpio_reset_asic();
 		ret = 1;
 	}
