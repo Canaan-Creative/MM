@@ -264,13 +264,12 @@ wire TIME0_INT ;
 wire TIME1_INT ;
 reg [2:0] counter;
 wire sys_reset = !counter[2] || WATCH_DOG ;
-always @(posedge clk_i or negedge reset_n)
-if (reset_n == 1'b0)
-counter <= #1 3'b000;
-else
-if (counter[2] == 1'b0)
-counter <= #1 counter + 1'b1;
-
+always @(posedge clk_i or negedge reset_n) begin
+	if (reset_n == 1'b0)
+		counter <= 3'b000;
+	else if (counter[2] == 1'b0)
+		counter <= counter + 3'b1;
+end
 
 wire one_zero = 1'b0;
 wire[1:0] two_zero = 2'b00;

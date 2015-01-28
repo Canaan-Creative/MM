@@ -4,6 +4,7 @@ module api_ctrl(
 input                 clk               ,
 input                 rst               ,
 
+input                 reg_rst           ,
 output [2:0]          reg_state         ,
 input  [27:0]         reg_timeout       ,
 input  [7:0]          reg_sck           ,
@@ -51,8 +52,10 @@ wire rx_fifo_full = (RX_FIFO_DEPTH - rx_fifo_data_count) < (RX_BLOCK_LEN * MAX_C
 wire [31:0] miso_dat;
 assign reg_state = {1'b0, cur_state};
 
-always @ (posedge clk) begin
+always @ (posedge clk or posedge rst) begin
 	if(rst)
+		cur_state <= WAIT;
+	else if(reg_rst)
 		cur_state <= WAIT;
 	else
 		cur_state <= nxt_state;
@@ -69,8 +72,10 @@ always @ (*) begin
 			nxt_state = WAIT;
 	endcase
 end
-always @ (posedge clk) begin
+always @ (posedge clk or posedge rst) begin
 	if(rst)
+		word_cnt <= 8'b0;
+	else if(reg_rst)
 		word_cnt <= 8'b0;
 	else if(cur_state != WORK && nxt_state == WORK)
 		word_cnt <= 8'b0;
@@ -78,8 +83,10 @@ always @ (posedge clk) begin
 		word_cnt <= word_cnt + 8'b1;
 end
 
-always @ (posedge clk) begin
+always @ (posedge clk or posedge rst) begin
 	if(rst)
+		mosi_vld <= 1'b0;
+	else if(reg_rst)
 		mosi_vld <= 1'b0;
 	else if(cur_state != WORK && nxt_state == WORK)
 		mosi_vld <= 1'b1;
@@ -89,8 +96,10 @@ always @ (posedge clk) begin
 		mosi_vld <= 1'b0;
 end
 
-always @ (posedge clk) begin
+always @ (posedge clk or posedge rst) begin
 	if(rst)
+		load_nop_cnt <= 4'b0;
+	else if(reg_rst)
 		load_nop_cnt <= 4'b0;
 	else if(cur_state != NOP && nxt_state == NOP)
 		load_nop_cnt <= 4'b1;
@@ -100,8 +109,10 @@ always @ (posedge clk) begin
 		load_nop_cnt <= 4'b0;
 end
 
-always @ (posedge clk) begin
+always @ (posedge clk or posedge rst) begin
 	if(rst)
+		work_cnt <= 5'b0;
+	else if(reg_rst)
 		work_cnt <= 5'b0;
 	else if(cur_state != WORK && nxt_state == WORK)
 		work_cnt <= 5'b0;
@@ -127,8 +138,10 @@ assign     miner_id =   load == `API_NUM'b1111111110 ? 4'd0 :
 assign rx_fifo_din = (work_cnt == (RX_BLOCK_LEN-1)) ? {miso_dat[31:16], 8'h12, 4'b0, miner_id} : miso_dat;
 
 reg led_get_nonce_l_r;
-always @ (posedge clk) begin
+always @ (posedge clk or posedge rst) begin
 	if(rst)
+		led_get_nonce_l_r <= 1'b0;
+	else if(reg_rst)
 		led_get_nonce_l_r <= 1'b0;
 	else if(rx_fifo_wr_en && (work_cnt == 2) && (miner_id <= 4))
 		led_get_nonce_l_r <= 1'b1;
@@ -137,8 +150,10 @@ always @ (posedge clk) begin
 end
 
 reg led_get_nonce_h_r;
-always @ (posedge clk) begin
+always @ (posedge clk or posedge rst) begin
 	if(rst)
+		led_get_nonce_h_r <= 1'b0;
+	else if(reg_rst)
 		led_get_nonce_h_r <= 1'b0;
 	else if(rx_fifo_wr_en && (work_cnt == 2) && (miner_id > 4))
 		led_get_nonce_h_r <= 1'b1;
@@ -149,15 +164,19 @@ end
 assign led_get_nonce_l = led_get_nonce_l_r && rx_fifo_wr_en && (work_cnt == RX_BLOCK_LEN - 2) && (miso_dat == 32'hbeafbeaf) && (miner_id <= 4);
 assign led_get_nonce_h = led_get_nonce_h_r && rx_fifo_wr_en && (work_cnt == RX_BLOCK_LEN - 2) && (miso_dat == 32'hbeafbeaf) && (miner_id > 4);
 
-always @ (posedge clk) begin
+always @ (posedge clk or posedge rst) begin
 	if(rst)
+		load <= {`API_NUM{1'b1}} ^ `API_NUM'b1;
+	else if(reg_rst)
 		load <= {`API_NUM{1'b1}} ^ `API_NUM'b1;
 	else if(cur_state == NOP && nxt_state == WAIT)
 		load <= {load[`API_NUM-2:0], load[`API_NUM-1]};
 end
 
-always @ (posedge clk) begin
+always @ (posedge clk or posedge rst) begin
 	if(rst)
+		ch_cnt <= 6'b0;
+	else if(reg_rst)
 		ch_cnt <= 6'b0;
 	else if(cur_state == WAIT && nxt_state == WORK && ch_cnt == reg_ch_num)
 		ch_cnt <= 6'b0;
@@ -171,6 +190,7 @@ api_timer api_timer(
 /*input          */ .clk         (clk         ),
 /*input          */ .rst         (rst         ),
 
+/*input          */ .reg_rst     (reg_rst     ),
 /*input  [27:0]  */ .reg_timeout (reg_timeout ),
 /*input          */ .start       (timer_start ),
 /*output         */ .timeout_busy(timeout_busy)
@@ -180,6 +200,7 @@ api_phy api_phy(
 /*input          */ .clk         (clk         ),
 /*output         */ .rst         (rst         ),
 
+/*input          */ .reg_rst     (reg_rst     ),
 /*input  [7:0]   */ .reg_sck     (reg_sck     ),
 
 /*input          */ .mosi_vld    (mosi_vld    ),

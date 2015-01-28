@@ -40,7 +40,7 @@ end
 // shcp counter
 //--------------------------------------------------
 reg [5:0] shcp_cnt ;
-always @ ( posedge clk ) begin
+always @ ( posedge clk or posedge rst) begin
 	if( rst )
 		shcp_cnt <= 6'b0 ;
 	else if( vld && cmd == 2'b01 )
@@ -52,8 +52,10 @@ end
 assign sft_shcp = shcp_cnt[2] ;
 
 reg [7:0] data ;
-always @ ( posedge clk ) begin
-	if( vld && cmd == 2'b01 )
+always @ ( posedge clk or posedge rst) begin
+	if(rst)
+		data <= 8'b0;
+	else if( vld && cmd == 2'b01 )
 		data <= din ;
 	else if( &shcp_cnt[2:0] )
 		data <= data >> 1 ;
@@ -66,7 +68,7 @@ assign sft_ds = (vld&&cmd==2'b01) ? din[0] : data[0] ;
 // sft_stcp
 //--------------------------------------------------
 reg [5:0] stcp_cnt ;
-always @ ( posedge clk ) begin
+always @ ( posedge clk or posedge rst) begin
 	if( rst )
 		stcp_cnt <= 6'b0 ;
 	else if( vld && cmd == 2'b10 )

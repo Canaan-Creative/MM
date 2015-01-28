@@ -118,8 +118,11 @@ reg [2:0] hash_cnt ;
 reg [31:0] reg_hash ;
 wire [255:0] hash ;
 reg sha_hash_rd_en_r ;
-always @ ( posedge CLK_I )
-	sha_hash_rd_en_r <= sha_hash_rd_en ;
+always @ ( posedge CLK_I or posedge RST_I )
+	if(RST_I)
+		sha_hash_rd_en_r <= 1'b0;
+	else
+		sha_hash_rd_en_r <= sha_hash_rd_en ;
 
 always @ ( * ) begin
 	case( hash_cnt )
@@ -135,7 +138,9 @@ always @ ( * ) begin
 end
 
 always @ ( posedge CLK_I or posedge RST_I ) begin
-	if( RST_I | reg_init )
+	if( RST_I )
+		hash_cnt <= 3'b0 ;
+	else if( reg_init )
 		hash_cnt <= 3'b0 ;
 	else if( sha_hash_rd_en_r )
 		hash_cnt <= hash_cnt + 3'b1 ;
@@ -146,7 +151,16 @@ end
 //-----------------------------------------------------
 reg [8*32-1:0] SHA256_Hx ;
 always @ ( posedge CLK_I or posedge RST_I ) begin
-	if( RST_I | reg_rst ) begin
+	if( RST_I ) begin
+		SHA256_Hx[8*32-1:7*32] <= `DEF_SHA256_H0 ;
+		SHA256_Hx[7*32-1:6*32] <= `DEF_SHA256_H1 ;
+		SHA256_Hx[6*32-1:5*32] <= `DEF_SHA256_H2 ;
+		SHA256_Hx[5*32-1:4*32] <= `DEF_SHA256_H3 ;
+		SHA256_Hx[4*32-1:3*32] <= `DEF_SHA256_H4 ;
+		SHA256_Hx[3*32-1:2*32] <= `DEF_SHA256_H5 ;
+		SHA256_Hx[2*32-1:1*32] <= `DEF_SHA256_H6 ;
+		SHA256_Hx[1*32-1:0*32] <= `DEF_SHA256_H7 ;
+	end else if( reg_rst ) begin
 		SHA256_Hx[8*32-1:7*32] <= `DEF_SHA256_H0 ;
 		SHA256_Hx[7*32-1:6*32] <= `DEF_SHA256_H1 ;
 		SHA256_Hx[6*32-1:5*32] <= `DEF_SHA256_H2 ;
@@ -166,8 +180,12 @@ wire [32*6-1:0] PRE ;
 reg [2:0] pre_cnt ;
 reg [31:0] reg_pre ;
 reg sha_pre_rd_en_r ;
-always @ ( posedge CLK_I )
-	sha_pre_rd_en_r <= sha_pre_rd_en ;
+always @ ( posedge CLK_I or posedge RST_I )begin
+	if(RST_I)
+		sha_pre_rd_en_r <= 1'b0;
+	else
+		sha_pre_rd_en_r <= sha_pre_rd_en ;
+end
 
 always @ ( * ) begin
 	case( pre_cnt )
@@ -182,7 +200,9 @@ always @ ( * ) begin
 end
 
 always @ ( posedge CLK_I or posedge RST_I ) begin
-	if( RST_I | reg_init )
+	if( RST_I )
+		pre_cnt <= 3'b0 ;
+	else if(reg_init)
 		pre_cnt <= 3'b0 ;
 	else if( sha_pre_rd_en_r )
 		pre_cnt <= pre_cnt + 3'b1 ;

@@ -120,19 +120,26 @@ reg [30:0] wdg_cnt ;
 reg [7:0] WATCH_DOG_f;
 wire WATCH_DOG_tmp;
 
-always @ (posedge CLK_I) begin
-	WATCH_DOG_f <= {WATCH_DOG_f[6:0], WATCH_DOG_tmp};
+always @ (posedge CLK_I or posedge RST_I) begin
+	if(RST_I)
+		WATCH_DOG_f <= 8'b0;
+	else
+		WATCH_DOG_f <= {WATCH_DOG_f[6:0], WATCH_DOG_tmp};
 end
 
-always @ ( posedge CLK_I) begin
-	if(WATCH_DOG_tmp)
+always @ ( posedge CLK_I or posedge RST_I) begin
+	if(RST_I)
+		wdg_en <= 1'b0;
+	else if(WATCH_DOG_tmp)
 		wdg_en <= 1'b0 ;
 	else if( wdg_wr_en )
 		wdg_en <= TWI_DAT_I[0] ;
 end
 
-always @ ( posedge CLK_I) begin
-	if(wdg_wr_en && TWI_DAT_I[0])
+always @ ( posedge CLK_I or posedge RST_I) begin
+	if(RST_I)
+		wdg_cnt <= 32'b0;
+	else if(wdg_wr_en && TWI_DAT_I[0])
 		wdg_cnt <= TWI_DAT_I[31:1] ;
 	else if( |wdg_cnt )
 		wdg_cnt <= wdg_cnt - 31'b1 ;
@@ -208,8 +215,11 @@ shift u_shift_b(
 
 reg [31:0] reg_sftc;
 reg sftc_wr_en_f;
-always @ ( posedge CLK_I )
-	sftc_wr_en_f <= sftc_wr_en;
+always @ ( posedge CLK_I or posedge RST_I )
+	if(RST_I)
+		sftc_wr_en_f <= 1'b0;
+	else
+		sftc_wr_en_f <= sftc_wr_en;
 
 always @ ( posedge CLK_I or posedge RST_I ) begin
 	if( RST_I )
@@ -221,7 +231,7 @@ end
 reg [7:0] reg_brea;
 always @ ( posedge CLK_I or posedge RST_I ) begin
 	if( RST_I )
-		reg_brea <= 200;
+		reg_brea <= 8'd200;
 	else if( brea_wr_en )
 		reg_brea <= TWI_DAT_I[7:0];
 end
@@ -248,8 +258,11 @@ reg [26:0] fan_cnt1 ;
 reg [26:0] reg_fan0 ;
 reg [2:0] fan0_f ;
 wire fan0_neg = ~fan0_f[1] && fan0_f[2] ;
-always @ ( posedge CLK_I ) begin
-	fan0_f <= {fan0_f[1:0],FAN_IN0} ;
+always @ ( posedge CLK_I or posedge RST_I) begin
+	if(RST_I)
+		fan0_f <= 3'b0;
+	else
+		fan0_f <= {fan0_f[1:0],FAN_IN0} ;
 end
 
 always @ ( posedge CLK_I or posedge RST_I ) begin
@@ -285,24 +298,29 @@ reg tim_done1 ;
 reg tim_mask0 ;
 reg tim_mask1 ;
 wire [31:0] reg_tim = {7'b0,tim_done1,sec_cnt1,tim_mask1,1'b0,7'b0,tim_done0,sec_cnt0,tim_mask0,1'b0} ;
-always @ ( posedge CLK_I ) begin
-	if( tim_cnt == `MM_CLK_1S_CNT )
-		tim_cnt <= 'b0 ;
+always @ ( posedge CLK_I or posedge RST_I) begin
+	if(RST_I)
+		tim_cnt <= 27'b0;
+	else if( tim_cnt == `MM_CLK_1S_CNT )
+		tim_cnt <= 27'b0 ;
 	else
-		tim_cnt <= 'b1 + tim_cnt ;
+		tim_cnt <= 27'b1 + tim_cnt ;
 end
 
 always @ ( posedge CLK_I or posedge RST_I ) begin
 	if( RST_I )
-		sec_cnt0 <= 'b0 ;
+		sec_cnt0 <= 6'b0 ;
 	else if( time_wr_en && TWI_DAT_I[0] )
 		sec_cnt0 <= TWI_DAT_I[7:2] ;
 	else if( |sec_cnt0 && tim_cnt == `MM_CLK_1S_CNT )
 		sec_cnt0 <= sec_cnt0 - 6'b1 ;
 end
 
-always @ ( posedge CLK_I ) begin
-	sec_cnt0_f <= sec_cnt0 ;
+always @ ( posedge CLK_I or posedge RST_I) begin
+	if(RST_I)
+		sec_cnt0_f <= 6'b0;
+	else
+		sec_cnt0_f <= sec_cnt0 ;
 end
 
 always @ ( posedge CLK_I or posedge RST_I ) begin
@@ -314,15 +332,18 @@ end
 
 always @ ( posedge CLK_I or posedge RST_I ) begin
 	if( RST_I )
-		sec_cnt1 <= 'b0 ;
+		sec_cnt1 <= 6'b0 ;
 	else if( time_wr_en && TWI_DAT_I[16] )
 		sec_cnt1 <= TWI_DAT_I[23:18] ;
 	else if( |sec_cnt1 && tim_cnt == `MM_CLK_1S_CNT )
 		sec_cnt1 <= sec_cnt1 - 6'b1 ;
 end
 
-always @ ( posedge CLK_I ) begin
-	sec_cnt1_f <= sec_cnt1 ;
+always @ ( posedge CLK_I or posedge RST_I) begin
+	if(RST_I)
+		sec_cnt1_f <= 6'b0;
+	else
+		sec_cnt1_f <= sec_cnt1 ;
 end
 
 always @ ( posedge CLK_I or posedge RST_I ) begin
@@ -366,8 +387,11 @@ always @ ( posedge CLK_I or posedge RST_I ) begin
 		reg_gout <= TWI_DAT_I[15:0];
 end
 assign GPIO_OUT = reg_gout ;
-always @ ( posedge CLK_I ) begin
-	reg_gin <= GPIO_IN ;
+always @ ( posedge CLK_I or posedge RST_I ) begin
+	if(RST_I)
+		reg_gin <= 16'b0;
+	else
+		reg_gin <= GPIO_IN ;
 end
 
 
@@ -399,17 +423,30 @@ reg brea_rd_en_r ;
 
 wire [7:0] reg_i2cr ;
 wire [7:0] reg_i2rd ;
-always @ ( posedge CLK_I ) begin
-	i2cr_rd_en_r <= i2cr_rd_en ;
-	wdg_rd_en_r <= wdg_rd_en ;
-	sft_rd_en_r <= sft_rd_en ;
-	fan0_rd_en_r <= fan0_rd_en ;
-	fan1_rd_en_r <= fan1_rd_en ;
-	time_rd_en_r <= time_rd_en ;
-	gpio_rd_en_r <= gpio_rd_en ;
-	sftb_rd_en_r <= sftb_rd_en ;
-	sftc_rd_en_r <= sftc_rd_en ;
-	brea_rd_en_r <= brea_rd_en ;
+always @ ( posedge CLK_I or posedge RST_I) begin
+	if(RST_I) begin
+		i2cr_rd_en_r <= 1'b0;
+		wdg_rd_en_r  <= 1'b0;
+		sft_rd_en_r  <= 1'b0;
+		fan0_rd_en_r <= 1'b0;
+		fan1_rd_en_r <= 1'b0;
+		time_rd_en_r <= 1'b0;
+		gpio_rd_en_r <= 1'b0;
+		sftb_rd_en_r <= 1'b0;
+		sftc_rd_en_r <= 1'b0;
+		brea_rd_en_r <= 1'b0;
+	end else begin
+		i2cr_rd_en_r <= i2cr_rd_en;
+		wdg_rd_en_r  <= wdg_rd_en ;
+		sft_rd_en_r  <= sft_rd_en ;
+		fan0_rd_en_r <= fan0_rd_en;
+		fan1_rd_en_r <= fan1_rd_en;
+		time_rd_en_r <= time_rd_en;
+		gpio_rd_en_r <= gpio_rd_en;
+		sftb_rd_en_r <= sftb_rd_en;
+		sftc_rd_en_r <= sftc_rd_en;
+		brea_rd_en_r <= brea_rd_en;
+	end
 end
 
 assign TWI_DAT_O = i2cr_rd_en_r ? {24'b0,reg_i2cr}     :

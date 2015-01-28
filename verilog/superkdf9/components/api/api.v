@@ -52,7 +52,7 @@ wire                rx_fifo_empty     ;
 wire [9  : 0]       rx_fifo_data_count;
 
 wire clk = CLK_I;
-wire rst = RST_I | reg_rst;
+wire rst = RST_I;
 
 wire [3:0] miner_id;
 wire [4:0] work_cnt;
@@ -109,6 +109,7 @@ api_ctrl #(.WORK_LEN(WORK_LEN), .RX_FIFO_DEPTH(RX_FIFO_DEPTH)) api_ctrl(
 /*input                */ .clk               (clk               ),
 /*input                */ .rst               (rst               ),
 
+/*input                */ .reg_rst           (reg_rst           ),
 /*output [2:0]         */ .reg_state         (reg_state         ),
 /*input  [27:0]        */ .reg_timeout       (reg_timeout       ),
 /*input  [7:0]         */ .reg_sck           (reg_sck           ),
@@ -140,7 +141,7 @@ assign api_idle = reg_state == 3'b0 && tx_fifo_empty && ~timeout_busy;
 //1024words
 fifo1024 tx_fifo(
 /*input          */ .clk       (clk               ),
-/*input          */ .srst      (rst               ),
+/*input          */ .srst      (rst | reg_rst     ),
 /*input  [31 : 0]*/ .din       (tx_fifo_din       ),
 /*input          */ .wr_en     (tx_fifo_wr_en     ),
 /*input          */ .rd_en     (tx_fifo_rd_en     ),
@@ -153,7 +154,7 @@ fifo1024 tx_fifo(
 //512words
 fifo512 rx_fifo(                          
 /*input          */ .clk       (clk               ),
-/*input          */ .srst      (rst               ),
+/*input          */ .srst      (rst | reg_rst     ),
 /*input  [31 : 0]*/ .din       (rx_fifo_din       ),
 /*input          */ .wr_en     (rx_fifo_wr_en     ),
 /*input          */ .rd_en     (rx_fifo_rd_en     ),

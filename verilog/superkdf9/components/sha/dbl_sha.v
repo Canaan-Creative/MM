@@ -38,8 +38,10 @@ always @ ( posedge clk or posedge rst ) begin
 		cnt <= cnt + 4'b1 ;
 end
 
-always @ ( posedge clk ) begin
-	if( done )
+always @ ( posedge clk or posedge rst ) begin
+	if( rst )
+		hash_r <= 256'b0;
+	else if( done )
 		hash_r <= hash ;
 	else if( start && cnt != 4'd7 )
 		hash_r <= hash_r << 32 ;

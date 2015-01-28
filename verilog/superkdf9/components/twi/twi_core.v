@@ -43,24 +43,22 @@ wire cmd_rd_no = cmd_r == 3'b100 && en_r ;
 
 assign i2cr = {1'b0,cmd_r,1'b0,done,init_r,en_r};
 //register twir
-always @ ( posedge clk ) begin
+always @ ( posedge clk or posedge rst) begin
 	if( rst ) begin
 		en_r   <= 1'b0 ;
 		init_r <= 1'b0 ;
 		cmd_r  <= 3'b0 ;
-	end
-	else if( wr_addr == `I2CR && wr ) begin
+	end else if( wr_addr == `I2CR && wr ) begin
 		en_r   <= data_in[0] ;
 		init_r <= data_in[1] ;
 		cmd_r  <= data_in[6:4] ;
-	end
-	else begin
+	end else begin
 		init_r <= 1'b0 ;
 	end
 end
 
 
-always @ ( posedge clk ) begin
+always @ ( posedge clk or posedge rst) begin
 	if( rst )
 		i2wd_r <= 8'b0 ;
 	else if( wr_addr == `I2WD && wr )
@@ -70,7 +68,7 @@ always @ ( posedge clk ) begin
 end
 
 
-always @ ( posedge clk ) begin
+always @ ( posedge clk or posedge rst) begin
 	if( rst )
 		done <= 1'b0 ;
 	else if( wr_addr == `I2CR && wr )
@@ -84,7 +82,7 @@ always @ ( posedge clk ) begin
 
 end
 
-always @ ( posedge clk ) begin
+always @ ( posedge clk or posedge rst) begin
 	if( rst )
 		byte_cnt <= 4'b0 ;
 	else if( init_r )
@@ -93,8 +91,10 @@ always @ ( posedge clk ) begin
 		byte_cnt <= byte_cnt + 4'b1 ; 
 end
 
-always @ ( posedge clk ) begin
-	if( rst || ~en_r )
+always @ ( posedge clk or posedge rst) begin
+	if(rst)
+		cnt <= 12'b0 ;
+	else if(~en_r)
 		cnt <= 12'b0 ;
 	else if( (cmd_start || cmd_stop ) && init_r )
 		cnt <= 12'b1 ;
@@ -109,55 +109,50 @@ always @ ( posedge clk ) begin
 end
 
 reg scl_o ;
-always @ ( posedge clk ) begin
-	if( rst || ~en_r ) begin
+always @ ( posedge clk or posedge rst) begin
+	if( rst ) begin
 		scl_o  <= 1'b1 ;
-	end
-	else if( cmd_start ) begin
+	end else if( ~en_r ) begin
+		scl_o  <= 1'b1 ;
+	end else if( cmd_start ) begin
 		if( cnt == START_SCL )
 			scl_o <= 1'b0 ; 
-	end
-	else if( cmd_wr || cmd_rd ) begin
+	end else if( cmd_wr || cmd_rd ) begin
 		scl_o <= cnt == 12'b0   ? 1'b0 : 
 			 cnt == SDA_SET ? 1'b1 : 
 			 cnt == (SDA_SET+SDA_WAIT) ? 1'b0 : scl_o ;
-	end
-	else if( cmd_stop && cnt == SDA_SET ) begin
+	end else if( cmd_stop && cnt == SDA_SET ) begin
 		scl_o <= 1'b1 ;
 	end
 end
 
 reg sda_oen ;
-always @ ( posedge clk ) begin
-	if( rst || ~en_r ) begin
+always @ ( posedge clk or posedge rst) begin
+	if( rst ) begin
 		sda_oen <= 1'b1 ;
-	end
-	else if( cmd_start ) begin
+	end else if( ~en_r ) begin
+		sda_oen <= 1'b1 ;
+	end else if( cmd_start ) begin
 		if( cnt == START_SDA ) 
 			sda_oen <= 1'b0 ;
-	end
-	else if( cmd_wr ) begin
+	end else if( cmd_wr ) begin
 		sda_oen <= i2wd_r[7] ;
-	end
-	else if( cmd_rd ) begin
+	end else if( cmd_rd ) begin
 		if( byte_cnt == 8 || byte_cnt == 9)
 			sda_oen <= 1'b0 ;//master read ack
 		else
 			sda_oen <= 1'b1 ;
-	end
-	else if( cmd_stop ) begin
+	end else if( cmd_stop ) begin
 		if( init_r )
 			sda_oen <= 1'b0 ;
 		else if( cnt == STOP_SCL+SDA_SET )
 			sda_oen <= 1'b1 ;
-	end
-	else if( cmd_rd_no ) begin
+	end else if( cmd_rd_no ) begin
 		sda_oen <= 1'b1 ;//master read no ack
 	end
-
 end
 
-always @ ( posedge clk ) begin
+always @ ( posedge clk or posedge rst ) begin
 	if( rst )
 		rd_buf <= 8'b0 ;
 	else if( cmd_rd && cnt == (SDA_SET+100) && byte_cnt <=7)

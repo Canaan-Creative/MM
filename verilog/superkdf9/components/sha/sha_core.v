@@ -154,7 +154,7 @@ end
         //------------------------------------------------------------------    
         // SHA round
         //------------------------------------------------------------------
-        always @(posedge clk)
+        always @(posedge clk or posedge rst)
         begin
                 if (rst)
                 begin
@@ -502,7 +502,7 @@ end
         //------------------------------------------------------------------    
         // Kt generator
         //------------------------------------------------------------------    
-        always @ (posedge clk)
+        always @ (posedge clk or posedge rst)
         begin
                 if (rst)
                 begin
@@ -582,7 +582,7 @@ end
 
 
 //done 
-always @ ( posedge clk ) begin
+always @ ( posedge clk or posedge rst) begin
 	if( rst )
 		done <= 1'b0 ;
 	else if( round == 7'd64 )

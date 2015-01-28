@@ -1,6 +1,7 @@
 module i2c_phy(
 input         clk      ,
 input         rst      ,
+input         reg_rst  ,
 input         scl_pin  ,
 inout         sda_pin  ,
 
@@ -45,8 +46,10 @@ reg addr_ack;
 reg [5:0] i2c_neg_dly_cnt;
 
 wire i2c_neg_dly = i2c_neg_dly_cnt == `MM_IIC_NEGEDGE_DLY;
-always @ (posedge clk) begin
+always @ (posedge clk or posedge rst) begin
 	if(rst)
+		i2c_neg_dly_cnt <= 'b0;
+	else if(reg_rst)
 		i2c_neg_dly_cnt <= 'b0;
 	else if(i2c_neg && (cur_state == ACKO || cur_state == AACKO))
 		i2c_neg_dly_cnt <= 'b1;
@@ -59,9 +62,11 @@ end
 //posedge delay
 reg [4:0] i2c_pos_dly_cnt;
 wire i2c_pos_dly = i2c_pos_dly_cnt == `MM_IIC_POSEDGE_DLY;
-always @ (posedge clk) begin
+always @ (posedge clk or posedge rst) begin
 	if(rst)
-		i2c_pos_dly_cnt <= 'b0;
+		i2c_pos_dly_cnt <= 5'b0;
+	else if(reg_rst)
+		i2c_pos_dly_cnt <= 5'b0;
 	else if(i2c_pos && (cur_state == DWR || cur_state == ADDR))
 		i2c_pos_dly_cnt <= 'b1;
 	else if(|i2c_pos_dly_cnt && i2c_pos_dly_cnt < `MM_IIC_POSEDGE_DLY)
@@ -73,8 +78,10 @@ end
 //read last bit neg delay
 reg [3:0] i2c_rd_dly_cnt;
 wire i2c_rd_dly = i2c_rd_dly_cnt == `MM_IIC_RD_DLY;
-always @ (posedge clk) begin
+always @ (posedge clk or posedge rst) begin
 	if(rst)
+		i2c_rd_dly_cnt <= 'b0;
+	else if(reg_rst)
 		i2c_rd_dly_cnt <= 'b0;
 	else if(cur_state == DRD && nxt_state != DRD)
 		i2c_rd_dly_cnt <= 'b1;
@@ -86,25 +93,46 @@ end
 
 assign sda_pin = sda_o ? 1'bz : 1'b0;
 
-always @ (posedge clk) begin
-	scl_f <= {scl_f[`MM_IIC_GLITCH - 2:0], scl_pin};
-	sda_f <= {sda_f[`MM_IIC_GLITCH - 2:0], sda_pin};
+always @ (posedge clk or posedge rst) begin
+	if(rst) begin
+		scl_f <= {`MM_IIC_GLITCH{1'b1}};
+		sda_f <= {`MM_IIC_GLITCH{1'b1}};
+	end else begin
+		scl_f <= {scl_f[`MM_IIC_GLITCH - 2:0], scl_pin};
+		sda_f <= {sda_f[`MM_IIC_GLITCH - 2:0], sda_pin};
+	end
 end
 
-always @ (posedge clk) begin
-	if(&scl_f[`MM_IIC_GLITCH - 1:1])
+always @ (posedge clk or posedge rst) begin
+	if(rst)
+		scl <= 1'b0;
+	else if(&scl_f[`MM_IIC_GLITCH - 1:1])
 		scl <= 1'b1;
 	else if(~|scl_f[`MM_IIC_GLITCH - 1:1])
 		scl <= 1'b0;
-	scl_r <= scl;
 end
 
-always @ (posedge clk) begin
-	if(&sda_f[`MM_IIC_GLITCH - 1:1])
+always @ (posedge clk or posedge rst) begin
+	if(rst)
+		scl_r <= 1'b0;
+	else
+		scl_r <= scl;
+end
+
+always @ (posedge clk or posedge rst) begin
+	if(rst)
+		sda <= 1'b1;
+	else if(&sda_f[`MM_IIC_GLITCH - 1:1])
                 sda <= 1'b1;
         else if(~|sda_f[`MM_IIC_GLITCH - 1:1])
                 sda <= 1'b0;
-	sda_r <= sda;
+end
+
+always @ (posedge clk or posedge rst) begin
+	if(rst)
+		sda_r <= 1'b0;
+	else
+		sda_r <= sda;
 end
 
 parameter IDLE  = 3'd0;
@@ -118,8 +146,10 @@ parameter ACKI  = 3'd6;
 reg [2:0] cur_state;
 reg [2:0] nxt_state;
 
-always @ (posedge clk) begin
-	if(rst || i2c_stop || i2c_start)
+always @ (posedge clk or posedge rst) begin
+	if(rst)
+		cur_state <= IDLE;
+	else if(i2c_stop || i2c_start)
 		cur_state <= IDLE;
 	else
 		cur_state <= nxt_state;
@@ -162,8 +192,10 @@ assign led_iic_rd = cur_state == AACKO && nxt_state == DRD;
 //-----------------------------------------------------
 // I2C Bit Byte Counter 0~7
 //-----------------------------------------------------
-always @ (posedge clk) begin
+always @ (posedge clk or posedge rst) begin
 	if(rst)
+		bit_cnt <= 3'b0;
+	else if(reg_rst)
 		bit_cnt <= 3'b0;
 	else if(cur_state == IDLE)
 		bit_cnt <= 3'b0;
@@ -171,8 +203,10 @@ always @ (posedge clk) begin
 		bit_cnt <= 3'b1 + bit_cnt;
 end
 
-always @ (posedge clk) begin
-	if(rst || cur_state == IDLE)
+always @ (posedge clk or posedge rst) begin
+	if(rst)
+		byte_cnt <= 2'b0;
+	else if(reg_rst || cur_state == IDLE)
 		byte_cnt <= 2'b0;
 	else if(cur_state == DWR && nxt_state == ACKO)
 		byte_cnt <= byte_cnt + 2'b1;
@@ -180,14 +214,16 @@ always @ (posedge clk) begin
 		byte_cnt <= byte_cnt + 2'b1;
 end
 
-always @ (posedge clk) begin
-	if(cur_state == DWR && nxt_state == ACKO)
+always @ (posedge clk or posedge rst) begin
+	if(rst)
+		byte_done <= 1'b0;
+	else if(cur_state == DWR && nxt_state == ACKO)
 		byte_done <= 1'b1;
 	else
 		byte_done <= 1'b0;
 end
 
-always @ (posedge clk) begin
+always @ (posedge clk or posedge rst) begin
 	if(rst)
 		i2c_start_r <= 1'b0;
 	else if(i2c_start)
@@ -199,7 +235,7 @@ end
 //-----------------------------------------------------
 // SDA
 //-----------------------------------------------------
-always @ (posedge clk) begin
+always @ (posedge clk or posedge rst) begin
 	if(rst)
 		acki_f <= 1'b1;
 	else if((cur_state == AACKO || cur_state == ACKI) && i2c_pos)
@@ -207,13 +243,17 @@ always @ (posedge clk) begin
 end
 
 wire this_my_addr = (sda_buf[7:1] == reg_addr) || (sda_buf[7:1] == 7'b1000000) || (sda_buf[7:1] == 7'b1000001) || (~|sda_buf[7:1]);
-always @ (posedge clk) begin
-	if(cur_state == ADDR && nxt_state == AACKO)
+always @ (posedge clk or posedge rst) begin
+	if(rst)
+		addr_r <= 7'b0;
+	else if(cur_state == ADDR && nxt_state == AACKO)
 		addr_r <= sda_buf[7:1];
 end
 
-always @ (posedge clk) begin
-	if(rst || cur_state == IDLE)
+always @ (posedge clk or posedge rst) begin
+	if(rst)
+		sda_o <= 1'b1;
+	else if(reg_rst || cur_state == IDLE)
 		sda_o <= 1'b1;
 	else if(cur_state == ADDR && nxt_state == AACKO)
 		sda_o <= ~(((~sda_buf[0] && ~full) || (sda_buf[0] && ~empty)) && this_my_addr);
@@ -233,8 +273,10 @@ always @ (posedge clk) begin
 		sda_o <= 1'b1;
 end
 
-always @ (posedge clk) begin
-	if(rst || nxt_state == IDLE)
+always @ (posedge clk or posedge rst) begin
+	if(rst)
+		addr_ack <= 1'b0;
+	else if(reg_rst || nxt_state == IDLE)
 		addr_ack <= 1'b0;
 	else if(cur_state == ADDR && nxt_state == AACKO)
 		addr_ack <= ((~sda_buf[0] && ~full) || (sda_buf[0] && ~empty)) && this_my_addr;
@@ -243,8 +285,10 @@ end
 //-----------------------------------------------------
 // Pop Buffer
 //-----------------------------------------------------
-always @ (posedge clk) begin
+always @ (posedge clk or posedge rst) begin
 	if(rst)
+		pop <= 1'b0;
+	else if(reg_rst)
 		pop <= 1'b0;
 	else if(cur_state == ACKI && i2c_pos && ~sda && ~|byte_cnt)
 		pop <= 1'b1;
@@ -257,8 +301,10 @@ end
 //-----------------------------------------------------
 // Push Buffer
 //-----------------------------------------------------
-always @ (posedge clk) begin
+always @ (posedge clk or posedge rst) begin
 	if(rst)
+		push <= 1'b0;
+	else if(reg_rst)
 		push <= 1'b0;
 	else if(cur_state == DWR && nxt_state == ACKO && &byte_cnt)
 		push <= 1'b1;
@@ -269,9 +315,11 @@ end
 //-----------------------------------------------------
 // SDA Buffer
 //-----------------------------------------------------
-always @ (posedge clk) begin
+always @ (posedge clk or posedge rst) begin
 	if(rst)
-		sda_buf <= 'b0;
+		sda_buf <= 32'b0;
+	else if(reg_rst)
+		sda_buf <= 32'b0;
 	else if(pop)
 		sda_buf <= din;
 	else if(cur_state == DRD && i2c_pos)
@@ -282,8 +330,10 @@ end
 
 assign byte_buf = sda_buf[7:0];
 
-always @ (posedge clk) begin
+always @ (posedge clk or posedge rst) begin
 	if(rst)
+		rw_flg <= 1'b0;
+	else if(reg_rst)
 		rw_flg <= 1'b0;
 	else if(cur_state == ADDR && i2c_pos)
 		rw_flg <= sda;
@@ -291,8 +341,10 @@ end
 
 assign dout = sda_buf;
 
-always @ (posedge clk) begin
+always @ (posedge clk or posedge rst) begin
 	if(rst)
+		reg_wstop <= 1'b0;
+	else if(reg_rst)
 		reg_wstop <= 1'b0;
 	else if(cur_state == DWR && (i2c_stop || i2c_start))
 		reg_wstop <= 1'b1;
@@ -300,8 +352,10 @@ always @ (posedge clk) begin
 		reg_wstop <= 1'b0;
 end
 
-always @ (posedge clk) begin
+always @ (posedge clk or posedge rst) begin
 	if(rst)
+		reg_rstop <= 1'b0;
+	else if(reg_rst)
 		reg_rstop <= 1'b0;
 	else if(cur_state == ACKI && nxt_state == IDLE)
 		reg_rstop <= 1'b1;
@@ -309,8 +363,10 @@ always @ (posedge clk) begin
 		reg_rstop <= 1'b0;
 end
 
-always @ (posedge clk) begin
+always @ (posedge clk or posedge rst) begin
 	if(rst)
+		reg_rerr <= 1'b0;
+	else if(reg_rst)
 		reg_rerr <= 1'b0;
 	else if(cur_state == DRD && i2c_pos && sda != sda_o)
 		reg_rerr <= 1'b1;
