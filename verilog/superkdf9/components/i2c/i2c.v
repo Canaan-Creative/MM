@@ -251,9 +251,9 @@ i2c_phy i2c_phy(
 /*output         */ .led_iic_rd(led_iic_rd) 
 );
 
-reg brg_cs_r = 1'b1;
+reg brg_cs_r;
 assign brg_cs = brg_cs_r;
-reg brg_en_r = 1'b0;
+reg brg_en_r;
 assign brg_en = brg_en_r;
 
 always @ (posedge CLK_I or posedge RST_I) begin
