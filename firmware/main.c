@@ -553,8 +553,12 @@ static int get_pkg(struct mm_work *mw)
 		count++;
 
 		if (count == AVA4_P_COUNT / 4) {
-			if (decode_pkg(g_pkg, mw))
+			wdg_feed(CPU_FREQUENCY * IDLE_TIME);
+			if (decode_pkg(g_pkg, mw)) {
+				start = 0;
+				count = 0;
 				return 1;
+			}
 
 			/* Here we send back PKG if necessary */
 			switch (g_pkg[2]) {
