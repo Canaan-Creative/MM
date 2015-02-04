@@ -149,6 +149,8 @@ static void encode_pkg(uint8_t *p, int type, uint8_t *buf, unsigned int len)
 	uint8_t *data, i;
 
 	memset(p, 0, AVA4_P_COUNT);
+	if (len > AVA4_P_DATA_LEN)
+		return;
 
 	p[0] = AVA4_H1;
 	p[1] = AVA4_H2;
@@ -483,6 +485,7 @@ static int read_result(struct mm_work *mw, struct result *ret)
 		return 1;
 
 	miner_id = nonce0 & 0xff;
+	miner_id %= MINER_COUNT;
 
 	/* Calculate chip id */
 	if (last_minerid != miner_id) {
