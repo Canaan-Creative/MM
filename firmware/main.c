@@ -469,7 +469,7 @@ static int read_result(struct mm_work *mw, struct result *ret)
 {
 	int n, i;
 	uint8_t *data, api_ret[4 * LM32_API_RET_LEN];
-	uint32_t nonce2, nonce0, memo, job_id, pool_no, miner_id;
+	uint32_t nonce2, nonce0, memo, job_id, pool_no, miner_id, temp;
 	uint32_t ntime = 0, last_nonce0 = 0xbeafbeaf;
 	static uint32_t last_minerid = 0xff;
 	static uint8_t chip_id;
@@ -525,8 +525,8 @@ static int read_result(struct mm_work *mw, struct result *ret)
 			memcpy(ret->nonce2, api_ret + 4, 8);
 			memcpy(ret->nonce, &nonce0, 4);
 			memcpy(ret->ntime, &ntime, 4);
-			miner_id |= chip_id << 16;
-			memcpy(ret->miner_id, &miner_id, 4);
+			temp = (miner_id | (chip_id << 16));
+			memcpy(ret->miner_id, &temp, 4);
 
 			memcpy(data, (uint8_t *)ret, 20);
 			memcpy(data + 20, &job_id, 4); /* Attach the job_id */
