@@ -8,7 +8,7 @@
 #
 
 DATE:=$(shell date +%Y-%m-%d)
-GIT_VERSION:=$(shell git rev-parse HEAD | cut -c 1-7)
+GIT_VERSION:=$(shell git rev-parse HEAD | cut -c 1-6)
 GIT_STATUS:=$(shell ([ -z "`git status -s -uno`" ] && echo 0) || echo +)
 
 -include config.mk
@@ -24,13 +24,18 @@ BATCHFILE	:= $(shell mktemp)
 HARDWARE_NAME	= mm
 PRJ_NAME	= mm
 
+# BOOTLOADER default: support.
+# OpenWrt firmware 20150119 doesn't support bootloader
+BOOTLOADER ?= 1
+NOBOOTFWDIR = mm-no-bootloader
+
 isedir  ?= /home/Xilinx/14.6/ISE_DS/
 xil_env ?= . $(isedir)/settings$(shell getconf LONG_BIT).sh &>/dev/null
 
 ifeq ($(MM41),1)
-CFLAGS += -DMM_VERSION='"411501-$(GIT_VERSION)$(GIT_STATUS)"' -DMM41
+CFLAGS += -DMM_VERSION='"411501-$(GIT_VERSION)$(BOOTLOADER)$(GIT_STATUS)"' -DMM41
 else
-CFLAGS += -DMM_VERSION='"401501-$(GIT_VERSION)$(GIT_STATUS)"' -DMM40
+CFLAGS += -DMM_VERSION='"401501-$(GIT_VERSION)$(BOOTLOADER)$(GIT_STATUS)"' -DMM40
 endif
 
 ifeq ($(DEBUG),1)
@@ -38,7 +43,11 @@ ifeq ($(DEBUG),1)
 	CSRCS  += uart.c
 endif
 
+ifeq ($(BOOTLOADER), 1)
 BIN_DIR:=$(DATE)
+else
+BIN_DIR:=$(DATE)/$(NOBOOTFWDIR)
+endif
 
 MD5FILES := mm.bit  mm.elf  mm.hexdump  mm.mcs  mm.objdump
 OBJS       := $(addsuffix .o,$(basename $(CSRCS) $(SSRCS)))
@@ -106,7 +115,9 @@ $(HARDWARE_NAME).mcs: $(HARDWARE_NAME).bit
 	cp $^ ../synth
 	make -C ../synth $@
 	cp ../synth/$@ $@
+ifeq ($(BOOTLOADER), 1)
 	./mm_add_bootloader; rm $@ -f; mv mmout.mcs $@
+endif
 
 $(HARDWARE_NAME).bit: $(PRJ_NAME).elf ../synth/$(HARDWARE_NAME).bit ../synth/$(HARDWARE_NAME)_bd.bmm
 	$(xil_env) && data2mem -bm ../synth/$(HARDWARE_NAME)_bd.bmm -bd $(PRJ_NAME).elf -bt ../synth/$(HARDWARE_NAME).bit -o b $@
