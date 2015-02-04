@@ -183,13 +183,6 @@ void miner_gen_nonce2_work(struct mm_work *mw, uint32_t nonce2, struct work *wor
 	memcpy(work->data, work_t, 44);
 
 	calc_prepare(work, work->data);
-	memcpy((uint8_t *)(&tmp32), work->a1, 4);
-	memcpy((uint8_t *)(&tmp32), work->a0, 4);
-	memcpy((uint8_t *)(&tmp32), work->e2, 4);
-	memcpy((uint8_t *)(&tmp32), work->e1, 4);
-	memcpy((uint8_t *)(&tmp32), work->e0, 4);
-	memcpy((uint8_t *)(&tmp32), work->a2, 4);
-
 	work->memo = mw->job_id | mw->pool_no;
 }
 
