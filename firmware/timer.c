@@ -87,7 +87,7 @@ void timer1_isr(void)
 	/* DO SOMETHING */
 
 	timer_int_clean(1);
-	irq_ack(IRQ_TIMER0);
+	irq_ack(IRQ_TIMER1);
 }
 
 /* GPIO */
