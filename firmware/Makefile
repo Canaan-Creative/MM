@@ -23,6 +23,7 @@ CSRCS      = main.c sha256.c twipwm.c miner.c crc16.c shifter.c timer.c iic.c ap
 BATCHFILE	:= $(shell mktemp)
 HARDWARE_NAME	= mm
 PRJ_NAME	= mm
+DUMPFILE	= mmdump.mcs
 
 # BOOTLOADER default: support.
 # OpenWrt firmware 20150119 doesn't support bootloader
@@ -107,6 +108,18 @@ erase:
 	echo identify		>> $(BATCHFILE)
 	echo attachFlash -p 1 -spi W25Q80BV		>> $(BATCHFILE)
 	echo erase -p 1 -o -spionly			>> $(BATCHFILE)
+	echo exit		>> $(BATCHFILE)
+	$(xil_env) && impact -batch $(BATCHFILE)
+	@rm -f $(BATCHFILE)
+
+# dump file must be named as xxx.mcs, it is funny :)
+# dump need long time, please wait and wait ...
+dump:
+	echo setmode -bs	>> $(BATCHFILE)
+	echo setcable -p auto	>> $(BATCHFILE)
+	echo identify		>> $(BATCHFILE)
+	echo attachFlash -p 1 -spi W25Q80BV			>> $(BATCHFILE)
+	echo readbacktofile -p 1 -file $(DUMPFILE) -spionly	>> $(BATCHFILE)
 	echo exit		>> $(BATCHFILE)
 	$(xil_env) && impact -batch $(BATCHFILE)
 	@rm -f $(BATCHFILE)
