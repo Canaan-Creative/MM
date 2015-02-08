@@ -44,6 +44,11 @@ static uint32_t g_nonce2_range = 0xffffffff;
 static int g_ntime_offset = ASIC_COUNT;
 static struct mm_work mm_work;
 static uint32_t glastcpm[3];
+static uint32_t g_vol_eco[MINER_COUNT];
+static uint32_t g_vol_normal[MINER_COUNT];
+static uint32_t g_vol_turbo[MINER_COUNT];
+static uint8_t g_runmode = MOD_ECO; /* high 4bits-save/setting, low 4bits-run mode */
+static uint8_t g_getvolopt;
 
 #define RET_RINGBUFFER_SIZE_RX 32
 #define RET_RINGBUFFER_MASK_RX (RET_RINGBUFFER_SIZE_RX-1)
@@ -147,6 +152,7 @@ static void encode_pkg(uint8_t *p, int type, uint8_t *buf, unsigned int len)
 	uint32_t tmp;
 	uint16_t crc;
 	uint8_t *data, i;
+	uint32_t val[MINER_COUNT];
 
 	memset(p, 0, AVA4_P_COUNT);
 	if (len > AVA4_P_DATA_LEN)
@@ -205,6 +211,39 @@ static void encode_pkg(uint8_t *p, int type, uint8_t *buf, unsigned int len)
 			data[i * 3 + 2] = g_hw_work_i[i] & 0xff;
 
 			g_hw_work_i[i] = 0;
+		}
+		break;
+	case AVA4_P_STATUS_VOLT:
+		if (g_getvolopt >> 4) {
+			switch (g_getvolopt & 0xf) {
+				case MOD_ECO:
+					for (i = 0; i < MINER_COUNT; i++) {
+						data[i * 2] = (g_vol_eco[i] >> 8) & 0xff;
+						data[i * 2 + 1] = g_vol_eco[i]  & 0xff;
+					}
+					break;
+				case MOD_NORMAL:
+					for (i = 0; i < MINER_COUNT; i++) {
+						data[i * 2] = (g_vol_normal[i] >> 8) & 0xff;
+						data[i * 2 + 1] = g_vol_normal[i]  & 0xff;
+					}
+					break;
+				case MOD_TURBO:
+					for (i = 0; i < MINER_COUNT; i++) {
+						data[i * 2] = (g_vol_turbo[i] >> 8) & 0xff;
+						data[i * 2 + 1] = g_vol_turbo[i]  & 0xff;
+					}
+					break;
+				default:
+					debug32("No config\n");
+					break;
+			}
+		} else {
+			get_voltage_i(val);
+			for (i = 0; i < MINER_COUNT; i++) {
+				data[i * 2] = (val[i] >> 8) & 0xff;
+				data[i * 2 + 1] = val[i]  & 0xff;
+			}
 		}
 		break;
 	default:
@@ -269,13 +308,14 @@ static inline int decode_pkg(uint8_t *p, struct mm_work *mw)
 	static uint8_t errcnt;
 	unsigned int expected_crc;
 	unsigned int actual_crc;
-	int idx, cnt;
+	uint8_t opt, idx, cnt;
 	uint32_t tmp;
 	uint32_t val[MINER_COUNT], i;
 	uint32_t test_core_count;
 
 	uint8_t *data = p + 6;
 
+	opt = p[3];
 	idx = p[4];
 	cnt = p[5];
 
@@ -372,13 +412,45 @@ static inline int decode_pkg(uint8_t *p, struct mm_work *mw)
 		debug32("[%d] N2: %08x(%08x-%08x)\n", g_module_id, mw->nonce2, g_nonce2_offset, g_nonce2_range);
 		break;
 	case AVA4_P_SET_VOLT:
-		debug32("VOL:");
-		for (i = 0; i < MINER_COUNT; i++) {
-			val[i] = data[i * 2] << 8 | data[i * 2 + 1];
-			debug32(" %08x", val[i]);
+		switch (opt & 0xf) {
+			case MOD_CUSTOM:
+			case MOD_ECO:
+			case MOD_NORMAL:
+			case MOD_TURBO:
+				g_runmode = opt;
+				debug32("VOL:"); for (i = 0; i < MINER_COUNT; i++) {
+					val[i] = data[i * 2] << 8 | data[i * 2 + 1];
+					debug32(" %08x", val[i]);
+				}
+				debug32("\n");
+				set_voltage_i(val);
+
+				if (g_runmode >> 4) {
+					/* TODO: save config
+					 * mm_save_config(g_runmode & 0xf);
+					 */
+					switch (opt & 0xf) {
+						case MOD_ECO:
+							memcpy(g_vol_eco, val, sizeof(uint32_t) * MINER_COUNT);
+							break;
+						case MOD_NORMAL:
+							memcpy(g_vol_normal, val, sizeof(uint32_t) * MINER_COUNT);
+							break;
+						case MOD_TURBO:
+							memcpy(g_vol_turbo, val, sizeof(uint32_t) * MINER_COUNT);
+							break;
+						default:
+							break;
+					}
+				}
+				break;
+			default:
+				break;
 		}
-		debug32("\n");
-		set_voltage_i(val);
+		break;
+	case AVA4_P_GET_VOLT:
+		g_getvolopt = opt;
+		send_pkg(AVA4_P_STATUS_VOLT, NULL, 0, 0);
 		break;
 	case AVA4_P_SET_FREQ:
 		memcpy(&val[2], data, 4);
@@ -699,6 +771,13 @@ int main(int argv, char **argc)
 	set_voltage_i(val);
 	glastcpm[0] = glastcpm[1] = glastcpm[2] = 0;
 	g_new_stratum = 0;
+
+	/* TODO: Load runconfig(eco, normal, turbo)
+	 * if load failed, then reset to default
+	 * mm_load_config(MOD_ECO, g_vol_eco);
+	 * mm_load_config(MOD_NORMAL, g_vol_normal);
+	 * mm_load_config(MOD_TURBO, g_vol_turbo);
+	 */
 	while (1) {
 		run_rbt();
 		wdg_feed(CPU_FREQUENCY * IDLE_TIME);

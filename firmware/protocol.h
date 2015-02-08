@@ -43,6 +43,7 @@
 #define AVA4_P_REQUIRE	0x31
 #define AVA4_P_TEST	0x32
 #define AVA4_P_RSTMMTX	0x33
+#define AVA4_P_GET_VOLT	0x34
 
 /* Back to host */
 #define AVA4_P_ACKDETECT	0x40
@@ -51,6 +52,7 @@
 #define AVA4_P_TEST_RET		0x43
 #define AVA4_P_STATUS_LW	0x44
 #define AVA4_P_STATUS_HW	0x45
+#define AVA4_P_STATUS_VOLT	0x46
 
 #define AVA4_MODULE_BROADCAST	0
 #endif	/* _PROTOCOL_H_ */

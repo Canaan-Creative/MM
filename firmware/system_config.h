@@ -21,6 +21,12 @@
 #define FAN_50		0x1ff
 #define FAN_100		0x000
 
+/* run mode 4bit */
+#define MOD_CUSTOM	0x0
+#define MOD_ECO		0x1
+#define MOD_NORMAL	0x2
+#define MOD_TURBO	0x3
+
 #define AVA4_DEFAULT_MODULES	64
 
 #ifdef MM41

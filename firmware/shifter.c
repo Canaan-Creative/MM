@@ -127,6 +127,16 @@ uint32_t get_voltage(void)
 	return g_voltage;
 }
 
+void get_voltage_i(uint32_t voltage[])
+{
+	uint8_t i;
+
+	if (voltage) {
+		for (i = 0; i < MINER_COUNT; i++)
+			voltage[i] = g_voltage_i[i];
+	}
+}
+
 uint32_t get_front_led(void)
 {
 	return g_led;
