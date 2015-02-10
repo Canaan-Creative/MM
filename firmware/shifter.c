@@ -34,7 +34,7 @@ static void shift_done(struct lm32_shifter *s)
 
 static void shift_update(struct lm32_shifter *s, uint32_t value[], int poweron)
 {
-	int i;
+	uint8_t i;
 
 	if ((value[0] == ASIC_0V) && (value[1] == ASIC_0V) &&
 		(value[2] == ASIC_0V) && (value[3] == ASIC_0V) &&

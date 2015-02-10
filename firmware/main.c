@@ -25,6 +25,7 @@
 #include "protocol.h"
 #include "crc.h"
 #include "api.h"
+#include "mboot.h"
 
 #include "hexdump.c"
 
@@ -44,9 +45,7 @@ static uint32_t g_nonce2_range = 0xffffffff;
 static int g_ntime_offset = ASIC_COUNT;
 static struct mm_work mm_work;
 static uint32_t glastcpm[3];
-static uint32_t g_vol_eco[MINER_COUNT];
-static uint32_t g_vol_normal[MINER_COUNT];
-static uint32_t g_vol_turbo[MINER_COUNT];
+static struct mm_config g_mmcfg;
 static uint8_t g_runmode = MOD_ECO; /* high 4bits-save/setting, low 4bits-run mode */
 static uint8_t g_getvolopt;
 
@@ -218,20 +217,20 @@ static void encode_pkg(uint8_t *p, int type, uint8_t *buf, unsigned int len)
 			switch (g_getvolopt & 0xf) {
 				case MOD_ECO:
 					for (i = 0; i < MINER_COUNT; i++) {
-						data[i * 2] = (g_vol_eco[i] >> 8) & 0xff;
-						data[i * 2 + 1] = g_vol_eco[i]  & 0xff;
+						data[i * 2] = (g_mmcfg.vol_eco[i] >> 8) & 0xff;
+						data[i * 2 + 1] = g_mmcfg.vol_eco[i]  & 0xff;
 					}
 					break;
 				case MOD_NORMAL:
 					for (i = 0; i < MINER_COUNT; i++) {
-						data[i * 2] = (g_vol_normal[i] >> 8) & 0xff;
-						data[i * 2 + 1] = g_vol_normal[i]  & 0xff;
+						data[i * 2] = (g_mmcfg.vol_normal[i] >> 8) & 0xff;
+						data[i * 2 + 1] = g_mmcfg.vol_normal[i]  & 0xff;
 					}
 					break;
 				case MOD_TURBO:
 					for (i = 0; i < MINER_COUNT; i++) {
-						data[i * 2] = (g_vol_turbo[i] >> 8) & 0xff;
-						data[i * 2 + 1] = g_vol_turbo[i]  & 0xff;
+						data[i * 2] = (g_mmcfg.vol_turbo[i] >> 8) & 0xff;
+						data[i * 2 + 1] = g_mmcfg.vol_turbo[i]  & 0xff;
 					}
 					break;
 				default:
@@ -347,7 +346,6 @@ static inline int decode_pkg(uint8_t *p, struct mm_work *mw)
 
 	case AVA4_P_STATIC:
 		g_new_stratum = 0;
-
 		memcpy(&mw->coinbase_len, data, 4);
 		memcpy(&mw->nonce2_offset, data + 4, 4);
 		memcpy(&mw->nonce2_size, data + 8, 4);
@@ -426,18 +424,21 @@ static inline int decode_pkg(uint8_t *p, struct mm_work *mw)
 				set_voltage_i(val);
 
 				if (g_runmode >> 4) {
-					/* TODO: save config
-					 * mm_save_config(g_runmode & 0xf);
-					 */
 					switch (opt & 0xf) {
 						case MOD_ECO:
-							memcpy(g_vol_eco, val, sizeof(uint32_t) * MINER_COUNT);
+							for (i = 0; i < MINER_COUNT; i++)
+								g_mmcfg.vol_eco[i] = val[i];
+							mboot_save_config(&g_mmcfg);
 							break;
 						case MOD_NORMAL:
-							memcpy(g_vol_normal, val, sizeof(uint32_t) * MINER_COUNT);
+							for (i = 0; i < MINER_COUNT; i++)
+								g_mmcfg.vol_normal[i] = val[i];
+							mboot_save_config(&g_mmcfg);
 							break;
 						case MOD_TURBO:
-							memcpy(g_vol_turbo, val, sizeof(uint32_t) * MINER_COUNT);
+							for (i = 0; i < MINER_COUNT; i++)
+								g_mmcfg.vol_turbo[i] = val[i];
+							mboot_save_config(&g_mmcfg);
 							break;
 						default:
 							break;
@@ -698,14 +699,11 @@ static inline void led(void)
 		led_ctrl(LED_PG2_BLINKING);
 }
 
-#include "mboot.c"
-
 int main(int argv, char **argc)
 {
 	struct work work;
 	struct result result;
-	int i;
-	uint32_t val[MINER_COUNT];
+	uint32_t val[MINER_COUNT], i;
 
 	adjust_fan(FAN_10);
 
@@ -733,16 +731,15 @@ int main(int argv, char **argc)
 
 #if 1
 	/* Test part of ASIC cores */
-	uint32_t freq[3] = {200, 200, 200};
-	uint32_t cpm[3] = {0x1e0784c7, 0x1e0784c7, 0x1e0784c7};
-
 	set_voltage(ASIC_CORETEST_VOLT);
 	for (i = 0; i < MINER_COUNT; i++) {
 		val[i] = ASIC_CORETEST_VOLT;
 	}
 	set_voltage_i(val);
-	set_asic_freq(freq);
-	set_asic_freq_i(cpm);
+	val[0] = val[1] = val[2] = 200;
+	set_asic_freq(val);
+	val[0] = val[1] = val[2] = 0x1e0784c7;
+	set_asic_freq_i(val);
 	gpio_reset_asic();
 	if (api_asic_testcores(TEST_CORE_COUNT, 0) >= 4 * TEST_CORE_COUNT)
 		g_postfailed |= 1;
@@ -772,14 +769,14 @@ int main(int argv, char **argc)
 	glastcpm[0] = glastcpm[1] = glastcpm[2] = 0;
 	g_new_stratum = 0;
 
-	/* TODO: Load runconfig(eco, normal, turbo)
-	 * if load failed, then reset to default
-	 * mm_load_config(MOD_ECO, g_vol_eco);
-	 * mm_load_config(MOD_NORMAL, g_vol_normal);
-	 * mm_load_config(MOD_TURBO, g_vol_turbo);
-	 */
+	if (mboot_load_config(&g_mmcfg)) {
+		debug32("D: LD failed!\n");
+		mboot_reset_config(&g_mmcfg);
+		mboot_save_config(&g_mmcfg);
+	}
+
 	while (1) {
-		run_rbt();
+		mboot_run_rbt();
 		wdg_feed(CPU_FREQUENCY * IDLE_TIME);
 
 		get_pkg(&mm_work);

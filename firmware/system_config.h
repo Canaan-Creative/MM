@@ -32,9 +32,15 @@
 #ifdef MM41
 	#define ASIC_CORETEST_VOLT	0xa100 /* 0.7875V */
 	#define ASIC_0V			0xff00
+	#define ASIC_VOL_ECO		0x9100 /* 0.7625 */
+	#define ASIC_VOL_NORMAL		0xc100 /* 0.8000 */
+	#define ASIC_VOL_TURBO		0xfe00 /* 0.8250 */
 #else
 	#define ASIC_CORETEST_VOLT	0xce00 /* 0.7875V */
 	#define ASIC_0V			0x8f00
+	#define ASIC_VOL_ECO		0x8e00 /* 0.8000 */
+	#define ASIC_VOL_NORMAL		0xf600 /* 0.8125 */
+	#define ASIC_VOL_TURBO		0xb600 /* 0.8250 */
 #endif
 
 #define ASIC_FREQUENCY		200 /* MHz */
@@ -70,6 +76,7 @@
 #define IIC_BASE		(0x80000700)
 #define DNA_BASE		(0x80000710)
 #define RBT_BASE		(0x80000714)
+#define MBOOT_BASE		(0x80000800)
 
 /* UART */
 #define LM32_UART_IER_RBRI	(1 << 0)
@@ -194,7 +201,6 @@ struct lm32_clko {
 #define LM32_IIC_CR_RX_INTR_MASK_SET	(1 << 24)
 #define LM32_IIC_CR_RX_INTR_MASK_CLEAR	(1 << 25)
 
-
 struct lm32_iic {
 	volatile unsigned int ctrl; /*ATWI ctrl*/
 	volatile unsigned int addr; /*ATWI addr*/
@@ -211,11 +217,28 @@ struct lm32_iic {
 #define LM32_DNA_MASK		(0x1f)
 
 struct lm32_dna {
-	volatile unsigned dna;	/*DNA*/
+	volatile unsigned int dna;	/*DNA*/
 };
 
 struct lm32_rbt {
-	volatile unsigned rbt;	/*reboot*/
+	volatile unsigned int rbt;	/*reboot*/
+};
+
+/* MBOOT */
+#define LM32_MBOOT_WP_N         (1 << 0)
+#define LM32_MBOOT_HOLD_N       (1 << 1)
+#define LM32_MBOOT_MOSI(bit)    ((bit) << 2)
+#define LM32_MBOOT_CS           (1 << 3)
+#define LM32_MBOOT_SCL          (1 << 4)
+#define LM32_MBOOT_MISO(bit)    ((bit) >> 5)
+#define LM32_ICAP_WRITE         (1 << 16)
+#define LM32_ICAP_CE            (1 << 17)
+#define LM32_ICAP_CLK           (1 << 18)
+
+struct lm32_mboot {
+	volatile unsigned int flash;
+	volatile unsigned int icap_o;
+	volatile unsigned int icap_i;
 };
 
 #endif /* _SYSTEM_CONFIG_H_ */
