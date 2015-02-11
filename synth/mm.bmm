@@ -1,17 +1,25 @@
-ADDRESS_SPACE iram RAMB16 [0x00000000:0x00003FFF]
+ADDRESS_SPACE iram RAMB16 [0x00000000:0x00007FFF]
 	BUS_BLOCK
-		irom/gen_bram[0].bram [31:28];
-		irom/gen_bram[1].bram [27:24];
-		irom/gen_bram[2].bram [23:20];
-		irom/gen_bram[3].bram [19:16];
-		irom/gen_bram[4].bram [15:12];
-		irom/gen_bram[5].bram [11:8];
-		irom/gen_bram[6].bram [7:4];
-		irom/gen_bram[7].bram [3:0];
+		irom/gen_bram[0].bram [31:30];
+		irom/gen_bram[1].bram [29:28];
+		irom/gen_bram[2].bram [27:26];
+		irom/gen_bram[3].bram [25:24];
+		irom/gen_bram[4].bram [23:22];
+		irom/gen_bram[5].bram [21:20];
+		irom/gen_bram[6].bram [19:18];
+		irom/gen_bram[7].bram [17:16];
+		irom/gen_bram[8].bram [15:14];
+		irom/gen_bram[9].bram [13:12];
+		irom/gen_bram[10].bram [11:10];
+		irom/gen_bram[11].bram [9:8];
+		irom/gen_bram[12].bram [7:6];
+		irom/gen_bram[13].bram [5:4];
+		irom/gen_bram[14].bram [3:2];
+		irom/gen_bram[15].bram [1:0];
 	END_BUS_BLOCK;
 END_ADDRESS_SPACE;
 
-ADDRESS_SPACE dram RAMB16 [0x00004000:0x00007FFF]
+ADDRESS_SPACE dram RAMB16 [0x00008000:0x0000BFFF]
 	BUS_BLOCK
 		dram/gen_bram[0].bram [31:28];
 		dram/gen_bram[1].bram [27:24];
