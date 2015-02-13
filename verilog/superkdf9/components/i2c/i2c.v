@@ -289,12 +289,41 @@ always @ (posedge CLK_I or posedge RST_I) begin
                 reg_download_done <= 1'b0;
 end
 
+reg first_byte;
+reg [1:0] this_flash_waddr;
+
+always @ (posedge CLK_I or posedge RST_I) begin
+        if(RST_I)
+                first_byte <= 1'b0;
+        else if(~brg_cs && byte_done && addr_r == 7'b1000001)
+                first_byte <= 1'b1;
+        else if(brg_cs)
+                first_byte <= 1'b0;
+end
+
+always @ (posedge CLK_I or posedge RST_I) begin
+        if(RST_I)
+                this_flash_waddr <= 2'b0;
+        else if(brg_cs)
+                this_flash_waddr <= 2'b0;
+        else if(~brg_cs && byte_done && this_flash_waddr == 2'b0 &&
+                (byte_buf[7:0] == 8'hd8 || byte_buf[7:0] == 8'h02) &&
+                addr_r == 7'b1000001 && ~first_byte)
+                this_flash_waddr <= 2'b1;
+        else if(~brg_cs && byte_done)
+                this_flash_waddr <= 2'd2;
+end
+
+wire [7:0] flash_byte_buf = (this_flash_waddr == 2'b1 && ~brg_cs && byte_done && addr_r == 7'b1000001) ?
+                              (byte_buf[7:0] | 8'h08)
+                            : byte_buf[7:0];
+
 brg_shift brg_shift(
 /*input       */ .clk     (CLK_I),
 /*input       */ .rst     (RST_I),
 /*input       */ .reg_rst (reg_rst),
 /*input       */ .vld     (addr_r == 7'b1000001 && byte_done),
-/*input  [7:0]*/ .din     ({byte_buf[0],byte_buf[1],byte_buf[2],byte_buf[3],byte_buf[4],byte_buf[5],byte_buf[6],byte_buf[7]}),
+/*input  [7:0]*/ .din     ({flash_byte_buf[0],flash_byte_buf[1],flash_byte_buf[2],flash_byte_buf[3],flash_byte_buf[4],flash_byte_buf[5],flash_byte_buf[6],flash_byte_buf[7]}),
 /*output      */ .done    (),
 
 /*output      */ .brg_sck (brg_sck),
