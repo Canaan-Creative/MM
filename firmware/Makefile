@@ -34,9 +34,9 @@ isedir  ?= /home/Xilinx/14.6/ISE_DS/
 xil_env ?= . $(isedir)/settings$(shell getconf LONG_BIT).sh &>/dev/null
 
 ifeq ($(MM41),1)
-CFLAGS += -DMM_VERSION='"411501-$(GIT_VERSION)$(BOOTLOADER)$(GIT_STATUS)"' -DMM41
+CFLAGS += -DMM_VERSION='"411502-$(GIT_VERSION)$(BOOTLOADER)$(GIT_STATUS)"' -DMM41
 else
-CFLAGS += -DMM_VERSION='"401501-$(GIT_VERSION)$(BOOTLOADER)$(GIT_STATUS)"' -DMM40
+CFLAGS += -DMM_VERSION='"401502-$(GIT_VERSION)$(BOOTLOADER)$(GIT_STATUS)"' -DMM40
 endif
 
 ifeq ($(DEBUG),1)
