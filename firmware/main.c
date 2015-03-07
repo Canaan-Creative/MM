@@ -664,6 +664,25 @@ static int get_pkg(struct mm_work *mw)
 	return 0;
 }
 
+static inline void pgcheck(void)
+{
+	int i;
+
+	i = read_power_good();
+	if (i == 0x1f || i == 0x3e0)
+		g_postfailed |= 1;
+
+	if ((i & 0x1f) == 0x1f)
+		g_postfailed |= 2;
+	else
+		g_postfailed &= 0xfd;
+
+	if (((i >> 5) & 0x1f) == 0x1f)
+		g_postfailed |= 4;
+	else
+		g_postfailed &= 0xfb;
+}
+
 static inline void led(void)
 {
 	if (g_new_stratum)
@@ -745,20 +764,6 @@ int main(int argv, char **argc)
 		g_postfailed |= 1;
 #endif
 
-	i = read_power_good();
-	if (i == 0x1f || i == 0x3e0)
-		g_postfailed |= 1;
-
-	if ((i & 0x1f) == 0x1f)
-		g_postfailed |= 2;
-	else
-		g_postfailed &= 0xfd;
-
-	if (((i >> 5) & 0x1f) == 0x1f)
-		g_postfailed |= 4;
-	else
-		g_postfailed &= 0xfb;
-
 	set_voltage(ASIC_0V);
 	for (i = 0; i < MINER_COUNT; i++) {
 		val[i] = ASIC_0V;
@@ -815,6 +820,7 @@ int main(int argv, char **argc)
 			}
 		}
 
+		pgcheck();
 		led();
 
 		if (!g_new_stratum)
