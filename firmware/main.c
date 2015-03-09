@@ -764,6 +764,7 @@ int main(int argv, char **argc)
 		g_postfailed |= 1;
 #endif
 
+	pgcheck();
 	set_voltage(ASIC_0V);
 	for (i = 0; i < MINER_COUNT; i++) {
 		val[i] = ASIC_0V;
@@ -820,12 +821,12 @@ int main(int argv, char **argc)
 			}
 		}
 
-		pgcheck();
 		led();
 
 		if (!g_new_stratum)
 			continue;
 
+		pgcheck();
 		if (api_get_tx_cnt() <= 23 * MINER_COUNT) {
 			miner_gen_nonce2_work(&mm_work, mm_work.nonce2++, &work);
 			api_send_work(&work);
