@@ -23,13 +23,13 @@
 #define MBOOT_FLASH_SECERASE    (0x20)
 
 /* spi flash address scope */
-#define MBOOT_FLASH_START       (0x070000)
-#define MBOOT_FLASH_END         (0x080000)
+#define MBOOT_FLASH_END         (0x100000)
+#define MBOOT_FLASH_START       (MBOOT_FLASH_END - 0x4000)
 
 /* spi flash specs */
 #define MBOOT_FLASH_PGSIZE      (256)
 #define MBOOT_FLASH_SECSIZE     (16 * MBOOT_FLASH_PGSIZE)
-#define MBOOT_FLASH_SECUSED     (8)
+#define MBOOT_FLASH_SECUSED     (4)
 
 /* MBOOT start addr */
 #define MBOOT_START_ADDR0       (0x0)
