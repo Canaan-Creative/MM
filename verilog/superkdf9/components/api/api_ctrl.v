@@ -28,7 +28,11 @@ output                mosi              ,
 input  [`API_NUM-1:0] miso              ,
 
 output                led_get_nonce_l   ,
-output                led_get_nonce_h    
+output                led_get_nonce_h   ,
+
+output reg            pllf_rd_en        ,
+input                 reg_pllf_empty    ,
+input  [43:0]         pllf_dout
 );
 parameter RX_FIFO_DEPTH = 512;//words
 parameter WORK_LEN = 736/32;//words
@@ -42,8 +46,8 @@ parameter NOP  = 2'd2;
 reg [1:0] cur_state;
 reg [1:0] nxt_state;
 wire timer_start = cur_state != WORK && nxt_state == WORK;
-reg [5:0] ch_cnt;
 reg [7:0] word_cnt;
+reg [3:0] chip_cnt;
 reg mosi_vld;
 wire miso_vld;
 reg [3:0] load_nop_cnt;
@@ -122,6 +126,14 @@ always @ (posedge clk or posedge rst) begin
 		work_cnt <= 5'b0;
 end
 
+always @ (posedge clk or posedge rst) begin
+	if(rst)
+		chip_cnt <= 4'b0;
+	else if(cur_state != WORK && nxt_state == WORK)
+		chip_cnt <= 4'b0;
+	else if(cur_state == WORK && word_cnt != reg_word_num && miso_vld && work_cnt == 5'd22)
+		chip_cnt <= chip_cnt + 4'b1;
+end
 
 assign rx_fifo_wr_en = miso_vld && (work_cnt < RX_BLOCK_LEN) && (cur_state == WORK);
 assign     miner_id =   load == `API_NUM'b1111111110 ? 4'd0 :
@@ -173,17 +185,6 @@ always @ (posedge clk or posedge rst) begin
 		load <= {load[`API_NUM-2:0], load[`API_NUM-1]};
 end
 
-always @ (posedge clk or posedge rst) begin
-	if(rst)
-		ch_cnt <= 6'b0;
-	else if(reg_rst)
-		ch_cnt <= 6'b0;
-	else if(cur_state == WAIT && nxt_state == WORK && ch_cnt == reg_ch_num)
-		ch_cnt <= 6'b0;
-	else if(cur_state != WORK && nxt_state == WORK)
-		ch_cnt <= 6'b1 + ch_cnt;
-end
-
 wire miso_w = &(miso | load);
 
 api_timer api_timer(
@@ -196,22 +197,32 @@ api_timer api_timer(
 /*output         */ .timeout_busy(timeout_busy)
 );
 
+wire this_is_pll_cfg = (~reg_pllf_empty                   )&& 
+                       (pllf_dout[3:0] == miner_id        )&& 
+                       (pllf_dout[7:4] == chip_cnt        )&& 
+                       ({2'b0,pllf_dout[11:8]} == work_cnt)&&mosi_vld;
+wire [31:0] mosi_dat = this_is_pll_cfg ? pllf_dout[43:12] : tx_fifo_dout;
+
+always @ (posedge clk) begin
+	pllf_rd_en <= this_is_pll_cfg;
+end
+
 api_phy api_phy(
-/*input          */ .clk         (clk         ),
-/*output         */ .rst         (rst         ),
+/*input          */ .clk         (clk     ),
+/*output         */ .rst         (rst     ),
 
-/*input          */ .reg_rst     (reg_rst     ),
-/*input  [7:0]   */ .reg_sck     (reg_sck     ),
+/*input          */ .reg_rst     (reg_rst ),
+/*input  [7:0]   */ .reg_sck     (reg_sck ),
 
-/*input          */ .mosi_vld    (mosi_vld    ),
-/*input  [31:0]  */ .mosi_dat    (tx_fifo_dout),
+/*input          */ .mosi_vld    (mosi_vld),
+/*input  [31:0]  */ .mosi_dat    (mosi_dat),
 
-/*output         */ .miso_vld    (miso_vld    ),
-/*output [31:0]  */ .miso_dat    (miso_dat    ),
+/*output         */ .miso_vld    (miso_vld),
+/*output [31:0]  */ .miso_dat    (miso_dat),
 
-/*output         */ .sck         (sck         ),
-/*output         */ .mosi        (mosi        ),
-/*input          */ .miso        (miso_w      )
+/*output         */ .sck         (sck     ),
+/*output         */ .mosi        (mosi    ),
+/*input          */ .miso        (miso_w  )
 );
 
 endmodule

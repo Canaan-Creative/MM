@@ -1,46 +1,53 @@
 `include "api_define.v"
 module api_slave(
 // system clock and reset
-input             clk         ,
-input             rst         ,
+input             clk                ,
+input             rst                ,
 
 // wishbone interface signals
-input             API_CYC_I   ,//NC
-input             API_STB_I   ,
-input             API_WE_I    ,
-input             API_LOCK_I  ,//NC
-input  [2:0]      API_CTI_I   ,//NC
-input  [1:0]      API_BTE_I   ,//NC
-input  [5:0]      API_ADR_I   ,
-input  [31:0]     API_DAT_I   ,
-input  [3:0]      API_SEL_I   ,//NC
-output reg        API_ACK_O   ,
-output            API_ERR_O   ,//const 0
-output            API_RTY_O   ,//const 0
-output reg [31:0] API_DAT_O   ,
+input             API_CYC_I          ,//NC
+input             API_STB_I          ,
+input             API_WE_I           ,
+input             API_LOCK_I         ,//NC
+input  [2:0]      API_CTI_I          ,//NC
+input  [1:0]      API_BTE_I          ,//NC
+input  [5:0]      API_ADR_I          ,
+input  [31:0]     API_DAT_I          ,
+input  [3:0]      API_SEL_I          ,//NC
+output reg        API_ACK_O          ,
+output            API_ERR_O          ,//const 0
+output            API_RTY_O          ,//const 0
+output reg [31:0] API_DAT_O          ,
 
-output reg        txfifo_push ,
-output reg [31:0] txfifo_din  ,
+output reg        txfifo_push        ,
+output reg [31:0] txfifo_din         ,
 
-input  [9 :0]     rxcnt       ,
-input             rxempty     ,
-input  [10:0]     txcnt       ,
-output            reg_flush   ,
-input             txfull      ,
+input  [9 :0]     rxcnt              ,
+input             rxempty            ,
+input  [10:0]     txcnt              ,
+output            reg_flush          ,
+input             txfull             ,
 
-input  [2:0]      reg_state   ,
-output reg [27:0] reg_timeout ,
-output reg [7:0]  reg_sck     ,
-output reg [5:0]  reg_ch_num  ,
-output reg [7:0]  reg_word_num,
+input  [2:0]      reg_state          ,
+output reg [27:0] reg_timeout        ,
+output reg [7:0]  reg_sck            ,
+output reg [5:0]  reg_ch_num         ,
+output reg [7:0]  reg_word_num       ,
 
-input             rx_fifo_wr_en,
-input  [31:0]     rx_fifo_din  ,
-input  [3:0]      miner_id     ,
-input  [4:0]      work_cnt     ,
+input             rx_fifo_wr_en      ,
+input  [31:0]     rx_fifo_din        ,
+input  [3:0]      miner_id           ,
+input  [4:0]      work_cnt           ,
 
-output            rxfifo_pop  ,
-input  [31:0]     rxfifo_dout   
+output            rxfifo_pop         ,
+input  [31:0]     rxfifo_dout        ,
+
+output reg        reg_pllf_rst       ,
+output reg[43:0]  reg_pllf_data      ,
+output reg        reg_pllf_wr_en     ,
+input             reg_pllf_full      ,
+input             reg_pllf_empty     ,
+input [8 : 0]     reg_pllf_data_count 
 );
 
 parameter API_TXFIFO  = 6'h00;
@@ -50,7 +57,8 @@ parameter API_TIMEOUT = 6'h0c;
 parameter API_SCK     = 6'h10;
 parameter API_RAM     = 6'h14;
 parameter API_LM      = 6'h18;//local work
-
+parameter API_PLLA    = 6'h1c;
+parameter API_PLLC    = 6'h20;
 //-----------------------------------------------------
 // WB bus ACK
 //-----------------------------------------------------
@@ -90,6 +98,10 @@ wire api_ram_rd_en = API_STB_I & ~API_WE_I  & ( API_ADR_I == API_RAM ) & ~API_AC
 wire api_lw_wr_en = API_STB_I & API_WE_I  & ( API_ADR_I == API_LM ) & ~API_ACK_O ;
 wire api_lw_rd_en = API_STB_I & ~API_WE_I  & ( API_ADR_I == API_LM ) & ~API_ACK_O ;
 
+wire api_plla_wr_en = API_STB_I & API_WE_I  & ( API_ADR_I == API_PLLA ) & ~API_ACK_O ;
+wire api_plla_rd_en = API_STB_I & API_WE_I  & ( API_ADR_I == API_PLLA ) & ~API_ACK_O ;
+
+wire api_pllc_wr_en = API_STB_I & API_WE_I  & ( API_ADR_I == API_PLLC ) & ~API_ACK_O ;
 //-----------------------------------------------------
 // Register.txfifo
 //-----------------------------------------------------
@@ -124,6 +136,16 @@ always @ ( posedge clk ) begin
 	if( api_sck_wr_en     ) reg_sck[7:0]      <= API_DAT_I[7:0];
 	if( api_sck_wr_en     ) reg_ch_num[5:0]   <= API_DAT_I[21:16];
 	if( api_sck_wr_en     ) reg_word_num[7:0] <= API_DAT_I[31:24];
+end
+
+//-----------------------------------------------------
+// PLL
+//-----------------------------------------------------
+always @ (posedge clk) begin
+	if(api_plla_wr_en) reg_pllf_data[11:0]  <= API_DAT_I[11:0];
+	if(api_plla_wr_en) reg_pllf_rst <= API_DAT_I[23]; else reg_pllf_rst <= 1'b0;
+	if(api_pllc_wr_en) reg_pllf_data[43:12] <= API_DAT_I[31:0];
+	if(api_pllc_wr_en) reg_pllf_wr_en <= 1'b1; else reg_pllf_wr_en <= 1'b0;
 end
 
 //-----------------------------------------------------
@@ -227,6 +249,7 @@ always @ ( posedge clk ) begin
 		api_sck_rd_en    : API_DAT_O <= {reg_word_num[7:0], 2'b0,reg_ch_num[5:0], 8'h0, reg_sck[7:0]};
 		api_ram_rd_en    : API_DAT_O <= tram_dout;
 		api_lw_rd_en     : API_DAT_O <= {8'b0, reg_lw};
+		api_plla_rd_en   : API_DAT_O <= {9'b0, reg_pllf_empty, reg_pllf_full, reg_pllf_data_count,12'b0};
 		default: API_DAT_O <= 32'hdeaddead ; 
 	endcase
 end
