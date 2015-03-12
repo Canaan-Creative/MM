@@ -23,13 +23,28 @@
 #define MBOOT_FLASH_SECERASE    (0x20)
 
 /* spi flash address scope */
-#define MBOOT_FLASH_END         (0x100000)
-#define MBOOT_FLASH_START       (MBOOT_FLASH_END - 0x4000)
+/* name             addr                  note
+ * -----------------------------------------------------------
+ * mcs0        0x00000  ~  mcs0 len    (mcs0 len must < 0x80000)
+ * reserved1   mcs0 len ~  0x7ffff
+ * mcs1        0x80000  ~  mcs1 len    (mcs1 len must < 0x40000)
+ * reserved2   mcs1 len ~  0xfbfff
+ * cfg         0xfc000  ~  0xfefff     (3 sectors)
+ * reserved3   0xff000  ~  0xfff7f
+ * mcs1 info   0xfff80  ~  0xfff90
+ * reserved4   0xfff91  ~  0x100000
+ */
+#define MBOOT_FLASH_BASE          0
+#define MBOOT_MCS1_ADDR_BASE      (MBOOT_FLASH_BASE + 0x80000)  /* compatiable */
+#define MBOOT_MCS1_INFO_ADDR_BASE 0xfff80                       /* compatiable */
+#define MBOOT_MCS1_INFO_LEN       16                            /* compatiable */
+#define MBOOT_CFG_START           0xfc000
+#define MBOOT_CFG_END             (MBOOT_CFG_START + (MBOOT_FLASH_SECUSED * MBOOT_FLASH_SECSIZE))
 
 /* spi flash specs */
 #define MBOOT_FLASH_PGSIZE      (256)
 #define MBOOT_FLASH_SECSIZE     (16 * MBOOT_FLASH_PGSIZE)
-#define MBOOT_FLASH_SECUSED     (4)
+#define MBOOT_FLASH_SECUSED     (3)
 
 /* MBOOT start addr */
 #define MBOOT_START_ADDR0       (0x0)
@@ -201,7 +216,7 @@ int mboot_spi_write(int byte_num, unsigned int addr, unsigned char *buf)
 	debug32("D: W %x\n", addr);
 #endif
 	mboot_spi_write_enable();
-	if (addr >= MBOOT_FLASH_START && addr < MBOOT_FLASH_END) {
+	if (addr >= MBOOT_CFG_START && addr < MBOOT_CFG_END) {
 		mboot_spi_op(MBOOT_FLASH_PGPROG, byte_num, addr, buf);
 		mboot_spi_wait_busy();
 	} else
@@ -216,7 +231,7 @@ int mboot_spi_erase_sector(unsigned int addr)
 	debug32("D: E %x\n", addr);
 #endif
 	mboot_spi_write_enable();
-	if (addr >= MBOOT_FLASH_START && addr < MBOOT_FLASH_END) {
+	if (addr >= MBOOT_CFG_START && addr < MBOOT_CFG_END) {
 		mboot_spi_op(MBOOT_FLASH_SECERASE, 0, addr, NULL);
 		delay(100);
 		mboot_spi_wait_busy();
@@ -231,7 +246,7 @@ static int mboot_find_config(uint32_t *pos, uint8_t *pgbuf)
 {
 	uint8_t i;
 	uint16_t crc, oldcrc;
-	uint32_t cfgpos = MBOOT_FLASH_START;
+	uint32_t cfgpos = MBOOT_CFG_START;
 
 	for (i = 0; i < MBOOT_FLASH_SECUSED; i++) {
 		memset(pgbuf, 0, MBOOT_FLASH_PGSIZE);
@@ -271,12 +286,12 @@ int mboot_save_config(struct mm_config *config)
 	if (!mboot_find_config(&cfgpos, g_pgbuf)) {
 		mboot_spi_erase_sector(cfgpos);
 
-		if ((cfgpos + MBOOT_FLASH_SECSIZE) >= (MBOOT_FLASH_START + MBOOT_FLASH_SECSIZE * MBOOT_FLASH_SECUSED))
-			cfgpos = MBOOT_FLASH_START;
+		if ((cfgpos + MBOOT_FLASH_SECSIZE) >= (MBOOT_CFG_START + MBOOT_FLASH_SECSIZE * MBOOT_FLASH_SECUSED))
+			cfgpos = MBOOT_CFG_START;
 		else
 			cfgpos += MBOOT_FLASH_SECSIZE;
 	} else
-		cfgpos = MBOOT_FLASH_START;
+		cfgpos = MBOOT_CFG_START;
 
 	debug32("MSC: %x\n", cfgpos);
 	mboot_spi_erase_sector(cfgpos);
@@ -327,7 +342,7 @@ void mboot_run_rbt(void)
 #ifdef DEBUG_VERBOSE
 void mboot_flash_test(void)
 {
-#define MBOOT_FLASH_ADDR MBOOT_FLASH_START
+#define MBOOT_FLASH_ADDR MBOOT_CFG_START
 	uint8_t pgbuf_w[MBOOT_FLASH_PGSIZE];
 	uint8_t pgbuf_r[MBOOT_FLASH_PGSIZE];
 
