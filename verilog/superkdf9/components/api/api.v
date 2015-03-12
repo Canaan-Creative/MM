@@ -58,13 +58,13 @@ wire [3:0] miner_id;
 wire [4:0] work_cnt;
 
 wire          reg_pllf_rst       ;
-wire [43 : 0] reg_pllf_data      ;
+wire [103: 0] reg_pllf_data      ;
 wire          reg_pllf_wr_en     ;
 wire          pllf_rd_en         ;
-wire [43 : 0] pllf_dout          ;
+wire [103: 0] pllf_dout          ;
 wire          reg_pllf_full      ;
 wire          reg_pllf_empty     ;
-wire [8 : 0]  reg_pllf_data_count;
+wire [6 : 0]  reg_pllf_data_count;
 
 api_slave api_slave(
 // system clock and reset
@@ -110,11 +110,11 @@ api_slave api_slave(
 /*input  [31:0]    */ .rxfifo_dout        (rx_fifo_dout       ), 
 
 /*output reg       */ .reg_pllf_rst       (reg_pllf_rst       ),
-/*output reg[43:0] */ .reg_pllf_data      (reg_pllf_data      ),
+/*output reg[103:0]*/ .reg_pllf_data      (reg_pllf_data      ),
 /*output reg       */ .reg_pllf_wr_en     (reg_pllf_wr_en     ),
 /*input            */ .reg_pllf_full      (reg_pllf_full      ),
 /*input            */ .reg_pllf_empty     (reg_pllf_empty     ),
-/*input [8 : 0]    */ .reg_pllf_data_count(reg_pllf_data_count) 
+/*input [6 : 0]    */ .reg_pllf_data_count(reg_pllf_data_count) 
 );
 
 
@@ -153,7 +153,7 @@ api_ctrl #(.WORK_LEN(WORK_LEN), .RX_FIFO_DEPTH(RX_FIFO_DEPTH)) api_ctrl(
 
 /*output               */ .pllf_rd_en        (pllf_rd_en        ),
 /*input                */ .reg_pllf_empty    (reg_pllf_empty    ),
-/*input  [43:0]        */ .pllf_dout         (pllf_dout         )
+/*input  [103:0]       */ .pllf_dout         (pllf_dout         )
 );
 
 assign api_idle = reg_state == 3'b0 && tx_fifo_empty && ~timeout_busy;
@@ -184,16 +184,16 @@ fifo512 rx_fifo(
 /*output [9  : 0]*/ .data_count(rx_fifo_data_count)
 );
 
-fifo256x44 pll_fifo(
+fifo64x104 pll_fifo(
 /*input          */ .clk       (clk                ),
 /*input          */ .srst      (rst | reg_pllf_rst ),
-/*input  [43 : 0]*/ .din       (reg_pllf_data      ),
+/*input  [103: 0]*/ .din       (reg_pllf_data      ),
 /*input          */ .wr_en     (reg_pllf_wr_en     ),
 /*input          */ .rd_en     (pllf_rd_en         ),
-/*output [43 : 0]*/ .dout      (pllf_dout          ),
+/*output [103: 0]*/ .dout      (pllf_dout          ),
 /*output         */ .full      (reg_pllf_full      ),
 /*output         */ .empty     (reg_pllf_empty     ),
-/*output [8 : 0] */ .data_count(reg_pllf_data_count)
+/*output [6 : 0] */ .data_count(reg_pllf_data_count)
 );
 
 endmodule

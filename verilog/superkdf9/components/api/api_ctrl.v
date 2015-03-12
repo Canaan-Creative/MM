@@ -32,7 +32,7 @@ output                led_get_nonce_h   ,
 
 output reg            pllf_rd_en        ,
 input                 reg_pllf_empty    ,
-input  [43:0]         pllf_dout
+input  [103:0]        pllf_dout
 );
 parameter RX_FIFO_DEPTH = 512;//words
 parameter WORK_LEN = 736/32;//words
@@ -199,9 +199,14 @@ api_timer api_timer(
 
 wire this_is_pll_cfg = (~reg_pllf_empty                   )&& 
                        (pllf_dout[3:0] == miner_id        )&& 
-                       (pllf_dout[7:4] == chip_cnt        )&& 
-                       ({2'b0,pllf_dout[11:8]} == work_cnt)&&mosi_vld;
-wire [31:0] mosi_dat = this_is_pll_cfg ? pllf_dout[43:12] : tx_fifo_dout;
+                       (pllf_dout[7:4] == chip_cnt        )&&mosi_vld;
+wire this_is_pll_cfg0 = this_is_pll_cfg && work_cnt == 5'd0;
+wire this_is_pll_cfg1 = this_is_pll_cfg && work_cnt == 5'd1;
+wire this_is_pll_cfg2 = this_is_pll_cfg && work_cnt == 5'd2;
+
+wire [31:0] mosi_dat = this_is_pll_cfg0 ? pllf_dout[39:8]   : 
+		       this_is_pll_cfg1 ? pllf_dout[71:40]  :
+		       this_is_pll_cfg2 ? pllf_dout[103:72] : tx_fifo_dout;
 
 always @ (posedge clk) begin
 	pllf_rd_en <= this_is_pll_cfg;

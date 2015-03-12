@@ -43,11 +43,11 @@ output            rxfifo_pop         ,
 input  [31:0]     rxfifo_dout        ,
 
 output reg        reg_pllf_rst       ,
-output reg[43:0]  reg_pllf_data      ,
+output reg[103:0] reg_pllf_data      ,
 output reg        reg_pllf_wr_en     ,
 input             reg_pllf_full      ,
 input             reg_pllf_empty     ,
-input [8 : 0]     reg_pllf_data_count 
+input [6 : 0]     reg_pllf_data_count 
 );
 
 parameter API_TXFIFO  = 6'h00;
@@ -58,7 +58,9 @@ parameter API_SCK     = 6'h10;
 parameter API_RAM     = 6'h14;
 parameter API_LM      = 6'h18;//local work
 parameter API_PLLA    = 6'h1c;
-parameter API_PLLC    = 6'h20;
+parameter API_PLLC0   = 6'h20;
+parameter API_PLLC1   = 6'h24;
+parameter API_PLLC2   = 6'h28;
 //-----------------------------------------------------
 // WB bus ACK
 //-----------------------------------------------------
@@ -101,7 +103,9 @@ wire api_lw_rd_en = API_STB_I & ~API_WE_I  & ( API_ADR_I == API_LM ) & ~API_ACK_
 wire api_plla_wr_en = API_STB_I & API_WE_I  & ( API_ADR_I == API_PLLA ) & ~API_ACK_O ;
 wire api_plla_rd_en = API_STB_I & API_WE_I  & ( API_ADR_I == API_PLLA ) & ~API_ACK_O ;
 
-wire api_pllc_wr_en = API_STB_I & API_WE_I  & ( API_ADR_I == API_PLLC ) & ~API_ACK_O ;
+wire api_pllc0_wr_en = API_STB_I & API_WE_I  & ( API_ADR_I == API_PLLC0 ) & ~API_ACK_O ;
+wire api_pllc1_wr_en = API_STB_I & API_WE_I  & ( API_ADR_I == API_PLLC1 ) & ~API_ACK_O ;
+wire api_pllc2_wr_en = API_STB_I & API_WE_I  & ( API_ADR_I == API_PLLC2 ) & ~API_ACK_O ;
 //-----------------------------------------------------
 // Register.txfifo
 //-----------------------------------------------------
@@ -142,10 +146,12 @@ end
 // PLL
 //-----------------------------------------------------
 always @ (posedge clk) begin
-	if(api_plla_wr_en) reg_pllf_data[11:0]  <= API_DAT_I[11:0];
+	if(api_plla_wr_en) reg_pllf_data[7:0]  <= API_DAT_I[7:0];
 	if(api_plla_wr_en) reg_pllf_rst <= API_DAT_I[23]; else reg_pllf_rst <= 1'b0;
-	if(api_pllc_wr_en) reg_pllf_data[43:12] <= API_DAT_I[31:0];
-	if(api_pllc_wr_en) reg_pllf_wr_en <= 1'b1; else reg_pllf_wr_en <= 1'b0;
+	if(api_pllc0_wr_en) reg_pllf_data[39:8] <= API_DAT_I[31:0];
+	if(api_pllc1_wr_en) reg_pllf_data[71:40] <= API_DAT_I[31:0];
+	if(api_pllc2_wr_en) reg_pllf_data[103:72] <= API_DAT_I[31:0];
+	if(api_pllc2_wr_en) reg_pllf_wr_en <= 1'b1; else reg_pllf_wr_en <= 1'b0;
 end
 
 //-----------------------------------------------------
@@ -249,7 +255,7 @@ always @ ( posedge clk ) begin
 		api_sck_rd_en    : API_DAT_O <= {reg_word_num[7:0], 2'b0,reg_ch_num[5:0], 8'h0, reg_sck[7:0]};
 		api_ram_rd_en    : API_DAT_O <= tram_dout;
 		api_lw_rd_en     : API_DAT_O <= {8'b0, reg_lw};
-		api_plla_rd_en   : API_DAT_O <= {9'b0, reg_pllf_empty, reg_pllf_full, reg_pllf_data_count,12'b0};
+		api_plla_rd_en   : API_DAT_O <= {9'b0, reg_pllf_empty, reg_pllf_full, 2'b0, reg_pllf_data_count,12'b0};
 		default: API_DAT_O <= 32'hdeaddead ; 
 	endcase
 end
