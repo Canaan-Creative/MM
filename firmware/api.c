@@ -384,7 +384,7 @@ uint32_t api_get_pll_fifo_count(void)
 {
 	uint32_t tmp;
 	tmp = readl(&api->plla);
-	tmp = (tmp >> 12) & 0x1ff;
+	tmp = (tmp >> 12) & 0x7f;
 	return tmp;
 }
 
