@@ -370,3 +370,39 @@ void api_get_lw(uint32_t *buf)
 	}
 }
 
+void api_set_pll(uint32_t miner_id, uint32_t chip_id, uint32_t pll_id, uint32_t pll_data)
+{
+	uint32_t tmp = 0;
+	tmp = (miner_id % MINER_COUNT) | ((chip_id % ASIC_COUNT) << 4) | ((pll_id % PLL_COUNT) << 8);
+	writel(tmp, &api->plla);
+	writel(pll_data, &api->pllc);
+}
+
+uint32_t api_get_pll_fifo_count(void)
+{
+	uint32_t tmp;
+	tmp = readl(&api->plla);
+	tmp = (tmp >> 12) & 0x1ff;
+	return tmp;
+}
+
+uint32_t api_get_pll_fifo_full(void)
+{
+	uint32_t tmp;
+	tmp = readl(&api->plla);
+	tmp = (tmp >> 21) & 0x1;
+	return tmp;
+}
+
+uint32_t api_get_pll_fifo_empty(void)
+{
+	uint32_t tmp;
+	tmp = readl(&api->plla);
+	tmp = (tmp >> 22) & 0x1;
+	return tmp;
+}
+
+void api_get_pll_fifo_reset(void)
+{
+	writel(0x1 << 23, &api->plla);
+}

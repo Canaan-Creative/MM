@@ -47,6 +47,7 @@
 #define ASIC_TIMEOUT_100M	0x4113e98
 #define MINER_COUNT		10
 #define ASIC_COUNT		4
+#define PLL_COUNT		3
 
 #define SPI_SPEED		(0x2)
 #define CPU_FREQUENCY		(50 * 1000 * 1000) /* 50Mhz */
@@ -144,6 +145,8 @@ struct lm32_api {
 	volatile unsigned int sck;
 	volatile unsigned int ram;
 	volatile unsigned int lw;
+	volatile unsigned int plla;
+	volatile unsigned int pllc;
 };
 
 /* TWI PWM */

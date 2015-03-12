@@ -27,4 +27,11 @@ uint32_t get_asic_freq(void);
 
 int api_asic_testcores(uint32_t cal_core_num, uint32_t ret);
 void api_get_lw(uint32_t *buf);
+
+void api_set_pll(uint32_t miner_id, uint32_t chip_id, uint32_t pll_id, uint32_t pll_data);
+uint32_t api_get_pll_fifo_count(void);
+uint32_t api_get_pll_fifo_full(void);
+uint32_t api_get_pll_fifo_empty(void);
+void api_get_pll_fifo_reset(void);
+
 #endif	/* _API_H_ */
