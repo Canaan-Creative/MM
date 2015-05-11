@@ -3,6 +3,7 @@ Between CGMiner and FPGA controller/Avalon4 Mini
 
 # Physical link
 Multiple FPGA controllers are daisy-chained together using IIC.
+
 Avalon4 Mini is a standalone device.
 
 # Packet structure
@@ -20,12 +21,12 @@ Format: |2B:HEAD|1B:TYPE|1B:OPT|1B:IDX|1B:CNT|32B:DATA|2B:CRC|
 # Conceptual model
 ### Detect MM controller/Avalon4 Mini
 1. P_DETECT: send out this package to MM/Avalon4 Mini, attach the modular id at the end of pakcage
-2. P_ACTDETECT: MM/Avalon4 Mini will send back this package with the following. cpuid/dna(4B), version(15B), asic count(4)
+2. P_ACTDETECT: MM/Avalon4 Mini will send back this package with the following. cpuid/dna(8B), version(15B), asic count(4)
 
 ### Send jobs to ASIC
 #### CGMiner broadcasts the stratum information to all MM controllers
 1. P_STATIC: Send the length info first, the package like: coinbase length, nonce2 offset, nonce2 size, merkle offset, merkles count, pool diff, pool no. each variable using 32bits. the P_STATIC will make MM stop generate works. until a P_SET pkg send out.
-2. P_TARGET: Send out the package, 
+2. P_TARGET: Send out the package,
 3. P_JOB_ID: Send out the stratum package
 4. P_COINBASE: Send out the whole coinbase, split by 32Bytes, we using IDX/CNT here. max length: **6KB**
 5. P_MERKLES: Send out the merkels one by one , we using IDX/CNT here. max count: **20**
@@ -39,9 +40,9 @@ Format: |2B:HEAD|1B:TYPE|1B:OPT|1B:IDX|1B:CNT|32B:DATA|2B:CRC|
 	IDX2: id(4B), target(4B), ntime(1B), fan(3B), led(4B), reserved(4), data(12)
 
 ### CGMiner will polling the MM controllers/Avalon4 Mini
-The MM controller selects its own partition of extranonce in coinbase, base on own modular id and nonce2 start and nonce range. there are 2 type of packages send back 
+The MM controller selects its own partition of extranonce in coinbase, base on own modular id and nonce2 start and nonce range. there are 2 type of packages send back
 
-1. P_POLLING: 
+1. P_POLLING:
 2. P_NONCE: get nonce from MM: miner id(4B), pool no(4B), nonce2(4B), ntime(4B), nonce(4B), job id(4B), attach the modular id at the end of package.
 3. P_STATUS: get status from MM: temp(4B), fan(4B), frequenc(4B), voltage(4B), local works(4B), hardware error works(4B), power good(4B) attach the modular id at the end of pakcage.
 4. P_NONCE_M: get nonce from Avalon4 Mini: It contains two nonces maximum, if data is invalid then it will fill with 0xff.
