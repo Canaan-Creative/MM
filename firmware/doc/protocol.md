@@ -37,18 +37,18 @@ Format: |2B:HEAD|1B:TYPE|1B:OPT|1B:IDX|1B:CNT|32B:DATA|2B:CRC|
 
 	IDX1: all data is midstate(icarus midstate byte order);
 
-	IDX2: id(4B), target(4B), ntime(1B), fan(3B), led(4B), reserved(4), data(12)
+	IDX2: id(6B), reserved(2B), ntime(1B), fan(3B), led(4B), reserved(4), data(12)
 
 ### CGMiner will polling the MM controllers/Avalon4 Mini
 The MM controller selects its own partition of extranonce in coinbase, base on own modular id and nonce2 start and nonce range. there are 2 type of packages send back
 
 1. P_POLLING:
 2. P_NONCE: get nonce from MM: miner id(4B), pool no(4B), nonce2(4B), ntime(4B), nonce(4B), job id(4B), attach the modular id at the end of package.
-3. P_STATUS: get status from MM: temp(4B), fan(4B), frequenc(4B), voltage(4B), local works(4B), hardware error works(4B), power good(4B) attach the modular id at the end of pakcage.
+3. P_STATUS: get status from MM: temp(4B), fan(4B), frequency(4B), voltage(4B), local works(4B), hardware error works(4B), power good(4B) attach the modular id at the end of pakcage.
 4. P_NONCE_M: get nonce from Avalon4 Mini: It contains two nonces maximum, if data is invalid then it will fill with 0xff.
 
-	id(4B), chipid(1B), ntime(1B), 0x0000(2B), nonce(4B), reserved(1B), usb ringbuf count(1B), work ringbuf count(1B), nonce ringbuf count(1B)
-5. P_STATUS_M: get status from Avalon4 Mini: spi speed(4B), led(4B), fan(4B), voltage(4B), frequency(12B)
+	id/(6B), chipid(1B), ntime(1B), nonce(4B), reserved(1B), usb ringbuf count(1B), work ringbuf count(1B), nonce ringbuf count(1B)
+5. P_STATUS_M: get status from Avalon4 Mini: spi speed(4B), led(4B), fan(4B), voltage(4B), frequency(12B), power good(4B)
 
 ### Device configurations and status
 1. P_SET: Send the MM configurations: fan pwm, chip voltage, chip frequency, nonce2 start, nonce2 range, each variable using 32bits. the P_SET will trigger MM to start generate works.
@@ -57,6 +57,7 @@ The MM controller selects its own partition of extranonce in coinbase, base on o
 4. P_SET_FREQ: pll1(4B), pll2(4B), pll3(4B); opt is used for asic tweak, if 0 then all asics use the same settings, else the asic with opt index used the value
 5. P_GET_VOLT:
 6. P_STATUS_VOLT: voltage(2B) x miner count; opt is used for miningmode, low 4 bit is mining mode(0:CUSTOM, 1:ECO, 2:NORMAL, 3:TURBO)
+7. P_GET_FREQ:
 7. P_STATUS_FREQ: pll1(4B), pll2(4B), pll3(4B); opt is used for asic index(1-?), 0 is used for all asics.
 
 # Module ID
