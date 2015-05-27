@@ -115,19 +115,19 @@ static inline void led_ctrl(int led_op)
 		value |= 0x3;
 		break;
 	case LED_PG1_ON:
-		value &= 0xfeffffff;
+		value &= 0xf0ffffff;
 		value |= 0x1000000;
 		break;
 	case LED_PG1_BLINKING:
-		value &= 0xfeffffff;
+		value &= 0xf0ffffff;
 		value |= 0x3000000;
 		break;
 	case LED_PG2_ON:
-		value &= 0xefffffff;
+		value &= 0x0fffffff;
 		value |= 0x10000000;
 		break;
 	case LED_PG2_BLINKING:
-		value &= 0xefffffff;
+		value &= 0xfffffff;
 		value |= 0x30000000;
 		break;
 	case LED_BUSY:
@@ -671,6 +671,8 @@ static inline void pgcheck(void)
 	i = read_power_good();
 	if (i == 0x1f || i == 0x3e0)
 		g_postfailed |= 1;
+	else
+		g_postfailed &= 0xfe;
 
 	if ((i & 0x1f) == 0x1f)
 		g_postfailed |= 2;
@@ -762,6 +764,8 @@ int main(int argv, char **argc)
 	gpio_reset_asic();
 	if (api_asic_testcores(TEST_CORE_COUNT, 0) >= 4 * TEST_CORE_COUNT)
 		g_postfailed |= 1;
+	else
+		g_postfailed &= 0xfe;
 #endif
 
 	pgcheck();
