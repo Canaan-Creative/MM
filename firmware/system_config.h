@@ -35,18 +35,43 @@
 	#define ASIC_VOL_ECO		0x9100 /* 0.7625 */
 	#define ASIC_VOL_NORMAL		0xc100 /* 0.8000 */
 	#define ASIC_VOL_TURBO		0xfe00 /* 0.8250 */
-#else
+#endif
+#ifdef MM40
 	#define ASIC_CORETEST_VOLT	0xce00 /* 0.7875V */
 	#define ASIC_0V			0x8f00
 	#define ASIC_VOL_ECO		0x8e00 /* 0.8000 */
 	#define ASIC_VOL_NORMAL		0xf600 /* 0.8125 */
 	#define ASIC_VOL_TURBO		0xb600 /* 0.8250 */
 #endif
+#ifdef MM50
+	#define ASIC_CORETEST_VOLT	0xa100 /* 0.7875V */
+	#define ASIC_0V			0xff00
+	#define ASIC_VOL_ECO		0x9100 /* 0.7625 */
+	#define ASIC_VOL_NORMAL		0xc100 /* 0.8000 */
+	#define ASIC_VOL_TURBO		0xfe00 /* 0.8250 */
+#endif
 
+#if defined(MM40) || defined(MM41)
 #define ASIC_FREQUENCY		200 /* MHz */
+#define ASIC_PLL		0x1e278447
+#endif
+#ifdef MM50
+#define ASIC_FREQUENCY		100 /* MHz */
+#define ASIC_PLL		0x1e678447
+#endif
+
 #define ASIC_TIMEOUT_100M	0x4113e98
+
+#if defined(MM40) || defined(MM41)
 #define MINER_COUNT		10
 #define ASIC_COUNT		4
+#endif
+
+#ifdef MM50
+#define MINER_COUNT		1
+#define ASIC_COUNT		16
+#endif
+
 #define PLL_COUNT		3
 
 #define SPI_SPEED		(0x2)

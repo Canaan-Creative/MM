@@ -15,14 +15,17 @@
 /* NOTICE: Always delay 100ms after set voltage */
 #define VOLTAGE_DELAY	100
 
+#if defined(MM40) || defined(MM41)
 static struct lm32_shifter *sft0 = (struct lm32_shifter *)SHIFTER_BASE0;
 static struct lm32_shifter *sft1 = (struct lm32_shifter *)SHIFTER_BASE1;
+#endif
 static struct lm32_shifter *sft2 = (struct lm32_shifter *)SHIFTER_BASE2;
 
 static uint32_t g_voltage = ASIC_0V;
 static uint32_t g_voltage_i[MINER_COUNT];
 static int32_t g_led = 0;
 
+#if defined(MM40) || defined(MM41)
 static void shift_done(struct lm32_shifter *s)
 {
 	unsigned int tmp;
@@ -67,6 +70,7 @@ static void shift_update(struct lm32_shifter *s, uint32_t value[], int poweron)
 	if (poweron)
 		delay(VOLTAGE_DELAY);
 }
+#endif
 
 uint32_t set_voltage(uint32_t value)
 {
@@ -85,7 +89,7 @@ uint32_t set_voltage(uint32_t value)
 /* Must call set_voltage first(record g_voltage), Call from AVA4_P_SET_VOLT */
 uint32_t set_voltage_i(uint32_t value[])
 {
-	uint32_t ret;
+	uint32_t ret = 0;
 	uint8_t i, diff = 0, ch1 = 0, ch2 = 0, allpoweron = 1;
 	int poweron = 0;
 
@@ -108,6 +112,7 @@ uint32_t set_voltage_i(uint32_t value[])
 	if (!diff)
 		return 0;
 
+#if defined(MM40) || defined(MM41)
 	if (ch1)
 		shift_update(sft0, g_voltage_i, poweron);
 
@@ -118,6 +123,7 @@ uint32_t set_voltage_i(uint32_t value[])
 		gpio_reset_asic();
 		ret = 1;
 	}
+#endif
 
 	return ret;
 }

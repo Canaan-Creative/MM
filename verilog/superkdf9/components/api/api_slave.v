@@ -32,7 +32,7 @@ input  [2:0]      reg_state          ,
 output reg [27:0] reg_timeout        ,
 output reg [7:0]  reg_sck            ,
 output reg [5:0]  reg_ch_num         ,
-output reg [7:0]  reg_word_num       ,
+output reg [8:0]  reg_word_num       ,
 
 input             rx_fifo_wr_en      ,
 input  [31:0]     rx_fifo_din        ,
@@ -139,7 +139,7 @@ always @ ( posedge clk ) begin
 	if( api_timeout_wr_en ) reg_timeout[27:0] <= API_DAT_I[27:0];
 	if( api_sck_wr_en     ) reg_sck[7:0]      <= API_DAT_I[7:0];
 	if( api_sck_wr_en     ) reg_ch_num[5:0]   <= API_DAT_I[21:16];
-	if( api_sck_wr_en     ) reg_word_num[7:0] <= API_DAT_I[31:24];
+	if( api_sck_wr_en     ) reg_word_num[8:0] <= API_DAT_I[31:23];
 end
 
 //-----------------------------------------------------
@@ -252,7 +252,7 @@ always @ ( posedge clk ) begin
 		api_state_rd_en  : API_DAT_O <= rd_state  ;
 		api_rxfifo_rd_en : API_DAT_O <= rxempty ? 32'h12345678 : rd_rxfifo ;
 		api_timeout_rd_en: API_DAT_O <= {4'b0, reg_timeout[27:0]};
-		api_sck_rd_en    : API_DAT_O <= {reg_word_num[7:0], 2'b0,reg_ch_num[5:0], 8'h0, reg_sck[7:0]};
+		api_sck_rd_en    : API_DAT_O <= {reg_word_num[8:0], 1'b0,reg_ch_num[5:0], 8'h0, reg_sck[7:0]};
 		api_ram_rd_en    : API_DAT_O <= tram_dout;
 		api_lw_rd_en     : API_DAT_O <= {8'b0, reg_lw};
 		api_plla_rd_en   : API_DAT_O <= {9'b0, reg_pllf_empty, reg_pllf_full, 2'b0, reg_pllf_data_count,12'b0};

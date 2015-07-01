@@ -9,7 +9,7 @@ output [2:0]          reg_state         ,
 input  [27:0]         reg_timeout       ,
 input  [7:0]          reg_sck           ,
 input  [5:0]          reg_ch_num        ,
-input  [7:0]          reg_word_num      ,
+input  [8:0]          reg_word_num      ,
 output                timeout_busy      ,
 
 input                 tx_fifo_empty     ,
@@ -46,7 +46,7 @@ parameter NOP  = 2'd2;
 reg [1:0] cur_state;
 reg [1:0] nxt_state;
 wire timer_start = cur_state != WORK && nxt_state == WORK;
-reg [7:0] word_cnt;
+reg [8:0] word_cnt;
 reg [3:0] chip_cnt;
 reg mosi_vld;
 wire miso_vld;
@@ -78,13 +78,13 @@ always @ (*) begin
 end
 always @ (posedge clk or posedge rst) begin
 	if(rst)
-		word_cnt <= 8'b0;
+		word_cnt <= 9'b0;
 	else if(reg_rst)
-		word_cnt <= 8'b0;
+		word_cnt <= 9'b0;
 	else if(cur_state != WORK && nxt_state == WORK)
-		word_cnt <= 8'b0;
+		word_cnt <= 9'b0;
 	else if(cur_state == WORK && word_cnt != reg_word_num && miso_vld)
-		word_cnt <= word_cnt + 8'b1;
+		word_cnt <= word_cnt + 9'b1;
 end
 
 always @ (posedge clk or posedge rst) begin

@@ -25,7 +25,7 @@ static inline void api_set_num(uint32_t ch_num, uint32_t chip_num)
 {
 	uint32_t tmp;
 	tmp = readl(&api->sck) & 0xff;
-	tmp = (ch_num << 16) | ((chip_num*23) << 24) | tmp;
+	tmp = (ch_num << 16) | ((chip_num*23) << 23) | tmp;
 	writel(tmp, &api->sck);
 }
 
@@ -75,8 +75,7 @@ static uint32_t api_verify_nonce(uint32_t ch_num, uint32_t chip_num,
 				 uint32_t verify_on, uint32_t target_nonce,
 				 uint32_t result[MINER_COUNT][ASIC_COUNT])
 {
-	static uint32_t last_minerid = 0xff;
-	static uint8_t chip_id;
+	static uint8_t chip_id = 0;
 
 	uint32_t i, j;
 	uint32_t rx_data[LM32_API_RET_LEN];
@@ -87,11 +86,6 @@ static uint32_t api_verify_nonce(uint32_t ch_num, uint32_t chip_num,
 		for (j = 0; j < chip_num; j++) {
 			api_get_rx_fifo(rx_data);
 			channel_id = rx_data[10] & 0xff;
-			if (last_minerid != channel_id) {
-				chip_id = 0;
-				last_minerid = channel_id;
-			} else
-				chip_id++;
 
 			if (verify_on && ((rx_data[2] == target_nonce) || (rx_data[3] == target_nonce) || (rx_data[4] == target_nonce))) {
 				pass_cal_num++;
@@ -101,6 +95,11 @@ static uint32_t api_verify_nonce(uint32_t ch_num, uint32_t chip_num,
 #endif
 				if (verify_on && result)
 				    result[channel_id][chip_id]++;
+			}
+
+			if (ASIC_COUNT > 1) {
+			    chip_id++;
+			    chip_id %= ASIC_COUNT;
 			}
 		}
 	}
@@ -190,9 +189,8 @@ static uint32_t api_asic_test(uint32_t ch_num, uint32_t chip_num,
 	api_set_timeout(0x10);
 	api_flush();
 
-	if (result) {
+	if (result)
 		memset(result, 0, MINER_COUNT * ASIC_COUNT * sizeof(uint32_t));
-	}
 
 	for (j = 0; j < cal_core_num + 2 * add_step; j += add_step) {
 		api_gen_test_work(j, tx_data);
@@ -323,7 +321,7 @@ uint32_t get_asic_freq(void)
 int api_asic_testcores(uint32_t cal_core_num, uint32_t ret)
 {
 	int i = 0, j = 0;
-	uint8_t txdat[20];
+	uint8_t txdat[4 * 4 + 1];
 	uint32_t result[MINER_COUNT][ASIC_COUNT];
 	uint32_t tmp;
 	uint32_t all = MINER_COUNT * ASIC_COUNT * cal_core_num;
@@ -334,15 +332,17 @@ int api_asic_testcores(uint32_t cal_core_num, uint32_t ret)
 		txdat[0] = i;
 		debug32("%d: ", i);
 		for (j = 0; j < ASIC_COUNT; j++) {
-			txdat[1 + j * ASIC_COUNT] = (result[i][j] >> 24) & 0xff;
-			txdat[2 + j * ASIC_COUNT] = (result[i][j] >> 16) & 0xff;
-			txdat[3 + j * ASIC_COUNT] = (result[i][j] >> 8) & 0xff;
-			txdat[4 + j * ASIC_COUNT] = result[i][j] & 0xff;
+			txdat[1 + (j % 4) * ASIC_COUNT] = (result[i][j] >> 24) & 0xff;
+			txdat[2 + (j % 4) * ASIC_COUNT] = (result[i][j] >> 16) & 0xff;
+			txdat[3 + (j % 4) * ASIC_COUNT] = (result[i][j] >> 8) & 0xff;
+			txdat[4 + (j % 4) * ASIC_COUNT] = result[i][j] & 0xff;
 			debug32("%d ", result[i][j]);
+
+			if (ret && !((j + 1) % 4))
+				send_pkg(AVA4_P_TEST_RET, txdat, 4 * 4 + 1, 0);
+
 		}
 		debug32("\n");
-		if (ret)
-			send_pkg(AVA4_P_TEST_RET, txdat, ASIC_COUNT * 4 + 1, 0);
 	}
 	if (ret) {
 		txdat[0] = (tmp >> 24) & 0xff;

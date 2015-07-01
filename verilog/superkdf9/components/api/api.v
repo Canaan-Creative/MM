@@ -33,7 +33,7 @@ wire [2:0]          reg_state         ;
 wire [27:0]         reg_timeout       ;
 wire [7:0]          reg_sck           ;
 wire [5:0]          reg_ch_num        ;
-wire [7:0]          reg_word_num      ;
+wire [8:0]          reg_word_num      ;
 wire                reg_rst           ;
 
 wire [31 : 0]       tx_fifo_din       ;
@@ -99,7 +99,7 @@ api_slave api_slave(
 /*output reg [27:0]*/ .reg_timeout        (reg_timeout        ),
 /*output reg [7:0] */ .reg_sck            (reg_sck            ),
 /*output reg [5:0] */ .reg_ch_num         (reg_ch_num         ),
-/*output reg [7:0] */ .reg_word_num       (reg_word_num       ),
+/*output reg [8:0] */ .reg_word_num       (reg_word_num       ),
 
 /*input            */ .rx_fifo_wr_en      (rx_fifo_wr_en      ),
 /*input  [31:0]    */ .rx_fifo_din        (rx_fifo_din        ),
@@ -130,7 +130,7 @@ api_ctrl #(.WORK_LEN(WORK_LEN), .RX_FIFO_DEPTH(RX_FIFO_DEPTH)) api_ctrl(
 /*input  [27:0]        */ .reg_timeout       (reg_timeout       ),
 /*input  [7:0]         */ .reg_sck           (reg_sck           ),
 /*input  reg [5:0]     */ .reg_ch_num        (reg_ch_num        ),
-/*input  reg [7:0]     */ .reg_word_num      (reg_word_num      ),
+/*input  reg [8:0]     */ .reg_word_num      (reg_word_num      ),
 /*output               */ .timeout_busy      (timeout_busy      ),
 
 /*input                */ .tx_fifo_empty     (tx_fifo_empty     ),
