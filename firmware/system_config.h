@@ -68,7 +68,7 @@
 #endif
 
 #ifdef MM50
-#define MINER_COUNT		1
+#define MINER_COUNT		2
 #define ASIC_COUNT		16
 #endif
 
