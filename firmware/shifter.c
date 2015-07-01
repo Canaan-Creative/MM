@@ -31,17 +31,22 @@ static void shift_done(struct lm32_shifter *s)
 	unsigned int tmp;
 	tmp = readl(&s->reg) & 0x8;
 
-	while(tmp != 0x8)
+	while (tmp != 0x8)
 		tmp = readl(&s->reg) & 0x8;
 }
 
 static void shift_update(struct lm32_shifter *s, uint32_t value[], int poweron)
 {
-	uint8_t i;
+	uint8_t i, poweroff = 1;
 
-	if ((value[0] == ASIC_0V) && (value[1] == ASIC_0V) &&
-		(value[2] == ASIC_0V) && (value[3] == ASIC_0V) &&
-		(value[4] == ASIC_0V)) {
+	for (i = 0; i < (MINER_COUNT / 2); i++) {
+		if (value[i] != ASIC_0V) {
+			poweroff = 0;
+			break;
+		}
+	}
+
+	if (poweroff) {
 		writel(0x7, &s->reg);
 		return;
 	}
@@ -54,13 +59,13 @@ static void shift_update(struct lm32_shifter *s, uint32_t value[], int poweron)
 	 * REV_BITS((VALUE < 1) & 1) << 16: is the value, the */
 
 	/* Set shifter to xx */
-	for (i = 0; i < 5; i++) {
+	for (i = 0; i < (MINER_COUNT / 2); i++) {
 		writel(value[i] | 0x1, &s->reg);
 		shift_done(s);
 	}
 
 	/* Shift to reg */
-	for (i = 0; i < 5; i++) {
+	for (i = 0; i < (MINER_COUNT / 2); i++) {
 		writel(0x2, &s->reg);
 		shift_done(s);
 	}
@@ -102,7 +107,7 @@ uint32_t set_voltage_i(uint32_t value[])
 
 			g_voltage_i[i] = value[i];
 			diff = 1;
-			if (i < 5)
+			if (i < (MINER_COUNT / 2))
 				ch1 = 1;
 			else
 				ch2 = 1;
@@ -117,7 +122,7 @@ uint32_t set_voltage_i(uint32_t value[])
 		shift_update(sft0, g_voltage_i, poweron);
 
 	if (ch2)
-		shift_update(sft1, g_voltage_i + 5, poweron);
+		shift_update(sft1, g_voltage_i + (MINER_COUNT / 2), poweron);
 
 	if (allpoweron) {
 		gpio_reset_asic();
