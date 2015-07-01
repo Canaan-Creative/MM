@@ -63,7 +63,7 @@ static inline uint32_t api_gen_test_work(uint32_t i, uint32_t *data)
         data[0] = data[0] ^ (i & 0xfffffff0);	/* nonce */
 
 	data[18] = 0x0;	/* nonce2 */
-	data[19] = i;	/* nonce2 */
+	data[19] = i + 1;	/* nonce2 */
 	data[20] = 0x1;	/* cpm2 */
 	data[21] = 0x1;	/* cpm1 */
 	data[22] = 0x1;	/* cpm0 */
@@ -91,7 +91,8 @@ static uint32_t api_verify_nonce(uint32_t ch_num, uint32_t chip_num,
 				pass_cal_num++;
 			} else {
 #ifdef DEBUG_VERBOSE
-				debug32("channel id: %d,chip id: %d, TN:%08x, RX[0]:%08x, RX[1]:%08x, RX[2]:%08x, RX[3]:%08x\n", channel_id, chip_id, target_nonce, rx_data[0], rx_data[1], rx_data[2], rx_data[3]);
+				if (result)
+					debug32("channel id: %d,chip id: %d, TN:%08x, RX[0]:%08x, RX[1]:%08x, RX[2]:%08x, RX[3]:%08x\n", channel_id, chip_id, target_nonce, rx_data[0], rx_data[1], rx_data[2], rx_data[3]);
 #endif
 				if (verify_on && result)
 				    result[channel_id][chip_id]++;
