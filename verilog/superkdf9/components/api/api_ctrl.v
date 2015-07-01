@@ -181,8 +181,10 @@ always @ (posedge clk or posedge rst) begin
 		load <= {`API_NUM{1'b1}} ^ `API_NUM'b1;
 	else if(reg_rst)
 		load <= {`API_NUM{1'b1}} ^ `API_NUM'b1;
-	else if(cur_state == NOP && nxt_state == WAIT)
+	else if(cur_state == NOP && nxt_state == WAIT && reg_ch_num == `API_NUM)
 		load <= {load[`API_NUM-2:0], load[`API_NUM-1]};
+	else if(cur_state == NOP && nxt_state == WAIT && reg_ch_num == 2)
+		load <= {{(`API_NUM-2){1'b1}}, load[0], load[1]};
 end
 
 wire miso_w = &(miso | load);
