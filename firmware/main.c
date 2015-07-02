@@ -257,7 +257,7 @@ static void encode_pkg(uint8_t *p, int type, uint8_t *buf, unsigned int len)
 uint32_t send_pkg(int type, uint8_t *buf, uint32_t len, int block)
 {
 #ifdef DEBUG_VERBOSE
-	debug32("%d-Send: %d, (CNT: %d)\n", g_module_id, type, iic_tx_fifo_cnt());
+	debug32("%d-Send: %x, (CNT: %d)\n", g_module_id, type, iic_tx_fifo_cnt());
 #endif
 	encode_pkg(g_act, type, buf, len);
 	if (!iic_write(g_act, AVA4_P_COUNT, block)) {
@@ -319,7 +319,7 @@ static inline int decode_pkg(uint8_t *p, struct mm_work *mw)
 	cnt = p[5];
 
 #ifdef DEBUG_VERBOSE
-	debug32("%d-Decode: %d %d/%d\n", g_module_id, p[2], idx, cnt);
+	debug32("%d-Decode: %x %d/%d\n", g_module_id, p[2], idx, cnt);
 #endif
 
 	expected_crc = (p[AVA4_P_COUNT - 1] & 0xff) |
