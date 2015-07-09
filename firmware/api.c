@@ -333,10 +333,10 @@ int api_asic_testcores(uint32_t cal_core_num, uint32_t ret)
 		txdat[0] = i;
 		debug32("%d: ", i);
 		for (j = 0; j < ASIC_COUNT; j++) {
-			txdat[1 + (j % 4) * ASIC_COUNT] = (result[i][j] >> 24) & 0xff;
-			txdat[2 + (j % 4) * ASIC_COUNT] = (result[i][j] >> 16) & 0xff;
-			txdat[3 + (j % 4) * ASIC_COUNT] = (result[i][j] >> 8) & 0xff;
-			txdat[4 + (j % 4) * ASIC_COUNT] = result[i][j] & 0xff;
+			txdat[1 + (j % 4) * 4] = (result[i][j] >> 24) & 0xff;
+			txdat[2 + (j % 4) * 4] = (result[i][j] >> 16) & 0xff;
+			txdat[3 + (j % 4) * 4] = (result[i][j] >> 8) & 0xff;
+			txdat[4 + (j % 4) * 4] = result[i][j] & 0xff;
 			debug32("%d ", result[i][j]);
 
 			if (ret && !((j + 1) % 4))
