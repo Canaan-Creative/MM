@@ -514,6 +514,7 @@ static inline int decode_pkg(uint8_t *p, struct mm_work *mw)
 		memcpy(&pll[1], data + 16, 4);
 		memcpy(&pll[2], data + 20, 4);
 		set_asic_freq_i(pll);
+		gpio_reset_asic();
 
 		if (api_asic_testcores(test_core_count, 1) < 4 * test_core_count)
 			g_postfailed &= 0xfe;
