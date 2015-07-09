@@ -467,6 +467,9 @@ static inline int decode_pkg(uint8_t *p, struct mm_work *mw)
 
 			debug32("CPM: %08x-%08x-%08x\n", pll[0], pll[1], pll[2]);
 			set_asic_freq_i(pll);
+#ifdef MM50
+			gpio_reset_asic();
+#endif
 		}
 		break;
 	case AVA4_P_FINISH:
