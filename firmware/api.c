@@ -9,7 +9,7 @@
 #include <stdint.h>
 #include <stddef.h>
 
-#include "minilibc.h"
+#include "minilibc/minilibc.h"
 #include "system_config.h"
 #include "defines.h"
 #include "miner.h"

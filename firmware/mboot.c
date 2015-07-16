@@ -6,10 +6,10 @@
  */
 #include <stdint.h>
 #include <stddef.h>
-#include "minilibc.h"
+#include "minilibc/minilibc.h"
+#include "sdk/intr.h"
 #include "system_config.h"
 #include "defines.h"
-#include "intr.h"
 #include "io.h"
 #include "crc.h"
 #include "protocol.h"

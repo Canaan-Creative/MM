@@ -7,7 +7,7 @@
  */
 
 #include <stdint.h>
-#include "minilibc.h"
+#include "minilibc/minilibc.h"
 #include "system_config.h"
 #include "defines.h"
 #include "io.h"

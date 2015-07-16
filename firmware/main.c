@@ -11,11 +11,11 @@
 #include <stdint.h>
 #include <stddef.h>
 
-#include "minilibc.h"
+#include "minilibc/minilibc.h"
+#include "sdk/intr.h"
 #include "system_config.h"
 #include "defines.h"
 #include "io.h"
-#include "intr.h"
 #include "iic.h"
 #include "miner.h"
 #include "sha256.h"

@@ -6,9 +6,9 @@
  * For details see the UNLICENSE file at the root of the source tree.
  */
 
+#include "sdk/intr.h"
 #include "system_config.h"
 #include "defines.h"
-#include "intr.h"
 #include "io.h"
 #include "timer.h"
 

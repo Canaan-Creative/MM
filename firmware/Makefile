@@ -13,7 +13,7 @@ GIT_STATUS:=$(shell ([ -z "`git status -s -uno`" ] && echo 0) || echo +)
 
 -include config.mk
 # ----- Customer ----------------------------------------------------------
-INCLUDES   = -I. -Isdk -Iminilibc
+INCLUDES   = -I.
 LDFLAGS    += -nostartfiles -nodefaultlibs -nostdlib -Wl,--gc-sections -Wl,-T,linker.ld -Wl,-Map=$(PRJ_NAME).map
 LDLIBS     += -Bminilibc -lminilibc -lgcc
 
@@ -77,7 +77,6 @@ minilibc/libminilibc.a:
 %.o: %.c
 	$(CC) $(CPPFLAGS) $(CFLAGS) -o $@ -c $<
 	$(MKDEP)
-
 
 # Bitstream rules
 # TODO: how to setCable -baud 12000000

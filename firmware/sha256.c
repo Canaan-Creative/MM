@@ -8,7 +8,7 @@
 
 #include <stdint.h>
 
-#include "minilibc.h"
+#include "minilibc/minilibc.h"
 #include "system_config.h"
 #include "io.h"
 #include "sha256.h"
