@@ -26,6 +26,7 @@
 #include "crc.h"
 #include "api.h"
 #include "mboot.h"
+#include "ma.h"
 
 #include "hexdump.c"
 
@@ -54,6 +55,7 @@ static uint8_t g_getvolopt;
 static uint8_t ret_buf[RET_RINGBUFFER_SIZE_RX][AVA4_P_DATA_LEN];
 static volatile unsigned int ret_produce = 0;
 static volatile unsigned int ret_consume = 0;
+static struct ma ma_sum[MINER_COUNT][ASIC_COUNT];
 
 #define UNPACK32(x, str)			\
 {						\
@@ -148,6 +150,7 @@ static inline void led_ctrl(int led_op)
 
 static void encode_pkg(uint8_t *p, int type, uint8_t *buf, unsigned int len)
 {
+	static uint8_t cur_miner_id = 0;
 	uint32_t tmp;
 	uint16_t crc;
 	uint8_t *data, i;
@@ -245,6 +248,13 @@ static void encode_pkg(uint8_t *p, int type, uint8_t *buf, unsigned int len)
 			}
 		}
 		break;
+	case AVA4_P_STATUS_MA:
+		/* ASIC_COUNT should < 32 */
+		p[3] = cur_miner_id;
+		for (i = 0; i < ASIC_COUNT; i++)
+			data[i] = ma_sum[cur_miner_id][i].sum;
+		cur_miner_id = (cur_miner_id + 1) % MINER_COUNT;
+		break;
 	default:
 		break;
 	}
@@ -272,9 +282,13 @@ static inline void polling(void)
 {
 	static uint8_t i;
 	uint8_t *data;
+	uint8_t mod = 3;
 
+#ifdef MM50
+	mod = 4;
+#endif
 	if (ret_consume == ret_produce) {
-		switch (i % 3) {
+		switch (i % mod) {
 		case 0:
 			send_pkg(AVA4_P_STATUS, NULL, 0, 0);
 			g_local_work = 0;
@@ -286,11 +300,14 @@ static inline void polling(void)
 		case 2:
 			send_pkg(AVA4_P_STATUS_HW, NULL, 0, 0);
 			break;
+		case 3:
+			send_pkg(AVA4_P_STATUS_MA, NULL, 0, 0);
+			break;
 		default:
 			break;
 		}
 		i++;
-		i = i % 3;
+		i = i % mod;
 		return;
 	}
 
@@ -589,6 +606,7 @@ static int read_result(struct mm_work *mw, struct result *ret)
 			if (n == NONCE_HW) {
 				g_hw_work++;
 				g_hw_work_i[miner_id]++;
+				push_data(&ma_sum[miner_id][ntime], true);
 				continue;
 			}
 		}
@@ -607,6 +625,7 @@ static int read_result(struct mm_work *mw, struct result *ret)
 
 			memcpy(data, (uint8_t *)ret, 20);
 			memcpy(data + 20, &job_id, 4); /* Attach the job_id */
+			push_data(&ma_sum[miner_id][ntime], false);
 		}
 	}
 	return 1;
@@ -726,7 +745,7 @@ int main(int argv, char **argc)
 {
 	struct work work;
 	struct result result;
-	uint32_t val[MINER_COUNT], pll[3], i;
+	uint32_t val[MINER_COUNT], pll[3], i, j;
 
 	adjust_fan(FAN_10);
 
@@ -752,6 +771,10 @@ int main(int argv, char **argc)
 	timer_set(1, 0);
 	led_ctrl(LED_OFF_ALL);
 
+	for (i = 0; i < MINER_COUNT; i++) {
+		for (j = 0; j < ASIC_COUNT; j++)
+			init_data(&ma_sum[i][j]);
+	}
 #if 1
 	/* Test part of ASIC cores */
 	set_voltage(ASIC_CORETEST_VOLT);

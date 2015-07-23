@@ -53,6 +53,7 @@
 #define AVA4_P_STATUS_LW	0x44
 #define AVA4_P_STATUS_HW	0x45
 #define AVA4_P_STATUS_VOLT	0x46
+#define AVA4_P_STATUS_MA	0x47
 
 #define AVA4_MODULE_BROADCAST	0
 #endif	/* _PROTOCOL_H_ */

@@ -18,7 +18,7 @@ LDFLAGS    += -nostartfiles -nodefaultlibs -nostdlib -Wl,--gc-sections -Wl,-T,li
 LDLIBS     += -Bminilibc -lminilibc -lgcc
 
 SSRCS      = sdk/crt0ram.S sdk/intr.c
-CSRCS      = main.c sha256.c twipwm.c miner.c crc16.c shifter.c timer.c iic.c api.c mboot.c
+CSRCS      = main.c sha256.c twipwm.c miner.c crc16.c shifter.c timer.c iic.c api.c mboot.c ma.c
 
 BATCHFILE	:= $(shell mktemp)
 HARDWARE_NAME	= mm
