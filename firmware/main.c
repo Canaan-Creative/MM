@@ -487,6 +487,11 @@ static inline int decode_pkg(uint8_t *p, struct mm_work *mw)
 				break;
 			}
 
+			if (!opt) {
+				debug32("E: Cann't support multiple chip settings\n");
+				break;
+			}
+
 			debug32("D:M:%d, C:%d, CPM:%08x-%08x-%08x\n",
 				data[12] - 1, opt - 1,
 				pll[0], pll[1], pll[2]);
