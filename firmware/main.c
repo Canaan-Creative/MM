@@ -250,6 +250,7 @@ static void encode_pkg(uint8_t *p, int type, uint8_t *buf, unsigned int len)
 		p[3] = cur_miner_id;
 		for (i = 0; i < ASIC_COUNT; i++)
 			data[i] = ma_sum[cur_miner_id][i].sum;
+
 		cur_miner_id = (cur_miner_id + 1) % MINER_COUNT;
 		break;
 	default:
@@ -416,7 +417,7 @@ static inline int decode_pkg(uint8_t *p, struct mm_work *mw)
 			pll[0] = (tmp & 0x3ff00000) >> 20;
 			pll[1] = (tmp & 0xffc00) >> 10;
 			pll[2] = tmp & 0x3ff;
-			debug32("F: %d|%08x,", poweron, tmp);
+			debug32("F: %d|%08x\n", poweron, tmp);
 			set_asic_freq(pll);
 		}
 
@@ -587,8 +588,10 @@ static int read_result(struct mm_work *mw, struct result *ret)
 	if (last_minerid != miner_id) {
 		chip_id = 0;
 		last_minerid = miner_id;
-	} else
+	} else {
 		chip_id++;
+		chip_id %= ASIC_COUNT;
+	}
 
 	/* Handle the real nonce */
 	for (i = 0; i < LM32_API_RET_LEN - 3; i++) {
