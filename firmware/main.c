@@ -475,18 +475,30 @@ static inline int decode_pkg(uint8_t *p, struct mm_work *mw)
 		memcpy(&pll[1], data + 4, 4);
 		memcpy(&pll[0], data + 8, 4);
 
-		if (!((glastcpm[0] == pll[0]) &&
-				(glastcpm[1] == pll[1]) &&
-				(glastcpm[2] == pll[2]))) {
-			glastcpm[0] = pll[0];
-			glastcpm[1] = pll[1];
-			glastcpm[2] = pll[2];
+		if (!opt) {
+			if (!((glastcpm[0] == pll[0]) &&
+					(glastcpm[1] == pll[1]) &&
+					(glastcpm[2] == pll[2]))) {
+				glastcpm[0] = pll[0];
+				glastcpm[1] = pll[1];
+				glastcpm[2] = pll[2];
 
-			debug32("CPM: %08x-%08x-%08x\n", pll[0], pll[1], pll[2]);
-			set_asic_freq_i(pll);
+				debug32("CPM: %08x-%08x-%08x\n", pll[0], pll[1], pll[2]);
+				set_asic_freq_i(pll);
 #ifdef MM50
-			gpio_reset_asic();
+				gpio_reset_asic();
 #endif
+			}
+		} else {
+			if (!data[12]) {
+				debug32("E: Cann't support multiple miner settings\n");
+				break;
+			}
+
+			debug32("D:M:%d, C:%d, CPM:%08x-%08x-%08x\n",
+				data[12] - 1, opt - 1,
+				pll[0], pll[1], pll[2]);
+			api_set_pll(data[12] - 1, opt - 1, pll[0], pll[1], pll[2]);
 		}
 		break;
 	case AVA4_P_FINISH:
