@@ -15,30 +15,38 @@
 /* NOTICE: Always delay 100ms after set voltage */
 #define VOLTAGE_DELAY	100
 
+#if defined(MM40) || defined(MM41)
 static struct lm32_shifter *sft0 = (struct lm32_shifter *)SHIFTER_BASE0;
 static struct lm32_shifter *sft1 = (struct lm32_shifter *)SHIFTER_BASE1;
+#endif
 static struct lm32_shifter *sft2 = (struct lm32_shifter *)SHIFTER_BASE2;
 
 static uint32_t g_voltage = ASIC_0V;
 static uint32_t g_voltage_i[MINER_COUNT];
 static int32_t g_led = 0;
 
+#if defined(MM40) || defined(MM41)
 static void shift_done(struct lm32_shifter *s)
 {
 	unsigned int tmp;
 	tmp = readl(&s->reg) & 0x8;
 
-	while(tmp != 0x8)
+	while (tmp != 0x8)
 		tmp = readl(&s->reg) & 0x8;
 }
 
 static void shift_update(struct lm32_shifter *s, uint32_t value[], int poweron)
 {
-	uint8_t i;
+	uint8_t i, poweroff = 1;
 
-	if ((value[0] == ASIC_0V) && (value[1] == ASIC_0V) &&
-		(value[2] == ASIC_0V) && (value[3] == ASIC_0V) &&
-		(value[4] == ASIC_0V)) {
+	for (i = 0; i < (MINER_COUNT / 2); i++) {
+		if (value[i] != ASIC_0V) {
+			poweroff = 0;
+			break;
+		}
+	}
+
+	if (poweroff) {
 		writel(0x7, &s->reg);
 		return;
 	}
@@ -51,13 +59,13 @@ static void shift_update(struct lm32_shifter *s, uint32_t value[], int poweron)
 	 * REV_BITS((VALUE < 1) & 1) << 16: is the value, the */
 
 	/* Set shifter to xx */
-	for (i = 0; i < 5; i++) {
+	for (i = 0; i < (MINER_COUNT / 2); i++) {
 		writel(value[i] | 0x1, &s->reg);
 		shift_done(s);
 	}
 
 	/* Shift to reg */
-	for (i = 0; i < 5; i++) {
+	for (i = 0; i < (MINER_COUNT / 2); i++) {
 		writel(0x2, &s->reg);
 		shift_done(s);
 	}
@@ -67,6 +75,7 @@ static void shift_update(struct lm32_shifter *s, uint32_t value[], int poweron)
 	if (poweron)
 		delay(VOLTAGE_DELAY);
 }
+#endif
 
 uint32_t set_voltage(uint32_t value)
 {
@@ -85,7 +94,7 @@ uint32_t set_voltage(uint32_t value)
 /* Must call set_voltage first(record g_voltage), Call from AVA4_P_SET_VOLT */
 uint32_t set_voltage_i(uint32_t value[])
 {
-	uint32_t ret;
+	uint32_t ret = 0;
 	uint8_t i, diff = 0, ch1 = 0, ch2 = 0, allpoweron = 1;
 	int poweron = 0;
 
@@ -98,7 +107,7 @@ uint32_t set_voltage_i(uint32_t value[])
 
 			g_voltage_i[i] = value[i];
 			diff = 1;
-			if (i < 5)
+			if (i < (MINER_COUNT / 2))
 				ch1 = 1;
 			else
 				ch2 = 1;
@@ -108,16 +117,18 @@ uint32_t set_voltage_i(uint32_t value[])
 	if (!diff)
 		return 0;
 
+#if defined(MM40) || defined(MM41)
 	if (ch1)
 		shift_update(sft0, g_voltage_i, poweron);
 
 	if (ch2)
-		shift_update(sft1, g_voltage_i + 5, poweron);
+		shift_update(sft1, g_voltage_i + (MINER_COUNT / 2), poweron);
 
 	if (allpoweron) {
 		gpio_reset_asic();
 		ret = 1;
 	}
+#endif
 
 	return ret;
 }

@@ -18,7 +18,7 @@ LDFLAGS    += -nostartfiles -nodefaultlibs -nostdlib -Wl,--gc-sections -Wl,-T,li
 LDLIBS     += -Bminilibc -lminilibc -lgcc
 
 SSRCS      = sdk/crt0ram.S sdk/intr.c
-CSRCS      = main.c sha256.c twipwm.c miner.c crc16.c shifter.c timer.c iic.c api.c mboot.c
+CSRCS      = main.c sha256.c twipwm.c miner.c crc16.c shifter.c timer.c iic.c api.c mboot.c ma.c
 
 BATCHFILE	:= $(shell mktemp)
 HARDWARE_NAME	= mm
@@ -34,9 +34,13 @@ isedir  ?= /home/Xilinx/14.6/ISE_DS/
 xil_env ?= . $(isedir)/settings$(shell getconf LONG_BIT).sh &>/dev/null
 
 ifeq ($(MM41),1)
-CFLAGS += -DMM_VERSION='"411503-$(GIT_VERSION)$(BOOTLOADER)$(GIT_STATUS)"' -DMM41
-else
-CFLAGS += -DMM_VERSION='"401503-$(GIT_VERSION)$(BOOTLOADER)$(GIT_STATUS)"' -DMM40
+CFLAGS += -DMM_VERSION='"411507-$(GIT_VERSION)$(BOOTLOADER)$(GIT_STATUS)"' -DMM41
+endif
+ifeq ($(MM40),1)
+CFLAGS += -DMM_VERSION='"401507-$(GIT_VERSION)$(BOOTLOADER)$(GIT_STATUS)"' -DMM40
+endif
+ifeq ($(MM50),1)
+CFLAGS += -DMM_VERSION='"501506-$(GIT_VERSION)$(BOOTLOADER)$(GIT_STATUS)"' -DMM50
 endif
 
 ifeq ($(DEBUG),1)

@@ -26,6 +26,7 @@
 #include "crc.h"
 #include "api.h"
 #include "mboot.h"
+#include "ma.h"
 
 #include "hexdump.c"
 
@@ -40,11 +41,8 @@ static uint32_t g_local_work = 0;
 static uint32_t g_local_work_i[MINER_COUNT];
 static uint32_t g_hw_work = 0;
 static uint32_t g_hw_work_i[MINER_COUNT];
-static uint32_t g_nonce2_offset = 0;
-static uint32_t g_nonce2_range = 0xffffffff;
 static int g_ntime_offset = ASIC_COUNT;
 static struct mm_work mm_work;
-static uint32_t glastcpm[3];
 static struct mm_config g_mmcfg;
 static uint8_t g_runmode = MOD_ECO; /* high 4bits-save/setting, low 4bits-run mode */
 static uint8_t g_getvolopt;
@@ -54,6 +52,7 @@ static uint8_t g_getvolopt;
 static uint8_t ret_buf[RET_RINGBUFFER_SIZE_RX][AVA4_P_DATA_LEN];
 static volatile unsigned int ret_produce = 0;
 static volatile unsigned int ret_consume = 0;
+static struct ma ma_sum[MINER_COUNT][ASIC_COUNT];
 
 #define UNPACK32(x, str)			\
 {						\
@@ -148,6 +147,7 @@ static inline void led_ctrl(int led_op)
 
 static void encode_pkg(uint8_t *p, int type, uint8_t *buf, unsigned int len)
 {
+	static uint8_t cur_miner_id = 0;
 	uint32_t tmp;
 	uint16_t crc;
 	uint8_t *data, i;
@@ -245,6 +245,14 @@ static void encode_pkg(uint8_t *p, int type, uint8_t *buf, unsigned int len)
 			}
 		}
 		break;
+	case AVA4_P_STATUS_MA:
+		/* ASIC_COUNT should < 32 */
+		p[3] = cur_miner_id;
+		for (i = 0; i < ASIC_COUNT; i++)
+			data[i] = ma_sum[cur_miner_id][i].sum;
+
+		cur_miner_id = (cur_miner_id + 1) % MINER_COUNT;
+		break;
 	default:
 		break;
 	}
@@ -257,7 +265,7 @@ static void encode_pkg(uint8_t *p, int type, uint8_t *buf, unsigned int len)
 uint32_t send_pkg(int type, uint8_t *buf, uint32_t len, int block)
 {
 #ifdef DEBUG_VERBOSE
-	debug32("%d-Send: %d, (CNT: %d)\n", g_module_id, type, iic_tx_fifo_cnt());
+	debug32("%d-Send: %x, (CNT: %d)\n", g_module_id, type, iic_tx_fifo_cnt());
 #endif
 	encode_pkg(g_act, type, buf, len);
 	if (!iic_write(g_act, AVA4_P_COUNT, block)) {
@@ -272,9 +280,13 @@ static inline void polling(void)
 {
 	static uint8_t i;
 	uint8_t *data;
+	uint8_t mod = 3;
 
+#ifdef MM50
+	mod = 4;
+#endif
 	if (ret_consume == ret_produce) {
-		switch (i % 3) {
+		switch (i % mod) {
 		case 0:
 			send_pkg(AVA4_P_STATUS, NULL, 0, 0);
 			g_local_work = 0;
@@ -286,11 +298,14 @@ static inline void polling(void)
 		case 2:
 			send_pkg(AVA4_P_STATUS_HW, NULL, 0, 0);
 			break;
+		case 3:
+			send_pkg(AVA4_P_STATUS_MA, NULL, 0, 0);
+			break;
 		default:
 			break;
 		}
 		i++;
-		i = i % 3;
+		i = i % mod;
 		return;
 	}
 
@@ -309,8 +324,10 @@ static inline int decode_pkg(uint8_t *p, struct mm_work *mw)
 	unsigned int actual_crc;
 	uint8_t opt, idx, cnt;
 	uint32_t tmp;
-	uint32_t val[MINER_COUNT], i;
+	uint32_t val[MINER_COUNT], pll[3], i;
 	uint32_t test_core_count;
+	uint32_t nonce2_offset = 0;
+	uint32_t nonce2_range = 0xffffffff;
 
 	uint8_t *data = p + 6;
 
@@ -319,7 +336,7 @@ static inline int decode_pkg(uint8_t *p, struct mm_work *mw)
 	cnt = p[5];
 
 #ifdef DEBUG_VERBOSE
-	debug32("%d-Decode: %d %d/%d\n", g_module_id, p[2], idx, cnt);
+	debug32("%d-Decode: %x %d/%d\n", g_module_id, p[2], idx, cnt);
 #endif
 
 	expected_crc = (p[AVA4_P_COUNT - 1] & 0xff) |
@@ -397,17 +414,17 @@ static inline int decode_pkg(uint8_t *p, struct mm_work *mw)
 		if (poweron || tmp != freq_value) {
 			freq_value = tmp;
 
-			val[0] = (tmp & 0x3ff00000) >> 20;
-			val[1] = (tmp & 0xffc00) >> 10;
-			val[2] = tmp & 0x3ff;
-			debug32("F: %d|%08x,", poweron, tmp);
-			set_asic_freq(val);
+			pll[0] = (tmp & 0x3ff00000) >> 20;
+			pll[1] = (tmp & 0xffc00) >> 10;
+			pll[2] = tmp & 0x3ff;
+			debug32("F: %d|%08x\n", poweron, tmp);
+			set_asic_freq(pll);
 		}
 
-		memcpy(&g_nonce2_offset, data + 12, 4);
-		memcpy(&g_nonce2_range, data + 16, 4);
-		mw->nonce2 = g_nonce2_offset + (g_nonce2_range / AVA4_DEFAULT_MODULES) * g_module_id;
-		debug32("[%d] N2: %08x(%08x-%08x)\n", g_module_id, mw->nonce2, g_nonce2_offset, g_nonce2_range);
+		memcpy(&nonce2_offset, data + 12, 4);
+		memcpy(&nonce2_range, data + 16, 4);
+		mw->nonce2 = nonce2_offset + (nonce2_range / AVA4_DEFAULT_MODULES) * g_module_id;
+		debug32("[%d] N2: %08x(%08x-%08x)\n", g_module_id, mw->nonce2, nonce2_offset, nonce2_range);
 		break;
 	case AVA4_P_SET_VOLT:
 		switch (opt & 0xf) {
@@ -454,19 +471,31 @@ static inline int decode_pkg(uint8_t *p, struct mm_work *mw)
 		send_pkg(AVA4_P_STATUS_VOLT, NULL, 0, 0);
 		break;
 	case AVA4_P_SET_FREQ:
-		memcpy(&val[2], data, 4);
-		memcpy(&val[1], data + 4, 4);
-		memcpy(&val[0], data + 8, 4);
+		memcpy(&pll[2], data, 4);
+		memcpy(&pll[1], data + 4, 4);
+		memcpy(&pll[0], data + 8, 4);
 
-		if (!((glastcpm[0] == val[0]) &&
-				(glastcpm[1] == val[1]) &&
-				(glastcpm[2] == val[2]))) {
-			glastcpm[0] = val[0];
-			glastcpm[1] = val[1];
-			glastcpm[2] = val[2];
+		if (!opt) {
+				debug32("CPM: %08x-%08x-%08x\n", pll[0], pll[1], pll[2]);
+				set_asic_freq_i(pll);
+#ifdef MM50
+				gpio_reset_asic();
+#endif
+		} else {
+			if (!data[12]) {
+				debug32("E: Cann't support multiple miner settings\n");
+				break;
+			}
 
-			debug32("CPM: %08x-%08x-%08x\n", val[0], val[1], val[2]);
-			set_asic_freq_i(val);
+			if (!opt) {
+				debug32("E: Cann't support multiple chip settings\n");
+				break;
+			}
+
+			debug32("D:M:%d, C:%d, CPM:%08x-%08x-%08x\n",
+				data[12] - 1, opt - 1,
+				pll[0], pll[1], pll[2]);
+			api_set_pll(data[12] - 1, opt - 1, pll[0], pll[1], pll[2]);
 		}
 		break;
 	case AVA4_P_FINISH:
@@ -504,16 +533,17 @@ static inline int decode_pkg(uint8_t *p, struct mm_work *mw)
 		set_voltage_i(val);
 
 		memcpy(&tmp, data + 8, 4);
-		val[0] = (tmp & 0x3ff00000) >> 20;
-		val[1] = (tmp & 0xffc00) >> 10;
-		val[2] = tmp & 0x3ff;
-		debug32(" F: %08x(%d:%d:%d)\n", tmp, val[0], val[1], val[2]);
-		set_asic_freq(val);
+		pll[0] = (tmp & 0x3ff00000) >> 20;
+		pll[1] = (tmp & 0xffc00) >> 10;
+		pll[2] = tmp & 0x3ff;
+		debug32(" F: %08x(%d:%d:%d)\n", tmp, pll[0], pll[1], pll[2]);
+		set_asic_freq(pll);
 
-		memcpy(&val[0], data + 12, 4);
-		memcpy(&val[1], data + 16, 4);
-		memcpy(&val[2], data + 20, 4);
-		set_asic_freq_i(val);
+		memcpy(&pll[0], data + 12, 4);
+		memcpy(&pll[1], data + 16, 4);
+		memcpy(&pll[2], data + 20, 4);
+		set_asic_freq_i(pll);
+		gpio_reset_asic();
 
 		if (api_asic_testcores(test_core_count, 1) < 4 * test_core_count)
 			g_postfailed &= 0xfe;
@@ -524,7 +554,6 @@ static inline int decode_pkg(uint8_t *p, struct mm_work *mw)
 		for (i = 0; i < MINER_COUNT; i++)
 			val[i] = ASIC_0V;
 		set_voltage_i(val);
-		glastcpm[0] = glastcpm[1] = glastcpm[2] = 0;
 		adjust_fan(FAN_10);
 		wdg_feed(CPU_FREQUENCY * IDLE_TIME);
 		break;
@@ -564,8 +593,10 @@ static int read_result(struct mm_work *mw, struct result *ret)
 	if (last_minerid != miner_id) {
 		chip_id = 0;
 		last_minerid = miner_id;
-	} else
+	} else {
 		chip_id++;
+		chip_id %= ASIC_COUNT;
+	}
 
 	/* Handle the real nonce */
 	for (i = 0; i < LM32_API_RET_LEN - 3; i++) {
@@ -585,6 +616,7 @@ static int read_result(struct mm_work *mw, struct result *ret)
 			if (n == NONCE_HW) {
 				g_hw_work++;
 				g_hw_work_i[miner_id]++;
+				push_data(&ma_sum[miner_id][chip_id], true);
 				continue;
 			}
 		}
@@ -603,6 +635,7 @@ static int read_result(struct mm_work *mw, struct result *ret)
 
 			memcpy(data, (uint8_t *)ret, 20);
 			memcpy(data + 20, &job_id, 4); /* Attach the job_id */
+			push_data(&ma_sum[miner_id][chip_id], false);
 		}
 	}
 	return 1;
@@ -724,7 +757,7 @@ int main(int argv, char **argc)
 {
 	struct work work;
 	struct result result;
-	uint32_t val[MINER_COUNT], i;
+	uint32_t val[MINER_COUNT], pll[3], i, j;
 
 	adjust_fan(FAN_10);
 
@@ -750,6 +783,10 @@ int main(int argv, char **argc)
 	timer_set(1, 0);
 	led_ctrl(LED_OFF_ALL);
 
+	for (i = 0; i < MINER_COUNT; i++) {
+		for (j = 0; j < ASIC_COUNT; j++)
+			init_data(&ma_sum[i][j]);
+	}
 #if 1
 	/* Test part of ASIC cores */
 	set_voltage(ASIC_CORETEST_VOLT);
@@ -757,11 +794,12 @@ int main(int argv, char **argc)
 		val[i] = ASIC_CORETEST_VOLT;
 	}
 	set_voltage_i(val);
-	val[0] = val[1] = val[2] = 200;
-	set_asic_freq(val);
-	val[0] = val[1] = val[2] = 0x1e0784c7;
-	set_asic_freq_i(val);
+	pll[0] = pll[1] = pll[2] = ASIC_FREQUENCY;
+	set_asic_freq(pll);
+	pll[0] = pll[1] = pll[2] = ASIC_PLL;
+	set_asic_freq_i(pll);
 	gpio_reset_asic();
+
 	if (api_asic_testcores(TEST_CORE_COUNT, 0) >= 4 * TEST_CORE_COUNT)
 		g_postfailed |= 1;
 	else
@@ -776,7 +814,6 @@ int main(int argv, char **argc)
 		g_local_work_i[i] = 0;
 	}
 	set_voltage_i(val);
-	glastcpm[0] = glastcpm[1] = glastcpm[2] = 0;
 	g_new_stratum = 0;
 
 	if (mboot_load_config(&g_mmcfg)) {
@@ -804,15 +841,12 @@ int main(int argv, char **argc)
 				g_hw_work_i[i] = 0;
 			}
 			set_voltage_i(val);
-			glastcpm[0] = glastcpm[1] = glastcpm[2] = 0;
 
 			if (read_temp() >= IDLE_TEMP) {
 				adjust_fan(FAN_100);
 			} else {
 				adjust_fan(FAN_10);
 
-				g_nonce2_offset = 0;
-				g_nonce2_range = 0xffffffff;
 				g_module_id = AVA4_MODULE_BROADCAST;
 
 				iic_addr_set(g_module_id);
