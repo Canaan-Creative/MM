@@ -55,6 +55,9 @@ The MM controller selects its own partition of extranonce in coinbase, base on o
 	* Avalon nano 2.0 format:
 
       frequency(4B), led(4B), reserved(4B), v2_5(4B), vcore(4B), temp(4B), v1_8 & V0_9(4B), power good(4B)
+6. P_STATUS_LW: get localworks by miners. 3B per miner, 10 miners max.
+7. P_STATUS_HW: get hardware works by miners. 3B per miner, 10 miners max.
+8. P_STATUS_MA: get moving average hardware works by asics. 1B per asics. 32 asics max.
 
 ### Device configurations and status
 1. P_SET: Send the MM configurations: fan pwm, chip voltage, chip frequency, nonce2 start, nonce2 range, each variable using 32bits. the P_SET will trigger MM to start generate works.
