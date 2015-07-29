@@ -48,7 +48,13 @@ The MM controller selects its own partition of extranonce in coinbase, base on o
 4. P_NONCE_M: get nonce from Avalon miner: It contains two nonces maximum, if data is invalid then it will fill with 0xff.
 
 	id/(6B), chipid(1B), ntime(1B), nonce(4B), reserved(1B), usb ringbuf count(1B), work ringbuf count(1B), nonce ringbuf count(1B)
-5. P_STATUS_M: get status from Avalon miner: spi speed(4B), led(4B), fan(4B), voltage(4B), adc_12v(4B), adc_copper(4B), adc_fan(4B), power good(4B)
+5. P_STATUS_M: get status from Avalon miner.
+	* Avalon4 mini format:
+
+      spi speed(4B), led(4B), fan(4B), voltage(4B), adc_12v(4B), adc_copper(4B), adc_fan(4B), power good(4B)
+	* Avalon nano 2.0 format:
+
+      frequency(4B), led(4B), reserved(4B), v2_5(4B), vcore(4B), temp(4B), v1_8 & V0_9(4B), power good(4B)
 
 ### Device configurations and status
 1. P_SET: Send the MM configurations: fan pwm, chip voltage, chip frequency, nonce2 start, nonce2 range, each variable using 32bits. the P_SET will trigger MM to start generate works.
