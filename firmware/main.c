@@ -418,8 +418,10 @@ static inline int decode_pkg(uint8_t *p, struct mm_work *mw)
 			pll[1] = (tmp & 0xffc00) >> 10;
 			pll[2] = tmp & 0x3ff;
 			debug32("F: %d|%08x\n", poweron, tmp);
-			if (poweron)
+			if (poweron) {
 				gpio_reset_asic();
+				api_initial(MINER_COUNT, ASIC_COUNT, SPI_SPEED);
+			}
 
 			set_asic_freq(pll);
 		}

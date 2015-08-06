@@ -16,10 +16,15 @@
 #include "io.h"
 #include "api.h"
 
+#define DEFALUT_FREQ_SETTIMES   1
+
 static struct lm32_api *api = (struct lm32_api *)API_BASE;
 
 static uint32_t g_asic_freq[3] = {200, 200, 200};
 static uint32_t g_asic_freq_avg = 0;
+static uint8_t g_freqflag[MINER_COUNT][ASIC_COUNT];
+static uint32_t g_freq[MINER_COUNT][ASIC_COUNT][3];
+static uint16_t g_asic_index;
 
 static inline void api_set_num(uint32_t ch_num, uint32_t chip_num)
 {
@@ -114,67 +119,11 @@ static inline void api_flush(void)
 	delay(1);
 }
 
-static void api_change_cpm(uint32_t ch_num, uint32_t chip_num, uint32_t cpm1, uint32_t cpm2, uint32_t cpm3)
-{
-#ifdef MM50
-	uint32_t tx_data[23];
-	uint32_t i, j;
-
-	/* random numbers, keep different with nonce2 */
-	tx_data[18] = 0xa8bc6de9;
-	tx_data[19] = 0x35416784;
-	tx_data[20] = cpm1;
-	tx_data[21] = cpm2;
-	tx_data[22] = cpm3;
-
-	for (i = 0; i < ch_num; i++) {
-		for (j = 0; j < chip_num; j++)
-			api_set_tx_fifo(tx_data);
-	}
-
-	api_wait_done(ch_num, chip_num);
-
-	api_verify_nonce(ch_num, chip_num, 0, 0, NULL);
-	delay(1);
-#else
-	uint32_t tx_data[23];
-	uint32_t i, k, j;
-
-	for (j = 0; j < 3; j++) {
-		/* random numbers, keep different with nonce2 */
-		tx_data[18] = 0xa8bc6de9 + j;
-		tx_data[19] = 0x35416784 + j;
-		if (j == 0) {
-			tx_data[20] = cpm1;
-			tx_data[21] = 1;
-			tx_data[22] = 1;
-		} else if (j == 1) {
-			tx_data[20] = 1;
-			tx_data[21] = cpm2;
-			tx_data[22] = 1;
-		} else if (j == 2) {
-			tx_data[20] = 1;
-			tx_data[21] = 1;
-			tx_data[22] = cpm3;
-		}
-
-		for (k = 0; k < ch_num; k++) {
-			for(i = 0; i < chip_num; i++)
-				api_set_tx_fifo(tx_data);
-		}
-
-		api_wait_done(ch_num, chip_num);
-
-		api_verify_nonce(ch_num, chip_num, 0, 0, NULL);
-		delay(1);
-	}
-#endif
-}
-
 void api_initial(uint32_t ch_num, uint32_t chip_num, uint32_t spi_speed)
 {
 	api_set_num(ch_num, chip_num);
 	api_set_sck(spi_speed);
+	g_asic_index = MINER_COUNT * ASIC_COUNT - 1;
 }
 
 void api_set_timeout(uint32_t timeout)
@@ -248,17 +197,7 @@ static uint32_t api_asic_test(uint32_t ch_num, uint32_t chip_num,
 
 int api_send_work(struct work *w)
 {
-#if 0
-	int i, j;
-
-	writel(0, &api->tx);
-
-	i = 0;
-
-	for (j = 1; j < 18; j++)
-		writel(test_data[i%16][j], &api->tx);
-#else
-	uint32_t tmp;
+	uint32_t tmp, miner_id, chip_id;
 	int i;
 
 	writel(0, &api->tx);
@@ -292,12 +231,25 @@ int api_send_work(struct work *w)
 
 	memcpy((uint8_t *)(&tmp), &w->nonce2, 4);
 	writel(tmp, &api->tx);
-#endif
 
 	/* The chip configure information */
-	writel(1, &api->tx);
-	writel(1, &api->tx);
-	writel(1, &api->tx);
+	miner_id = g_asic_index / ASIC_COUNT;
+	chip_id = g_asic_index % ASIC_COUNT;
+	if (g_freqflag[miner_id][chip_id]) {
+		g_freqflag[miner_id][chip_id]--;
+		writel(g_freq[miner_id][chip_id][0], &api->tx);
+		writel(g_freq[miner_id][chip_id][1], &api->tx);
+		writel(g_freq[miner_id][chip_id][2], &api->tx);
+	} else {
+		writel(1, &api->tx);
+		writel(1, &api->tx);
+		writel(1, &api->tx);
+	}
+
+	if (g_asic_index > 0)
+		g_asic_index--;
+	else
+		g_asic_index = MINER_COUNT * ASIC_COUNT - 1;
 
 	return 0;
 }
@@ -333,7 +285,14 @@ void set_asic_freq(uint32_t value[])
 /* Must call set_asic_freq first, Call from AVA4_P_SET_FREQ */
 void set_asic_freq_i(uint32_t cpm[])
 {
-	api_change_cpm(MINER_COUNT, ASIC_COUNT, cpm[0], cpm[1], cpm[2]);
+	int i, j;
+
+	for (i = 0; i < MINER_COUNT; i++) {
+		for (j = 0; j < ASIC_COUNT; j++) {
+			g_freqflag[i][j] = DEFALUT_FREQ_SETTIMES;
+			memcpy(g_freq[i][j], cpm, sizeof(uint32_t) * 3);
+		}
+	}
 }
 
 uint32_t get_asic_freq(void)
@@ -395,39 +354,9 @@ void api_get_lw(uint32_t *buf)
 
 void api_set_pll(uint32_t miner_id, uint32_t chip_id, uint32_t pll_data0, uint32_t pll_data1, uint32_t pll_data2)
 {
-	uint32_t tmp = 0;
-	tmp = (miner_id % MINER_COUNT) | ((chip_id % ASIC_COUNT) << 4);
-	writel(tmp, &api->plla);
-	writel(pll_data0, &api->pllc);
-	writel(pll_data1, &api->pllc);
-	writel(pll_data2, &api->pllc);
+	g_freqflag[miner_id][chip_id] = DEFALUT_FREQ_SETTIMES;
+	g_freq[miner_id][chip_id][0] = pll_data0;
+	g_freq[miner_id][chip_id][1] = pll_data1;
+	g_freq[miner_id][chip_id][2] = pll_data2;
 }
 
-uint32_t api_get_pll_fifo_count(void)
-{
-	uint32_t tmp;
-	tmp = readl(&api->plla);
-	tmp = (tmp >> 12) & 0x7f;
-	return tmp;
-}
-
-uint32_t api_get_pll_fifo_full(void)
-{
-	uint32_t tmp;
-	tmp = readl(&api->plla);
-	tmp = (tmp >> 21) & 0x1;
-	return tmp;
-}
-
-uint32_t api_get_pll_fifo_empty(void)
-{
-	uint32_t tmp;
-	tmp = readl(&api->plla);
-	tmp = (tmp >> 22) & 0x1;
-	return tmp;
-}
-
-void api_get_pll_fifo_reset(void)
-{
-	writel(0x1 << 23, &api->plla);
-}
