@@ -418,6 +418,9 @@ static inline int decode_pkg(uint8_t *p, struct mm_work *mw)
 			pll[1] = (tmp & 0xffc00) >> 10;
 			pll[2] = tmp & 0x3ff;
 			debug32("F: %d|%08x\n", poweron, tmp);
+			if (poweron)
+				gpio_reset_asic();
+
 			set_asic_freq(pll);
 		}
 
@@ -478,9 +481,6 @@ static inline int decode_pkg(uint8_t *p, struct mm_work *mw)
 		if (!opt) {
 				debug32("CPM: %08x-%08x-%08x\n", pll[0], pll[1], pll[2]);
 				set_asic_freq_i(pll);
-#ifdef MM50
-				gpio_reset_asic();
-#endif
 		} else {
 			if (!data[12]) {
 				debug32("E: Cann't support multiple miner settings\n");
@@ -542,8 +542,8 @@ static inline int decode_pkg(uint8_t *p, struct mm_work *mw)
 		memcpy(&pll[0], data + 12, 4);
 		memcpy(&pll[1], data + 16, 4);
 		memcpy(&pll[2], data + 20, 4);
-		set_asic_freq_i(pll);
 		gpio_reset_asic();
+		set_asic_freq_i(pll);
 
 		if (api_asic_testcores(test_core_count, 1) < 4 * test_core_count)
 			g_postfailed &= 0xfe;
@@ -797,15 +797,14 @@ int main(int argv, char **argc)
 	pll[0] = pll[1] = pll[2] = ASIC_FREQUENCY;
 	set_asic_freq(pll);
 	pll[0] = pll[1] = pll[2] = ASIC_PLL;
-	set_asic_freq_i(pll);
 	gpio_reset_asic();
+	set_asic_freq_i(pll);
 
 	if (api_asic_testcores(TEST_CORE_COUNT, 0) >= 4 * TEST_CORE_COUNT)
 		g_postfailed |= 1;
 	else
 		g_postfailed &= 0xfe;
 #endif
-
 	pgcheck();
 	set_voltage(ASIC_0V);
 	for (i = 0; i < MINER_COUNT; i++) {
@@ -815,6 +814,7 @@ int main(int argv, char **argc)
 	}
 	set_voltage_i(val);
 	g_new_stratum = 0;
+	clko_init(0);
 
 	if (mboot_load_config(&g_mmcfg)) {
 		debug32("D: LD failed!\n");
@@ -841,6 +841,7 @@ int main(int argv, char **argc)
 				g_hw_work_i[i] = 0;
 			}
 			set_voltage_i(val);
+			clko_init(0);
 
 			if (read_temp() >= IDLE_TEMP) {
 				adjust_fan(FAN_100);
