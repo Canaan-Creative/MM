@@ -116,28 +116,49 @@ static inline void api_flush(void)
 
 static void api_change_cpm(uint32_t ch_num, uint32_t chip_num, uint32_t cpm1, uint32_t cpm2, uint32_t cpm3)
 {
+#ifdef MM50
+	uint32_t tx_data[23];
+	uint32_t i, j;
+
+	/* random numbers, keep different with nonce2 */
+	tx_data[18] = 0xa8bc6de9;
+	tx_data[19] = 0x35416784;
+	tx_data[20] = cpm1;
+	tx_data[21] = cpm2;
+	tx_data[22] = cpm3;
+
+	for (i = 0; i < ch_num; i++) {
+		for (j = 0; j < chip_num; j++)
+			api_set_tx_fifo(tx_data);
+	}
+
+	api_wait_done(ch_num, chip_num);
+
+	api_verify_nonce(ch_num, chip_num, 0, 0, NULL);
+	delay(1);
+#else
 	uint32_t tx_data[23];
 	uint32_t i, k, j;
 
-	for(j = 0; j < 3; j++){
+	for (j = 0; j < 3; j++) {
 		/* random numbers, keep different with nonce2 */
 		tx_data[18] = 0xa8bc6de9 + j;
 		tx_data[19] = 0x35416784 + j;
-		if(j == 0){
+		if (j == 0) {
 			tx_data[20] = cpm1;
 			tx_data[21] = 1;
 			tx_data[22] = 1;
-		}else if(j == 1){
+		} else if (j == 1) {
 			tx_data[20] = 1;
 			tx_data[21] = cpm2;
 			tx_data[22] = 1;
-		}else if(j == 2){
+		} else if (j == 2) {
 			tx_data[20] = 1;
 			tx_data[21] = 1;
 			tx_data[22] = cpm3;
 		}
 
-		for (k = 0; k < ch_num; k++){
+		for (k = 0; k < ch_num; k++) {
 			for(i = 0; i < chip_num; i++)
 				api_set_tx_fifo(tx_data);
 		}
@@ -147,6 +168,7 @@ static void api_change_cpm(uint32_t ch_num, uint32_t chip_num, uint32_t cpm1, ui
 		api_verify_nonce(ch_num, chip_num, 0, 0, NULL);
 		delay(1);
 	}
+#endif
 }
 
 void api_initial(uint32_t ch_num, uint32_t chip_num, uint32_t spi_speed)
