@@ -189,6 +189,8 @@ void iic_logic_reset(void)
 
 void iic_rx_reset(void)
 {
+	rx_produce = 0;
+	rx_consume = 0;
 	writel(LM32_IIC_CR_RXFIFORESET, &iic->ctrl);
 }
 
