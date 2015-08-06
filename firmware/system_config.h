@@ -65,16 +65,17 @@
 #if defined(MM40) || defined(MM41)
 #define MINER_COUNT		10
 #define ASIC_COUNT		4
+#define SPI_SPEED		(0x2)
 #endif
 
 #ifdef MM50
 #define MINER_COUNT		2
 #define ASIC_COUNT		16
+#define SPI_SPEED		(0x4)
 #endif
 
 #define PLL_COUNT		3
 
-#define SPI_SPEED		(0x2)
 #define CPU_FREQUENCY		(50 * 1000 * 1000) /* 50Mhz */
 #define UART_BAUD_RATE          (115200)
 
