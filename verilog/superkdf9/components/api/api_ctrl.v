@@ -50,7 +50,7 @@ reg [8:0] word_cnt;
 reg [3:0] chip_cnt;
 reg mosi_vld;
 wire miso_vld;
-reg [3:0] load_nop_cnt;
+reg [5:0] load_nop_cnt;
 assign tx_fifo_rd_en = mosi_vld && cur_state == WORK;
 wire rx_fifo_full = (RX_FIFO_DEPTH - rx_fifo_data_count) < (RX_BLOCK_LEN * MAX_CHIP_IN_CH);
 wire [31:0] miso_dat;
@@ -102,15 +102,15 @@ end
 
 always @ (posedge clk or posedge rst) begin
 	if(rst)
-		load_nop_cnt <= 4'b0;
+		load_nop_cnt <= 6'b0;
 	else if(reg_rst)
-		load_nop_cnt <= 4'b0;
+		load_nop_cnt <= 6'b0;
 	else if(cur_state != NOP && nxt_state == NOP)
-		load_nop_cnt <= 4'b1;
+		load_nop_cnt <= 6'b1;
 	else if(~&load_nop_cnt && cur_state == NOP)
-		load_nop_cnt <= load_nop_cnt + 4'b1;
+		load_nop_cnt <= load_nop_cnt + 6'b1;
 	else if(cur_state == NOP && nxt_state != NOP)
-		load_nop_cnt <= 4'b0;
+		load_nop_cnt <= 6'b0;
 end
 
 always @ (posedge clk or posedge rst) begin
