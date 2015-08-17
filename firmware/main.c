@@ -768,12 +768,6 @@ int main(int argv, char **argc)
 	struct result result;
 	uint32_t val[MINER_COUNT], pll[3], i, j;
 
-	while (1) {
-		gpio_led(0);
-		delay(200);
-		gpio_led(1);
-		delay(200);
-	}
 	adjust_fan(FAN_10);
 
 	irq_setmask(0);
