@@ -41,6 +41,7 @@ module twi(
     output         SFTC_DS      ,
 
     input          FAN_IN0     ,
+    input          FAN_IN1     ,
     output         TIME0_INT   ,
     output         TIME1_INT   ,
 
@@ -157,104 +158,26 @@ assign WATCH_DOG = |WATCH_DOG_f;
 10: Storage register
 11: Output Enable
 */
-wire sft_done ;
-reg sft_done_r ;
-wire [31:0] reg_sft = {28'b0,sft_done_r,SFT_OE_N,2'b0} ;
-always @ ( posedge CLK_I or posedge RST_I ) begin
-	if( RST_I )
-		sft_done_r <= 1'b0 ;
-	else if( sft_wr_en )
-		sft_done_r <= 1'b0 ;
-	else if( sft_done )
-		sft_done_r <= 1'b1 ;
-end
-
-shift u_shift_a(
-/*input       */ .clk      (CLK_I          ) ,
-/*input       */ .rst      (RST_I          ) ,
-/*input       */ .vld      (sft_wr_en      ) ,
-/*input  [1:0]*/ .cmd      (TWI_DAT_I[1:0] ) ,
-/*input       */ .cmd_oen  (TWI_DAT_I[2]   ) ,
-/*input  [7:0]*/ .din      (TWI_DAT_I[15:8]) ,
-/*output      */ .done     (sft_done       ) ,
-
-/*output      */ .sft_shcp (SFT_SHCP       ) ,
-/*output      */ .sft_ds   (SFT_DS         ) ,
-/*output      */ .sft_stcp (SFT_STCP       ) ,
-/*output      */ .sft_mr_n (SFT_MR_N       ) ,
-/*output      */ .sft_oe_n (SFT_OE_N       )
-);
-
-wire sftb_done ;
-reg sftb_done_r ;
-wire [31:0] reg_sftb = {28'b0,sftb_done_r,SFTB_OE_N,2'b0} ;
-always @ ( posedge CLK_I or posedge RST_I ) begin
-	if( RST_I )
-		sftb_done_r <= 1'b0 ;
-	else if( sftb_wr_en )
-		sftb_done_r <= 1'b0 ;
-	else if( sftb_done )
-		sftb_done_r <= 1'b1 ;
-end
-
-shift u_shift_b(
-/*input       */ .clk      (CLK_I           ) ,
-/*input       */ .rst      (RST_I           ) ,
-/*input       */ .vld      (sftb_wr_en      ) ,
-/*input  [1:0]*/ .cmd      (TWI_DAT_I[1:0]  ) ,
-/*input       */ .cmd_oen  (TWI_DAT_I[2]    ) ,
-/*input  [7:0]*/ .din      (TWI_DAT_I[15:8] ) ,
-/*output      */ .done     (sftb_done       ) ,
-
-/*output      */ .sft_shcp (SFTB_SHCP       ) ,
-/*output      */ .sft_ds   (SFTB_DS         ) ,
-/*output      */ .sft_stcp (SFTB_STCP       ) ,
-/*output      */ .sft_mr_n (SFTB_MR_N       ) ,
-/*output      */ .sft_oe_n (SFTB_OE_N       )
-);
-
-reg [31:0] reg_sftc;
-reg sftc_wr_en_f;
-always @ ( posedge CLK_I or posedge RST_I )
-	if(RST_I)
-		sftc_wr_en_f <= 1'b0;
-	else
-		sftc_wr_en_f <= sftc_wr_en;
-
-always @ ( posedge CLK_I or posedge RST_I ) begin
-	if( RST_I )
-		reg_sftc <= 32'h0;
-	else if( sftc_wr_en )
-		reg_sftc <= TWI_DAT_I[31:0];
-end
-
-reg [7:0] reg_brea;
-always @ ( posedge CLK_I or posedge RST_I ) begin
-	if( RST_I )
-		reg_brea <= 8'd200;
-	else if( brea_wr_en )
-		reg_brea <= TWI_DAT_I[7:0];
-end
-
-led_ctrl u_shift_c(
-/*input       */ .clk        (CLK_I       ) ,
-/*input       */ .rst        (RST_I       ) ,
-/*input       */ .vld        (sftc_wr_en_f) ,
-/*input [31:0]*/ .reg_din    (reg_sftc    ) ,
-/*input  [7:0]*/ .reg_breath (reg_brea    ) ,
-
-/*input  [3:0]*/ .led_bling  (led_bling   ) ,
-/*input       */ .api_idle   (api_idle    ) ,
-/*output      */ .sft_shcp   (SFTC_SHCP   ) ,
-/*output      */ .sft_ds     (SFTC_DS     )  
-);
+wire [31:0] reg_sft = 0;
+wire [31:0] reg_sftb = 0;
+wire [31:0] reg_sftc = 0;
+wire [7:0] reg_brea = 0;
 
 //-----------------------------------------------------
 // fan speed
 //-----------------------------------------------------
 reg [26:0] sec_cnt ;//1m
+always @ ( posedge CLK_I or posedge RST_I ) begin
+	if( RST_I )
+		sec_cnt <= 27'b0 ;
+	else if( sec_cnt == `MM_CLK_1S_CNT )
+		sec_cnt <= 27'b0 ;
+	else
+		sec_cnt <= 27'b1 + sec_cnt ;
+end
+
+//fan0
 reg [26:0] fan_cnt0 ;
-reg [26:0] fan_cnt1 ;
 reg [26:0] reg_fan0 ;
 reg [2:0] fan0_f ;
 wire fan0_neg = ~fan0_f[1] && fan0_f[2] ;
@@ -267,15 +190,6 @@ end
 
 always @ ( posedge CLK_I or posedge RST_I ) begin
 	if( RST_I )
-		sec_cnt <= 27'b0 ;
-	else if( sec_cnt == `MM_CLK_1S_CNT )
-		sec_cnt <= 27'b0 ;
-	else
-		sec_cnt <= 27'b1 + sec_cnt ;
-end
-
-always @ ( posedge CLK_I or posedge RST_I ) begin
-	if( RST_I )
 		fan_cnt0 <= 27'b0 ;
 	else if( sec_cnt == `MM_CLK_1S_CNT ) begin
 		fan_cnt0 <= 27'b0 ;
@@ -283,6 +197,29 @@ always @ ( posedge CLK_I or posedge RST_I ) begin
 	end else if( fan0_neg )
 		fan_cnt0 <= fan_cnt0 + 27'b1 ;
 end
+
+//fan1
+reg [26:0] fan_cnt1 ;
+reg [26:0] reg_fan1 ;
+reg [2:0] fan1_f ;
+wire fan1_neg = ~fan1_f[1] && fan1_f[2] ;
+always @ ( posedge CLK_I or posedge RST_I) begin
+	if(RST_I)
+		fan1_f <= 3'b0;
+	else
+		fan1_f <= {fan1_f[1:0],FAN_IN1} ;
+end
+
+always @ ( posedge CLK_I or posedge RST_I ) begin
+	if( RST_I )
+		fan_cnt1 <= 27'b0 ;
+	else if( sec_cnt == `MM_CLK_1S_CNT ) begin
+		fan_cnt1 <= 27'b0 ;
+		reg_fan1 <= fan_cnt1 ;
+	end else if( fan1_neg )
+		fan_cnt1 <= fan_cnt1 + 27'b1 ;
+end
+
 
 //-----------------------------------------------------
 // timer
@@ -453,7 +390,7 @@ assign TWI_DAT_O = i2cr_rd_en_r ? {24'b0,reg_i2cr}     :
 		   wdg_rd_en_r  ? {wdg_cnt,wdg_en}     :
 		   sft_rd_en_r  ? reg_sft              :
 		   fan0_rd_en_r ? {5'b0,reg_fan0}      :
-		   fan1_rd_en_r ? 32'b0                :
+		   fan1_rd_en_r ? {5'b0,reg_fan1}      :
 		   time_rd_en_r ? reg_tim              :
 		   gpio_rd_en_r ? reg_gpio             :
 		   sftb_rd_en_r ? reg_sftb             :

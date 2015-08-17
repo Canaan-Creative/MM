@@ -12,20 +12,18 @@
 #include "shifter.h"
 #include "timer.h"
 
-/* NOTICE: Always delay 100ms after set voltage */
-#define VOLTAGE_DELAY	100
-
-#if defined(MM40) || defined(MM41)
-static struct lm32_shifter *sft0 = (struct lm32_shifter *)SHIFTER_BASE0;
-static struct lm32_shifter *sft1 = (struct lm32_shifter *)SHIFTER_BASE1;
-#endif
-static struct lm32_shifter *sft2 = (struct lm32_shifter *)SHIFTER_BASE2;
-
 static uint32_t g_voltage = ASIC_0V;
 static uint32_t g_voltage_i[MINER_COUNT];
 static int32_t g_led = 0;
 
 #if defined(MM40) || defined(MM41)
+/* NOTICE: Always delay 100ms after set voltage */
+#define VOLTAGE_DELAY	100
+
+static struct lm32_shifter *sft0 = (struct lm32_shifter *)SHIFTER_BASE0;
+static struct lm32_shifter *sft1 = (struct lm32_shifter *)SHIFTER_BASE1;
+static struct lm32_shifter *sft2 = (struct lm32_shifter *)SHIFTER_BASE2;
+
 static void shift_done(struct lm32_shifter *s)
 {
 	unsigned int tmp;
@@ -75,7 +73,6 @@ static void shift_update(struct lm32_shifter *s, uint32_t value[], int poweron)
 	if (poweron)
 		delay(VOLTAGE_DELAY);
 }
-#endif
 
 uint32_t set_voltage(uint32_t value)
 {
@@ -117,7 +114,6 @@ uint32_t set_voltage_i(uint32_t value[])
 	if (!diff)
 		return 0;
 
-#if defined(MM40) || defined(MM41)
 	if (ch1)
 		shift_update(sft0, g_voltage_i, poweron);
 
@@ -128,7 +124,6 @@ uint32_t set_voltage_i(uint32_t value[])
 		gpio_reset_asic();
 		ret = 1;
 	}
-#endif
 
 	return ret;
 }
@@ -161,3 +156,51 @@ void set_front_led(uint32_t value)
 	g_led = value;
 	writel(value, &sft2->reg);
 }
+#else
+uint32_t set_voltage(uint32_t value)
+{
+	/* TODO */
+	g_voltage = value;
+	return 0;
+}
+
+uint32_t set_voltage_i(uint32_t value[])
+{
+	/* TODO */
+	uint32_t i;
+
+	for (i = 0; i < MINER_COUNT; i++)
+		g_voltage_i[i] = value[i];
+
+	return 0;
+}
+
+uint32_t get_voltage(void)
+{
+	/* TODO */
+	return g_voltage;
+}
+
+void get_voltage_i(uint32_t voltage[])
+{
+	uint8_t i;
+
+	if (voltage) {
+		for (i = 0; i < MINER_COUNT; i++)
+			voltage[i] = g_voltage_i[i];
+	}
+}
+
+void set_front_led(uint32_t data)
+{
+	/* TODO */
+	g_led = data;
+}
+
+uint32_t get_front_led(void)
+{
+	return g_led;
+}
+
+#endif
+

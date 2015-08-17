@@ -184,16 +184,9 @@ fifo512 rx_fifo(
 /*output [9  : 0]*/ .data_count(rx_fifo_data_count)
 );
 
-fifo64x104 pll_fifo(
-/*input          */ .clk       (clk                ),
-/*input          */ .srst      (rst | reg_pllf_rst ),
-/*input  [103: 0]*/ .din       (reg_pllf_data      ),
-/*input          */ .wr_en     (reg_pllf_wr_en     ),
-/*input          */ .rd_en     (pllf_rd_en         ),
-/*output [103: 0]*/ .dout      (pllf_dout          ),
-/*output         */ .full      (reg_pllf_full      ),
-/*output         */ .empty     (reg_pllf_empty     ),
-/*output [6 : 0] */ .data_count(reg_pllf_data_count)
-);
+assign pllf_dout           = 0;
+assign reg_pllf_full       = 0;
+assign reg_pllf_empty      = 1;
+assign reg_pllf_data_count = 0;
 
 endmodule

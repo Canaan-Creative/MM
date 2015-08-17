@@ -24,5 +24,8 @@ int read_power_good(void);
 int clko_init(uint32_t value);
 
 void gpio_led(uint8_t value);
+#ifdef MM50
+void gpio_reset_mcu(void);
+#endif
 
 #endif	/* __TIMER_H__ */

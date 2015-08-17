@@ -136,16 +136,7 @@ always @ (posedge clk or posedge rst) begin
 end
 
 assign rx_fifo_wr_en = miso_vld && (work_cnt < RX_BLOCK_LEN) && (cur_state == WORK);
-assign     miner_id =   load == `API_NUM'b1111111110 ? 4'd0 :
-			load == `API_NUM'b1111111101 ? 4'd1 :
-			load == `API_NUM'b1111111011 ? 4'd2 :
-			load == `API_NUM'b1111110111 ? 4'd3 :
-			load == `API_NUM'b1111101111 ? 4'd4 :
-			load == `API_NUM'b1111011111 ? 4'd5 :
-			load == `API_NUM'b1110111111 ? 4'd6 :
-			load == `API_NUM'b1101111111 ? 4'd7 :
-			load == `API_NUM'b1011111111 ? 4'd8 :
-			load == `API_NUM'b0111111111 ? 4'd9 : 4'd10;
+assign     miner_id = load == `API_NUM'b10 ? 4'd0 : 4'd1;
 
 assign rx_fifo_din = (work_cnt == (RX_BLOCK_LEN-1)) ? {miso_dat[31:16], 8'h12, 4'b0, miner_id} : miso_dat;
 

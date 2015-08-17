@@ -95,10 +95,16 @@ void gpio_led(uint8_t led)
 {
 	uint32_t value;
 
+#if defined(MM40) || defined(MM41)
 	value = readl(&gpio->reg) & 0xffffff0f;
 	value |= led << 4;
 
 	writel(value, &gpio->reg);
+#else
+	value = readl(&gpio->reg) & (~(1 << 2));
+	value |= led << 2;
+	writel(value, &gpio->reg);
+#endif
 }
 
 void gpio_reset_asic(void)
@@ -107,6 +113,7 @@ void gpio_reset_asic(void)
 
 	clko_init(1);
 
+#if defined(MM40) || defined(MM41)
 	tmp = readl(&gpio->reg);
 	writel(tmp | 0xc, &gpio->reg);
 	delay(10);
@@ -116,7 +123,28 @@ void gpio_reset_asic(void)
 
 	writel(tmp | 0xc, &gpio->reg);
 	delay(10);
+#else
+	tmp = readl(&gpio->reg);
+	writel(tmp | 0x3, &gpio->reg);
+	delay(10);
+
+	writel(tmp & 0xfffffffc, &gpio->reg);
+	delay(10);
+
+	writel(tmp | 0x3, &gpio->reg);
+	delay(10);
+#endif
 }
+
+#ifdef MM50
+void gpio_reset_mcu(void)
+{
+	uint32_t tmp;
+	tmp = readl(&gpio->reg);
+	writel(tmp | 0x8, &gpio->reg);
+	delay(10);
+}
+#endif
 
 int read_power_good(void)
 {

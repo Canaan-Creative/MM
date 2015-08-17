@@ -704,6 +704,7 @@ static inline void pgcheck(void)
 	int i;
 
 	i = read_power_good();
+#if defined(MM40) || defined(MM41)
 	if (i == 0x1f || i == 0x3e0)
 		g_postfailed |= 1;
 	else
@@ -718,6 +719,12 @@ static inline void pgcheck(void)
 		g_postfailed |= 4;
 	else
 		g_postfailed &= 0xfb;
+#else
+	if (i != 0xf)
+		g_postfailed |= 1;
+	else
+		g_postfailed &= 0xfe;
+#endif
 }
 
 static inline void led(void)
@@ -761,6 +768,12 @@ int main(int argv, char **argc)
 	struct result result;
 	uint32_t val[MINER_COUNT], pll[3], i, j;
 
+	while (1) {
+		gpio_led(0);
+		delay(200);
+		gpio_led(1);
+		delay(200);
+	}
 	adjust_fan(FAN_10);
 
 	irq_setmask(0);
@@ -769,6 +782,9 @@ int main(int argv, char **argc)
 	iic_init();
 	iic_addr_set(g_module_id);
 	gpio_led(g_module_id);
+#ifdef MM50
+	gpio_reset_mcu();
+#endif
 
 	api_initial(MINER_COUNT, ASIC_COUNT, SPI_SPEED);
 

@@ -52,16 +52,21 @@
 `include "../components/api/api_phy.v"
 `include "../components/api/api_timer.v"
 
+`include "../../xilinx/cpm_ctrl5.v"
 `include "../components/mboot/mboot.v"
 
 module mm (
   ex_clk_i
 , ex_clk_o
-
+, DUMMY_IO_IN
 , gpioPIO_IN
 , gpioPIO_OUT
 , uart_debugSIN
 , uart_debugSOUT
+, UART_RX
+, UART_TX
+, MCU_CLK
+
 , PWM
 , TWI_SCL
 , TWI_SDA
@@ -69,24 +74,12 @@ module mm (
 , I2C_SDA
 
 , FAN_IN0
+, FAN_IN1
 
 , API_LOAD
 , API_SCK
 , API_MOSI
 , API_MISO
-
-, SFTA_SHCP
-, SFTA_DS  
-, SFTA_STCP
-, SFTA_OE_N
- 
-, SFTB_SHCP
-, SFTB_DS  
-, SFTB_STCP
-, SFTB_OE_N
-
-, SFTC_SHCP
-, SFTC_DS
 
 , MBOOT_SCL    
 , MBOOT_CS     
@@ -108,25 +101,16 @@ output [`API_NUM-1:0] API_SCK  ;
 output [`API_NUM-1:0] API_MOSI ;
 input  [`API_NUM-1:0] API_MISO ;
 
-output SFTA_SHCP;
-output SFTA_DS  ;
-output SFTA_STCP;
-output SFTA_OE_N;
-
-output SFTB_SHCP;
-output SFTB_DS  ;
-output SFTB_STCP;
-output SFTB_OE_N;
-
-output SFTC_SHCP;
-output SFTC_DS  ;
-
 output PWM ;
 input	ex_clk_i;
 output  [1:0] ex_clk_o ;
 wire clk_i , reset_n, clk25m_on;
-
-clkgen clk (.clkin(ex_clk_i), .clk25m_on(clk25m_on), .clkout(clk_i), .clk25m(ex_clk_o), .locked(reset_n));
+input UART_RX;
+output UART_TX;
+output MCU_CLK;
+inout [23:0] DUMMY_IO_IN;
+assign DUMMY_IO_IN = 24'bzzzzzzzz_zzzzzzzz_zzzzzzzz;
+clkgen clk (.clkin(ex_clk_i), .clk25m_on(clk25m_on), .clkout(clk_i), .clk25m(ex_clk_o), .locked(reset_n), .mcu_clk(MCU_CLK));
 
 wire WATCH_DOG ;
 wire [31:0] irom_q_rd, irom_q_wr;
@@ -200,8 +184,8 @@ wire uartUART_en;
 wire i2cI2C_ACK_O, i2cI2C_ERR_O, i2cI2C_RTY_O;
 wire [31:0] i2cI2C_DAT_O; 
 
-input [9:0] gpioPIO_IN;
-output [7:0] gpioPIO_OUT;
+input [3:0] gpioPIO_IN;
+output [3:0] gpioPIO_OUT;
 
 wire [7:0] uart_debugUART_DAT_O;
 wire   uart_debugUART_ACK_O;
@@ -252,6 +236,7 @@ wire brg_sck;
 wire brg_mosi;
 
 input       FAN_IN0 ;
+input       FAN_IN1 ;
 // Enable the FT232 and HUB
 wire TIME0_INT ;
 wire TIME1_INT ;
@@ -479,24 +464,58 @@ bram #(
 );
 
 
-assign uartUART_en = (SHAREDBUS_ADR_I[31:4] == 28'b1000000000000000000000010000);
-
 wire led_iic_wr, led_iic_rd, led_get_nonce_l, led_get_nonce_h;
 
-reg uartUART_ACK_O_r;
-assign uartUART_ACK_O = uartUART_ACK_O_r;
-assign uartUART_DAT_O = 0;
-assign uartUART_ERR_O = 0;
-assign uartUART_RTY_O = 0;
+wire [7:0] uartUART_DAT_I;
+assign uartUART_DAT_I = ((
+	SHAREDBUS_ADR_I[1:0] == 2'b00) ? SHAREDBUS_DAT_I[31:24] : ((
+	SHAREDBUS_ADR_I[1:0] == 2'b01) ? SHAREDBUS_DAT_I[23:16] : ((
+	SHAREDBUS_ADR_I[1:0] == 2'b10) ? SHAREDBUS_DAT_I[15:8] : SHAREDBUS_DAT_I[7:0])));
+wire uartUART_SEL_I;
+assign uartUART_SEL_I = ((
+	SHAREDBUS_ADR_I[1:0] == 2'b00) ? SHAREDBUS_SEL_I[3] : ((
+	SHAREDBUS_ADR_I[1:0] == 2'b01) ? SHAREDBUS_SEL_I[2] : ((
+	SHAREDBUS_ADR_I[1:0] == 2'b10) ? SHAREDBUS_SEL_I[1] : SHAREDBUS_SEL_I[0])));
 
-always @ ( posedge clk_i or posedge sys_reset ) begin
-	if( sys_reset )
-		uartUART_ACK_O_r <= 1'b0 ;
-	else if( (SHAREDBUS_STB_I & uartUART_en) && (~uartUART_ACK_O_r) )
-		uartUART_ACK_O_r <= 1'b1 ;
-	else
-		uartUART_ACK_O_r <= 1'b0 ;
-end
+assign uartUART_en = (SHAREDBUS_ADR_I[31:4] == 28'b1000000000000000000000010000);
+
+wire uartINTR;
+uart_core
+#(
+.UART_WB_DAT_WIDTH(8),
+.UART_WB_ADR_WIDTH(4),
+.CLK_IN_MHZ(`MM_CLK_IN_MHZ),
+.BAUD_RATE(115200),
+.STDOUT_SIM(0),
+.STDOUT_SIMFAST(0),
+.LCR_DATA_BITS(8),
+.LCR_STOP_BITS(1),
+.LCR_PARITY_ENABLE(0),
+.LCR_PARITY_ODD(0),
+.LCR_PARITY_STICK(0),
+.LCR_SET_BREAK(0),
+.FIFO(1))
+ uart(
+.UART_ADR_I(SHAREDBUS_ADR_I[3:0]),
+.UART_DAT_I(uartUART_DAT_I[7:0]),
+.UART_DAT_O(uartUART_DAT_O[7:0]),
+.UART_SEL_I(uartUART_SEL_I),
+.UART_WE_I(SHAREDBUS_WE_I),
+.UART_ACK_O(uartUART_ACK_O),
+.UART_ERR_O(uartUART_ERR_O),
+.UART_RTY_O(uartUART_RTY_O),
+.UART_CTI_I(SHAREDBUS_CTI_I),
+.UART_BTE_I(SHAREDBUS_BTE_I),
+.UART_LOCK_I(SHAREDBUS_LOCK_I),
+.UART_CYC_I(SHAREDBUS_CYC_I & uartUART_en),
+.UART_STB_I(SHAREDBUS_STB_I & uartUART_en),
+.SIN(UART_RX),
+.SOUT(UART_TX),
+.INTR(uartINTR),
+.CLK(clk_i), 
+.RESET(sys_reset),
+.RXRDY_N(), .TXRDY_N());
+
 
 assign i2cI2C_en = (SHAREDBUS_ADR_I[31:5] == 27'b100000000000000000000111000);
 
@@ -646,7 +665,7 @@ api api(
 /*output               */ .api_idle       (api_idle       )
 );
 
-wire [7:0] gpioPIO_OUT_fake;
+wire [11:0] gpioPIO_OUT_fake;
 assign twiTWI_en = (SHAREDBUS_ADR_I[31:6] == 26'b10000000000000000000011000);
 assign TWI_SCL = TWI_SCL_O == 1'b0 ? 1'b0 : 1'bz ;//p85
 assign TWI_SDA = TWI_SDA_OEN == 1'b0 ? 1'b0 : 1'bz ;//p8
@@ -676,26 +695,27 @@ twi u_twi(
 /*output        */ .PWM         (PWM                         ) ,
 /*output        */ .WATCH_DOG   (WATCH_DOG                   ) ,
 
-/*output        */ .SFT_SHCP    (SFTA_SHCP                   ) ,
-/*output        */ .SFT_DS      (SFTA_DS                     ) ,
-/*output        */ .SFT_STCP    (SFTA_STCP                   ) ,
+/*output        */ .SFT_SHCP    (                            ) ,
+/*output        */ .SFT_DS      (                            ) ,
+/*output        */ .SFT_STCP    (                            ) ,
 /*output        */ .SFT_MR_N    (                            ) ,
-/*output        */ .SFT_OE_N    (SFTA_OE_N                   ) ,
+/*output        */ .SFT_OE_N    (                            ) ,
 
-/*output        */ .SFTB_SHCP   (SFTB_SHCP                   ) ,
-/*output        */ .SFTB_DS     (SFTB_DS                     ) ,
-/*output        */ .SFTB_STCP   (SFTB_STCP                   ) ,
+/*output        */ .SFTB_SHCP   (                            ) ,
+/*output        */ .SFTB_DS     (                            ) ,
+/*output        */ .SFTB_STCP   (                            ) ,
 /*output        */ .SFTB_MR_N   (                            ) ,
-/*output        */ .SFTB_OE_N   (SFTB_OE_N                   ) ,
+/*output        */ .SFTB_OE_N   (                            ) ,
 
-/*output        */ .SFTC_SHCP   (SFTC_SHCP                   ) ,
-/*output        */ .SFTC_DS     (SFTC_DS                     ) ,
+/*output        */ .SFTC_SHCP   (                            ) ,
+/*output        */ .SFTC_DS     (                            ) ,
 
 /*input         */ .FAN_IN0     (FAN_IN0                     ) ,
+/*input         */ .FAN_IN1     (FAN_IN1                     ) ,
 /*output        */ .TIME0_INT   (TIME0_INT                   ) ,
 /*output        */ .TIME1_INT   (TIME1_INT                   ) ,
-/*output [15:0] */ .GPIO_OUT    ({gpioPIO_OUT_fake[7:0], gpioPIO_OUT[7:0]}) ,
-/*input  [15:0] */ .GPIO_IN     ({6'b0, gpioPIO_IN[9:0]}     ) ,
+/*output [15:0] */ .GPIO_OUT    ({gpioPIO_OUT_fake, gpioPIO_OUT[3:0]}) ,
+/*input  [15:0] */ .GPIO_IN     ({12'b0, gpioPIO_IN[3:0]}     ) ,
 /*output        */ .clk25m_on   (clk25m_on                   ) ,
 
 /*input  [3:0]  */ .led_bling   ({led_get_nonce_h, led_get_nonce_l, led_iic_rd, led_iic_wr}),
@@ -744,7 +764,7 @@ assign superkdf9interrupt_n[4] = brg_en || !uart_debugINTR ;
 assign superkdf9interrupt_n[2] = brg_en || !int_i2c;
 assign superkdf9interrupt_n[5] = brg_en || !TIME0_INT;
 assign superkdf9interrupt_n[6] = brg_en || !TIME1_INT;
-assign superkdf9interrupt_n[7] = 1'b1;
+assign superkdf9interrupt_n[7] = brg_en || !uartINTR;
 assign superkdf9interrupt_n[8] = 1'b1;
 assign superkdf9interrupt_n[9] = 1'b1;
 assign superkdf9interrupt_n[10] = 1'b1;
