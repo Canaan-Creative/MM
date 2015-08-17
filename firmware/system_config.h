@@ -71,7 +71,7 @@
 #ifdef MM50
 #define MINER_COUNT		2
 #define ASIC_COUNT		16
-#define SPI_SPEED		(0x4)
+#define SPI_SPEED		64
 #endif
 
 #define PLL_COUNT		3
