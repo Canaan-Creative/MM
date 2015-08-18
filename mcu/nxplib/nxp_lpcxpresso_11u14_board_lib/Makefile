@@ -1,0 +1,20 @@
+#
+# Author: Mikeqin <Fengling.Qin@gmail.com>
+#
+# This is free and unencumbered software released into the public domain.
+# For details see the UNLICENSE file at the root of the source tree.
+#
+
+include ../../defaultc.mk
+
+INCLUDES	+= -I../lpc_chip_11uxx_lib/inc/
+
+all: $(SLIB)
+
+$(SLIB): ${OBJS}
+	mkdir -p $(LIBDIR)
+	$(AR) -r -o $@ $(OBJS)
+	mv $(SLIB) $(LIBDIR)
+
+clean:
+	rm -f $(OBJS) $(SLIB) $(LIBDIR)/$(SLIB)
