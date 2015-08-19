@@ -91,6 +91,7 @@ int main(void)
 {
 	uint8_t stat = STAT_WORK;
 	uint32_t len = 0;
+	uint8_t i = 0;
 
 	Board_Init();
 	SystemCoreClockUpdate();
@@ -99,12 +100,33 @@ int main(void)
 	led_init();
 	adc_init();
 
-	/* post */
-	led_mcu(STATE_LED_ON);
-	led_rgb(LED_WHITE);
+	for (i = LED_RED; i <= LED_MCU; i++)
+		led_set(i, LED_ON);
+
 	delay(2000);
-	led_mcu(STATE_LED_OFF);
-	led_rgb(LED_BLACK);
+
+	for (i = LED_RED; i <= LED_MCU; i++)
+		led_set(i, LED_OFF);
+
+	delay(2000);
+
+	led_rgb(0xffffff);
+	delay(2000);
+	led_rgb(0x0);
+	delay(2000);
+
+	/* post */
+	for (i = LED_RED; i <= LED_MCU; i++) {
+		led_set(i, LED_BLINK);
+		delay(5000);
+		led_set(i, LED_BREATH);
+		delay(5000);
+		led_set(i, LED_OFF);
+		delay(5000);
+		led_set(i, LED_ON);
+		delay(5000);
+		led_set(i, LED_OFF);
+	}
 
 	timer_set(TIMER_ID1, IDLE_TIME, NULL);
 	while (1) {
