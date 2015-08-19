@@ -64,10 +64,10 @@ $(FIRMWARE).axf: $(OBJS) lpc_chip_11uxx_lib nxp_lpcxpresso_11u14_board_lib
 	$(CC) -Wl,--start-group $(LDCFLAGS) $(LIBPATH) $(OBJS) $(LDLIBS) -Wl,--end-group -o $@
 
 lpc_chip_11uxx_lib:
-	make -C $(NXPLIBS_PATH)/lpc_chip_11uxx_lib
+	make -C $(NXPLIBS_PATH)/lpc_chip_11uxx_lib FW_RELEASE=$(FW_RELEASE)
 
 nxp_lpcxpresso_11u14_board_lib:
-	make -C $(NXPLIBS_PATH)/nxp_lpcxpresso_11u14_board_lib
+	make -C $(NXPLIBS_PATH)/nxp_lpcxpresso_11u14_board_lib FW_RELEASE=$(FW_RELEASE)
 
 reflash_ulink2: $(FIRMWARE).axf erase_ulink2
 	(while ! (sleep 0.5 && crt_emu_cm_redlink -flash-load-exec $< $(NXP_PARAMETERS)); do : ; done;)
