@@ -148,7 +148,11 @@ void gpio_reset_mcu(void)
 
 int read_power_good(void)
 {
+#ifdef MM50
+	return (readl(&gpio->reg)) >> 16 & 0xf;
+#else
 	return (readl(&gpio->reg)) >> 16 & 0x3ff;
+#endif
 }
 
 /* CLKO:
