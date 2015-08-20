@@ -15,7 +15,6 @@
 #include "io.h"
 #include "uart.h"
 
-
 #define UART_RINGBUFFER_SIZE_RX 1024
 #define UART_RINGBUFFER_MASK_RX (UART_RINGBUFFER_SIZE_RX-1)
 
@@ -125,9 +124,9 @@ void uart1_init(void)
 	writeb(LM32_UART_MCR_DTR | LM32_UART_MCR_RTS, &uart1->mcr);
 
 	/* Set baud rate */
-	value = (CPU_FREQUENCY / UART_BAUD_RATE) & 0xff;
+	value = (CPU_FREQUENCY / UART1_BAUD_RATE) & 0xff;
 	writeb(value, &uart1->divl);
-	value = (CPU_FREQUENCY / UART_BAUD_RATE) >> 8;
+	value = (CPU_FREQUENCY / UART1_BAUD_RATE) >> 8;
 	writeb(value, &uart1->divh);
 
 }

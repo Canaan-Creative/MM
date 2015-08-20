@@ -78,6 +78,7 @@
 
 #define CPU_FREQUENCY		(50 * 1000 * 1000) /* 50Mhz */
 #define UART_BAUD_RATE          (115200)
+#define UART1_BAUD_RATE          (115200)
 
 /* Interrupt
  * Define at last few lines of verilog/superkdf9/soc/superkdf9_simple.v

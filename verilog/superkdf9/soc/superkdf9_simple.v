@@ -765,14 +765,14 @@ assign MBOOT_MOSI   = brg_en ? brg_mosi : MBOOT_MOSI_w   ;
 assign MBOOT_HOLD_N = brg_en ? 1'b1     : MBOOT_HOLD_N_w ;
 assign MBOOT_WP_N   = brg_en ? 1'b1     : MBOOT_WP_N_w   ;
 
-assign superkdf9interrupt_n[3] = 1'b1;
+assign superkdf9interrupt_n[3] = brg_en || !uartINTR;
 assign superkdf9interrupt_n[1] = 1'b1;
 assign superkdf9interrupt_n[0] = 1'b1;
 assign superkdf9interrupt_n[4] = brg_en || !uart_debugINTR ;
 assign superkdf9interrupt_n[2] = brg_en || !int_i2c;
 assign superkdf9interrupt_n[5] = brg_en || !TIME0_INT;
 assign superkdf9interrupt_n[6] = brg_en || !TIME1_INT;
-assign superkdf9interrupt_n[7] = brg_en || !uartINTR;
+assign superkdf9interrupt_n[7] = 1'b1;
 assign superkdf9interrupt_n[8] = 1'b1;
 assign superkdf9interrupt_n[9] = 1'b1;
 assign superkdf9interrupt_n[10] = 1'b1;

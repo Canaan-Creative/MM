@@ -31,6 +31,7 @@
 #include "hexdump.c"
 
 static uint8_t g_pkg[AVA4_P_COUNT];
+static uint8_t g_mcupkg[AVA4_P_COUNT];
 static uint8_t g_act[AVA4_P_COUNT];
 static uint8_t g_dna[AVA4_MM_DNA_LEN];
 static uint8_t g_led_blinking = 0;
@@ -272,6 +273,17 @@ uint32_t send_pkg(int type, uint8_t *buf, uint32_t len, int block)
 		iic_tx_reset();
 		return 0;
 	}
+
+	return len;
+}
+
+static uint32_t send2mcu(int type, uint8_t *buf, uint32_t len)
+{
+#ifdef DEBUG_VERBOSE
+	debug32("%d-Send2MCU: %x, (CNT: %d)\n", g_module_id, type, iic_tx_fifo_cnt());
+#endif
+	encode_pkg(g_act, type, buf, len);
+	uart_nwrite((char *)g_act, AVA4_P_COUNT);
 
 	return len;
 }
@@ -762,6 +774,56 @@ static inline void led(void)
 		led_ctrl(LED_PG2_BLINKING);
 }
 
+static int decode_mcu(void)
+{
+	static int start = 0, count = 0;
+	unsigned int expected_crc;
+	unsigned int actual_crc;
+
+	while (1) {
+		if (!uart_read_nonblock() && !start)
+			break;
+
+		g_mcupkg[count++] = uart_read();
+		g_mcupkg[count++] = uart_read();
+		if (g_mcupkg[0] == AVA4_H1 &&
+		    g_mcupkg[1] == AVA4_H2 && !start) {
+			start = 1;
+		}
+
+		if (count == AVA4_P_COUNT) {
+			wdg_feed(CPU_FREQUENCY * IDLE_TIME);
+
+			expected_crc = (g_mcupkg[AVA4_P_COUNT - 1] & 0xff) |
+				((g_mcupkg[AVA4_P_COUNT - 2] & 0xff) << 8);
+
+			actual_crc = crc16(g_mcupkg + 6, AVA4_P_DATA_LEN);
+			if(expected_crc != actual_crc) {
+				debug32("E: MCU CRC failed %d:(W %08x, R %08x)\n",
+						g_mcupkg[2], expected_crc, actual_crc);
+
+				start = 0;
+				count = 0;
+				return 1;
+			}
+
+			/* Here we send back PKG if necessary */
+			switch (g_mcupkg[2]) {
+			case AVA4_P_ACKDETECT:
+				debug32("D: AVA4_P_ACKDETECT\n");
+				break;
+			default:
+				break;
+			}
+
+			start = 0;
+			count = 0;
+		}
+	}
+
+	return 0;
+}
+
 int main(int argv, char **argc)
 {
 	struct work work;
@@ -776,6 +838,7 @@ int main(int argv, char **argc)
 	iic_init();
 	iic_addr_set(g_module_id);
 	gpio_led(g_module_id);
+	uart_init();
 #ifdef MM50
 	gpio_reset_mcu();
 #endif
@@ -839,6 +902,7 @@ int main(int argv, char **argc)
 		wdg_feed(CPU_FREQUENCY * IDLE_TIME);
 
 		get_pkg(&mm_work);
+		decode_mcu();
 
 		if ((!timer_read(0) && (g_new_stratum || g_module_id)) ||
 		    read_temp() >= IDLE_TEMP) {
