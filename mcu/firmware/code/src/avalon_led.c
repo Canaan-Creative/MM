@@ -11,7 +11,6 @@
 
 #include "board.h"
 #include "avalon_led.h"
-#include "avalon_timer.h"
 
 #define PIN_LED_RED	9
 #define PIN_LED_GREEN	15
