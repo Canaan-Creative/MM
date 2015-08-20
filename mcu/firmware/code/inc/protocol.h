@@ -26,12 +26,12 @@
 
 #define AVAM_P_DETECT   0x10
 
-#define AVAM_P_SETM 0x20
+#define AVAM_P_SETM 0x24
 
 #define AVAM_P_POLLING	0x30
 
 #define AVAM_P_ACKDETECT	0x40
-#define AVAM_P_STATUS_M		0x41
+#define AVAM_P_STATUS_M		0x48
 
 #define AVAM_P_DATAOFFSET	6
 

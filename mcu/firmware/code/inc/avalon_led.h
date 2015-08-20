@@ -20,6 +20,11 @@
 #define LED_BLINK	2
 #define LED_BREATH	3
 
+/* Color defines */
+#define COLOR_RED	0xff0000
+#define COLOR_GREEN	0xff00
+#define COLOR_BLUE	0xff
+
 void led_init(void);
 void led_set(unsigned int led, uint8_t led_op);
 void led_rgb(unsigned int rgb);

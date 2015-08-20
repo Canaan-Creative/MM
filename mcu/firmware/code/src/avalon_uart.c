@@ -26,7 +26,7 @@ static uint8_t uart_rxdata[UART_RX_BUF_SZ], uart_txdata[UART_TX_BUF_SZ];
 
 static void init_uart_pinmux(void)
 {
-	Chip_IOCON_PinMuxSet(LPC_IOCON, 0, 18, IOCON_FUNC1 | IOCON_MODE_INACT | IOCON_MODE_PULLUP);	/* PIO0_18 used for RXD */
+	Chip_IOCON_PinMuxSet(LPC_IOCON, 0, 18, IOCON_FUNC1 | IOCON_MODE_INACT);	/* PIO0_18 used for RXD */
 	Chip_IOCON_PinMuxSet(LPC_IOCON, 0, 19, IOCON_FUNC1 | IOCON_MODE_INACT);	/* PIO0_19 used for TXD */
 }
 
@@ -41,8 +41,8 @@ void uart_init(void)
 	Chip_UART_SetupFIFOS(LPC_USART, (UART_FCR_FIFO_EN | UART_FCR_TRG_LEV2));
 	Chip_UART_TXEnable(LPC_USART);
 
-	RingBuffer_Init(&uart_rxrb, uart_rxdata, AVAM_P_COUNT, UART_RX_BUF_CNT);
-	RingBuffer_Init(&uart_txrb, uart_txdata, AVAM_P_COUNT, UART_TX_BUF_CNT);
+	RingBuffer_Init(&uart_rxrb, uart_rxdata, 1, UART_RX_BUF_SZ);
+	RingBuffer_Init(&uart_txrb, uart_txdata, 1, UART_TX_BUF_SZ);
 
 	/* Enable receive data and line status interrupt */
 	Chip_UART_IntEnable(LPC_USART, (UART_IER_RBRINT | UART_IER_RLSINT));

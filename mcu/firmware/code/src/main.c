@@ -99,6 +99,7 @@ int main(void)
 	timer_init();
 	led_init();
 	adc_init();
+	uart_init();
 
 	for (i = LED_RED; i <= LED_MCU; i++)
 		led_set(i, LED_ON);
@@ -109,24 +110,6 @@ int main(void)
 		led_set(i, LED_OFF);
 
 	delay(2000);
-
-	led_rgb(0xffffff);
-	delay(2000);
-	led_rgb(0x0);
-	delay(2000);
-
-	/* post */
-	for (i = LED_RED; i <= LED_MCU; i++) {
-		led_set(i, LED_BLINK);
-		delay(5000);
-		led_set(i, LED_BREATH);
-		delay(5000);
-		led_set(i, LED_OFF);
-		delay(5000);
-		led_set(i, LED_ON);
-		delay(5000);
-		led_set(i, LED_OFF);
-	}
 
 	timer_set(TIMER_ID1, IDLE_TIME, NULL);
 	while (1) {
@@ -139,12 +122,13 @@ int main(void)
 				process_mm_pkg((struct avalon_pkg*)g_reqpkg);
 			}
 
-			if (timer_istimeout(TIMER_ID1))
+			if (timer_istimeout(TIMER_ID1)) {
 				stat = STAT_IDLE;
+				g_ledstatus = COLOR_GREEN;
+				led_rgb(g_ledstatus);
+			}
 		break;
 		case STAT_IDLE:
-			g_ledstatus = LED_GREEN;
-			led_rgb(g_ledstatus);
 			len = uart_rxrb_cnt();
 			if (len >= AVAM_P_COUNT)
 				stat = STAT_WORK;
