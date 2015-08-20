@@ -70,6 +70,8 @@ module mm (
 , PWM
 , TWI_SCL
 , TWI_SDA
+, LCD_SCL
+, LCD_SDA
 , I2C_SCL
 , I2C_SDA
 
@@ -213,6 +215,8 @@ wire        alinkALINK_en;
 //twi core
 inout       TWI_SCL ;
 inout       TWI_SDA ;
+inout       LCD_SCL ;
+inout       LCD_SDA ;
 input       I2C_SCL ;
 inout       I2C_SDA ;
 
@@ -669,6 +673,10 @@ wire [11:0] gpioPIO_OUT_fake;
 assign twiTWI_en = (SHAREDBUS_ADR_I[31:6] == 26'b10000000000000000000011000);
 assign TWI_SCL = TWI_SCL_O == 1'b0 ? 1'b0 : 1'bz ;//p85
 assign TWI_SDA = TWI_SDA_OEN == 1'b0 ? 1'b0 : 1'bz ;//p8
+
+assign LCD_SCL = TWI_SCL_O == 1'b0 ? 1'b0 : 1'bz ;//p85
+assign LCD_SDA = TWI_SDA_OEN == 1'b0 ? 1'b0 : 1'bz ;//p8
+
 twi u_twi(
 // system clock and reset
 /*input         */ .CLK_I       (clk_i                       ) ,
@@ -690,7 +698,7 @@ twi u_twi(
 /*output [31:0] */ .TWI_DAT_O   (twiTWI_DAT_O                ) ,
 
 /*output        */ .TWI_SCL_O   (TWI_SCL_O                   ) ,
-/*input         */ .TWI_SDA_I   (TWI_SDA                     ) ,
+/*input         */ .TWI_SDA_I   (TWI_SDA & LCD_SDA           ) ,
 /*output        */ .TWI_SDA_OEN (TWI_SDA_OEN                 ) ,
 /*output        */ .PWM         (PWM                         ) ,
 /*output        */ .WATCH_DOG   (WATCH_DOG                   ) ,
