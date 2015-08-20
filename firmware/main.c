@@ -897,6 +897,8 @@ int main(int argv, char **argc)
 		mboot_save_config(&g_mmcfg);
 	}
 
+	/* detect mcu */
+	send2mcu(AVA4_P_DETECT, NULL, 0);
 	while (1) {
 		mboot_run_rbt();
 		wdg_feed(CPU_FREQUENCY * IDLE_TIME);
