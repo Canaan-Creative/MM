@@ -17,6 +17,8 @@
 #define ADC_VCC12VIN	(ADC_CH3)
 #define ADC_VCC3V3	(ADC_CH7)
 
+#define ADC_CAPCOUNT	6
+
 void adc_init(void);
 void adc_read(uint8_t channel, uint16_t *data);
 

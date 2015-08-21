@@ -33,7 +33,8 @@ __CRP unsigned int CRP_WORD = CRP_NO_ISP;
 
 static uint8_t g_reqpkg[AVAM_P_COUNT];
 static uint8_t g_ackpkg[AVAM_P_COUNT];
-static uint32_t g_ledstatus = LED_GREEN;
+static uint32_t g_ledstatus = COLOR_GREEN;
+static uint16_t g_adc_val[ADC_CAPCOUNT];
 
 static int init_mm_pkg(struct avalon_pkg *pkg, uint8_t type)
 {
@@ -56,7 +57,8 @@ static unsigned int process_mm_pkg(struct avalon_pkg *pkg)
 {
 	unsigned int expected_crc;
 	unsigned int actual_crc;
-	int ret;
+	int ret, i;
+	uint32_t tmp;
 
 	expected_crc = (pkg->crc[1] & 0xff)
 			| ((pkg->crc[0] & 0xff) << 8);
@@ -75,7 +77,16 @@ static unsigned int process_mm_pkg(struct avalon_pkg *pkg)
 		ret = 0;
 		break;
 	case AVAM_P_POLLING:
-		memset(g_ackpkg, 0xff, AVAM_P_COUNT);
+		memset(g_ackpkg, 0, AVAM_P_COUNT);
+
+		for (i = 0; i < ADC_CAPCOUNT; i++) {
+			g_ackpkg[AVAM_P_DATAOFFSET + i * 2] = g_adc_val[i] >> 8;
+			g_ackpkg[AVAM_P_DATAOFFSET + i * 2 + 1] = g_adc_val[i] & 0xff;
+		}
+
+		tmp = be32toh(g_ledstatus);
+		memcpy(&g_ackpkg[AVAM_P_DATAOFFSET + ADC_CAPCOUNT * 2], &tmp, 4);
+
 		init_mm_pkg((struct avalon_pkg *)g_ackpkg, AVAM_P_STATUS_M);
 		uart_write(g_ackpkg, AVAM_P_COUNT);
 		break;
@@ -101,6 +112,10 @@ int main(void)
 	adc_init();
 	uart_init();
 
+	/* adc 0 ~ 1023 */
+	for (i = 0; i < ADC_CAPCOUNT; i++)
+		g_adc_val[i] = 0x3ff;
+
 	for (i = LED_RED; i <= LED_MCU; i++)
 		led_set(i, LED_ON);
 
@@ -112,6 +127,7 @@ int main(void)
 	delay(2000);
 
 	timer_set(TIMER_ID1, IDLE_TIME, NULL);
+	timer_set(TIMER_ID2, ADC_CAPTIME, NULL);
 	while (1) {
 		switch (stat) {
 		case STAT_WORK:
@@ -138,6 +154,17 @@ int main(void)
 		default:
 			stat = STAT_IDLE;
 			break;
+		}
+
+		if (timer_istimeout(TIMER_ID2)) {
+			adc_read(ADC_RNTCP1, &g_adc_val[0]);
+			adc_read(ADC_RNTCP2, &g_adc_val[1]);
+			adc_read(ADC_RNTCP3, &g_adc_val[2]);
+			adc_read(ADC_RNTCP4, &g_adc_val[3]);
+			adc_read(ADC_VCC12VIN, &g_adc_val[4]);
+			adc_read(ADC_VCC3V3, &g_adc_val[5]);
+
+			timer_set(TIMER_ID2, ADC_CAPTIME, NULL);
 		}
 	}
 }

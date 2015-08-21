@@ -72,6 +72,7 @@
 #define MINER_COUNT		2
 #define ASIC_COUNT		16
 #define SPI_SPEED		64
+#define ADC_CAPCOUNT	6
 #endif
 
 #define PLL_COUNT		3

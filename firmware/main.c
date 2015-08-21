@@ -33,7 +33,9 @@
 static uint8_t g_pkg[AVA4_P_COUNT];
 static uint8_t g_mcupkg[AVA4_P_COUNT];
 static uint8_t g_act[AVA4_P_COUNT];
+static uint8_t g_mcuact[AVA4_P_COUNT];
 static uint8_t g_dna[AVA4_MM_DNA_LEN];
+static uint8_t g_mcuver[AVA4_MM_VER_LEN];
 static uint8_t g_led_blinking = 0;
 static uint8_t g_postfailed = 0;
 static int g_module_id = AVA4_MODULE_BROADCAST;
@@ -786,9 +788,12 @@ static int decode_mcu(void)
 
 		g_mcupkg[count++] = uart_read();
 		g_mcupkg[count++] = uart_read();
-		if (g_mcupkg[0] == AVA4_H1 &&
-		    g_mcupkg[1] == AVA4_H2 && !start) {
-			start = 1;
+		if (!start) {
+			if (g_mcupkg[0] == AVA4_H1 && g_mcupkg[1] == AVA4_H2)
+				start = 1;
+			else
+				count = 0;
+			continue;
 		}
 
 		if (count == AVA4_P_COUNT) {
@@ -807,10 +812,13 @@ static int decode_mcu(void)
 				return 1;
 			}
 
-			/* Here we send back PKG if necessary */
 			switch (g_mcupkg[2]) {
 			case AVA4_P_ACKDETECT:
-				debug32("D: AVA4_P_ACKDETECT\n");
+				memcpy(g_mcuver, g_mcupkg + 6 + AVA4_MM_DNA_LEN, AVA4_MM_VER_LEN);
+				break;
+			case AVA4_P_STATUS_M:
+				memcpy(g_mcuact, g_mcupkg, AVA4_P_COUNT);
+				hexdump(g_mcuact, AVA4_P_COUNT);
 				break;
 			default:
 				break;
@@ -872,6 +880,7 @@ int main(int argv, char **argc)
 	pll[0] = pll[1] = pll[2] = ASIC_FREQUENCY;
 	set_asic_freq(pll);
 	pll[0] = pll[1] = pll[2] = ASIC_PLL;
+
 	gpio_reset_asic();
 	set_asic_freq_i(pll);
 
@@ -905,6 +914,10 @@ int main(int argv, char **argc)
 
 		get_pkg(&mm_work);
 		decode_mcu();
+
+		/* the same timer with temperature read */
+		if (!timer_read(1))
+			send2mcu(AVA4_P_POLLING, NULL, 0);
 
 		if ((!timer_read(0) && (g_new_stratum || g_module_id)) ||
 		    read_temp() >= IDLE_TEMP) {
