@@ -27,6 +27,7 @@
 #include "api.h"
 #include "mboot.h"
 #include "ma.h"
+#include "uart.h"
 
 #include "hexdump.c"
 
@@ -36,6 +37,7 @@ static uint8_t g_act[AVA4_P_COUNT];
 static uint8_t g_mcuact[AVA4_P_COUNT];
 static uint8_t g_dna[AVA4_MM_DNA_LEN];
 static uint8_t g_mcuver[AVA4_MM_VER_LEN];
+static uint8_t g_mcustatus[AVA4_P_DATA_LEN];
 static uint8_t g_led_blinking = 0;
 static uint8_t g_postfailed = 0;
 static int g_module_id = AVA4_MODULE_BROADCAST;
@@ -177,6 +179,7 @@ static void encode_pkg(uint8_t *p, int type, uint8_t *buf, unsigned int len)
 		break;
 	case AVA4_P_NONCE:
 	case AVA4_P_TEST_RET:
+	case AVA4_P_SETM:
 		memcpy(data, buf, len);
 		break;
 	case AVA4_P_STATUS:
@@ -284,8 +287,8 @@ static uint32_t send2mcu(int type, uint8_t *buf, uint32_t len)
 #ifdef DEBUG_VERBOSE
 	debug32("%d-Send2MCU: %x, (CNT: %d)\n", g_module_id, type, iic_tx_fifo_cnt());
 #endif
-	encode_pkg(g_act, type, buf, len);
-	uart_nwrite((char *)g_act, AVA4_P_COUNT);
+	encode_pkg(g_mcuact, type, buf, len);
+	uart_nwrite((char *)g_mcuact, AVA4_P_COUNT);
 
 	return len;
 }
@@ -817,8 +820,8 @@ static int decode_mcu(void)
 				memcpy(g_mcuver, g_mcupkg + 6 + AVA4_MM_DNA_LEN, AVA4_MM_VER_LEN);
 				break;
 			case AVA4_P_STATUS_M:
-				memcpy(g_mcuact, g_mcupkg, AVA4_P_COUNT);
-				hexdump(g_mcuact, AVA4_P_COUNT);
+				memcpy(g_mcustatus, g_mcupkg + 6, AVA4_P_DATA_LEN);
+				hexdump(g_mcustatus, AVA4_P_DATA_LEN);
 				break;
 			default:
 				break;
@@ -830,6 +833,26 @@ static int decode_mcu(void)
 	}
 
 	return 0;
+}
+
+#define MCULED_R_BLINK	0x20ff0000
+#define MCULED_R_BREATH	0x30ff0000
+#define MCULED_G_BLINK	0x08ff0000
+#define MCULED_G_BREATH	0x0cff0000
+#define MCULED_B_BLINK	0x02ff0000
+#define MCULED_B_BREATH	0x03ff0000
+#define MCULED_RGB	0x15000000
+
+static void set_mculed(uint32_t stat)
+{
+	uint8_t buf[8];
+
+	buf[4] = (stat >> 24) & 0xff;
+	buf[5] = (stat >> 16) & 0xff;
+	buf[6] = (stat >> 8) & 0xff;
+	buf[7] = stat & 0xff;
+
+	send2mcu(AVA4_P_SETM, buf, 8);
 }
 
 int main(int argv, char **argc)
@@ -908,6 +931,10 @@ int main(int argv, char **argc)
 
 	/* detect mcu */
 	send2mcu(AVA4_P_DETECT, NULL, 0);
+
+	/* Turn off all leds on MCU */
+	set_mculed(MCULED_RGB | 0x00);
+
 	while (1) {
 		mboot_run_rbt();
 		wdg_feed(CPU_FREQUENCY * IDLE_TIME);

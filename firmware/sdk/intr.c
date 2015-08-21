@@ -13,9 +13,7 @@
 
 #include "iic.h"
 #include "timer.h"
-#ifdef DEBUG
 #include "uart.h"
-#endif
 
 void isr(void)
 {
@@ -32,8 +30,6 @@ void isr(void)
 	if (irqs & IRQ_TIMER1)
 		timer1_isr();
 
-#ifdef DEBUG
 	if (irqs & IRQ_UART)
 		uart_isr();
-#endif
 }

@@ -33,7 +33,7 @@ __CRP unsigned int CRP_WORD = CRP_NO_ISP;
 
 static uint8_t g_reqpkg[AVAM_P_COUNT];
 static uint8_t g_ackpkg[AVAM_P_COUNT];
-static uint32_t g_ledstatus = COLOR_GREEN;
+static uint32_t g_ledstatus;
 static uint16_t g_adc_val[ADC_CAPCOUNT];
 
 static int init_mm_pkg(struct avalon_pkg *pkg, uint8_t type)
@@ -59,9 +59,11 @@ static unsigned int process_mm_pkg(struct avalon_pkg *pkg)
 	unsigned int actual_crc;
 	int ret, i;
 	uint32_t tmp;
+	uint8_t led_op, r, g, b;
 
-	expected_crc = (pkg->crc[1] & 0xff)
-			| ((pkg->crc[0] & 0xff) << 8);
+	/* crc order is different with send */
+	expected_crc = (pkg->crc[0] & 0xff)
+			| ((pkg->crc[1] & 0xff) << 8);
 	actual_crc = crc16(pkg->data, AVAM_P_DATA_LEN);
 
 	if (expected_crc != actual_crc)
@@ -89,6 +91,65 @@ static unsigned int process_mm_pkg(struct avalon_pkg *pkg)
 
 		init_mm_pkg((struct avalon_pkg *)g_ackpkg, AVAM_P_STATUS_M);
 		uart_write(g_ackpkg, AVAM_P_COUNT);
+		break;
+	case AVAM_P_SETM:
+		memcpy(&tmp, pkg->data + 4, 4);
+		tmp = be32toh(tmp);
+		r = (g_ledstatus >> 16) & 0xff;
+		g = (g_ledstatus >> 8) & 0xff;
+		b = g_ledstatus & 0xff;
+
+		/* 2bits per color,  0: ignore, 1: rgb settings, 2: blink, 3: breath
+		 * order: reserverd (2bit), r (2bit), g (2bit), b (2bit)
+		 * */
+		led_op = (tmp >> (4 + 24)) & 3;
+		switch (led_op) {
+			case 1:
+				r = (tmp >> 16) & 0xff;
+				led_rgb((r << 16) | (g << 8) | b);
+				break;
+			case 2:
+				led_set(LED_RED, LED_BLINK);
+				break;
+			case 3:
+				led_set(LED_RED, LED_BREATH);
+				break;
+			default:
+				break;
+		}
+
+		led_op = (tmp >> (2 + 24)) & 3;
+		switch (led_op) {
+			case 1:
+				g = (tmp >> 8) & 0xff;
+				led_rgb((r << 16) | (g << 8) | b);
+				break;
+			case 2:
+				led_set(LED_GREEN, LED_BLINK);
+				break;
+			case 3:
+				led_set(LED_GREEN, LED_BREATH);
+				break;
+			default:
+				break;
+		}
+
+		led_op = (tmp >> 24) & 3;
+		switch (led_op) {
+			case 1:
+				b = tmp & 0xff;
+				led_rgb((r << 16) | (g << 8) | b);
+				break;
+			case 2:
+				led_set(LED_BLUE, LED_BLINK);
+				break;
+			case 3:
+				led_set(LED_BLUE, LED_BREATH);
+				break;
+			default:
+				break;
+		}
+		g_ledstatus = (tmp & 0xff000000) | (r << 16) | (g << 8) | b;
 		break;
 	default:
 		ret = 1;
@@ -125,6 +186,7 @@ int main(void)
 		led_set(i, LED_OFF);
 
 	delay(2000);
+	g_ledstatus = 0x15000000;
 
 	timer_set(TIMER_ID1, IDLE_TIME, NULL);
 	timer_set(TIMER_ID2, ADC_CAPTIME, NULL);
@@ -140,14 +202,15 @@ int main(void)
 
 			if (timer_istimeout(TIMER_ID1)) {
 				stat = STAT_IDLE;
-				g_ledstatus = COLOR_GREEN;
-				led_rgb(g_ledstatus);
+				led_set(LED_MCU, LED_ON);
 			}
 		break;
 		case STAT_IDLE:
 			len = uart_rxrb_cnt();
-			if (len >= AVAM_P_COUNT)
+			if (len >= AVAM_P_COUNT) {
 				stat = STAT_WORK;
+				led_set(LED_MCU, LED_OFF);
+			}
 
 			__WFI();
 			break;
