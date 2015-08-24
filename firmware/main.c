@@ -821,7 +821,6 @@ static int decode_mcu(void)
 				break;
 			case AVA4_P_STATUS_M:
 				memcpy(g_mcustatus, g_mcupkg + 6, AVA4_P_DATA_LEN);
-				hexdump(g_mcustatus, AVA4_P_DATA_LEN);
 				break;
 			default:
 				break;
