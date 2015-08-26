@@ -42,7 +42,7 @@ MPFR=mpfr-$(MPFR_VERSION).tar.bz2
 DL=$(if $(wildcard ../dl/.),../dl,dl)
 
 # make sure this rule stays at top
-all: .install.gdb.ok .install.gcc.ok
+all: .install.gcc.ok .install.gdb.ok
 
 .PHONY: all clean
 
