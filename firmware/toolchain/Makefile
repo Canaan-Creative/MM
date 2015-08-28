@@ -17,7 +17,7 @@
 #make sure you have wrtie access
 RTEMS_VERSION=4.11
 LM32_PREFIX=/opt/lm32
-LM32_SOURCES_URL=http://www.rtems.org/ftp/pub/rtems/SOURCES/$(RTEMS_VERSION)
+LM32_SOURCES_URL=https://ftp.rtems.org/pub/rtems/SOURCES/$(RTEMS_VERSION)
 
 # For Mac OS X use curl.
 WGET=wget -c -O
@@ -42,7 +42,7 @@ MPFR=mpfr-$(MPFR_VERSION).tar.bz2
 DL=$(if $(wildcard ../dl/.),../dl,dl)
 
 # make sure this rule stays at top
-all: .install.gdb.ok .install.gcc.ok
+all: .install.gcc.ok .install.gdb.ok
 
 .PHONY: all clean
 
