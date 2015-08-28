@@ -24,15 +24,13 @@ void sha256_init(void)
 static void write_block(const uint8_t *block)
 {
 	int i;
-	uint32_t tmp;
+	uint32_t *p = (uint32_t *)block;
 
-	for (i = 0; i < 64; i += 4) {
-		memcpy((uint8_t *)(&tmp), block + i, 4);
-		writel(tmp, &lm_sha256->din);
-		if (!((i + 4) % 64)) /* Every 512bits we wait */
-			while (!(readl(&lm_sha256->cmd) & LM32_SHA256_CMD_DONE))
-				;
-	}
+	for (i = 0; i < 16; i++)
+		lm_sha256->din = p[i];
+
+	while (!(readl(&lm_sha256->cmd) & LM32_SHA256_CMD_DONE))
+		;
 }
 
 static void sha256_padding(const uint8_t *input, unsigned int count)
@@ -86,23 +84,19 @@ void sha256_update(const uint8_t *input, unsigned int count)
 static void sha256_precalc_final(uint8_t *state)
 {
 	int i;
-	uint32_t tmp;
+	uint32_t *p = (uint32_t *)state;
 
-	for (i = 0; i < 6 * 4; i += 4) {
-		tmp = readl(&lm_sha256->pre);
-		memcpy(state + i, (uint8_t *)(&tmp), 4);
-	}
+	for (i = 0; i < 6 ; i++)
+		p[i] = readl(&lm_sha256->pre);
 }
 
 void sha256_final(uint8_t *state)
 {
 	int i;
-	uint32_t tmp;
+	uint32_t *p = (uint32_t *)state;
 
-	for (i = 0; i < 8 * 4; i += 4) {
-		tmp = readl(&lm_sha256->hash);
-		memcpy(state + i, (uint8_t *)(&tmp), 4);
-	}
+	for (i = 0; i < 8; i++)
+		p[i] = readl(&lm_sha256->hash);
 }
 
 void sha256(const uint8_t *input, unsigned int count, uint8_t *state)
@@ -132,13 +126,12 @@ void dsha256(const uint8_t *input, unsigned int count, uint8_t *state)
 void dsha256_posthash(const uint8_t *input, unsigned int count, unsigned int count_posthash, uint8_t *state)
 {
 	int i;
-	uint32_t tmp;
+	uint32_t *p = (uint32_t *)input;
 
 	writel(LM32_SHA256_CMD_RST, &lm_sha256->cmd);
-	for (i = 0; i < 32; i += 4) {
-		memcpy((uint8_t *)(&tmp), input + i, 4);
-		writel(tmp, &lm_sha256->hi);
-	}
+	for (i = 0; i < 8; i++)
+		lm_sha256->hi = p[i];
+
 	writel(LM32_SHA256_CMD_INIT, &lm_sha256->cmd);
 
 	sha256_update(input + 32, count_posthash);
@@ -151,14 +144,12 @@ void dsha256_posthash(const uint8_t *input, unsigned int count, unsigned int cou
 void sha256_precalc(const uint8_t *h, const uint8_t *input, unsigned int count, uint8_t *state)
 {
 	int i;
-	uint32_t tmp;
 	uint8_t digest[12];
+	uint32_t *p = (uint32_t *)h;
 
 	writel(LM32_SHA256_CMD_RST, &lm_sha256->cmd);
-	for (i = 28; i >= 0; i -= 4) {
-		memcpy((uint8_t *)(&tmp), h + i, 4);
-		writel(tmp, &lm_sha256->hi);
-	}
+	for (i = 7; i >= 0; i--)
+		lm_sha256->hi = p[i];
 	writel(LM32_SHA256_CMD_INIT, &lm_sha256->cmd);
 
 	memcpy(digest + 0, input + 8, 4);
