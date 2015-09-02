@@ -31,12 +31,11 @@ static inline void flip32(void *dest_p, const void *src_p)
 static inline void flip64(void *dest_p, const uint8_t *src_p)
 {
 	uint32_t *dest = dest_p;
+	const uint32_t *src = (uint32_t *)src_p;
 	int i;
 
-	for (i = 0; i < 16; i++) {
-		dest[i] = src_p[i * 4 + 0] | src_p[i * 4 + 1] << 8 |
-			src_p[i * 4 + 2] << 16 | src_p[i * 4 + 3] << 24;
-	}
+	for (i = 0; i < 16; i++)
+		dest[i] = bswap_32(src[i]);
 }
 
 static inline void flip80(void *dest_p, const void *src_p)
@@ -87,18 +86,6 @@ static void rev(unsigned char *s, size_t l)
  * TaskID_H:1, TASKID_L:1, STEP:1, TIMEOUT:1,
  * CLK_CFG:2, a2, Midsate:8, e0, e1, e2, a0, a1, Data:3
  */
-static void calc_prepare(struct work *work, uint8_t *buf)
-{
-	uint32_t precalc[6];
-	sha256_precalc(buf, buf + 32, 12, (uint8_t *)precalc);
-	memcpy(work->a0, precalc + 0, 4);
-	memcpy(work->a1, precalc + 1, 4);
-	memcpy(work->a2, precalc + 2, 4);
-	memcpy(work->e0, precalc + 3, 4);
-	memcpy(work->e1, precalc + 4, 4);
-	memcpy(work->e2, precalc + 5, 4);
-}
-
 void roll_work(struct work *work, int ntime_offset)
 {
 	uint32_t *work_ntime;
@@ -109,23 +96,22 @@ void roll_work(struct work *work, int ntime_offset)
 
 	/* The block header: for test nonce  */
 	work_ntime = (uint32_t *)(work->header + 68);
-	memcpy(&ntime, (uint8_t *)work_ntime, 4);
-	ntime += ntime_offset;
-	memcpy((uint8_t *)work_ntime, &ntime, 4);
+	*work_ntime += ntime_offset;
 
 	/* The data: for ASIC api */
 	work_ntime = (uint32_t *)(work->data + 36);
 	ntime = bswap_32(*work_ntime);
 	ntime += ntime_offset;
 	*work_ntime = bswap_32(ntime);
-	calc_prepare(work, work->data);
+
+	sha256_precalc(work->data, work);
 }
 
 void miner_gen_nonce2_work(struct mm_work *mw, uint32_t nonce2, struct work *work)
 {
-	uint8_t merkle_root[32], merkle_sha[64];
+	uint8_t merkle_sha[32], *merkle_root = merkle_sha;
 	uint8_t work_t[44];
-	uint32_t *data32, *swap32, tmp32;
+	uint32_t tmp32;
 	int i;
 	int nonce2_offset_posthash;
 	int coinbase_len_posthash;
@@ -138,8 +124,6 @@ void miner_gen_nonce2_work(struct mm_work *mw, uint32_t nonce2, struct work *wor
 	memcpy(mw->coinbase + nonce2_offset_posthash, (uint8_t *)(&tmp32), mw->nonce2_size);
 	dsha256_posthash(mw->coinbase, mw->coinbase_len, coinbase_len_posthash, merkle_root);
 
-	memcpy(merkle_sha, merkle_root, 32);
-
 #ifdef DEBUG_STRATUM
 	debug32("MR:\n");
 	hexdump(merkle_root, 32);
@@ -148,9 +132,7 @@ void miner_gen_nonce2_work(struct mm_work *mw, uint32_t nonce2, struct work *wor
 #endif
 
 	for (i = 0; i < mw->nmerkles; i++) {
-		memcpy(merkle_sha + 32, mw->merkles[i], 32);
-		dsha256(merkle_sha, 64, merkle_root);
-		memcpy(merkle_sha, merkle_root, 32);
+		dsha256m(merkle_sha, mw->merkles[i], merkle_root);
 
 #ifdef DEBUG_STRATUM
 		debug32("MR[%d]: \n", i);
@@ -158,9 +140,7 @@ void miner_gen_nonce2_work(struct mm_work *mw, uint32_t nonce2, struct work *wor
 #endif
 
 	}
-	data32 = (uint32_t *)merkle_sha;
-	swap32 = (uint32_t *)merkle_root;
-	flip32(swap32, data32);
+	flip32(merkle_root, merkle_root);
 
 #ifdef DEBUG_STRATUM
 	debug32("MR:\n");
@@ -182,7 +162,7 @@ void miner_gen_nonce2_work(struct mm_work *mw, uint32_t nonce2, struct work *wor
 	rev(work_t + 32, 12);
 	memcpy(work->data, work_t, 44);
 
-	calc_prepare(work, work->data);
+	sha256_precalc(work->data, work);
 	work->memo = mw->job_id | mw->pool_no;
 }
 
