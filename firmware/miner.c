@@ -18,74 +18,34 @@
 #include "twipwm.h"
 #include "api.h"
 
-static inline void flip32(void *dest_p, const void *src_p)
+// TODO: flip is useless if no nonce testing needed
+static inline void flip(void *dest_p, const void *src_p, int count)
 {
 	uint32_t *dest = dest_p;
 	const uint32_t *src = src_p;
 	int i;
 
-	for (i = 0; i < 8; i++)
-		dest[i] = bswap_32(src[i]);
-}
-
-static inline void flip64(void *dest_p, const uint8_t *src_p)
-{
-	uint32_t *dest = dest_p;
-	const uint32_t *src = (uint32_t *)src_p;
-	int i;
-
-	for (i = 0; i < 16; i++)
-		dest[i] = bswap_32(src[i]);
-}
-
-static inline void flip80(void *dest_p, const void *src_p)
-{
-	uint32_t *dest = dest_p;
-	const uint32_t *src = src_p;
-	int i;
-
-	for (i = 0; i < 20; i++)
+	for (i = 0; i < count / 4; i++)
 		dest[i] = bswap_32(src[i]);
 }
 
 static void calc_midstate(struct mm_work *mw, struct work *work)
 {
-	unsigned char data[64];
-	uint32_t *data32 = (uint32_t *)data;
+	int i;
+	uint8_t *p = work->data;
 
-	flip64(data32, mw->header);
+	sha256_midstate(mw->header, p);
 
-	sha256_init();
-	sha256_update(data, 64);
-	sha256_final(work->data);
-
-	/* FIXME: LM32 will crash if I direct use
-	 * flip64(work->data, work->data);
-	 * Should be flip32 ??
-	 */
-	memcpy(data, work->data, 32);
-	flip64(data32, data);
-
-	memcpy(work->data, data, 32);
-	memcpy(work->data + 32, mw->header + 64, 12);
-}
-
-static void rev(unsigned char *s, size_t l)
-{
-	size_t i, j;
-	unsigned char t;
-
-	for (i = 0, j = l - 1; i < j; i++, j--) {
-		t = s[i];
-		s[i] = s[j];
-		s[j] = t;
-	}
+	p = (uint8_t *)(mw->header + 64);
+	for (i = 0; i < 12; i++)
+		*(work->data + 32 + i) = p[11 - i];
 }
 
 /* Total: 4W + 19W = 23W
  * TaskID_H:1, TASKID_L:1, STEP:1, TIMEOUT:1,
  * CLK_CFG:2, a2, Midsate:8, e0, e1, e2, a0, a1, Data:3
  */
+
 void roll_work(struct work *work, int ntime_offset)
 {
 	uint32_t *work_ntime;
@@ -109,8 +69,7 @@ void roll_work(struct work *work, int ntime_offset)
 
 void miner_gen_nonce2_work(struct mm_work *mw, uint32_t nonce2, struct work *work)
 {
-	uint8_t merkle_sha[32], *merkle_root = merkle_sha;
-	uint8_t work_t[44];
+	uint8_t *merkle_root = mw->header + mw->merkle_offset;
 	uint32_t tmp32;
 	int i;
 	int nonce2_offset_posthash;
@@ -122,6 +81,8 @@ void miner_gen_nonce2_work(struct mm_work *mw, uint32_t nonce2, struct work *wor
 	nonce2_offset_posthash = (mw->nonce2_offset % SHA256_BLOCK_SIZE) + 32;
 	coinbase_len_posthash = mw->coinbase_len - mw->nonce2_offset + (mw->nonce2_offset % SHA256_BLOCK_SIZE);
 	memcpy(mw->coinbase + nonce2_offset_posthash, (uint8_t *)(&tmp32), mw->nonce2_size);
+
+	// TODO: Merge from here to END into dsha256_merkle
 	dsha256_posthash(mw->coinbase, mw->coinbase_len, coinbase_len_posthash, merkle_root);
 
 #ifdef DEBUG_STRATUM
@@ -132,7 +93,7 @@ void miner_gen_nonce2_work(struct mm_work *mw, uint32_t nonce2, struct work *wor
 #endif
 
 	for (i = 0; i < mw->nmerkles; i++) {
-		dsha256m(merkle_sha, mw->merkles[i], merkle_root);
+		dsha256_merkle(mw->header + mw->merkle_offset, mw->merkles[i], merkle_root);
 
 #ifdef DEBUG_STRATUM
 		debug32("MR[%d]: \n", i);
@@ -140,14 +101,15 @@ void miner_gen_nonce2_work(struct mm_work *mw, uint32_t nonce2, struct work *wor
 #endif
 
 	}
-	flip32(merkle_root, merkle_root);
+	flip(merkle_root, merkle_root, 32);
+	// END
 
 #ifdef DEBUG_STRATUM
 	debug32("MR:\n");
 	hexdump(merkle_root, 32);
 #endif
 
-	memcpy(mw->header + mw->merkle_offset, merkle_root, 32);
+	// TODO: skip if no nonce testing needed.
 	memcpy(work->header, mw->header, 128);
 
 #ifdef DEBUG_STRATUM
@@ -156,11 +118,6 @@ void miner_gen_nonce2_work(struct mm_work *mw, uint32_t nonce2, struct work *wor
 #endif
 
 	calc_midstate(mw, work);
-
-	memcpy(work_t, work->data, 44);
-	rev(work_t, 32);
-	rev(work_t + 32, 12);
-	memcpy(work->data, work_t, 44);
 
 	sha256_precalc(work->data, work);
 	work->memo = mw->job_id | mw->pool_no;
@@ -214,7 +171,7 @@ int test_nonce(struct mm_work *mw, uint32_t nonce2, uint32_t nonce, int ntime_of
 	unsigned char hash1[32];
 	uint32_t *hash_32 = (uint32_t *)(hash1 + 28);
 
-	flip80(swap32, data32);
+	flip(swap32, data32, 80);
 	dsha256(swap, 80, hash1);
 
 	if (*hash_32 != 0)

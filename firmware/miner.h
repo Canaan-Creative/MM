@@ -30,6 +30,7 @@ struct work {
 	uint8_t a1[4];
 	uint8_t data[44]; 	/* midstate[32] + data[12] */
 
+	// TODO: skip if no nonce testing needed.
 	uint8_t header[128]; 	/* Block header */
 };
 
