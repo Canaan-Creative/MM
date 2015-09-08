@@ -77,6 +77,16 @@ void delay(unsigned int ms)
 	}
 }
 
+void delayus(unsigned int us)
+{
+	unsigned int i;
+
+	while (us && us--) {
+		for (i = 0; i < CPU_FREQUENCY / 1000000 / 5; i++)
+			__asm__ __volatile__("nop");
+	}
+}
+
 #define LED_OFF_ALL		1
 #define LED_WARNING_ON		2
 #define LED_WARNING_OFF 	3
@@ -880,6 +890,9 @@ int main(int argv, char **argc)
 	/* Dump the FPGA DNA */
 	iic_dna_read(g_dna);
 	hexdump(g_dna, AVA4_MM_DNA_LEN);
+	lcd_init();
+	lcd_on();
+	lcd_puts("Ver:"MM_VERSION);
 #ifdef DEBUG_IIC_TEST
 	extern void iic_test(void);
 	iic_test();
@@ -906,10 +919,15 @@ int main(int argv, char **argc)
 	gpio_reset_asic();
 	set_asic_freq_i(pll);
 
-	if (api_asic_testcores(TEST_CORE_COUNT, 0) >= 4 * TEST_CORE_COUNT)
+	if (api_asic_testcores(TEST_CORE_COUNT, 0) >= 4 * TEST_CORE_COUNT) {
 		g_postfailed |= 1;
-	else
+		lcd_setcursor(0, 1);
+		lcd_puts("Post failed!");
+	} else {
 		g_postfailed &= 0xfe;
+		lcd_setcursor(0, 1);
+		lcd_puts("Post success!");
+	}
 #endif
 	pgcheck();
 	set_voltage(ASIC_0V);

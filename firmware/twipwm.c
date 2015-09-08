@@ -15,6 +15,8 @@
 #include "timer.h"
 
 static struct lm32_twipwm *tp = (struct lm32_twipwm *)TWIPWM_BASE;
+static uint8_t g_lcd_bg = 0;
+static uint8_t g_lcd_dispctrl = 0;
 
 static void twi_start(void)
 {
@@ -63,6 +65,14 @@ static uint16_t twi_read_2byte(uint8_t addr)
 	tmp = (tmp << 8) | twi_read();
 	twi_stop();
 	return (tmp & 0xffff);
+}
+
+static void twi_write_byte(uint8_t addr, uint8_t byte)
+{
+	twi_start();
+	twi_write(addr << 1);
+	twi_write(byte);
+	twi_stop();
 }
 
 static void write_pwm(uint32_t value)
@@ -131,3 +141,116 @@ int16_t read_temp(void)
 	last = (int16_t)((sum - max - min) / 8);
 	return last;
 }
+
+static void lcd_op(uint8_t data, uint8_t mode, uint8_t rs)
+{
+	/* write command or high 8 bits data */
+	twi_write_byte(LM32_TWI_REG_LCD, (data & 0xf0) | g_lcd_bg | rs);
+	/* enable command */
+	twi_write_byte(LM32_TWI_REG_LCD, (data & 0xf0) | g_lcd_bg | rs | LM32_TWIPWM_LCD_EN);
+	delayus(50);
+	twi_write_byte(LM32_TWI_REG_LCD, (data & 0xf0) | g_lcd_bg | rs);
+	delayus(800);
+
+	if (mode == LM32_TWIPWM_LCD_FULLMODE) {
+		/* write low 8bit */
+		twi_write_byte(LM32_TWI_REG_LCD, ((data << 4) & 0xf0) | g_lcd_bg | rs);
+		/* enable command */
+		twi_write_byte(LM32_TWI_REG_LCD, ((data << 4) & 0xf0) | g_lcd_bg | rs | LM32_TWIPWM_LCD_EN);
+		delayus(50);
+		twi_write_byte(LM32_TWI_REG_LCD, ((data << 4) & 0xf0) | g_lcd_bg | rs);
+		delayus(800);
+	}
+}
+
+/* https://www.sparkfun.com/datasheets/LCD/HD44780.pdf */
+void lcd_init(void)
+{
+	uint8_t i;
+
+	/* Initializing HD44780.pdf P.45 */
+	lcd_op(0, LM32_TWIPWM_LCD_HALFMODE, 0);
+	delay(50);
+
+	for (i = 0; i < 3; i++) {
+		lcd_op(0x30, LM32_TWIPWM_LCD_HALFMODE, 0);
+		delay(5);
+	}
+
+	/* set to 4-Bit Interface */
+	lcd_op(0x20, LM32_TWIPWM_LCD_HALFMODE, 0);
+
+	/* set line, dot */
+	lcd_op(LM32_TWIPWM_LCD_FUNC | LM32_TWIPWM_LCD_4BIT | LM32_TWIPWM_LCD_2LINE | LM32_TWIPWM_LCD_5X8DOTS, LM32_TWIPWM_LCD_FULLMODE, 0);
+	/* set display, turn off cursor and blink */
+	g_lcd_dispctrl = LM32_TWIPWM_LCD_DISP | LM32_TWIPWM_LCD_DISPON | LM32_TWIPWM_LCD_CURSOROFF | LM32_TWIPWM_LCD_BLINKOFF;
+	lcd_op(g_lcd_dispctrl, LM32_TWIPWM_LCD_FULLMODE, 0);
+
+	/* clear */
+	lcd_op(LM32_TWIPWM_LCD_CLEAR, LM32_TWIPWM_LCD_FULLMODE, 0);
+
+	/* entry mode */
+	lcd_op(LM32_TWIPWM_LCD_MODE | LM32_TWIPWM_LCD_ENTRYL | LM32_TWIPWM_LCD_ENTRYDEC, LM32_TWIPWM_LCD_FULLMODE, 0);
+
+	/* home */
+	lcd_op(LM32_TWIPWM_LCD_HOME, LM32_TWIPWM_LCD_FULLMODE, 0);
+}
+
+void lcd_on(void)
+{
+	g_lcd_bg = LM32_TWIPWM_LCD_BGON;
+	g_lcd_dispctrl |= LM32_TWIPWM_LCD_DISPON;
+	lcd_op(g_lcd_dispctrl, LM32_TWIPWM_LCD_FULLMODE, 0);
+}
+
+void lcd_off(void)
+{
+	g_lcd_bg = ~LM32_TWIPWM_LCD_BGON;
+	g_lcd_dispctrl &= ~LM32_TWIPWM_LCD_DISPON;
+	lcd_op(g_lcd_dispctrl, LM32_TWIPWM_LCD_FULLMODE, 0);
+}
+
+void lcd_clear(void)
+{
+	lcd_op(LM32_TWIPWM_LCD_CLEAR, LM32_TWIPWM_LCD_FULLMODE, 0);
+	delay(2);
+}
+
+void lcd_home(void)
+{
+	lcd_op(LM32_TWIPWM_LCD_HOME, LM32_TWIPWM_LCD_FULLMODE, 0);
+	delay(2);
+}
+
+void lcd_setcursor(uint8_t col, uint8_t row)
+{
+	int row_offsets[] = {0x00, 0x40, 0x14, 0x54};
+
+	/* 16 x 2 */
+	if (row > 2)
+		row = 1;
+
+	lcd_op(LM32_TWIPWM_LCD_DDIR | (col + row_offsets[row]), LM32_TWIPWM_LCD_FULLMODE, 0);
+}
+
+void lcd_leftscroll(void)
+{
+	lcd_op(LM32_TWIPWM_LCD_SHIFT | LM32_TWIPWM_LCD_DISPMOVE | LM32_TWIPWM_LCD_SL, LM32_TWIPWM_LCD_FULLMODE, 0);
+}
+
+void lcd_rightscroll(void)
+{
+	lcd_op(LM32_TWIPWM_LCD_SHIFT | LM32_TWIPWM_LCD_DISPMOVE | LM32_TWIPWM_LCD_SR, LM32_TWIPWM_LCD_FULLMODE, 0);
+}
+
+void lcd_write(char c)
+{
+	lcd_op(c, LM32_TWIPWM_LCD_FULLMODE, LM32_TWIPWM_LCD_RS);
+}
+
+void lcd_puts(const char *s)
+{
+	while (*s)
+		lcd_write(*s++);
+}
+

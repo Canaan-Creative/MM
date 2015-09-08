@@ -26,6 +26,7 @@ void hexdump(const uint8_t *p, unsigned int len);
 #endif
 
 void delay(unsigned int ms);
+void delayus(unsigned int us);
 uint32_t send_pkg(int type, uint8_t *buf, uint32_t len, int block);
 
 #endif	/* _DEFINES_H_ */

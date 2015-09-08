@@ -189,9 +189,52 @@ struct lm32_api {
 
 #define LM32_TWIPWM_WDG_ENABLE	(1 << 0);
 /* [26:1] Feed Dog: 0x3~0x3ffffff;[WR] */
+#define LM32_TWIPWM_LCD_HALFMODE	0x0
+#define LM32_TWIPWM_LCD_FULLMODE	0x1
+
+/* LCD control RS, E, BG */
+#define LM32_TWIPWM_LCD_RS	0x1
+#define LM32_TWIPWM_LCD_EN	0x4
+#define LM32_TWIPWM_LCD_BGON	0x8
+
+/* LCD instructions */
+#define LM32_TWIPWM_LCD_CLEAR	0x1
+#define LM32_TWIPWM_LCD_HOME	0x2
+#define LM32_TWIPWM_LCD_MODE	0x4
+#define LM32_TWIPWM_LCD_DISP	0x8
+#define LM32_TWIPWM_LCD_SHIFT	0x10
+#define LM32_TWIPWM_LCD_FUNC	0x20
+#define LM32_TWIPWM_LCD_CDIR	0x40
+#define LM32_TWIPWM_LCD_DDIR	0x80
+
+/* LCD entry mode */
+#define LM32_TWIPWM_LCD_ENTRYL	0x2
+#define LM32_TWIPWM_LCD_ENTRYR	0x0
+#define LM32_TWIPWM_LCD_ENTRYINC	0x1
+#define LM32_TWIPWM_LCD_ENTRYDEC	0x0
+
+/* LCD display flags */
+#define LM32_TWIPWM_LCD_DISPON	0x4
+#define LM32_TWIPWM_LCD_DISPOFF	0x0
+#define LM32_TWIPWM_LCD_CURSORON	0x2
+#define LM32_TWIPWM_LCD_CURSOROFF	0x0
+#define LM32_TWIPWM_LCD_BLINKON	0x1
+#define LM32_TWIPWM_LCD_BLINKOFF	0x0
+
+/* LCD shift flags */
+#define LM32_TWIPWM_LCD_DISPMOVE	0x8
+#define LM32_TWIPWM_LCD_CURSORMOVE	0x0
+#define LM32_TWIPWM_LCD_SR	0x4
+#define LM32_TWIPWM_LCD_SL	0x0
+
+/* LCD function flags */
+#define LM32_TWIPWM_LCD_4BIT	0x0
+#define LM32_TWIPWM_LCD_2LINE	0x8
+#define LM32_TWIPWM_LCD_5X8DOTS	0x0
 
 #define LM32_TWI_REG_TEMP0	0x48
 #define LM32_TWI_REG_TEMP1	0x49
+#define LM32_TWI_REG_LCD	0x3f
 
 struct lm32_twipwm {
 	volatile unsigned int cr; /* TWI ctrl register */
