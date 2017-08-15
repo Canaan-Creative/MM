@@ -42,7 +42,6 @@ static inline void irq_setie(unsigned int ie)
        __asm__ __volatile__("wcsr IE, %0" : : "r" (ie));
 }
 
-void isr_register(int irq, void (*isr)(void));
-void isr_unregister(int irq);
+void isr(void);
 
 #endif	/* _INTR_H_ */

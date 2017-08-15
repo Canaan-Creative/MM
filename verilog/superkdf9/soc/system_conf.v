@@ -11,14 +11,14 @@
 `define CFG_IROM_ENABLED
 `define CFG_IROM_EXPOSE
 `define CFG_IROM_BASE_ADDRESS 32'h0000
-`define CFG_IROM_LIMIT 32'h3fff
+`define CFG_IROM_LIMIT 32'h7fff
 `define CFG_IROM_INIT_FILE_FORMAT "hex"
 `define CFG_IROM_INIT_FILE "none"
 `define CFG_DRAM_ENABLED
 `define CFG_DRAM_EXPOSE
-`define CFG_DRAM_BASE_ADDRESS 32'h4000
+`define CFG_DRAM_BASE_ADDRESS 32'h8000
 
-`define CFG_DRAM_LIMIT 32'h7FFF
+`define CFG_DRAM_LIMIT 32'hbFFF
 // Don't forget update mm.bmm file
 
 `define CFG_DRAM_INIT_FILE_FORMAT "hex"

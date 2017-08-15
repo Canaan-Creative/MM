@@ -20,7 +20,7 @@ LDFLAGS    += -nostartfiles -nodefaultlibs -nostdlib -Wl,--gc-sections -Wl,-T,li
 LDLIBS     += -Bminilibc -lminilibc -lgcc
 
 SSRCS      = sdk/crt0ram.S sdk/intr.c
-CSRCS      = main.c uart.c sha256.c alink.c twipwm.c miner.c crc16.c shifter.c timer.c
+CSRCS      = main.c uart.c timer.c gpio.c
 OBJS       := $(addsuffix .o,$(basename $(CSRCS) $(SSRCS)))
 
 BATCHFILE	:= $(shell mktemp)
@@ -30,6 +30,9 @@ PRJ_NAME	= mm
 isedir  ?= /home/Xilinx/14.6/ISE_DS/
 xil_env ?= . $(isedir)/settings$(shell getconf LONG_BIT).sh &>/dev/null
 
+ifeq ($(DEBUG),1)
+	CFLAGS += -DDEBUG
+endif
 
 .PHONY: all clean distclean load reflash
 
@@ -63,7 +66,7 @@ reflash: $(HARDWARE_NAME).mcs
 	echo setmode -bs	>> $(BATCHFILE)
 	echo setcable -p auto	>> $(BATCHFILE)
 	echo identify		>> $(BATCHFILE)
-	echo attachFlash -p 1 -spi W25Q80BV		>> $(BATCHFILE)
+	echo attachFlash -p 1 -spi W25Q16BV		>> $(BATCHFILE)
 	echo assignfiletoattachedflash -p 1 -file $<	>> $(BATCHFILE)
 	echo program -p 1 -dataWidth 4 -spionly -erase -loadfpga >> $(BATCHFILE)
 	echo exit		>> $(BATCHFILE)
