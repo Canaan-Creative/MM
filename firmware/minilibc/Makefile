@@ -8,18 +8,22 @@
 
 -include ../config.mk
 
+CSRCS      = memcpy.c memset.c strncmp.c printf.c math.c
+
+OBJS       := $(addsuffix .o,$(basename $(CSRCS) $(SSRCS)))
+
 .PHONY: all clean
 
 all: libminilibc.a
 
-libminilibc.a: memcpy.o memset.o printf.o strncmp.o
+libminilibc.a: $(OBJS)
 	$(AR) rc $@ $^
 
 %.o: %.c minilibc.h
 	$(CC) $(CFLAGS) $(CPPFLAGS) -c $< -o $@
 
 clean:
-	rm -f memcpy.o memset.o printf.o strncmp.o
+	rm -f $(OBJS)
 	rm -f libminilibc.a
 
 

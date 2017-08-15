@@ -14,10 +14,13 @@
 # You should have received a copy of the GNU General Public License
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
+
+# You may need gcc-4.8 and texinfo_4.13a.dfsg.1 for Debian
+
 #make sure you have wrtie access
 RTEMS_VERSION=4.11
 LM32_PREFIX=/opt/lm32
-LM32_SOURCES_URL=http://www.rtems.org/ftp/pub/rtems/SOURCES/$(RTEMS_VERSION)
+LM32_SOURCES_URL=ftp://ftp.rtems.org//pub/rtems/archive/SOURCES/$(RTEMS_VERSION)
 
 # For Mac OS X use curl.
 WGET=wget -c -O
@@ -42,7 +45,7 @@ MPFR=mpfr-$(MPFR_VERSION).tar.bz2
 DL=$(if $(wildcard ../dl/.),../dl,dl)
 
 # make sure this rule stays at top
-all: .install.gdb.ok .install.gcc.ok
+all: .install.gcc.ok .install.gdb.ok
 
 .PHONY: all clean
 

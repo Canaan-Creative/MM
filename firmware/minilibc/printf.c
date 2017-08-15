@@ -1,5 +1,5 @@
 /*
- * Author: Xiangfu Liu <xiangfu@openmobilefree.net>
+ * Author: Fengling <Fengling.Qin@gmail.com>
  * Author: Xiangfu Liu <xiangfu@openmobilefree.net>
  * Bitcoin:	1CanaaniJzgps8EV6Sfmpb7T8RutpaeyFn
  *
@@ -65,7 +65,6 @@ static void prints(char **dest, const char *string, int width, int pad)
 
 #define PRINT_BUF_LEN 12
 /* the following should be enough for 32 bit int */
-
 static void printi(char **dest, int i, int b, int sg, int width, int pad, int letbase)
 {
 	char           print_buf[PRINT_BUF_LEN];
@@ -84,7 +83,7 @@ static void printi(char **dest, int i, int b, int sg, int width, int pad, int le
 		u = -i;
 	}
 
-	s  = print_buf + PRINT_BUF_LEN-1;
+	s = print_buf + PRINT_BUF_LEN - 1;
 	*s = '\0';
 
 	while (u) {
@@ -107,10 +106,9 @@ static void printi(char **dest, int i, int b, int sg, int width, int pad, int le
 	}
 
 	prints(dest, s, width, pad);
-	return;
 }
 
-char *m_sprintf(char *dest, const char *format, ...)
+char *m_snprintf(char *dest, size_t size, const char *format, ...)
 {
 	int width, pad;
 	char scr[2];
@@ -146,6 +144,18 @@ char *m_sprintf(char *dest, const char *format, ...)
 				continue;
 			}
 
+			if (*format == 'c') {
+				/* char are converted to int then pushed on the stack */
+				scr[0] = (char)va_arg(args, int);
+				scr[1] = '\0';
+				prints(&dest, scr, width, pad);
+				continue;
+			}
+
+			/* FIXME: Only check printi function */
+			if (dest_bk && ((dest - dest_bk) >= (size - PRINT_BUF_LEN - 1)))
+				break;
+
 			if (*format == 'd' || *format == 'i') {
 				printi(&dest, va_arg(args, int), 10, 1, width, pad, 'a');
 				continue;
@@ -165,14 +175,6 @@ char *m_sprintf(char *dest, const char *format, ...)
 				printi(&dest, va_arg(args, int), 10, 0, width, pad, 'a');
 				continue;
 			}
-
-			if (*format == 'c') {
-				/* char are converted to int then pushed on the stack */
-				scr[0] = (char)va_arg(args, int);
-				scr[1] = '\0';
-				prints(&dest, scr, width, pad);
-				continue;
-			}
 		} else {
 		out:
 			if (dest)
@@ -188,4 +190,4 @@ char *m_sprintf(char *dest, const char *format, ...)
 	return dest_bk;
 }
 
-/* vim: set ts=4 sw=4 noet fdm=marker : */
+/* vim: set ts=8 sw=8 noexpandtab */
