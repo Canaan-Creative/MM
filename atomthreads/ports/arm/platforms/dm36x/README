@@ -1,0 +1,213 @@
+---------------------------------------------------------------------------
+
+Library:      Atomthreads DaVinci DM365/DM368 Platform.
+Author:       Kelvin Lawson <info@atomthreads.com>
+Website:      http://atomthreads.com
+License:      BSD Revised
+
+---------------------------------------------------------------------------
+
+DaVinci DM36x (ARM926EJ-S) Platform
+
+The "dm36x" platform folder contains sources for building a sample
+Atomthreads RTOS application for DaVinci DM365 and DM368 (ARM926EJ-S)
+platforms.
+
+This has been tested on a DM368 Leopardboard platform, but will work on any
+DM36x-based platform.
+
+
+---------------------------------------------------------------------------
+
+SOURCE LAYOUT
+
+All of the cross-platform kernel code is contained in the top-level 
+'kernel' folder, while ports to specific CPU architectures are contained in
+the 'ports' folder tree. To support multiple ARM boards/platforms using a
+single common ARM architecture port, the ARM port contains 'platform'
+sub-folders in which the board/platform-specific code is situated. This
+allows the sharing of common ARM port code between many different ARM
+boards with different interrupt controllers, UARTs etc but which all reuse
+the same common core ARM context-switching code.
+
+This platform contains a few key platform-specific files:
+
+ * startup.s: Interrupt vector table and basic startup assembly code
+ * atomport-private.c: Low level initialisation for this platform
+ * uart.c: Simple UART implementation for debug purposes
+
+The common ARM architecture port that is used across all platforms contains
+the basic code for thread-switching on all ARM platforms:
+
+ * atomport.c: Those functions which can be written in C
+ * atomport-asm.s: The main register save/restore assembler routines
+
+Each Atomthreads port requires also a header file which describes various
+architecture-specific details such as appropriate types for 8-bit, 16-bit
+etc variables, the port's system tick frequency, and macros for performing
+interrupt lockouts / critical sections:
+
+ * atomport.h: Port-specific header required by the kernel for each port
+
+A couple of additional source files are also included in the common ARM port:
+
+ * tests-main.c: Main application file (used for launching automated tests)
+ * syscalls.c: Simple implementation of open/close/read/write for stdio
+
+Atomthreads includes a suite of automated tests which prove the key OS
+functionality, and can be used with any architecture ports. This platform
+provides an easy mechanism for building and quickly running the test suite
+using a serial port connected to real hardware to prove the OS.
+
+
+---------------------------------------------------------------------------
+
+GCC TOOLCHAIN
+
+The port works out-of-the-box with the GCC tools (for building). It can be
+built on any OS for which GCC is available, and was tested using the
+CodeSourcery toolchain (2009q3 non-Linux but others should be supported).
+Note that the Makefile for this platform assumes that your GCC binary is
+named "arm-none-eabi-gcc".
+
+Currently we assume that the toolchain will provide some header files like
+stdint.h. Not all toolchains will include this, in which case you simply
+need to add definitions for int32_t and friends in atomport.h, in place of
+the include declaration for stdint.h.
+
+
+---------------------------------------------------------------------------
+
+OTHER PREREQUISITES
+
+Running the entire automated test suite in one command via "make tests"
+requires the "expect" program.
+
+".bin" images bootable via U-boot are created as part of the build but if
+uImage format is preferred then the "mkimage" application is also
+required.
+
+
+---------------------------------------------------------------------------
+
+BUILDING THE SOURCE
+
+A Makefile is provided for building the kernel, port, platform and
+automated tests. Make sure the ARM GCC toolchain is in the path
+(e.g. "PATH=$PATH:/opt/arm-2009q3/bin && export path") and carry out the
+full build using the following:
+
+ * make all
+
+All objects are built into the 'build' folder under 
+ports/arm/platforms/dm36x. The build process builds separate target
+applications for each automated test, and appropriate ELF/BIN files can be
+found in the build folder ready for running on the target. Each test is
+built and run as a separate application.
+
+
+All built objects etc can be cleaned using:
+
+ * make clean
+
+
+The Atomthreads sources are documented using Doxygen markup. You can build
+both the kernel and port documentation from this folder using:
+
+ * make doxygen
+
+
+---------------------------------------------------------------------------
+
+PLATFORM SPECIFICS
+
+This RTOS port was developed on the DM368 Leopardboard, but there is
+currently very little board-specific code present, other than the choice of
+UART (the Leopardboard uses UART0 but many boards use UART1). The UART is
+used to print out pass/fail indications and other information via a serial
+debug cable connected to the board. For other boards using UART1 you may
+simply change the UART_BASE definition in uart.c.
+
+
+---------------------------------------------------------------------------
+
+AUTOMATED TESTS
+
+Atomthreads contains a set of generic kernel tests which can be run on any
+port to prove that all core functionality is working on your target.
+
+The full set of tests can be found in the top-level 'tests' folder. Each of
+these tests is built as an independent application in the 'build' folder.
+
+These can be run on the target using the instructions below.
+
+To view the test results, connect a serial debug cable to your target
+platform. On starting, the test applications print out "Go" on the UART.
+Once the test is complete they will print out "Pass" or "Fail", along with
+other information if the test failed.
+
+Most of the tests complete within a few seconds, but some (particularly
+the stress tests) can take longer, so be patient. 
+
+The full suite of tests endeavours to exercise as much of the kernel code
+as possible, and can be used for quick confirmation of core OS
+functionality if you ever need to make a change to the kernel or port.
+
+The test application main() is contained in tests-main.c. This initialises
+the OS, creates a main thread, and calls out to the test modules.
+
+
+---------------------------------------------------------------------------
+
+RUNNING THE FULL TEST SUITE
+
+It is possible to run the full automated test suite on the target board.
+This is very useful for quick verification of the entire test suite after
+making any software changes.
+
+A single command runs every single test application on the target, and
+automatically parses the UART output to verify that each test case passes.
+
+This requires the "expect" application on your development PC.
+
+To run all tests in one command, type:
+
+ * make tests
+
+This will download every single test application to your TFTP folder one at
+a time, ready for the target to load via U-Boot, and quit immediately if
+any one test fails.
+
+You should set your target board to load the file "test.bin" via TFTP and
+hit the reset button after each test has completed (when prompted).
+The U-boot "bootcmd" variable should be set as follows:
+
+ * setenv 'tftpboot 0x80000000 test.bin; go 0x80000000'
+ * saveenv
+
+Now when you run "make tests" it will copy each test application binary
+into your TFTP root folder one-by-one, and request that you reset the board
+to start the next test running. Passes or failures are reported, and the
+test suite quits if any test suite failures are encountered.
+
+The ability to run these automated tests in one command allows you to
+easily include the OS test suite in your nightly build or continous
+integration system and quickly find out if any of your local changes have
+caused any of the operating system tests to fail. In order to include them
+in a nightly test run you will need to set the test applications to
+automatically reset after running each test.
+
+
+---------------------------------------------------------------------------
+
+WRITING APPLICATIONS
+
+The easiest way to start a new application which utilises the Atomthreads
+scheduler is to base your main application startup on tests-main.c. This
+initialises the OS and calls out to the test module entry functions. You
+can generally simply replace the call to the test modules by a call to your
+own application startup code.
+
+
+---------------------------------------------------------------------------
+
