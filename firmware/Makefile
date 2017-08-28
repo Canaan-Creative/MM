@@ -13,6 +13,9 @@ GIT_STATUS:=$(shell ([ -z "`git status -s -uno`" ] && echo 0) || echo +)
 
 CFLAGS += -DMM_VERSION='"331408-$(GIT_VERSION)$(GIT_STATUS)"'
 
+#submodule atomthreads branch
+ATOM_VERSION   ?= AtomthreadsTest
+
 -include config.mk
 # ----- Customer ----------------------------------------------------------
 INCLUDES   = -I. -Isdk -Iminilibc -I../atomthreads/kernel -I../atomthreads/ports/lm32
@@ -56,12 +59,18 @@ $(PRJ_NAME).objdump: $(PRJ_NAME).elf
 $(PRJ_NAME).hexdump: $(PRJ_NAME).elf
 	hexdump -v -e '1 "%08x"' -e '"\n"' $^ > $@
 
-$(PRJ_NAME).elf: $(OBJS) minilibc/libminilibc.a
+$(PRJ_NAME).elf: $(OBJS) minilibc/libminilibc.a ./atom_submodule
 	$(LD) $(LDFLAGS) $(OBJS) -o $@ $(LDLIBS)
 	$(SIZE) $(PRJ_NAME).elf
 
 minilibc/libminilibc.a:
 	make -C `dirname $@`
+
+./atom_submodule:
+	@echo "git submodule update atomthreads"
+	cd ..
+	git checkout $(ATOM_VERSION)
+	git submodule update --init --recursive
 
 %.o: %.c
 	$(CC) $(CPPFLAGS) $(CFLAGS) -o $@ -c $<
