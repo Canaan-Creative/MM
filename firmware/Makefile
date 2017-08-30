@@ -18,7 +18,7 @@ ATOM_VERSION   ?= AtomthreadsTest
 
 -include config.mk
 # ----- Customer ----------------------------------------------------------
-INCLUDES   = -I. -Isdk -Iminilibc -I../atomthreads/kernel -I../atomthreads/ports/lm32
+INCLUDES   = -I. -Isdk -Iminilibc -I../atomthreads/kernel -I../atomthreads/ports/lm32 -I../atomthreads/tests
 LDFLAGS    += -nostartfiles -nodefaultlibs -nostdlib -Wl,--gc-sections -Wl,-T,linker.ld -Wl,-Map=$(PRJ_NAME).map
 LDLIBS     += -Bminilibc -lminilibc -lgcc
 
@@ -32,7 +32,9 @@ ATOM_KERN  = ../atomthreads/kernel/atomkernel.c \
 	     ../atomthreads/kernel/atomsem.c \
 	     ../atomthreads/kernel/atommutex.c \
 	     ../atomthreads/kernel/atomqueue.c
-OBJS       := $(addsuffix .o,$(basename $(CSRCS) $(SSRCS) $(ATOM_PORTS) $(ATOM_KERN)))
+TESTS      ?= test-template.c
+ATOM_TESTS = ../atomthreads/tests/$(TESTS)
+OBJS       := $(addsuffix .o,$(basename $(CSRCS) $(SSRCS) $(ATOM_PORTS) $(ATOM_KERN) $(ATOM_TESTS)))
 
 BATCHFILE	:= $(shell mktemp)
 HARDWARE_NAME	= mm
@@ -59,18 +61,12 @@ $(PRJ_NAME).objdump: $(PRJ_NAME).elf
 $(PRJ_NAME).hexdump: $(PRJ_NAME).elf
 	hexdump -v -e '1 "%08x"' -e '"\n"' $^ > $@
 
-$(PRJ_NAME).elf: $(OBJS) minilibc/libminilibc.a ./atom_submodule
+$(PRJ_NAME).elf: $(OBJS) minilibc/libminilibc.a
 	$(LD) $(LDFLAGS) $(OBJS) -o $@ $(LDLIBS)
 	$(SIZE) $(PRJ_NAME).elf
 
 minilibc/libminilibc.a:
 	make -C `dirname $@`
-
-./atom_submodule:
-	@echo "git submodule update atomthreads"
-	cd ..
-	git checkout $(ATOM_VERSION)
-	git submodule update --init --recursive
 
 %.o: %.c
 	$(CC) $(CPPFLAGS) $(CFLAGS) -o $@ -c $<

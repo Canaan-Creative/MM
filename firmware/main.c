@@ -22,7 +22,7 @@
 #include "atomport.h"
 #include "atommutex.h"
 #include "atomsem.h"
-
+#include "atomtests.h"
 
 /* Thread Stack Size define */
 #define IDLE_STACK_SIZE_BYTES	256
@@ -55,7 +55,14 @@ void first_thread_func(uint32_t data)
 	static uint8_t led_on = 0;
 	static int sem_flag = 0;
 	static int mutex_flag = 0;
+	int status;
 
+	/* tests start */
+	status = test_start();
+	if (0 == status)
+	    debug32("test start status = 0\n");
+	else
+	    debug32("test start status != 0\n");
 	while (1)
 	{
 		/* Only get mutex one times */
