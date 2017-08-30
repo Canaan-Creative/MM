@@ -13,15 +13,28 @@ GIT_STATUS:=$(shell ([ -z "`git status -s -uno`" ] && echo 0) || echo +)
 
 CFLAGS += -DMM_VERSION='"331408-$(GIT_VERSION)$(GIT_STATUS)"'
 
+#submodule atomthreads branch
+ATOM_VERSION   ?= AtomthreadsTest
+
 -include config.mk
 # ----- Customer ----------------------------------------------------------
-INCLUDES   = -I. -Isdk -Iminilibc
+INCLUDES   = -I. -Isdk -Iminilibc -I../atomthreads/kernel -I../atomthreads/ports/lm32 -I../atomthreads/tests
 LDFLAGS    += -nostartfiles -nodefaultlibs -nostdlib -Wl,--gc-sections -Wl,-T,linker.ld -Wl,-Map=$(PRJ_NAME).map
 LDLIBS     += -Bminilibc -lminilibc -lgcc
 
 SSRCS      = sdk/crt0ram.S sdk/intr.c
 CSRCS      = main.c uart.c timer.c gpio.c
-OBJS       := $(addsuffix .o,$(basename $(CSRCS) $(SSRCS)))
+#Atomthreads files
+ATOM_PORTS = ../atomthreads/ports/lm32/atomport-asm.S \
+	     ../atomthreads/ports/lm32/atomport.c
+ATOM_KERN  = ../atomthreads/kernel/atomkernel.c \
+	     ../atomthreads/kernel/atomtimer.c \
+	     ../atomthreads/kernel/atomsem.c \
+	     ../atomthreads/kernel/atommutex.c \
+	     ../atomthreads/kernel/atomqueue.c
+TESTS      ?= test-template.c
+ATOM_TESTS = ../atomthreads/tests/$(TESTS)
+OBJS       := $(addsuffix .o,$(basename $(CSRCS) $(SSRCS) $(ATOM_PORTS) $(ATOM_KERN) $(ATOM_TESTS)))
 
 BATCHFILE	:= $(shell mktemp)
 HARDWARE_NAME	= mm
