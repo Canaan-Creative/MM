@@ -17,6 +17,7 @@
 
 enum timer_id {
     TIMER_IDLE,
+    TIMER_TICK,
     TIMER_MAX
 };
 
