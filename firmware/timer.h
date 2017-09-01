@@ -10,7 +10,6 @@
 
 #include <stdint.h>
 #include <stdbool.h>
-#include <stddef.h>
 
 #define MAX_TIMER_VAL	(uint32_t)-1
 
