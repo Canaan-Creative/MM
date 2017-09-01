@@ -11,8 +11,6 @@
 #include <stdint.h>
 #include <stdbool.h>
 
-#include "atomport.h"
-
 #define MAX_TIMER_VAL	(uint32_t)-1
 
 enum timer_id {

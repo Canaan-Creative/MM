@@ -19,7 +19,6 @@
 #include "gpio.h"
 
 #include "atom.h"
-#include "atomport.h"
 #include "atommutex.h"
 #include "atomsem.h"
 #include "atomtests.h"
@@ -49,39 +48,32 @@ void second_thread_func(uint32_t data);
 ATOM_MUTEX mutex;
 ATOM_SEM sem;
 
-
 void first_thread_func(uint32_t data)
 {
-	static uint8_t led_on = 0;
-	static int sem_flag = 0;
-	static int mutex_flag = 0;
-	int status;
+	uint8_t led_on = 0;
+	int sem_flag = 0;
+	int mutex_flag = 0;
+	int test_status;
 
 	/* tests start */
-	status = test_start();
-	if (0 == status)
-	    debug32("test start status = 0\n");
+	test_status = test_start();
+	if (!test_status)
+	    debug32("test status is 0.\n");
 	else
-	    debug32("test start status != 0\n");
-	while (1)
-	{
+	    debug32("test start status isn't 0.\n");
+
+	while (1) {
 		/* Only get mutex one times */
-		if (mutex_flag == 0)
-		{
+		if (mutex_flag == 0) {
 			mutex_flag++;
 			if (atomMutexGet(&mutex, 0) != ATOM_OK)
-			{
 				debug32("get mutex failed.\n");
-			}
 			else
-			{
 				debug32("get mutex success.\n");
-			}
 		}
 
 		/* Get sem third, current thread block */
-		if (sem_flag <= 2)
-		{
+		if (sem_flag <= 2) {
 			atomSemGet(&sem,0);
 			sem_flag++;
 		}
@@ -96,15 +88,12 @@ void first_thread_func(uint32_t data)
 
 void second_thread_func(uint32_t data)
 {
-	static uint8_t led_on = 0;
-	int i;
+	uint8_t led_on = 0;
 	int print_flag = 0;
+	int i;
 
-	while(1)
-	{
-		/* Loop six timer, led twinkle faster */
-		for (i=0; i<6; i++)
-		{
+	while (1) {
+		for (i = 0; i < 6; i++) {
 			debug32("second thread func.\n");
 			gpio_led(led_on);
 			delay(100);
@@ -113,8 +102,7 @@ void second_thread_func(uint32_t data)
 		}
 
 		/* Put sem for wake up first thread */
-		if (print_flag == 0)
-		{
+		if (print_flag == 0) {
 		    atomSemPut(&sem);
 		    print_flag++;
 		}
@@ -138,23 +126,16 @@ int main(int argv, char **argc)
 
 	/* Initialise the OS before creating our threads */
 	status = atomOSInit(&idle_thread_stack[0], IDLE_STACK_SIZE_BYTES, TRUE);
-	if (status == ATOM_OK)
-	{
+	if (status == ATOM_OK) {
 		/* Enable the system */
 		irq_setmask(0);
 		irq_enable(1);
-#if 0
-		timer_init();
-#endif
 
 #ifdef DEBUG
 		uart2_init();
 #endif
 		gpio_led(led_on);
 		gpio_led_rgb(GPIO_LED_BLACK);
-#if 0
-		timer_set(TIMER_IDLE, IDLE_TIME, NULL);
-#endif
 
 		/* Create an application thread */
 		status = atomThreadCreate(&first_tcb,
@@ -167,8 +148,7 @@ int main(int argv, char **argc)
 				&second_thread_stack[0],
 				SECOND_STACK_SIZE_BYTES,
 				TRUE);
-		if (status == ATOM_OK)
-		{
+		if (status == ATOM_OK) {
 			debug32("create thread success.\n");
 
 			/* Create sem */
@@ -192,12 +172,8 @@ int main(int argv, char **argc)
 			atomOSStart();
 		}
 		else
-		{
 			debug32("create thread failed!\n");
-		}
 	}
-
-	while (1);
 
 	return 0;
 }
