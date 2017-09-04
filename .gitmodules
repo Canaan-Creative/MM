@@ -1,0 +1,3 @@
+[submodule "atomthreads"]
+	path = atomthreads
+	url = https://github.com/XzxEmbedded/atomthreads.git
