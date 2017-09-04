@@ -28,11 +28,13 @@
 #define IDLE_STACK_SIZE_BYTES	256
 #define FIRST_STACK_SIZE_BYTES	1024
 #define SECOND_STACK_SIZE_BYTES	1024
+#define THIRD_STACK_SIZE_BYTES	1024
 
 /* Local data */
 /* Application thread's TCBs */
 ATOM_TCB first_tcb;
 ATOM_TCB second_tcb;
+ATOM_TCB third_tcb;
 
 /* Idle thread's stack area */
 uint8_t idle_thread_stack[IDLE_STACK_SIZE_BYTES];
@@ -40,24 +42,25 @@ uint8_t idle_thread_stack[IDLE_STACK_SIZE_BYTES];
 uint8_t first_thread_stack[FIRST_STACK_SIZE_BYTES];
 /* Second thread's stack area */
 uint8_t second_thread_stack[SECOND_STACK_SIZE_BYTES];
+uint8_t third_thread_stack[THIRD_STACK_SIZE_BYTES];
 
 /* Forward declarations */
 void first_thread_func(uint32_t data);
 void second_thread_func(uint32_t data);
-
-/* Test OS objects */
-ATOM_MUTEX mutex;
-ATOM_SEM sem;
+void third_thread_func(uint32_t data);
 
 void first_thread_func(uint32_t data)
 {
-	static uint8_t led_on = 0;
 	int test_status = 0;
 
-	if (data == 3)
-		debug32("input param is right.\n");
+	if (atomThreadCreate(&third_tcb,
+		    253, third_thread_func, 0,
+		    &third_thread_stack[0],
+		    THIRD_STACK_SIZE_BYTES,
+		    TRUE) != ATOM_OK)
+		debug32("create thread-3 failed.\n");
 	else
-		debug32("input param is wrong.\n");
+		debug32("create thread-3 success.\n");
 
 	/* tests start */
 	test_status = test_start();
@@ -67,31 +70,33 @@ void first_thread_func(uint32_t data)
 		debug32("test status is %d.\n", test_status);
 
 	while (1) {
+		debug32("thread-1 start\n");
+		gpio_led_rgb(GPIO_LED_BLACK);
 		atomTimerDelay(3);
-		delay(1000);
-		debug32("first thread func.\n");
-		gpio_led(led_on);
-		delay(1000);
-		gpio_led(!led_on);
-		delay(1000);
+		gpio_led_rgb(GPIO_LED_RED);
+		atomTimerDelay(3);
+		debug32("thread-1 end\n");
 	}
 }
 
 void second_thread_func(uint32_t data)
 {
-	static uint8_t led_on = 0;
-
-	if (data == 6)
-		debug32("second input param is right.\n");
-	else
-		debug32("second input param is wrong.\n");
-
 	while (1) {
-		debug32("second thread func.\n");
-		gpio_led(led_on);
-		delay(100);
-		gpio_led(!led_on);
-		delay(100);
+		debug32("thread-2 start\n");
+		gpio_led(0);
+		atomTimerDelay(1);
+		gpio_led(1);
+		atomTimerDelay(1);
+		debug32("thread-2 end\n");
+	}
+}
+
+void third_thread_func(uint32_t data)
+{
+	while (1) {
+		debug32("thread-3 start\n");
+		atomTimerDelay(2);
+		debug32("thread-3 end\n");
 	}
 }
 
@@ -122,6 +127,8 @@ int main(int argv, char **argc)
 #endif
 		gpio_led(led_on);
 		gpio_led_rgb(GPIO_LED_BLACK);
+		timer_set(TIMER_IDLE, 1, NULL);
+		timer_set(TIMER_TICK, 1, NULL);
 
 		/* Create an application thread */
 		status = atomThreadCreate(&first_tcb,
@@ -135,8 +142,6 @@ int main(int argv, char **argc)
 				SECOND_STACK_SIZE_BYTES,
 				TRUE);
 		if (status == ATOM_OK) {
-			debug32("create thread success.\n");
-
 			/**
 			 * Frist application thread successfully created. It is
 			 * now possible to start the OS. Execution will not return
@@ -149,8 +154,6 @@ int main(int argv, char **argc)
 			 */
 			atomOSStart();
 		}
-		else
-			debug32("create thread failed!\n");
 	}
 
 	return 0;
