@@ -44,7 +44,7 @@ else
 endif
 
 CPU_CONFIG = -mmultiply-enabled -mbarrel-shift-enabled
-CPPFLAGS   += -std=gnu99 -Os -ffunction-sections -ffreestanding \
+CPPFLAGS   += -std=gnu99 -O0 -ffunction-sections -ffreestanding \
 		-Wall -Werror \
 		-Wstrict-prototypes -Wmissing-prototypes \
 		-Wold-style-declaration -Wold-style-definition \
