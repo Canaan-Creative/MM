@@ -56,5 +56,4 @@ void hexdump(const uint8_t *p, unsigned int len);
 	*((str) + 0) = (uint8_t)((x) >> 8);	\
 }
 
-void delay(unsigned int ms);
 #endif	/* _DEFINES_H_ */

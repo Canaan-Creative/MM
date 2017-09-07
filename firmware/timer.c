@@ -12,6 +12,7 @@
 #include "defines.h"
 #include "io.h"
 #include "timer.h"
+#include "atom.h"
 
 static struct lm32_timer *tim = (struct lm32_timer *)TIMER_BASE;
 
@@ -87,8 +88,13 @@ void timer0_isr(void)
 				timerfun[id]();
 		}
 	}
+
 	timer_mask_clean();
 	irq_ack(IRQ_TIMER0);
+
+	atomIntEnter();
+	atomTimerTick();
+	atomIntExit(TRUE);
 }
 
 static void ticker_mask_set(void)
@@ -127,4 +133,8 @@ void timer1_isr(void)
 	ticker_mask_set();
 	ticker_mask_clean();
 	irq_ack(IRQ_TIMER1);
+
+	atomIntEnter();
+	atomTimerTick();
+	atomIntExit(TRUE);
 }

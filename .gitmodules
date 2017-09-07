@@ -1,0 +1,3 @@
+[submodule "firmware/atomthreads"]
+	path = firmware/atomthreads
+	url = https://github.com/Canaan-Creative/atomthreads.git
