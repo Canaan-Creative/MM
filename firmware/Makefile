@@ -15,13 +15,21 @@ CFLAGS += -DMM_VERSION='"331408-$(GIT_VERSION)$(GIT_STATUS)"'
 
 -include config.mk
 # ----- Customer ----------------------------------------------------------
-INCLUDES   = -I. -Isdk -Iminilibc
+INCLUDES   = -I. -Isdk -Iminilibc -I../atomthreads/kernel -I../atomthreads/ports/lm32
 LDFLAGS    += -nostartfiles -nodefaultlibs -nostdlib -Wl,--gc-sections -Wl,-T,linker.ld -Wl,-Map=$(PRJ_NAME).map
 LDLIBS     += -Bminilibc -lminilibc -lgcc
 
 SSRCS      = sdk/crt0ram.S sdk/intr.c
 CSRCS      = main.c uart.c timer.c gpio.c
-OBJS       := $(addsuffix .o,$(basename $(CSRCS) $(SSRCS)))
+#Atomthreads files
+ATOM_PORTS = ../atomthreads/ports/lm32/atomport-asm.S \
+	     ../atomthreads/ports/lm32/atomport.c
+ATOM_KERN  = ../atomthreads/kernel/atomkernel.c \
+	     ../atomthreads/kernel/atomtimer.c \
+	     ../atomthreads/kernel/atomsem.c \
+	     ../atomthreads/kernel/atommutex.c \
+	     ../atomthreads/kernel/atomqueue.c
+OBJS       := $(addsuffix .o,$(basename $(CSRCS) $(SSRCS) $(ATOM_PORTS) $(ATOM_KERN)))
 
 BATCHFILE	:= $(shell mktemp)
 HARDWARE_NAME	= mm
@@ -59,7 +67,6 @@ minilibc/libminilibc.a:
 	$(CC) $(CPPFLAGS) $(CFLAGS) -o $@ -c $<
 	$(MKDEP)
 
-
 # Bitstream rules
 # TODO: how to setCable -baud 12000000
 reflash: $(HARDWARE_NAME).mcs
@@ -95,7 +102,6 @@ $(HARDWARE_NAME).bit: $(PRJ_NAME).elf ../synth/$(HARDWARE_NAME).bit ../synth/$(H
 
 ../synth/$(HARDWARE_NAME).bit:
 	make -C ../synth
-
 
 # Clean rules
 clean:
