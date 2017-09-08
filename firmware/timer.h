@@ -8,13 +8,15 @@
 #ifndef __TIMER_H__
 #define __TIMER_H__
 
+#include <stdint.h>
 #include <stdbool.h>
-#include "atom.h"
+#include <stddef.h>
 
 #define MAX_TIMER_VAL	(uint32_t)-1
 
 enum timer_id {
     TIMER_IDLE,
+    TIMER_TICK,
     TIMER_MAX
 };
 

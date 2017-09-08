@@ -10,7 +10,7 @@
 #ifndef _DEFINES_H_
 #define _DEFINES_H_
 
-#include "atom.h"
+#include <stdint.h>
 
 #ifdef DEBUG
 #define BUFFER_LEN	32

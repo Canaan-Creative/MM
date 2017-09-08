@@ -8,6 +8,7 @@
 
 #include <stdbool.h>
 #include <stdint.h>
+#include <stddef.h>
 
 #include "minilibc.h"
 #include "system_config.h"
@@ -19,28 +20,21 @@
 #include "gpio.h"
 #include "atom.h"
 
-/* Thread Stack Size define */
-#define IDLE_STACK_SIZE_BYTES	256
+#define IDLE_STACK_SIZE_BYTES	1024
 #define FIRST_STACK_SIZE_BYTES	1024
 #define SECOND_STACK_SIZE_BYTES	1024
 
-/* Local data */
-/* Application thread's TCBs */
-ATOM_TCB first_tcb;
-ATOM_TCB second_tcb;
+static ATOM_TCB first_tcb;
+static ATOM_TCB second_tcb;
 
-/* Idle thread's stack area */
-uint8_t idle_thread_stack[IDLE_STACK_SIZE_BYTES];
-/* First thread's stack area */
-uint8_t first_thread_stack[FIRST_STACK_SIZE_BYTES];
-/* Second thread's stack area */
-uint8_t second_thread_stack[SECOND_STACK_SIZE_BYTES];
+static uint8_t idle_thread_stack[IDLE_STACK_SIZE_BYTES];
+static uint8_t first_thread_stack[FIRST_STACK_SIZE_BYTES];
+static uint8_t second_thread_stack[SECOND_STACK_SIZE_BYTES];
 
-/* Forward declarations */
-void first_thread_func(uint32_t data);
-void second_thread_func(uint32_t data);
+static void first_thread_func(uint32_t data);
+static void second_thread_func(uint32_t data);
 
-void first_thread_func(uint32_t data)
+static void first_thread_func(uint32_t data)
 {
 	while (1) {
 		debug32("thread-1 start.\n");
@@ -52,7 +46,7 @@ void first_thread_func(uint32_t data)
 	}
 }
 
-void second_thread_func(uint32_t data)
+static void second_thread_func(uint32_t data)
 {
 	while (1) {
 		debug32("thread-2 start.\n");
@@ -61,16 +55,6 @@ void second_thread_func(uint32_t data)
 		gpio_led_rgb(GPIO_LED_RED);
 		atomTimerDelay(1);
 		debug32("thread-2 end.\n");
-	}
-}
-
-void delay(unsigned int ms)
-{
-	unsigned int i;
-
-	while (ms && ms--) {
-		for (i = 0; i < CPU_FREQUENCY / 1000 / 5; i++)
-			__asm__ __volatile__("nop");
 	}
 }
 
@@ -83,13 +67,14 @@ int main(int argv, char **argc)
 	/* Initialise the OS before creating our threads */
 	status = atomOSInit(&idle_thread_stack[0], IDLE_STACK_SIZE_BYTES, TRUE);
 	if (status == ATOM_OK) {
-		/* Enable the system */
 		irq_setmask(0);
 		irq_enable(1);
+
 		timer_init();
 #ifdef DEBUG
 		uart2_init();
 #endif
+
 		/* Create an application thread */
 		status = atomThreadCreate(&first_tcb,
 				10, first_thread_func, 3,

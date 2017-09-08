@@ -8,7 +8,7 @@
 #ifndef __GPIO_H__
 #define __GPIO_H__
 
-#include "atom.h"
+#include <stdint.h>
 
 #define GPIO_LED_RED	0xff0000
 #define GPIO_LED_GREEN	0xff00

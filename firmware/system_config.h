@@ -8,7 +8,7 @@
 #ifndef _SYSTEM_CONFIG_H_
 #define _SYSTEM_CONFIG_H_
 
-#define IDLE_TIME	3
+#define TICK_TIME	1
 
 #define CPU_FREQUENCY_MHZ	(50)
 #define CPU_FREQUENCY		(CPU_FREQUENCY_MHZ * 1000 * 1000) /* 50Mhz */
