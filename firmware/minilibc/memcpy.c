@@ -1,3 +1,4 @@
+#include "minilibc.h"
 /**
  * memcpy - Copies one area of memory to another
  * @dest: Destination

@@ -33,10 +33,7 @@
 
 #include "minilibc.h"
 
-int
-strncmp(s1, s2, n)
-register const char *s1, *s2;
-register size_t n;
+int strncmp(register const char *s1, register const char *s2, register size_t n)
 {
 
     if (n == 0)

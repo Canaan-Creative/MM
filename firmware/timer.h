@@ -1,6 +1,5 @@
 /*
- * Author: Xiangfu Liu <xiangfu@openmobilefree.net>
- * Bitcoin:	1CanaaniJzgps8EV6Sfmpb7T8RutpaeyFn
+ * Author: Mikeqin <Fengling.Qin@gmail.com>
  *
  * This is free and unencumbered software released into the public domain.
  * For details see the UNLICENSE file at the root of the source tree.
@@ -9,20 +8,21 @@
 #ifndef __TIMER_H__
 #define __TIMER_H__
 
-#include <stdint.h>
+#include <stdbool.h>
+#include "atom.h"
 
+#define MAX_TIMER_VAL	(uint32_t)-1
+
+enum timer_id {
+    TIMER_IDLE,
+    TIMER_MAX
+};
+
+typedef int (*timerproc)(void);
+
+void timer_init(void);
+void timer_set(enum timer_id id, uint32_t seconds, timerproc proc);
+bool timer_istimeout(enum timer_id id);
 void timer0_isr(void);
-void timer1_isr(void);
-void timer_mask_set(unsigned char timer);
-void timer_mask_clean(unsigned char timer);
-void timer_set(unsigned char timer, unsigned char load);
-uint32_t timer_read(unsigned char timer);
-
-void gpio_led(uint8_t value);
-void gpio_reset_asic();
-int read_module_id();
-int read_power_good();
-
-int clko_init(uint32_t value);
 
 #endif	/* __TIMER_H__ */

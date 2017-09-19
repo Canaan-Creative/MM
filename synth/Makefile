@@ -21,7 +21,6 @@ vfiles_nodir := \
 	xilinx/pmi_fifo.v\
 	xilinx/bram.v\
 	xilinx/clkgen.v\
-	superkdf9/components/spi/wb_spi.v\
 	superkdf9/components/uart_core/rxcver.v\
 	superkdf9/components/uart_core/txcver_fifo.v\
 	superkdf9/components/uart_core/intface.v\
@@ -29,17 +28,11 @@ vfiles_nodir := \
 	superkdf9/components/uart_core/txmitt.v\
 	superkdf9/components/uart_core/rxcver_fifo.v\
 	superkdf9/components/uart_core/modem.v\
-	superkdf9/components/gpio/tpio.v\
-	superkdf9/components/gpio/gpio.v\
 	superkdf9/soc/superkdf9.v\
 	superkdf9/soc/superkdf9_simple.v 
 
 xilinx_cores := $(addprefix ../ipcores_dir/,\
 	fifo_uart.xco\
-	tx_fifo.xco\
-	rx_fifo.xco\
-	icon.xco\
-	ila.xco\
 	)
 
 vfiles := $(addprefix ../verilog/, $(vfiles_nodir))

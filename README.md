@@ -26,6 +26,10 @@ How to build?
 First you need install the ISE for sure. then edit the `isedir` under xilinx.mk
 by default we are using /home/Xilinx/14.6/ISE_DS/
 
+For build the toolchain for lm32-rtems, it meet some problem with gcc-5.2.1 under Ubuntu and
+gcc-4.9.2 under Debian, for fix that. just switch to gcc-4.8 with CC=gcc=4.8 make ... and you
+also need texinfo_4.13a for fix the gdb build.
+
 1. $ make -C firmware/toolchain # Install the lm32-rtems-4.11- toolchain under /opt
 2. $ make -C firmware           # Generate the final bitstream file .bit/.mcs under firmware/
 3. $ make -C firmware load      # Load the config bit file to FPAG by using Xilix Platform cable
