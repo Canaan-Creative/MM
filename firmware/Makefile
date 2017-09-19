@@ -15,7 +15,7 @@ CFLAGS += -DMM_VERSION='"331408-$(GIT_VERSION)$(GIT_STATUS)"'
 
 -include config.mk
 # ----- Customer ----------------------------------------------------------
-INCLUDES   = -I. -Isdk -Iminilibc -I../atomthreads/kernel -I../atomthreads/ports/lm32
+INCLUDES   = -I. -Isdk -Iminilibc -I../atomthreads/kernel -I../atomthreads/ports/lm32 -I../atomthreads/tests
 LDFLAGS    += -nostartfiles -nodefaultlibs -nostdlib -Wl,--gc-sections -Wl,-T,linker.ld -Wl,-Map=$(PRJ_NAME).map
 LDLIBS     += -Bminilibc -lminilibc -lgcc
 
@@ -29,7 +29,9 @@ ATOM_KERN  = ../atomthreads/kernel/atomkernel.c \
 	     ../atomthreads/kernel/atomsem.c \
 	     ../atomthreads/kernel/atommutex.c \
 	     ../atomthreads/kernel/atomqueue.c
-OBJS       := $(addsuffix .o,$(basename $(CSRCS) $(SSRCS) $(ATOM_PORTS) $(ATOM_KERN)))
+TESTS	   ?= test-template.c
+ATOM_TESTS = ../atomthreads/tests/$(TESTS)
+OBJS       := $(addsuffix .o,$(basename $(CSRCS) $(SSRCS) $(ATOM_PORTS) $(ATOM_KERN) $(ATOM_TESTS)))
 
 BATCHFILE	:= $(shell mktemp)
 HARDWARE_NAME	= mm

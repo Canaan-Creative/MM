@@ -18,6 +18,7 @@
 #include "timer.h"
 #include "gpio.h"
 #include "atom.h"
+#include "atomtests.h"
 
 /* Thread Stack Size define */
 #define IDLE_STACK_SIZE_BYTES	256
@@ -42,6 +43,8 @@ void second_thread_func(uint32_t data);
 
 void first_thread_func(uint32_t data)
 {
+	debug32("test start = %d\n", test_start());
+
 	while (1) {
 		debug32("thread-1 start.\n");
 		gpio_led(0);
