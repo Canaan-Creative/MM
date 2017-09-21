@@ -366,7 +366,8 @@ end
 // timer
 //-----------------------------------------------------
 //1s 2faf080 SEC
-reg [26:0] tim_cnt ;
+reg [26:0] tim_cnt0 ;
+reg [26:0] tim_cnt1 ;
 reg [5:0] sec_cnt0 ;
 reg [5:0] sec_cnt0_f ;
 reg tim_done0 ;
@@ -378,11 +379,20 @@ reg tim_mask1 ;
 wire [31:0] reg_tim = {7'b0,tim_done1,sec_cnt1,tim_mask1,1'b0,7'b0,tim_done0,sec_cnt0,tim_mask0,1'b0} ;
 always @ ( posedge CLK_I or posedge RST_I) begin
 	if(RST_I)
-		tim_cnt <= 27'b0;
-	else if( tim_cnt == `MM_CLK_1S_CNT )
-		tim_cnt <= 27'b0 ;
+		tim_cnt0 <= 27'b0;
+	else if( tim_cnt0 == `MM_CLK_1S_CNT )
+		tim_cnt0 <= 27'b0 ;
 	else
-		tim_cnt <= 27'b1 + tim_cnt ;
+		tim_cnt0 <= 27'b1 + tim_cnt0 ;
+end
+
+always @ ( posedge CLK_I or posedge RST_I) begin
+	if(RST_I)
+		tim_cnt1 <= 27'b0;
+	else if( tim_cnt1 == `MM_CLK_1MS_CNT )
+		tim_cnt1 <= 27'b0 ;
+	else
+		tim_cnt1 <= 27'b1 + tim_cnt1 ;
 end
 
 always @ ( posedge CLK_I or posedge RST_I ) begin
@@ -390,7 +400,7 @@ always @ ( posedge CLK_I or posedge RST_I ) begin
 		sec_cnt0 <= 6'b0 ;
 	else if( time_wr_en && TWI_DAT_I[0] )
 		sec_cnt0 <= TWI_DAT_I[7:2] ;
-	else if( |sec_cnt0 && tim_cnt == `MM_CLK_1S_CNT )
+	else if( |sec_cnt0 && tim_cnt0 == `MM_CLK_1S_CNT )
 		sec_cnt0 <= sec_cnt0 - 6'b1 ;
 end
 
@@ -413,7 +423,7 @@ always @ ( posedge CLK_I or posedge RST_I ) begin
 		sec_cnt1 <= 6'b0 ;
 	else if( time_wr_en && TWI_DAT_I[16] )
 		sec_cnt1 <= TWI_DAT_I[23:18] ;
-	else if( |sec_cnt1 && tim_cnt == `MM_CLK_1S_CNT )
+	else if( |sec_cnt1 && tim_cnt1 == `MM_CLK_1MS_CNT )
 		sec_cnt1 <= sec_cnt1 - 6'b1 ;
 end
 

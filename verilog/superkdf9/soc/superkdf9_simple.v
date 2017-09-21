@@ -7,6 +7,7 @@
 `ifdef MM_50M
 `define MM_CLK_IN_MHZ   50
 `define MM_CLK_1S_CNT   (27'h5f5e100/2)
+`define MM_CLK_1MS_CNT  (27'h5f5e100/2/1000)
 `define MM_CLK_PROD     40
 `define MM_CLK_MUL      2
 `define MM_CLK_DIV      2
@@ -17,6 +18,7 @@
 `else
 `define MM_CLK_IN_MHZ   100
 `define MM_CLK_1S_CNT   27'h5f5e100
+`define MM_CLK_1MS_CNT  (27'h5f5e100/1000)
 `define MM_CLK_PROD     40
 `define MM_CLK_MUL      4
 `define MM_CLK_DIV      4
