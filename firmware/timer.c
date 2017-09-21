@@ -97,3 +97,40 @@ void timer0_isr(void)
 	atomIntExit(TRUE);
 }
 
+static void ticker_mask_set(void)
+{
+	unsigned int tmp;
+
+	tmp = readl(&tim->reg) & 0x20002;	/*read timer int mask*/
+	tmp |= (0x102 << 16);
+	writel(tmp, &tim->reg);
+}
+
+static void ticker_mask_clean(void)
+{
+	unsigned int tmp;
+
+	tmp = readl(&tim->reg) & 0x20002;	/*read timer int mask*/
+	tmp &=  0xfffdffff;
+	tmp |= (0x5 << 16);
+	writel(tmp, &tim->reg);
+}
+
+void ticker_init(void)
+{
+	uint32_t tmp;
+
+	ticker_mask_clean();
+
+	irq_ack(IRQ_TIMER1);
+	tmp = irq_getmask();
+	tmp |= IRQ_TIMER1;
+	irq_setmask(tmp);
+}
+
+void timer1_isr(void)
+{
+	ticker_mask_set();
+	ticker_mask_clean();
+	irq_ack(IRQ_TIMER1);
+}

@@ -25,4 +25,7 @@ void timer_set(enum timer_id id, uint32_t seconds, timerproc proc);
 bool timer_istimeout(enum timer_id id);
 void timer0_isr(void);
 
+void ticker_init(void);
+void timer1_isr(void);
+
 #endif	/* __TIMER_H__ */
