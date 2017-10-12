@@ -37,24 +37,20 @@ static void second_thread_func(uint32_t data);
 static void first_thread_func(uint32_t data)
 {
 	while (1) {
-		debug32("thread-1 start.\n");
 		gpio_led(0);
-		atomTimerDelay(3);
+		atomTimerDelay(2000);
 		gpio_led(1);
-		atomTimerDelay(3);
-		debug32("thread-1 end.\n");
+		atomTimerDelay(2000);
 	}
 }
 
 static void second_thread_func(uint32_t data)
 {
 	while (1) {
-		debug32("thread-2 start.\n");
 		gpio_led_rgb(GPIO_LED_BLACK);
-		atomTimerDelay(1);
+		atomTimerDelay(1000);
 		gpio_led_rgb(GPIO_LED_RED);
-		atomTimerDelay(1);
-		debug32("thread-2 end.\n");
+		atomTimerDelay(1000);
 	}
 }
 
@@ -70,7 +66,7 @@ int main(int argv, char **argc)
 		irq_setmask(0);
 		irq_enable(1);
 
-		timer_init();
+		ticker_init();
 #ifdef DEBUG
 		uart2_init();
 #endif
