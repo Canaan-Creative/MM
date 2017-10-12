@@ -133,4 +133,8 @@ void timer1_isr(void)
 	ticker_mask_set();
 	ticker_mask_clean();
 	irq_ack(IRQ_TIMER1);
+
+	atomIntEnter();
+	atomTimerTick();
+	atomIntExit(TRUE);
 }
