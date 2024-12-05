@@ -10,7 +10,6 @@ Main objectives
 * Test the nonce inside the FPGA. only report the >= DIFF taskes back to host (cgminer)
 * It fit any kinds of bitcoin mining ASIC, (you may needs some VerilogHDL coding)
 * It have LM32 CPU inside, fit in XC6SLX16 small FPGAs
-* The MM datasheet: http://downloads.canaan-creative.com/software/mm/MM_SOC_Specification.pdf
 
 Directory structure
 ===================
@@ -33,7 +32,6 @@ by default we are using /home/Xilinx/14.6/ISE_DS/
 Discussion
 ==========
 * IRC: #avalon @freenode.net
-* Mailing list: http://lists.canaan-creative.com/
 * Documents/Downloads: https://en.bitcoin.it/wiki/Avalon2
 
 Support
