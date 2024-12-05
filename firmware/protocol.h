@@ -38,5 +38,9 @@
 #define AVA2_P_STATUS		24
 #define AVA2_P_ACKDETECT	25
 #define AVA2_P_TEST_RET		26
+#define AVA2_P_JOB_FLAGS	27
+
+/* Job flags */
+#define AVA2_P_FULLCOINBASE	(1<<0)
 
 #endif	/* _PROTOCOL_H_ */

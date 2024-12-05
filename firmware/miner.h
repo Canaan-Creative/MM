@@ -62,6 +62,8 @@ struct mm_work {
 	uint32_t pool_no;
 
 	uint8_t	target[32];
+
+	uint32_t flags;
 };
 
 void miner_init_work(struct mm_work *mw, struct work *work);

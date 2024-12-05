@@ -11,7 +11,7 @@ BIN_DIR:=$(shell date +%Y-%m-%d)
 GIT_VERSION:=$(shell git rev-parse HEAD | cut -c 1-7)
 GIT_STATUS:=$(shell ([ -z "`git status -s -uno`" ] && echo 0) || echo +)
 
-CFLAGS += -DMM_VERSION='"331408-$(GIT_VERSION)$(GIT_STATUS)"'
+CFLAGS += -DMM_VERSION='"331410-$(GIT_VERSION)$(GIT_STATUS)"'
 
 -include config.mk
 # ----- Customer ----------------------------------------------------------
